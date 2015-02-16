@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual C++ Express 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CtrlCmdCLI", "..\CtrlCmdCLI\CtrlCmdCLI\CtrlCmdCLI.vcxproj", "{5FB5606D-756A-49B1-A2F8-4C0D5F63E4B8}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EpgDataCap_Bon", "..\EpgDataCap_Bon\EpgDataCap_Bon\EpgDataCap_Bon.vcxproj", "{A690F4ED-0014-4346-AC5B-9FB4F2B3D05F}"
