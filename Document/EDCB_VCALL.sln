@@ -25,6 +25,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Write_AVIVO", "..\Write_AVI
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Write_Default", "..\Write_Default\Write_Default\Write_Default.vcxproj", "{1A31824D-D8E5-4AC5-9D89-354FEC750B94}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EpgTimer", "..\EpgTimer\EpgTimer\EpgTimer.csproj", "{6B82030F-99FB-4D11-81E2-BAFD81A672BC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5FB5606D-756A-49B1-A2F8-4C0D5F63E4B8} = {5FB5606D-756A-49B1-A2F8-4C0D5F63E4B8}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -121,6 +126,14 @@ Global
 		{1A31824D-D8E5-4AC5-9D89-354FEC750B94}.Release|Win32.Build.0 = Release|Win32
 		{1A31824D-D8E5-4AC5-9D89-354FEC750B94}.Release|x64.ActiveCfg = Release|x64
 		{1A31824D-D8E5-4AC5-9D89-354FEC750B94}.Release|x64.Build.0 = Release|x64
+		{6B82030F-99FB-4D11-81E2-BAFD81A672BC}.Debug|Win32.ActiveCfg = Debug|x86
+		{6B82030F-99FB-4D11-81E2-BAFD81A672BC}.Debug|Win32.Build.0 = Debug|x86
+		{6B82030F-99FB-4D11-81E2-BAFD81A672BC}.Debug|x64.ActiveCfg = Debug|x64
+		{6B82030F-99FB-4D11-81E2-BAFD81A672BC}.Debug|x64.Build.0 = Debug|x64
+		{6B82030F-99FB-4D11-81E2-BAFD81A672BC}.Release|Win32.ActiveCfg = Release|x86
+		{6B82030F-99FB-4D11-81E2-BAFD81A672BC}.Release|Win32.Build.0 = Release|x86
+		{6B82030F-99FB-4D11-81E2-BAFD81A672BC}.Release|x64.ActiveCfg = Release|x64
+		{6B82030F-99FB-4D11-81E2-BAFD81A672BC}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
