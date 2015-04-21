@@ -679,9 +679,45 @@ BOOL CEpgDBManager::IsEqualContent(vector<EPGDB_CONTENT_DATA>* searchKey, vector
 {
 	for( size_t i=0; i<searchKey->size(); i++ ){
 		for( size_t j=0; j<eventData->size(); j++ ){
+
+			/*本来の比較コード(CS用ジャンルコード対応に修正済))
 			if( (*searchKey)[i].content_nibble_level_1 == (*eventData)[j].content_nibble_level_1 ){
 				if( (*searchKey)[i].content_nibble_level_2 != 0xFF ){
 					if( (*searchKey)[i].content_nibble_level_2 == (*eventData)[j].content_nibble_level_2 ){
+						if( (*eventData)[j].content_nibble_level_1 == 0x0e && (*eventData)[j].content_nibble_level_2 == 0x01 )
+						{
+							if( (*searchKey)[i].user_nibble_1 == (*eventData)[j].user_nibble_1 ){
+								if( (*searchKey)[i].user_nibble_2 != 0xFF ){
+									if( (*searchKey)[i].user_nibble_2 == (*eventData)[j].user_nibble_2 ){
+										return TRUE;
+									}
+								}else{
+									return TRUE;
+								}
+							}
+						}else{
+							return TRUE;
+						}
+					}
+				}else{
+					return TRUE;
+				}
+			}
+			*/
+
+			//CS用ジャンルコードへの仮対応版
+			BYTE event_nibble_level_1=(*eventData)[j].content_nibble_level_1;
+			BYTE event_nibble_level_2=(*eventData)[j].content_nibble_level_2;
+
+			if( event_nibble_level_1 == 0x0e && event_nibble_level_2 == 0x01 )
+			{
+				event_nibble_level_1=(*eventData)[j].user_nibble_1 | 0x70;
+				event_nibble_level_2=(*eventData)[j].user_nibble_2;
+			}
+
+			if( (*searchKey)[i].content_nibble_level_1 == event_nibble_level_1 ){
+				if( (*searchKey)[i].content_nibble_level_2 != 0xFF ){
+					if( (*searchKey)[i].content_nibble_level_2 == event_nibble_level_2 ){
 						return TRUE;
 					}
 				}else{
