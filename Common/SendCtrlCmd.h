@@ -403,6 +403,11 @@ public:
 		return SendAndReceiveCmdData(CMD2_EPG_SRV_GET_CHG_CH_TVTEST, val, resVal);
 	}
 
+	//設定ファイル(ini)の更新を通知させる
+	DWORD SendNotifyProfileUpdate(){
+		return SendCmdWithoutData(CMD2_EPG_SRV_PROFILE_UPDATE);
+	}
+
 	//ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え
 	//戻り値：
 	// エラーコード
