@@ -1591,6 +1591,12 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			}
 		}
 		break;
+	case CMD2_EPG_SRV_PROFILE_UPDATE:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_PROFILE_UPDATE\r\n");
+			sys->notifyManager.AddNotify(NOTIFY_UPDATE_PROFILE);
+		}
+		break;
 	case CMD2_EPG_SRV_NWTV_SET_CH:
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_NWTV_SET_CH\r\n");
