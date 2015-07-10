@@ -944,6 +944,8 @@ bool CParseEpgAutoAddText::ParseLine(const wstring& parseLine, pair<DWORD, EPG_A
 	}
 	item.second.searchInfo.chkRecEnd = _wtoi(NextToken(token)) != 0;
 	item.second.searchInfo.chkRecDay = (WORD)_wtoi(NextToken(token));
+	item.second.searchInfo.chkDurationMin = (WORD)_wtoi(NextToken(token));
+	item.second.searchInfo.chkDurationMax = (WORD)_wtoi(NextToken(token));
 	item.second.addCount = 0;
 	this->nextID = this->nextID > item.first + 50000000 ? item.first + 1 : (max(item.first + 1, this->nextID) - 1) % 100000000 + 1;
 	return true;
@@ -1000,7 +1002,7 @@ bool CParseEpgAutoAddText::SaveLine(const pair<DWORD, EPG_AUTO_ADD_DATA>& item, 
 			item.second.recSetting.partialRecFolder[i].writePlugIn + L"*" +
 			item.second.recSetting.partialRecFolder[i].recNamePlugIn + L"\n";
 	}
-	Format(saveLine, L"%d\n%s\n%s\n%d\n%d\n%s\n%s\n%s\n%d\n%d\n%d\n%d\n%d\n%s\n%d\n%d\n%d\n%d\n%d\n%d\n%s%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%s%d\n%d\n",
+	Format(saveLine, L"%d\n%s\n%s\n%d\n%d\n%s\n%s\n%s\n%d\n%d\n%d\n%d\n%d\n%s\n%d\n%d\n%d\n%d\n%d\n%d\n%s%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%s%d\n%d\n%d\n%d\n",
 		item.second.dataID,
 		item.second.searchInfo.andKey.c_str(),
 		item.second.searchInfo.notKey.c_str(),
@@ -1032,9 +1034,11 @@ bool CParseEpgAutoAddText::SaveLine(const pair<DWORD, EPG_AUTO_ADD_DATA>& item, 
 		(int)item.second.recSetting.partialRecFolder.size(),
 		strPartialRecFolder.c_str(),
 		item.second.searchInfo.chkRecEnd,
-		item.second.searchInfo.chkRecDay
+		item.second.searchInfo.chkRecDay,
+		item.second.searchInfo.chkDurationMin,
+		item.second.searchInfo.chkDurationMax
 		);
-	return FinalizeField(saveLine) == 30 + item.second.recSetting.recFolderList.size() + item.second.recSetting.partialRecFolder.size();
+	return FinalizeField(saveLine) == 32 + item.second.recSetting.recFolderList.size() + item.second.recSetting.partialRecFolder.size();
 }
 
 bool CParseEpgAutoAddText::SaveFooterLine(wstring& saveLine) const
