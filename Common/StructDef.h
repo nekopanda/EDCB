@@ -441,6 +441,9 @@ typedef struct _EPGDB_SEARCH_KEY_INFO{
 	//自動予約登録の条件専用
 	BYTE chkRecEnd;					//録画済かのチェックあり
 	WORD chkRecDay;					//録画済かのチェック対象期間
+	//番組長検索用
+	WORD chkDurationMin;			//最低番組長(分/0は無制限)
+	WORD chkDurationMax;			//最大番組長(分/0は無制限)
 	_EPGDB_SEARCH_KEY_INFO(void){
 		andKey = L"";
 		notKey = L"";
@@ -452,6 +455,8 @@ typedef struct _EPGDB_SEARCH_KEY_INFO{
 		freeCAFlag = 0;
 		chkRecEnd = 0;
 		chkRecDay = 6;
+		chkDurationMin = 0;
+		chkDurationMax = 0;
 	};
 }EPGDB_SEARCH_KEY_INFO;
 
