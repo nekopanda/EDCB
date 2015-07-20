@@ -38,6 +38,7 @@
 #define CMD2_EPG_SRV_UNREGIST_GUI			6 //GUIアプリケーションのパイプ名と接続待機用イベント名の登録を解除
 #define CMD2_EPG_SRV_REGIST_GUI_TCP			7 //TCP接続のGUIアプリケーションのIPとポートを登録（タイマーGUI用のコマンドが飛ぶようになる）
 #define CMD2_EPG_SRV_UNREGIST_GUI_TCP		8 //TCP接続のGUIアプリケーションのIPとポートの登録を解除
+#define CMD2_EPG_SRV_ISREGIST_GUI_TCP		9 //TCP接続のGUIアプリケーションのIPとポートの登録状況確認
 
 #define CMD2_EPG_SRV_ENUM_RESERVE			1011 //予約一覧取得
 #define CMD2_EPG_SRV_GET_RESERVE			1012 //予約情報取得
