@@ -427,26 +427,18 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			if( ctx->sys->epgDB.IsLoadingData() == FALSE ){
 				//リロード終わったので自動予約登録処理を行う
 				ctx->sys->reserveManager.CheckTuijyu();
-				bool addCountUpdated = false;
 				{
 					CBlockLock lock(&ctx->sys->settingLock);
 					for( map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr = ctx->sys->epgAutoAdd.GetMap().begin(); itr != ctx->sys->epgAutoAdd.GetMap().end(); itr++ ){
-						DWORD addCount = itr->second.addCount;
 						ctx->sys->AutoAddReserveEPG(itr->second);
-						if( addCount != itr->second.addCount ){
-							addCountUpdated = true;
-						}
 					}
 					for( map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr = ctx->sys->manualAutoAdd.GetMap().begin(); itr != ctx->sys->manualAutoAdd.GetMap().end(); itr++ ){
 						ctx->sys->AutoAddReserveProgram(itr->second);
 					}
 				}
 				KillTimer(hwnd, TIMER_RELOAD_EPG_CHK_PENDING);
-				if( addCountUpdated ){
-					//予約登録数の変化を通知する
-					ctx->sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
-				}
 				ctx->sys->notifyManager.AddNotify(NOTIFY_UPDATE_EPGDATA);
+				ctx->sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 
 				if( ctx->sys->useSyoboi ){
 					//しょぼいカレンダー対応
