@@ -117,6 +117,16 @@ public:
 		return SendCmdData(CMD2_EPG_SRV_UNREGIST_GUI_TCP, port);
 	}
 
+	//EpgTimerSrv.exeのTCP接続GUI登録状況を確認する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// port					[IN]ポート
+	// registerd			[OUT]登録済みの時true
+	DWORD SendIsRegistTCP(DWORD port, BOOL* registered){
+		return SendAndReceiveCmdData(CMD2_EPG_SRV_ISREGIST_GUI_TCP, port, registered);
+	}
+
 	//予約一覧を取得する
 	//戻り値：
 	// エラーコード
