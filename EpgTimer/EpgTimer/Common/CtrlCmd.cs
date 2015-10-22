@@ -427,7 +427,7 @@ namespace EpgTimer
     /// <summary>CtrlCmdコマンド送信クラス(SendCtrlCmd.h/cppから移植)</summary>
     public class CtrlCmdUtil
     {
-        private const ushort CMD_VER = 5;
+        private const ushort CMD_VER = 6;
         private bool tcpFlag = false;
         private int connectTimeOut = 15000;
         private string eventName = "Global\\EpgTimerSrvConnect";

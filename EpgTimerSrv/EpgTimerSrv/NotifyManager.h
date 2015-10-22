@@ -42,6 +42,7 @@ protected:
 	vector<NOTIFY_SRV_INFO> notifySentList;
 protected:
 	void _SendNotify();
-	static UINT WINAPI SendNotifyThread(LPVOID param);
+	static UINT WINAPI SendNotifyThread_(LPVOID param);
+	UINT SendNotifyThread();
 };
 

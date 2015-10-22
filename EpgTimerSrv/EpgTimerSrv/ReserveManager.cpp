@@ -17,6 +17,7 @@ CReserveManager::CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& 
 	, epgCapWork(false)
 	, shutdownModePending(-1)
 	, reserveModified(false)
+	, newRecFile(true)
 	, watchdogStopEvent(NULL)
 	, watchdogThread(NULL)
 {
@@ -42,9 +43,12 @@ void CReserveManager::Initialize()
 	this->recInfoText.ParseText((settingPath + L"\\" + REC_INFO_TEXT_NAME).c_str());
 	this->recInfo2Text.ParseText((settingPath + L"\\" + REC_INFO2_TEXT_NAME).c_str());
 
+	this->recEventDB.Load(settingPath + L"\\" + REC_EPG_DATA_NAME, recInfoText.GetMap());
+	this->recEventDB.Save();
+
 	this->watchdogStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if( this->watchdogStopEvent ){
-		this->watchdogThread = (HANDLE)_beginthreadex(NULL, 0, WatchdogThread, this, 0, NULL);
+		this->watchdogThread = (HANDLE)_beginthreadex(NULL, 0, WatchdogThread_, this, 0, NULL);
 	}
 }
 
@@ -311,11 +315,15 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setComment, bool setReserveStatus)
 {
 	CBlockLock lock(&this->managerLock);
+	return AddReserveData2(reserveList, setComment, setReserveStatus).size() > 0;
+}
 
-	bool modified = false;
+vector<const RESERVE_DATA*> CReserveManager::AddReserveData2(const vector<RESERVE_DATA>& reserveList, bool setComment, bool setReserveStatus)
+{
 	__int64 minStartTime = LLONG_MAX;
 	__int64 now = GetNowI64Time();
 	vector<BAT_WORK_INFO> batWorkList;
+	vector<const RESERVE_DATA*> addList;
 	for( size_t i = 0; i < reserveList.size(); i++ ){
 		RESERVE_DATA r = reserveList[i];
 		//すでに終了していないか
@@ -330,8 +338,7 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 			}
 			r.recFileNameList.clear();
 			r.reserveID = this->reserveText.AddReserve(r);
-			this->reserveModified = true;
-			modified = true;
+			addList.push_back(&this->reserveText.GetMap().at(r.reserveID));
 			if( r.recSetting.recMode != RECMODE_NO ){
 				__int64 startTime;
 				CalcEntireReserveTime(&startTime, NULL, r);
@@ -341,15 +348,15 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 			}
 		}
 	}
-	if( modified ){
+	if(addList.size() > 0){
+		this->reserveModified = true;
 		this->reserveText.SaveText();
 		ReloadBankMap(minStartTime);
 		CheckAutoDel();
 		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
 		AddPostBatWork(batWorkList, L"PostAddReserve.bat");
-		return true;
 	}
-	return false;
+	return addList;
 }
 
 bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bool setReserveStatus)
@@ -529,7 +536,7 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 	}
 }
 
-vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll() const
+vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll()
 {
 	CBlockLock lock(&this->managerLock);
 
@@ -537,7 +544,11 @@ vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll() const
 	infoList.reserve(this->recInfoText.GetMap().size());
 	for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().begin(); itr != this->recInfoText.GetMap().end(); itr++ ){
 		infoList.push_back(itr->second);
+		// EPGデータ有無フラグを追加
+		REC_FILE_INFO& info = infoList.back();
+		info.autoAddInfoFlag = recEventDB.HasEpgInfo(info.id);
 	}
+
 	return infoList;
 }
 
@@ -1400,7 +1411,8 @@ DWORD CReserveManager::Check()
 						item.comment = L"録画時間に起動していなかった可能性があります";
 						break;
 					}
-					this->recInfoText.AddRecInfo(item);
+					item.id = this->recInfoText.AddRecInfo(item);
+					this->recEventDB.AddRecInfo(item);
 
 					//バッチ処理追加
 					BAT_WORK_INFO batInfo;
@@ -1421,6 +1433,7 @@ DWORD CReserveManager::Check()
 
 					this->reserveText.DelReserve(itrRes->first);
 					this->reserveModified = true;
+					this->newRecFile = true;
 					modified = true;
 
 					//予約終了を通知
@@ -1439,6 +1452,8 @@ DWORD CReserveManager::Check()
 				this->reserveText.SaveText();
 				this->recInfoText.SaveText();
 				this->recInfo2Text.SaveText();
+				this->recEventDB.Save();
+				this->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 				AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
 				AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
 				AddPostBatWork(batWorkList, L"PostRecEnd.bat");
@@ -1714,7 +1729,7 @@ __int64 CReserveManager::GetNextEpgCapTime(__int64 now, int* basicOnlyFlags) con
 	return (now / (60 * I64_1SEC) + minDiff) * (60 * I64_1SEC);
 }
 
-bool CReserveManager::IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid) const
+bool CReserveManager::IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid, DWORD* outID) const
 {
 	CBlockLock lock(&this->managerLock);
 
@@ -1722,10 +1737,16 @@ bool CReserveManager::IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid) co
 
 	vector<pair<ULONGLONG, DWORD>>::const_iterator itr = std::lower_bound(
 		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, eid), 0));
-	return itr != sortList.end() && itr->first == _Create64Key2(onid, tsid, sid, eid);
+	if (itr != sortList.end() && itr->first == _Create64Key2(onid, tsid, sid, eid)) {
+		if (outID) {
+			*outID = itr->second;
+		}
+		return true;
+	}
+	return false;
 }
 
-bool CReserveManager::IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int64 startTime, DWORD durationSec) const
+bool CReserveManager::IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int64 startTime, DWORD durationSec, DWORD* outID) const
 {
 	CBlockLock lock(&this->managerLock);
 
@@ -1736,6 +1757,9 @@ bool CReserveManager::IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int
 	for( ; itr != sortList.end() && itr->first == _Create64Key2(onid, tsid, sid, 0xFFFF); itr++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itr->second);
 		if( itrRes->second.durationSecond == durationSec && ConvertI64Time(itrRes->second.startTime) == startTime ){
+			if (outID) {
+				*outID = itrRes->first;
+			}
 			return true;
 		}
 	}
@@ -1897,15 +1921,23 @@ vector<CH_DATA5> CReserveManager::GetChDataList() const
 	return list;
 }
 
-UINT WINAPI CReserveManager::WatchdogThread(LPVOID param)
+UINT WINAPI CReserveManager::WatchdogThread_(LPVOID param)
 {
-	CReserveManager* sys = (CReserveManager*)param;
-	while( WaitForSingleObject(sys->watchdogStopEvent, 2000) == WAIT_TIMEOUT ){
-		for( map<DWORD, CTunerBankCtrl*>::const_iterator itr = sys->tunerBankMap.begin(); itr != sys->tunerBankMap.end(); itr++ ){
+	__try {
+		CReserveManager* sys = (CReserveManager*)param;
+		sys->WatchdogThread();
+	}
+	__except (FilterException(GetExceptionInformation())) { }
+	return 0;
+}
+
+void CReserveManager::WatchdogThread()
+{
+	while (WaitForSingleObject(this->watchdogStopEvent, 2000) == WAIT_TIMEOUT) {
+		for (map<DWORD, CTunerBankCtrl*>::const_iterator itr = this->tunerBankMap.begin(); itr != this->tunerBankMap.end(); itr++) {
 			itr->second->Watch();
 		}
 	}
-	return 0;
 }
 
 void CReserveManager::AddPostBatWork(vector<BAT_WORK_INFO>& workList, LPCWSTR fileName)
@@ -1933,6 +1965,130 @@ void CReserveManager::AddNotifyAndPostBat(DWORD notifyID)
 	workList[0].macroList.push_back(pair<string, wstring>("NotifyID", L""));
 	Format(workList[0].macroList.back().second, L"%d", notifyID);
 	AddPostBatWork(workList, L"PostNotify.bat");
+}
+
+bool CReserveManager::AutoAddReserveEPG(
+	const EPG_AUTO_ADD_DATA& data, int autoAddHour_, bool chkGroupEvent_,
+	vector<RESERVE_DATA>* reserveData)
+{
+	CBlockLock lock(&this->managerLock);
+
+	bool modified = false;
+	vector<RESERVE_DATA> setList;
+	vector<const RESERVE_DATA*> addList;
+
+	__int64 now = GetNowI64Time();
+
+	reserveText.RemoveReserveAutoAddId(data.dataID, data.reserveList);
+
+	vector<std::unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>> resultList;
+	vector<EPGDB_SEARCH_KEY_INFO> key(1, data.searchInfo);
+	this->epgDBManager.SearchEpg(&key, &resultList);
+
+	for (size_t i = 0; i < resultList.size(); i++) {
+		const EPGDB_EVENT_INFO& info = resultList[i]->info;
+		//時間未定でなく対象期間内かどうか
+		if (info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
+			now < ConvertI64Time(info.start_time) && ConvertI64Time(info.start_time) < now + autoAddHour_ * 60 * 60 * I64_1SEC) {
+			DWORD reserveID = 0;
+			if (IsFindReserve(info.original_network_id, info.transport_stream_id, info.service_id, info.event_id, &reserveID) == false) {
+				bool found = false;
+				if (info.eventGroupInfo != NULL && chkGroupEvent_) {
+					//イベントグループのチェックをする
+					for (size_t j = 0; found == false && j < info.eventGroupInfo->eventDataList.size(); j++) {
+						//group_typeは必ず1(イベント共有)
+						const EPGDB_EVENT_DATA& e = info.eventGroupInfo->eventDataList[j];
+						if (IsFindReserve(e.original_network_id, e.transport_stream_id, e.service_id, e.event_id, &reserveID)) {
+							found = true;
+							break;
+						}
+						//追加前予約のチェックをする
+						for (size_t k = 0; k < setList.size(); k++) {
+							if (setList[k].originalNetworkID == e.original_network_id &&
+								setList[k].transportStreamID == e.transport_stream_id &&
+								setList[k].serviceID == e.service_id &&
+								setList[k].eventID == e.event_id) {
+								found = true;
+								break;
+							}
+						}
+					}
+				}
+				//追加前予約のチェックをする
+				for (size_t j = 0; found == false && j < setList.size(); j++) {
+					if (setList[j].originalNetworkID == info.original_network_id &&
+						setList[j].transportStreamID == info.transport_stream_id &&
+						setList[j].serviceID == info.service_id &&
+						setList[j].eventID == info.event_id) {
+						found = true;
+					}
+				}
+				if (found == false) {
+					//まだ存在しないので追加対象
+					setList.resize(setList.size() + 1);
+					RESERVE_DATA& item = setList.back();
+					if (info.shortInfo != NULL) {
+						item.title = info.shortInfo->event_name;
+					}
+					item.startTime = info.start_time;
+					item.startTimeEpg = item.startTime;
+					item.durationSecond = info.durationSec;
+					item.stationName = info.serviceName;
+					item.originalNetworkID = info.original_network_id;
+					item.transportStreamID = info.transport_stream_id;
+					item.serviceID = info.service_id;
+					item.eventID = info.event_id;
+					item.recSetting = data.recSetting;
+					if (data.searchInfo.chkRecEnd != 0 && IsFindRecEventInfo(info, data.searchInfo)) {
+						item.recSetting.recMode = RECMODE_NO;
+					}
+					item.comment = L"EPG自動予約";
+					if (resultList[i]->findKey.empty() == false) {
+						item.comment += L"(" + resultList[i]->findKey + L")";
+						Replace(item.comment, L"\r", L"");
+						Replace(item.comment, L"\n", L"");
+					}
+				}
+			}
+			else if (data.searchInfo.chkRecEnd != 0 && IsFindRecEventInfo(info, data.searchInfo)) {
+				//録画済みなので無効でない予約は無効にする
+				if (ChgAutoAddNoRec(info.original_network_id, info.transport_stream_id, info.service_id, info.event_id)) {
+					modified = true;
+				}
+			}
+			if (reserveID > 0) {
+				addList.push_back(&reserveText.GetMap().at(reserveID));
+			}
+		}
+	}
+	if (setList.empty() == false) {
+		auto addTmp = AddReserveData2(setList, true);
+		if (addTmp.size() > 0) {
+			modified = true;
+			addList.insert(addList.end(), addTmp.begin(), addTmp.end());
+		}
+	}
+
+	// 時間順にソート
+	typedef pair<int64_t, const RESERVE_DATA*> RESERVE_PAIR;
+	vector<RESERVE_PAIR> tmpList; tmpList.reserve(addList.size());
+	for(auto rsv : addList) {
+		tmpList.push_back(RESERVE_PAIR(_SYSTEMTIMEtoINT64(&rsv->startTime), rsv));
+	}
+	std::sort(tmpList.begin(), tmpList.end(), [](RESERVE_PAIR a, RESERVE_PAIR b) {
+		return a.first < b.first;
+	});
+
+	vector<RESERVE_DATA> list; list.reserve(tmpList.size());
+	for (RESERVE_PAIR item : tmpList) {
+		list.push_back(*item.second);
+	}
+
+	reserveText.AddReserveAutoAddId(data, list);
+	if (reserveData != NULL) {
+		*reserveData = std::move(list);
+	}
+	return modified;
 }
 
 void CReserveManager::AddTimeMacro(vector<pair<string, wstring>>& macroList, const SYSTEMTIME& startTime, DWORD durationSecond, LPCSTR suffix)

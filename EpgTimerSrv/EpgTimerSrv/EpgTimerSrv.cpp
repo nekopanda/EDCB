@@ -51,10 +51,10 @@ static void StopDebugLog()
 	}
 }
 
-int APIENTRY _tWinMain(HINSTANCE hInstance,
-                     HINSTANCE hPrevInstance,
-                     LPTSTR    lpCmdLine,
-                     int       nCmdShow)
+int EpgTimerSrvMain(HINSTANCE hInstance,
+	HINSTANCE hPrevInstance,
+	LPTSTR    lpCmdLine,
+	int       nCmdShow)
 {
 	if( lpCmdLine[0] == _T('-') || lpCmdLine[0] == _T('/') ){
 		if( lstrcmpi(_T("install"), lpCmdLine + 1) == 0 ){
@@ -156,6 +156,18 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		}
 	}
 
+	return 0;
+}
+
+int APIENTRY _tWinMain(HINSTANCE hInstance,
+	HINSTANCE hPrevInstance,
+	LPTSTR    lpCmdLine,
+	int       nCmdShow)
+{
+	__try {
+		return EpgTimerSrvMain(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+	}
+	__except (FilterException(GetExceptionInformation())) { }
 	return 0;
 }
 

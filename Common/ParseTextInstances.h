@@ -68,6 +68,9 @@ public:
 	//プロテクト情報を変更する
 	bool ChgProtectRecInfo(DWORD id, BYTE flag);
 	void GetProtectFiles(map<wstring, wstring>* fileMap) const;
+	//
+	void RemoveReserveAutoAddId(DWORD id, const vector<REC_FILE_BASIC_INFO>& list);
+	void AddReserveAutoAddId(const EPG_AUTO_ADD_DATA& data, const vector<REC_FILE_BASIC_INFO>& list);
 	//AddRecInfo直後に残しておく非プロテクトの録画済み情報の個数を設定する
 	void SetKeepCount(DWORD keepCount = UINT_MAX) { this->keepCount = keepCount; }
 	void SetRecInfoDelFile(bool recInfoDelFile) { this->recInfoDelFile = recInfoDelFile; }
@@ -131,6 +134,9 @@ public:
 	vector<pair<LONGLONG, const RESERVE_DATA*>> GetReserveList(BOOL calcMargin = FALSE, int defStartMargin = 0) const;
 	//ONID<<48|TSID<<32|SID<<16|EID,予約IDでソートされた予約一覧を取得する。戻り値は次の非const操作まで有効
 	const vector<pair<ULONGLONG, DWORD>>& GetSortByEventList() const;
+
+	void RemoveReserveAutoAddId(DWORD id, const vector<RESERVE_BASIC_DATA>& list);
+	void AddReserveAutoAddId(const EPG_AUTO_ADD_DATA& data, const vector<RESERVE_DATA>& list);
 protected:
 	bool ParseLine(const wstring& parseLine, pair<DWORD, RESERVE_DATA>& item);
 	bool SaveLine(const pair<DWORD, RESERVE_DATA>& item, wstring& saveLine) const;
@@ -152,7 +158,8 @@ public:
 	DWORD AddData(const EPG_AUTO_ADD_DATA& item);
 	bool ChgData(const EPG_AUTO_ADD_DATA& item);
 	//予約登録数を変更する(イテレータに影響しない)
-	bool SetAddCount(DWORD id, DWORD addCount);
+	bool SetAddList(DWORD id, const vector<RESERVE_BASIC_DATA>& addList);
+	bool SetRecList(DWORD id, const vector<REC_FILE_BASIC_INFO>& recList);
 	bool DelData(DWORD id);
 protected:
 	bool ParseLine(const wstring& parseLine, pair<DWORD, EPG_AUTO_ADD_DATA>& item);

@@ -61,6 +61,7 @@
                     <MenuItem Header="Drop" Name="Drops" IsCheckable="True" />
                     <MenuItem Header="Scramble" Name="Scrambles" IsCheckable="True" />
                     <MenuItem Header="結果" Name="Result" IsCheckable="True" />
+                    <MenuItem Header="該当自動予約" Name="ReserveInfo" IsCheckable="True" />
                     <MenuItem Header="録画ファイル" Name="RecFilePath" IsCheckable="True" />
                 </ContextMenu>
                 <ContextMenu x:Key="itemMenu"/>
@@ -120,6 +121,11 @@
                             <GridViewColumnHeader Content="結果" Tag="Result" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=ReserveInfo}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="該当自動予約" Tag="ReserveInfo" HorizontalContentAlignment="Left"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=RecFilePath}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="録画ファイル" Tag="RecFilePath" HorizontalContentAlignment="Left"/>
@@ -132,6 +138,7 @@
             <Button Content="再生" Height="23" Name="button_play" Margin="0,10,0,10" />
             <Button Content="削除" Height="23" Name="button_del" Margin="0,10,0,10" />
             <Button Content="全クリア" Height="23" Name="button_delAll" Margin="0,10,0,10" />
+            <Button Content="リスト更新" Height="23" Name="button_reload" Margin="0,10,0,10" Click="button_reload_Click" />
         </StackPanel>
     </Grid>
 </local:DataViewBase>

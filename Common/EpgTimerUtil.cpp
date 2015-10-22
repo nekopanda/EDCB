@@ -135,6 +135,12 @@ BOOL _MJDtoSYSTEMTIME(DWORD mjd, SYSTEMTIME* time)
 	return TRUE;
 }
 
+__int64 _SYSTEMTIMEtoINT64(const SYSTEMTIME* time) {
+	FILETIME tmpFileTime;
+	SystemTimeToFileTime(time, &tmpFileTime);
+	return (__int64(tmpFileTime.dwHighDateTime) << 32) | __int64(tmpFileTime.dwLowDateTime);
+}
+
 BOOL _GetBitrate(WORD ONID, WORD TSID, WORD SID, DWORD* bitrate)
 {
 	wstring iniPath;

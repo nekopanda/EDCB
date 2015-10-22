@@ -31,4 +31,7 @@ BOOL _GetDiskFreeSpaceEx(
 void _OutputDebugString(const TCHAR *pOutputString, ...);
 void GetLastErrMsg(DWORD err, wstring& msg);
 
+LONG FilterException(struct _EXCEPTION_POINTERS * ExceptionInfo);
+
+
 #endif

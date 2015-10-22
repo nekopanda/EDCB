@@ -20,6 +20,11 @@
                     <my:RecSettingView x:Name="recSettingView" />
                 </Grid>
             </TabItem>
+            <TabItem Header="録画済み" Name="recFileTabItem">
+                <Grid>
+                    <my:AutoAddRecInfoView x:Name="recFileView" />
+                </Grid>
+            </TabItem>
         </TabControl>
         <GridSplitter Grid.Row="0" Height="2" HorizontalAlignment="Stretch" Name="gridSplitter1" VerticalAlignment="Bottom" BorderBrush="DarkGray" Background="DarkGray" />
         <StackPanel Grid.Row="1" Name="stackPanel_button" Orientation="Horizontal">

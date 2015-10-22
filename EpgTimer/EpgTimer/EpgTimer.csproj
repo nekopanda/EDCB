@@ -108,6 +108,7 @@
       <DependentUpon>ConnectWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="DefineClass\ListColumnInfo.cs" />
+    <Compile Include="DefineClass\RecFileBasicItem.cs" />
     <Compile Include="EpgView\EpgMainViewBase.cs" />
     <Compile Include="EpgView\EpgViewBase.cs" />
     <Compile Include="Menu\CmdExe.cs" />
@@ -131,6 +132,9 @@
       <DependentUpon>NotifyLogWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="DefineClass\NotifySrvInfoItem.cs" />
+    <Compile Include="UserCtrlView\AutoAddRecInfoView.xaml.cs">
+      <DependentUpon>AutoAddRecInfoView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Menu\SetContextMenuWindow.xaml.cs">
       <DependentUpon>SetContextMenuWindow.xaml</DependentUpon>
     </Compile>
@@ -290,6 +294,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="NotifyLogWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserCtrlView\AutoAddRecInfoView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -566,5 +574,4 @@
   </Target>
   <Target Name="AfterBuild">
   </Target>
-  -->
-</Project>
+  --></Project>

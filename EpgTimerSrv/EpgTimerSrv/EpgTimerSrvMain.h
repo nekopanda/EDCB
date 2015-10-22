@@ -48,6 +48,15 @@ private:
 	bool IsFindNoSuspendExe() const;
 	bool AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data);
 	bool AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data);
+
+	//自動予約リストは関連付けの更新などがあるので専用関数を用意
+	vector<EPG_AUTO_ADD_DATA> GetAutoAddList();
+	bool DelAutoAdd(vector<DWORD>& val);
+	bool ChgAutoAdd(vector<EPG_AUTO_ADD_DATA>& val);
+	bool AddAutoAdd(vector<EPG_AUTO_ADD_DATA>& val);
+
+	void UpdateRecFileInfo();
+
 	//外部制御コマンド関係
 	static int CALLBACK CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
 	static int InitLuaCallback(lua_State* L);
@@ -114,6 +123,8 @@ private:
 	CParseEpgAutoAddText epgAutoAdd;
 	CParseManualAutoAddText manualAutoAdd;
 
+	// ロック順: settingLock >> reserveManager >> notifyManager, epgDB
+	// デッドロックするので順番を入れ替えてはいけない
 	mutable CRITICAL_SECTION settingLock;
 	HWND hwndMain;
 

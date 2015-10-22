@@ -1,10 +1,12 @@
 #pragma once
 
 #include "../../Common/ParseTextInstances.h"
+#include "../../Common/BlockLock.h"
 #include "EpgDBManager.h"
 #include "NotifyManager.h"
 #include "TunerManager.h"
 #include "BatManager.h"
+#include "RecEventDB.h"
 
 //予約を管理しチューナに割り当てる
 //必ずオブジェクト生成→Initialize()→…→Finalize()→破棄の順番で利用しなければならない
@@ -34,7 +36,7 @@ public:
 	//予約情報を削除する
 	void DelReserveData(const vector<DWORD>& idList);
 	//録画済み情報一覧を取得する
-	vector<REC_FILE_INFO> GetRecFileInfoAll() const;
+	vector<REC_FILE_INFO> GetRecFileInfoAll();
 	//録画済み情報を削除する
 	void DelRecFileInfo(const vector<DWORD>& idList);
 	//録画済み情報のプロテクトを変更する
@@ -53,9 +55,9 @@ public:
 	//baseTime以後に録画またはEPG取得を開始する最小時刻を取得する
 	__int64 GetSleepReturnTime(__int64 baseTime) const;
 	//指定イベントの予約が存在するかどうか
-	bool IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid) const;
+	bool IsFindReserve(WORD onid, WORD tsid, WORD sid, WORD eid, DWORD* outID = NULL) const;
 	//指定時刻のプログラム予約があるかどうか
-	bool IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int64 startTime, DWORD durationSec) const;
+	bool IsFindProgramReserve(WORD onid, WORD tsid, WORD sid, __int64 startTime, DWORD durationSec, DWORD* outID = NULL) const;
 	//指定サービスを利用できるチューナID一覧を取得する
 	vector<DWORD> GetSupportServiceTuner(WORD onid, WORD tsid, WORD sid) const;
 	bool GetTunerCh(DWORD tunerID, WORD onid, WORD tsid, WORD sid, DWORD* space, DWORD* ch) const;
@@ -76,6 +78,47 @@ public:
 	vector<CH_DATA5> GetChDataList() const;
 	//パラメータなしの通知を追加する
 	void AddNotifyAndPostBat(DWORD notifyID);
+	//録画ファイルを検索
+	vector<REC_FILE_BASIC_INFO> SearchRecFile(const EPGDB_SEARCH_KEY_INFO& item) {
+		CBlockLock lock(&this->managerLock);
+
+		vector<DWORD> ids = recEventDB.SearchRecFile(item);
+		const auto& recFileMap = recInfoText.GetMap();
+		vector<REC_FILE_BASIC_INFO> list;
+		list.reserve(ids.size());
+		for (DWORD id : ids) {
+			auto it = recFileMap.find(id);
+			if (it != recFileMap.end()) {
+				list.push_back(it->second);
+			}
+		}
+		return list;
+	}
+
+	// 自動予約が削除されたことを通知
+	void AutoAddDeleted(const EPG_AUTO_ADD_DATA& item) {
+		CBlockLock lock(&this->managerLock);
+		recInfoText.RemoveReserveAutoAddId(item.dataID, item.recFileList);
+		reserveText.RemoveReserveAutoAddId(item.dataID, item.reserveList);
+	}
+	// 自動予約と録画ファイルの関連付けを更新
+	void AutoAddUpdateRecInfo(const EPG_AUTO_ADD_DATA& item, vector<REC_FILE_BASIC_INFO>* recFileIds) {
+		CBlockLock lock(&this->managerLock);
+		recInfoText.RemoveReserveAutoAddId(item.dataID, item.recFileList);
+		vector<REC_FILE_BASIC_INFO> recFiles = SearchRecFile(item.searchInfo);
+		recInfoText.AddReserveAutoAddId(item, recFiles);
+		if (recFileIds != NULL) {
+			*recFileIds = std::move(recFiles);
+		}
+	}
+	// 自動予約で番組予約を追加
+	bool AutoAddReserveEPG(
+		const EPG_AUTO_ADD_DATA& data, int autoAddHour_, bool chkGroupEvent_,
+		vector<RESERVE_DATA>* reserveData);
+
+	bool IsNewRecFile() const { return newRecFile; }
+	void ResetNewRecFile() { newRecFile = false; }
+
 private:
 	struct CHK_RESERVE_DATA {
 		__int64 cutStartTime;
@@ -114,7 +157,8 @@ private:
 	//次のEPG取得時刻を取得する
 	__int64 GetNextEpgCapTime(__int64 now, int* basicOnlyFlags = NULL) const;
 	//バンクを監視して必要ならチューナを強制終了するスレッド
-	static UINT WINAPI WatchdogThread(LPVOID param);
+	static UINT WINAPI WatchdogThread_(LPVOID param);
+	void WatchdogThread();
 	//batPostManagerにバッチを追加する
 	void AddPostBatWork(vector<BAT_WORK_INFO>& workList, LPCWSTR fileName);
 	//バッチに渡す日時マクロを追加する
@@ -123,6 +167,8 @@ private:
 	static void AddReserveDataMacro(vector<pair<string, wstring>>& macroList, const RESERVE_DATA& data, LPCSTR suffix);
 	//バッチに渡す録画済み情報マクロを追加する
 	static void AddRecInfoMacro(vector<pair<string, wstring>>& macroList, const REC_FILE_INFO& recInfo);
+	//予約情報を追加する
+	vector<const RESERVE_DATA*> AddReserveData2(const vector<RESERVE_DATA>& reserveList, bool setComment = false, bool setReserveStatus = false);
 
 	mutable CRITICAL_SECTION managerLock;
 
@@ -137,6 +183,8 @@ private:
 	CTunerManager tunerManager;
 	CBatManager batManager;
 	CBatManager batPostManager;
+
+	CRecEventDB recEventDB;
 
 	map<DWORD, CTunerBankCtrl*> tunerBankMap;
 
@@ -167,6 +215,7 @@ private:
 	int epgCapBasicOnlyFlags;
 	int shutdownModePending;
 	bool reserveModified;
+	bool newRecFile;
 
 	HANDLE watchdogStopEvent;
 	HANDLE watchdogThread;

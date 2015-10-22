@@ -92,3 +92,12 @@ void GetLastErrMsg(DWORD err, wstring& msg)
 	msg = (LPWSTR)lpMsgBuf;
 	LocalFree( lpMsgBuf );
 }
+
+LONG FilterException(struct _EXCEPTION_POINTERS * ExceptionInfo) {
+	if (ExceptionInfo->ExceptionRecord->ExceptionCode == 0xe06d7363) {
+		// C++例外の場合は、意図的に出した例外なので、そのまま上に持っていく
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+	// それ以外の場合は原因不明なので、エラー出力させる
+	return UnhandledExceptionFilter(ExceptionInfo);
+}

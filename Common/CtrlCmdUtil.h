@@ -73,6 +73,12 @@ BOOL ReadVALUE( WORD ver, RESERVE_DATA* val, const BYTE* buff, DWORD buffSize, D
 inline DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const vector<RESERVE_DATA>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( WORD ver, vector<RESERVE_DATA>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
+DWORD WriteVALUE(WORD ver, BYTE* buff, DWORD buffOffset, const RESERVE_BASIC_DATA& val);
+BOOL ReadVALUE(WORD ver, RESERVE_BASIC_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize);
+
+inline DWORD WriteVALUE(WORD ver, BYTE* buff, DWORD buffOffset, const vector<RESERVE_BASIC_DATA>& val) { CCUTIL_VECTOR_WRITE_; }
+inline BOOL ReadVALUE(WORD ver, vector<RESERVE_BASIC_DATA>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize) { CCUTIL_VECTOR_READ_; }
+
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SERVICE_INFO& val );
 BOOL ReadVALUE( WORD ver, EPGDB_SERVICE_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
@@ -157,11 +163,23 @@ BOOL ReadVALUE( WORD ver, SET_CTRL_REC_STOP_PARAM* val, const BYTE* buff, DWORD 
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const SET_CTRL_REC_STOP_RES_PARAM& val );
 BOOL ReadVALUE( WORD ver, SET_CTRL_REC_STOP_RES_PARAM* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
+DWORD WriteVALUE(WORD ver, BYTE* buff, DWORD buffOffset, const REC_FILE_BASIC_INFO& val);
+BOOL ReadVALUE(WORD ver, REC_FILE_BASIC_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize);
+
+inline DWORD WriteVALUE(WORD ver, BYTE* buff, DWORD buffOffset, const vector<REC_FILE_BASIC_INFO>& val) { CCUTIL_VECTOR_WRITE_; }
+inline BOOL ReadVALUE(WORD ver, vector<REC_FILE_BASIC_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize) { CCUTIL_VECTOR_READ_; }
+
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const REC_FILE_INFO& val );
 BOOL ReadVALUE( WORD ver, REC_FILE_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );
 
 inline DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const vector<REC_FILE_INFO>& val ){ CCUTIL_VECTOR_WRITE_; }
 inline BOOL ReadVALUE( WORD ver, vector<REC_FILE_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
+
+DWORD WriteVALUE(WORD ver, BYTE* buff, DWORD buffOffset, const EPG_AUTO_ADD_BASIC_INFO& val);
+BOOL ReadVALUE(WORD ver, EPG_AUTO_ADD_BASIC_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize);
+
+inline DWORD WriteVALUE(WORD ver, BYTE* buff, DWORD buffOffset, const vector<EPG_AUTO_ADD_BASIC_INFO>& val) { CCUTIL_VECTOR_WRITE_; }
+inline BOOL ReadVALUE(WORD ver, vector<EPG_AUTO_ADD_BASIC_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize) { CCUTIL_VECTOR_READ_; }
 
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPG_AUTO_ADD_DATA& val );
 BOOL ReadVALUE( WORD ver, EPG_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize );

@@ -303,6 +303,31 @@ void CParseRecInfoText::GetProtectFiles(map<wstring, wstring>* fileMap) const
 	}
 }
 
+void CParseRecInfoText::RemoveReserveAutoAddId(DWORD id, const vector<REC_FILE_BASIC_INFO>& list)
+{
+	for (const auto& recFile : list) {
+		auto itRsv = itemMap.find(recFile.id);
+		if (itRsv != itemMap.end()) {
+			for (auto it = itRsv->second.autoAddInfo.begin(); it != itRsv->second.autoAddInfo.end(); ++it) {
+				if (it->dataID == id) {
+					itRsv->second.autoAddInfo.erase(it);
+					break;
+				}
+			}
+		}
+	}
+}
+
+void CParseRecInfoText::AddReserveAutoAddId(const EPG_AUTO_ADD_DATA& data, const vector<REC_FILE_BASIC_INFO>& list)
+{
+	for (const auto& recFile : list) {
+		auto itRsv = itemMap.find(recFile.id);
+		if (itRsv != itemMap.end()) {
+			itRsv->second.autoAddInfo.push_back(data);
+		}
+	}
+}
+
 bool CParseRecInfoText::ParseLine(const wstring& parseLine, pair<DWORD, REC_FILE_INFO>& item)
 {
 	if( parseLine.find(L'\t') == wstring::npos || parseLine[0] == L';' ){
@@ -516,7 +541,9 @@ bool CParseReserveText::ChgReserve(const RESERVE_DATA& item)
 {
 	map<DWORD, RESERVE_DATA>::iterator itr = this->itemMap.find(item.reserveID);
 	if( itr != this->itemMap.end() ){
+		RESERVE_DATA tmp = std::move(itr->second);
 		itr->second = item;
+		itr->second.autoAddInfo = tmp.autoAddInfo;
 		this->sortByEventCache.clear();
 		return true;
 	}
@@ -802,6 +829,31 @@ const vector<pair<ULONGLONG, DWORD>>& CParseReserveText::GetSortByEventList() co
 	return this->sortByEventCache;
 }
 
+void CParseReserveText::RemoveReserveAutoAddId(DWORD id, const vector<RESERVE_BASIC_DATA>& list)
+{
+	for (const auto& reserveData : list) {
+		auto itRsv = itemMap.find(reserveData.reserveID);
+		if (itRsv != itemMap.end()) {
+			for (auto it = itRsv->second.autoAddInfo.begin(); it != itRsv->second.autoAddInfo.end(); ++it) {
+				if (it->dataID == id) {
+					itRsv->second.autoAddInfo.erase(it);
+					break;
+				}
+			}
+		}
+	}
+}
+
+void CParseReserveText::AddReserveAutoAddId(const EPG_AUTO_ADD_DATA& data, const vector<RESERVE_DATA>& list)
+{
+	for (const auto& reserveData : list) {
+		auto itRsv = itemMap.find(reserveData.reserveID);
+		if (itRsv != itemMap.end()) {
+			itRsv->second.autoAddInfo.push_back(data);
+		}
+	}
+}
+
 DWORD CParseEpgAutoAddText::AddData(const EPG_AUTO_ADD_DATA& item)
 {
 	map<DWORD, EPG_AUTO_ADD_DATA>::iterator itr = this->itemMap.insert(pair<DWORD, EPG_AUTO_ADD_DATA>(this->nextID, item)).first;
@@ -813,17 +865,32 @@ bool CParseEpgAutoAddText::ChgData(const EPG_AUTO_ADD_DATA& item)
 {
 	map<DWORD, EPG_AUTO_ADD_DATA>::iterator itr = this->itemMap.find(item.dataID);
 	if( itr != this->itemMap.end() ){
+		EPG_AUTO_ADD_DATA tmp = std::move(itr->second);
 		itr->second = item;
+		itr->second.addCount = tmp.addCount;
+		itr->second.reserveList = tmp.reserveList;
+		itr->second.recFileList = tmp.recFileList;
 		return true;
 	}
 	return false;
 }
 
-bool CParseEpgAutoAddText::SetAddCount(DWORD id, DWORD addCount)
+bool CParseEpgAutoAddText::SetAddList(DWORD id, const vector<RESERVE_BASIC_DATA>& addList)
 {
 	map<DWORD, EPG_AUTO_ADD_DATA>::iterator itr = this->itemMap.find(id);
 	if( itr != this->itemMap.end() ){
-		itr->second.addCount = addCount;
+		itr->second.addCount = addList.size();
+		itr->second.reserveList = addList;
+		return true;
+	}
+	return false;
+}
+
+bool CParseEpgAutoAddText::SetRecList(DWORD id, const vector<REC_FILE_BASIC_INFO>& recList)
+{
+	map<DWORD, EPG_AUTO_ADD_DATA>::iterator itr = this->itemMap.find(id);
+	if (itr != this->itemMap.end()) {
+		itr->second.recFileList = recList;
 		return true;
 	}
 	return false;

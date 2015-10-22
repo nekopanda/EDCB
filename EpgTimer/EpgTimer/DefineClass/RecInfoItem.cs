@@ -236,6 +236,30 @@ namespace EpgTimer
                 return view;
             }
         }
+        public String ReserveInfo
+        {
+            get
+            {
+                String info = "";
+                if (RecInfo != null)
+                {
+                    if(RecInfo.AutoAddInfoFlag != 0)
+                    {
+                        var reserveList = RecInfo.AutoAddInfo;
+                        foreach(var data in reserveList)
+                        {
+                            if (info.Length > 0) info += ",";
+                            info += data.andKey + "(" + data.dataID + ")";
+                        }
+                    }
+                    else
+                    {
+                        info = "(データなし)";
+                    }
+                }
+                return info;
+            }
+        }
     }
 
     public static class RecInfoItemEx
