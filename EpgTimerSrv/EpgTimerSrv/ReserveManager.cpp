@@ -1418,7 +1418,7 @@ DWORD CReserveManager::Check()
 					BAT_WORK_INFO batInfo;
 					AddRecInfoMacro(batInfo.macroList, item);
 					batInfo.macroList.push_back(pair<string, wstring>("AddKey",
-						itrRes->second.comment.compare(0, 8, L"EPGŽ©“®—\–ñ(") == 0 && itrRes->second.comment.size() >= 9 ?
+						itrRes->second.comment.compare(0, 8, EPG_AUTO_ADD_TEXT L"(") == 0 && itrRes->second.comment.size() >= 9 ?
 						itrRes->second.comment.substr(8, itrRes->second.comment.size() - 9) : wstring()));
 					if( (itrRet->type == CTunerBankCtrl::CHECK_END || itrRet->type == CTunerBankCtrl::CHECK_END_NEXT_START_END || this->errEndBatRun) &&
 					    item.recFilePath.empty() == false && itrRes->second.recSetting.batFilePath.empty() == false && itrRet->continueRec == false ){
@@ -1901,7 +1901,7 @@ bool CReserveManager::ChgAutoAddNoRec(WORD onid, WORD tsid, WORD sid, WORD eid)
 		sortList.begin(), sortList.end(), pair<ULONGLONG, DWORD>(_Create64Key2(onid, tsid, sid, eid), 0));
 	for( ; itr != sortList.end() && itr->first == _Create64Key2(onid, tsid, sid, eid); itr++ ){
 		map<DWORD, RESERVE_DATA>::const_iterator itrRes = this->reserveText.GetMap().find(itr->second);
-		if( itrRes->second.recSetting.recMode != RECMODE_NO && itrRes->second.comment.compare(0, 7, L"EPGŽ©“®—\–ñ") == 0 ){
+		if( itrRes->second.recSetting.recMode != RECMODE_NO && itrRes->second.comment.compare(0, 7, EPG_AUTO_ADD_TEXT) == 0 ){
 			chgList.push_back(itrRes->second);
 			chgList.back().recSetting.recMode = RECMODE_NO;
 		}

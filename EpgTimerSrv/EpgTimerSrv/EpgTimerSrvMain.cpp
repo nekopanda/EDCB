@@ -13,6 +13,7 @@
 #include <shellapi.h>
 #include <tlhelp32.h>
 #include <LM.h>
+#include <set>
 #pragma comment (lib, "netapi32.lib")
 
 static const char UPNP_URN_DMS_1[] = "urn:schemas-upnp-org:device:MediaServer:1";
@@ -1004,6 +1005,44 @@ void CEpgTimerSrvMain::UpdateRecFileInfo() {
 	}
 }
 
+bool CEpgTimerSrvMain::RemoveNolinkedReserve(vector<DWORD> beforeReserveIds) {
+	CBlockLock lock(&this->settingLock);
+
+	// èdï°ÇÇ»Ç≠Ç∑
+	std::set<DWORD> beforeIdSet;
+	for (DWORD id : beforeReserveIds) {
+		beforeIdSet.insert(id);
+	}
+
+	std::vector<DWORD> removeIds;
+	for (DWORD id : beforeIdSet) {
+		RESERVE_DATA rsv;
+		if (reserveManager.GetReserveData(id, &rsv)) {
+			// é©ìÆó\ñÒÇ≈í«â¡Ç≥ÇÍÇΩÅH
+			if (rsv.comment.compare(0, 7, EPG_AUTO_ADD_TEXT) == 0) {
+				// äYìñé©ìÆó\ñÒÇ™Ç»Ç¢ÅH
+				if (rsv.autoAddInfo.size() == 0) {
+					// àÍâûî‘ëgèÓïÒÇÕÇ†ÇÈÇ©ämîF
+					EPGDB_EVENT_INFO evi;
+					if (epgDB.SearchEpg(rsv.originalNetworkID, rsv.transportStreamID, rsv.serviceID, rsv.eventID, &evi)) {
+						
+						_OutputDebugString(L"é©ìÆó\ñÒê›íËïœçXÇÃî∫Ç¢ó\ñÒÇçÌèú: %s\r\n", evi.shortInfo->event_name);
+
+						removeIds.push_back(id);
+					}
+				}
+			}
+		}
+	}
+
+	if (removeIds.size() > 0) {
+		reserveManager.DelReserveData(removeIds);
+		return true;
+	}
+
+	return false;
+}
+
 vector<EPG_AUTO_ADD_DATA> CEpgTimerSrvMain::GetAutoAddList()
 {
 	CBlockLock lock(&this->settingLock);
@@ -1021,10 +1060,16 @@ vector<EPG_AUTO_ADD_DATA> CEpgTimerSrvMain::GetAutoAddList()
 
 bool CEpgTimerSrvMain::DelAutoAdd(vector<DWORD>& val) {
 	bool modified = false;
+	vector<DWORD> reserveList;
+
 	CBlockLock lock(&settingLock);
+
 	for (size_t i = 0; i < val.size(); i++) {
 		auto it = epgAutoAdd.GetMap().find(val[i]);
 		if (it != epgAutoAdd.GetMap().end()) {
+			for (const RESERVE_BASIC_DATA& rsv : it->second.reserveList) {
+				reserveList.push_back(rsv.reserveID);
+			}
 			reserveManager.AutoAddDeleted(it->second);
 			epgAutoAdd.DelData(val[i]);
 			modified = true;
@@ -1032,6 +1077,7 @@ bool CEpgTimerSrvMain::DelAutoAdd(vector<DWORD>& val) {
 	}
 	if (modified) {
 		epgAutoAdd.SaveText();
+		RemoveNolinkedReserve(reserveList);
 		notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 	}
 	return modified;
@@ -1039,6 +1085,7 @@ bool CEpgTimerSrvMain::DelAutoAdd(vector<DWORD>& val) {
 
 bool CEpgTimerSrvMain::ChgAutoAdd(vector<EPG_AUTO_ADD_DATA>& val) {
 	bool modified = false;
+	vector<DWORD> reserveList;
 	{
 		CBlockLock lock(&settingLock);
 		for (size_t i = 0; i < val.size(); i++) {
@@ -1047,6 +1094,9 @@ bool CEpgTimerSrvMain::ChgAutoAdd(vector<EPG_AUTO_ADD_DATA>& val) {
 			}
 			else {
 				val[i] = epgAutoAdd.GetMap().at(val[i].dataID);
+				for (const RESERVE_BASIC_DATA& rsv : val[i].reserveList) {
+					reserveList.push_back(rsv.reserveID);
+				}
 				vector<REC_FILE_BASIC_INFO> list;
 				reserveManager.AutoAddUpdateRecInfo(val[i], &list);
 				epgAutoAdd.SetRecList(val[i].dataID, list);
@@ -1061,12 +1111,14 @@ bool CEpgTimerSrvMain::ChgAutoAdd(vector<EPG_AUTO_ADD_DATA>& val) {
 		for (size_t i = 0; i < val.size(); i++) {
 			AutoAddReserveEPG(val[i]);
 		}
+		RemoveNolinkedReserve(reserveList);
 		notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 	}
 	return modified;
 }
 
 bool CEpgTimerSrvMain::AddAutoAdd(vector<EPG_AUTO_ADD_DATA>& val) {
+	vector<DWORD> reserveList;
 	{
 		CBlockLock lock(&settingLock);
 		for (size_t i = 0; i < val.size(); i++) {

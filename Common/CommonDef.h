@@ -17,6 +17,8 @@
 #define EPG_AUTO_ADD_TEXT_NAME L"EpgAutoAdd.txt"
 #define MANUAL_AUTO_ADD_TEXT_NAME L"ManualAutoAdd.txt"
 
+#define EPG_AUTO_ADD_TEXT L"EPGŽ©“®—\–ñ"
+
 #define EPG_TIMER_SERVICE_EXE L"EpgTimerSrv.exe"
 
 #define EPG_TIMER_BON_MUTEX L"Global\\EpgTimer_Bon2"

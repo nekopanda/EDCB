@@ -56,6 +56,7 @@ private:
 	bool AddAutoAdd(vector<EPG_AUTO_ADD_DATA>& val);
 
 	void UpdateRecFileInfo();
+	bool RemoveNolinkedReserve(vector<DWORD> beforeReserveIds);
 
 	//外部制御コマンド関係
 	static int CALLBACK CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
