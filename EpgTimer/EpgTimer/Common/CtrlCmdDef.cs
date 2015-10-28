@@ -271,7 +271,7 @@ namespace EpgTimer
         public List<string> RecFileNameList;
         /// <summary>将来用</summary>
         private uint UnusedParam1;
-        /// <summary>録画予定ファイル名</summary>
+        /// <summary>該当自動予約登録</summary>
         public List<EpgAutoAddBasicInfo> AutoAddInfo;
 
         public ReserveData()
