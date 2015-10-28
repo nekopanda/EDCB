@@ -175,7 +175,7 @@ namespace EpgTimer
                     SearchItem item = new SearchItem();
                     item.EventInfo = info;
 
-                    if (item.EventInfo.start_time.AddSeconds(item.EventInfo.durationSec) > DateTime.Now)
+                    if (item.EventInfo.start_time.AddSeconds(item.EventInfo.DurationFlag == 0 ? 0 : item.EventInfo.durationSec) > DateTime.Now)
                     {
                         foreach (ReserveData info2 in CommonManager.Instance.DB.ReserveList.Values)
                         {
@@ -193,11 +193,6 @@ namespace EpgTimer
                         {
                             item.ServiceName = ChSet5.Instance.ChList[serviceKey].ServiceName;
                         }
-                        if (Settings.Instance.FixSearchResult)
-                        {
-                            item.EventInfo.ShortInfo.text_char = "省略";
-                        }
-
                         resultList.Add(item);
                     }
                 }
@@ -324,7 +319,7 @@ namespace EpgTimer
                 List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
                 addList.Add(addItem);
 
-                if (cmd.SendAddEpgAutoAdd(addList) != 1)
+                if (cmd.SendAddEpgAutoAdd(addList) != ErrCode.CMD_SUCCESS)
                 {
                     MessageBox.Show("追加に失敗しました");
                 }
@@ -359,7 +354,7 @@ namespace EpgTimer
                 List<EpgAutoAddData> addList = new List<EpgAutoAddData>();
                 addList.Add(addItem);
 
-                if (cmd.SendChgEpgAutoAdd(addList) != 1)
+                if (cmd.SendChgEpgAutoAdd(addList) != ErrCode.CMD_SUCCESS)
                 {
                     MessageBox.Show("変更に失敗しました");
                 }

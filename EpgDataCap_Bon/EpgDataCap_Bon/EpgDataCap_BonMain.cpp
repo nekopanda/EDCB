@@ -12,8 +12,6 @@ CEpgDataCap_BonMain::CEpgDataCap_BonMain(void)
 	this->sendUdpFlag = FALSE;
 	this->sendTcpFlag = FALSE;
 
-	this->startMargine = 5;
-	this->endMargine = 5;
 	this->overWriteFlag = FALSE;
 	this->enableScrambleFlag = TRUE;
 	this->enableEMMFlag = FALSE;
@@ -90,9 +88,6 @@ void CEpgDataCap_BonMain::ReloadSetting()
 	this->needCaption = GetPrivateProfileInt( L"SET", L"Caption", 1, appIniPath.c_str() );
 	this->needData = GetPrivateProfileInt( L"SET", L"Data", 0, appIniPath.c_str() );
 
-	this->startMargine = GetPrivateProfileInt( L"SET", L"StartMargine", 5, appIniPath.c_str() );
-	this->endMargine = GetPrivateProfileInt( L"SET", L"EndMargine", 5, appIniPath.c_str() );
-
 	this->overWriteFlag = GetPrivateProfileInt( L"SET", L"OverWrite", 0, appIniPath.c_str() );
 
 	WCHAR buff[512]=L"";
@@ -134,14 +129,10 @@ void CEpgDataCap_BonMain::ReloadSetting()
 
 //BonDriverフォルダのBonDriver_*.dllを列挙
 //戻り値：
-// エラーコード
-//引数：
-// bonList			[OUT]検索できたBonDriver一覧
-DWORD CEpgDataCap_BonMain::EnumBonDriver(
-	vector<wstring>* bonList
-)
+// 検索できたBonDriver一覧
+vector<wstring> CEpgDataCap_BonMain::EnumBonDriver()
 {
-	return this->bonCtrl.EnumBonDriver(bonList);
+	return this->bonCtrl.EnumBonDriver();
 }
 
 //BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
@@ -174,12 +165,10 @@ DWORD CEpgDataCap_BonMain::OpenBonDriver(
 }
 
 //ロードしているBonDriverの開放
-//戻り値：
-// エラーコード
-DWORD CEpgDataCap_BonMain::CloseBonDriver()
+void CEpgDataCap_BonMain::CloseBonDriver()
 {
 	this->currentBonDriver = L"";
-	return this->bonCtrl.CloseBonDriver();
+	this->bonCtrl.CloseBonDriver();
 }
 
 //サービス一覧を取得する
@@ -597,7 +586,7 @@ BOOL CEpgDataCap_BonMain::StartRec(
 		now.wSecond,
 		serviceName.c_str()
 		);
-	ChkFileName(fileName);
+	CheckFileName(fileName);
 
 	vector<REC_FILE_SET_INFO> saveFolder;
 	REC_FILE_SET_INFO forderItem;
@@ -805,11 +794,8 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 		OutputDebugString(L"CMD2_VIEW_APP_GET_BONDRIVER");
 		{
 			if( sys->currentBonDriver.size() > 0 ){
-				resParam->dataSize = GetVALUESize(sys->currentBonDriver);
-				resParam->data = new BYTE[resParam->dataSize];
-				if( WriteVALUE(sys->currentBonDriver, resParam->data, resParam->dataSize, NULL) == TRUE ){
-					resParam->param = CMD_SUCCESS;
-				}
+				resParam->data = NewWriteVALUE(sys->currentBonDriver, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;
@@ -848,11 +834,8 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 		{
 			int val = sys->bonCtrl.GetTimeDelay();
 
-			resParam->dataSize = GetVALUESize(val);
-			resParam->data = new BYTE[resParam->dataSize];
-			if( WriteVALUE(val, resParam->data, resParam->dataSize, NULL) == TRUE ){
-				resParam->param = CMD_SUCCESS;
-			}
+			resParam->data = NewWriteVALUE(val, resParam->dataSize);
+			resParam->param = CMD_SUCCESS;
 		}
 		break;
 	case CMD2_VIEW_APP_GET_STATUS:
@@ -873,11 +856,8 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 					}
 				}
 			}
-			resParam->dataSize = GetVALUESize(val);
-			resParam->data = new BYTE[resParam->dataSize];
-			if( WriteVALUE(val, resParam->data, resParam->dataSize, NULL) == TRUE ){
-				resParam->param = CMD_SUCCESS;
-			}
+			resParam->data = NewWriteVALUE(val, resParam->dataSize);
+			resParam->param = CMD_SUCCESS;
 		}
 		break;
 	case CMD2_VIEW_APP_CLOSE:
@@ -911,11 +891,8 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 	case CMD2_VIEW_APP_GET_ID:
 		OutputDebugString(L"CMD2_VIEW_APP_GET_ID");
 		{
-			resParam->dataSize = GetVALUESize(sys->outCtrlID);
-			resParam->data = new BYTE[resParam->dataSize];
-			if( WriteVALUE(sys->outCtrlID, resParam->data, resParam->dataSize, NULL) == TRUE ){
-				resParam->param = CMD_SUCCESS;
-			}
+			resParam->data = NewWriteVALUE(sys->outCtrlID, resParam->dataSize);
+			resParam->param = CMD_SUCCESS;
 		}
 		break;
 	case CMD2_VIEW_APP_SET_STANDBY_REC:
@@ -934,11 +911,8 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 			DWORD val = 0;
 			if( sys->bonCtrl.CreateServiceCtrl(&val) == TRUE ){
 				sys->ctrlMap.insert(pair<DWORD,DWORD>(val, val));
-				resParam->dataSize = GetVALUESize(val);
-				resParam->data = new BYTE[resParam->dataSize];
-				if( WriteVALUE(val, resParam->data, resParam->dataSize, NULL) == TRUE ){
-					resParam->param = CMD_SUCCESS;
-				}
+				resParam->data = NewWriteVALUE(val, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;
@@ -1037,11 +1011,8 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 				resVal.subRecFlag = (BYTE)subRec;
 				sys->bonCtrl.GetErrCount(val.ctrlID, &resVal.drop, &resVal.scramble);
 				if(sys->bonCtrl.EndSave(val.ctrlID) == TRUE){
-					resParam->dataSize = GetVALUESize(&resVal);
-					resParam->data = new BYTE[resParam->dataSize];
-					if( WriteVALUE(&resVal, resParam->data, resParam->dataSize, NULL) == TRUE ){
-						resParam->param = CMD_SUCCESS;
-					}
+					resParam->data = NewWriteVALUE(&resVal, resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
 					if( sys->ctrlMap.size() == 1 ){
 						PostMessage(sys->msgWnd, WM_RESERVE_REC_STOP, 0, 0);
 					}
@@ -1058,11 +1029,8 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 				BOOL subRec;
 				sys->bonCtrl.GetSaveFilePath(val, &saveFile, &subRec);
 				if( saveFile.size() > 0 ){
-					resParam->dataSize = GetVALUESize(saveFile);
-					resParam->data = new BYTE[resParam->dataSize];
-					if( WriteVALUE(saveFile, resParam->data, resParam->dataSize, NULL) == TRUE ){
-						resParam->param = CMD_SUCCESS;
-					}
+					resParam->data = NewWriteVALUE(saveFile, resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
 				}
 			}
 		}
@@ -1123,11 +1091,8 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				EPGDB_EVENT_INFO epgInfo;
 				if( sys->bonCtrl.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag, &epgInfo) == TRUE ){
-					resParam->dataSize = GetVALUESize(&epgInfo);
-					resParam->data = new BYTE[resParam->dataSize];
-					if( WriteVALUE(&epgInfo, resParam->data, resParam->dataSize, NULL) == TRUE ){
-						resParam->param = CMD_SUCCESS;
-					}
+					resParam->data = NewWriteVALUE(&epgInfo, resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
 				}
 			}
 		}
@@ -1138,11 +1103,8 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 			if( ReadVALUE(&key, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				EPGDB_EVENT_INFO epgInfo;
 				if( sys->bonCtrl.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag, &epgInfo) == TRUE ){
-					resParam->dataSize = GetVALUESize(&epgInfo);
-					resParam->data = new BYTE[resParam->dataSize];
-					if( WriteVALUE(&epgInfo, resParam->data, resParam->dataSize, NULL) == TRUE ){
-						resParam->param = CMD_SUCCESS;
-					}
+					resParam->data = NewWriteVALUE(&epgInfo, resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
 				}
 			}
 		}
@@ -1159,11 +1121,8 @@ void CEpgDataCap_BonMain::CtrlCmdCallbackInvoked()
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL ) == TRUE ){
 				__int64 writeSize = -1;
 				sys->bonCtrl.GetRecWriteSize(val, &writeSize);
-				resParam->dataSize = GetVALUESize(writeSize);
-				resParam->data = new BYTE[resParam->dataSize];
-				if( WriteVALUE(writeSize, resParam->data, resParam->dataSize, NULL) == TRUE ){
-					resParam->param = CMD_SUCCESS;
-				}
+				resParam->data = NewWriteVALUE(writeSize, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
 			}
 		}
 		break;

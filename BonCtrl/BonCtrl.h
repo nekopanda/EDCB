@@ -31,12 +31,8 @@ public:
 
 	//BonDriverフォルダのBonDriver_*.dllを列挙
 	//戻り値：
-	// エラーコード
-	//引数：
-	// bonList			[OUT]検索できたBonDriver一覧
-	DWORD EnumBonDriver(
-		vector<wstring>* bonList
-		);
+	// 検索できたBonDriver一覧
+	vector<wstring> EnumBonDriver();
 
 	//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
 	//戻り値：
@@ -49,9 +45,7 @@ public:
 		);
 
 	//ロードしているBonDriverの開放
-	//戻り値：
-	// エラーコード
-	DWORD CloseBonDriver();
+	void CloseBonDriver();
 
 	//ロード中のBonDriverのファイル名を取得する（ロード成功しているかの判定）
 	//戻り値：
@@ -61,21 +55,6 @@ public:
 	BOOL GetOpenBonDriver(
 		wstring* bonDriverFile
 		);
-
-	//ロードしたBonDriverの情報取得
-	//SpaceとChの一覧を取得する
-	//戻り値：
-	// エラーコード
-	//引数：
-	// spaceMap			[OUT] SpaceとChの一覧（mapのキー Space）
-	DWORD GetOriginalChList(
-		map<DWORD, BON_SPACE_INFO>* spaceMap
-	);
-
-	//BonDriverのチューナー名を取得
-	//戻り値：
-	// チューナー名
-	wstring GetTunerName();
 
 	//チャンネル変更
 	//戻り値：
@@ -471,16 +450,13 @@ protected:
 	CTSOut tsOut;
 	CChSetUtil chUtil;
 
-	HANDLE lockEvent;
-
 	CRITICAL_SECTION buffLock;
-	vector<TS_DATA*> TSBuff;
-	DWORD totalTSBuffSize;
+	vector<BYTE> TSBuff;
+	size_t TSBuffOffset;
 
-	HANDLE recvThread;
-	HANDLE recvStopEvent;
 	HANDLE analyzeThread;
-	HANDLE analyzeStopEvent;
+	HANDLE analyzeEvent;
+	BOOL analyzeStopFlag;
 
 	//チャンネルスキャン用
 	HANDLE chScanThread;
@@ -518,19 +494,13 @@ protected:
 	DWORD tsBuffMaxCount;
 	int writeBuffMaxCount;
 protected:
-	//PublicAPI排他制御用
-	BOOL Lock(LPCWSTR log = NULL, DWORD timeOut = 15*1000);
-	void UnLock(LPCWSTR log = NULL);
-
 	//BonDriverをロード後の初期化処理
 	//戻り値：
 	// エラーコード
 	DWORD _OpenBonDriver();
 
 	//ロードしているBonDriverの開放本体
-	//戻り値：
-	// エラーコード
-	DWORD _CloseBonDriver();
+	void _CloseBonDriver();
 
 	DWORD _SetCh(
 		DWORD space,
@@ -540,7 +510,7 @@ protected:
 
 	static void GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath, BOOL BSBasic, BOOL CS1Basic, BOOL CS2Basic);
 
-	static UINT WINAPI RecvThread(LPVOID param);
+	static void RecvCallback(void* param, BYTE* data, DWORD size, DWORD remain);
 	static UINT WINAPI AnalyzeThread(LPVOID param);
 
 	static UINT WINAPI ChScanThread(LPVOID param);
