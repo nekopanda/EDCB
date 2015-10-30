@@ -28,6 +28,8 @@ BOOL _GetDiskFreeSpaceEx(
   PULARGE_INTEGER lpTotalNumberOfBytes,    // ディスク全体のバイト数
   PULARGE_INTEGER lpTotalNumberOfFreeBytes // ディスク全体の空きバイト数
 );
+__int64 GetFileLastModified(const wstring& path);
+bool GetFileExist(const wstring& path);
 void _OutputDebugString(const TCHAR *pOutputString, ...);
 void GetLastErrMsg(DWORD err, wstring& msg);
 

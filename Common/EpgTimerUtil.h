@@ -17,8 +17,6 @@ DWORD _BCDtoDWORD(BYTE* data, BYTE size, BYTE digit);
 BOOL _MJDtoYMD(DWORD mjd, WORD* y, WORD* m, WORD* d);
 //MJD->SYSTEMTIME変換
 BOOL _MJDtoSYSTEMTIME(DWORD mjd, SYSTEMTIME* time);
-//SYSTEMTIME->__int64変換
-__int64 _SYSTEMTIMEtoINT64(const SYSTEMTIME* time);
 
 //iniファイルから予想ビットレートを取得する
 BOOL _GetBitrate(WORD ONID, WORD TSID, WORD SID, DWORD* bitrate);

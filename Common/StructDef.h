@@ -165,6 +165,7 @@ typedef struct _REC_FILE_INFO : public REC_FILE_BASIC_INFO {
 	//CMD_VER 4à»ç~
 	BYTE protectFlag;
 	//CMD_VER 6à»ç~
+	BYTE fileExist;			//ÉtÉ@ÉCÉãÇ™ë∂ç›Ç∑ÇÈÇ©
 	BYTE autoAddInfoFlag;
 	vector<EPG_AUTO_ADD_BASIC_INFO> autoAddInfo;
 
@@ -182,6 +183,7 @@ typedef struct _REC_FILE_INFO : public REC_FILE_BASIC_INFO {
 		programInfo = L"";
 		errInfo = L"";
 		protectFlag = 0;
+		fileExist = 0;
 		autoAddInfoFlag = 0;
 		autoAddInfo.clear();
 	};
@@ -204,6 +206,7 @@ typedef struct _REC_FILE_INFO : public REC_FILE_BASIC_INFO {
 		programInfo = L"";
 		errInfo = L"";
 		protectFlag = 0;
+		fileExist = 0;
 		autoAddInfoFlag = 0;
 		autoAddInfo.clear();
 		return *this;

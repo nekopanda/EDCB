@@ -55,6 +55,23 @@ BOOL _GetDiskFreeSpaceEx(
 	return GetDiskFreeSpaceEx( szMount, lpFreeBytesAvailable, lpTotalNumberOfBytes, lpTotalNumberOfFreeBytes );
 }
 
+__int64 GetFileLastModified(const wstring& path)
+{
+	WIN32_FIND_DATA data;
+	HANDLE hfind = FindFirstFile(path.c_str(), &data);
+	if (hfind == INVALID_HANDLE_VALUE) {
+		return 0;
+	}
+	FindClose(hfind);
+	return (__int64(data.ftLastWriteTime.dwHighDateTime) << 32) | data.ftLastWriteTime.dwLowDateTime;
+}
+
+bool GetFileExist(const wstring& path)
+{
+	DWORD attr = GetFileAttributes(path.c_str());
+	return (attr != -1 && (attr & FILE_ATTRIBUTE_DIRECTORY) == 0);
+}
+
 void _OutputDebugString(const TCHAR *format, ...)
 {
 	va_list params;

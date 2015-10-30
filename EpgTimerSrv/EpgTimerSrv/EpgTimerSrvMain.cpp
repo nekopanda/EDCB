@@ -1027,7 +1027,7 @@ bool CEpgTimerSrvMain::RemoveNolinkedReserve(vector<DWORD> beforeReserveIds) {
 					EPGDB_EVENT_INFO evi;
 					if (epgDB.SearchEpg(rsv.originalNetworkID, rsv.transportStreamID, rsv.serviceID, rsv.eventID, &evi)) {
 						
-						_OutputDebugString(L"Ž©“®—\–ñÝ’è•ÏX‚Ì”º‚¢—\–ñ‚ðíœ: %s\r\n", evi.shortInfo->event_name);
+						_OutputDebugString(L"Ž©“®—\–ñÝ’è•ÏX‚Ì”º‚¢—\–ñ‚ðíœ: %s\r\n", evi.shortInfo->event_name.c_str());
 
 						removeIds.push_back(id);
 					}

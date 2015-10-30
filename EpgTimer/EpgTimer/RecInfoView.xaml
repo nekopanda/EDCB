@@ -62,6 +62,7 @@
                     <MenuItem Header="Scramble" Name="Scrambles" IsCheckable="True" />
                     <MenuItem Header="結果" Name="Result" IsCheckable="True" />
                     <MenuItem Header="該当自動予約" Name="ReserveInfo" IsCheckable="True" />
+                    <MenuItem Header="存在" Name="FileExist" IsCheckable="True" />
                     <MenuItem Header="録画ファイル" Name="RecFilePath" IsCheckable="True" />
                 </ContextMenu>
                 <ContextMenu x:Key="itemMenu"/>
@@ -124,6 +125,11 @@
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ReserveInfo}">
                         <GridViewColumn.Header>
                             <GridViewColumnHeader Content="該当自動予約" Tag="ReserveInfo" HorizontalContentAlignment="Left"/>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=FileExist}">
+                        <GridViewColumn.Header>
+                            <GridViewColumnHeader Content="存在" Tag="FileExist" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=RecFilePath}">

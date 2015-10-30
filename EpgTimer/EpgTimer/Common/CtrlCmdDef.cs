@@ -473,6 +473,7 @@ namespace EpgTimer
         public string ErrInfo;
         public byte ProtectFlag;
 
+        public byte FileExist;
         public byte AutoAddInfoFlag;
         public List<EpgAutoAddBasicInfo> AutoAddInfo;
 
@@ -496,6 +497,7 @@ namespace EpgTimer
             ProgramInfo = "";
             ErrInfo = "";
             ProtectFlag = 0;
+            FileExist = 0;
             AutoAddInfoFlag = 0;
             AutoAddInfo = new List<EpgAutoAddBasicInfo>();
         }
@@ -526,6 +528,7 @@ namespace EpgTimer
             }
             if (version >= 6)
             {
+                w.Write(FileExist);
                 w.Write(AutoAddInfoFlag);
                 w.Write(AutoAddInfo);
             }
@@ -558,6 +561,7 @@ namespace EpgTimer
             }
             if (version >= 6)
             {
+                r.Read(ref FileExist);
                 r.Read(ref AutoAddInfoFlag);
                 r.Read(ref AutoAddInfo);
             }

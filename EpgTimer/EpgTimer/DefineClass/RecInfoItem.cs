@@ -139,6 +139,18 @@ namespace EpgTimer
                 return view;
             }
         }
+        public String FileExist
+        {
+            get
+            {
+                String view = "";
+                if (RecInfo != null)
+                {
+                    view = (RecInfo.FileExist != 0) ? "○" : "×";
+                }
+                return view;
+            }
+        }
         public String RecFilePath
         {
             get

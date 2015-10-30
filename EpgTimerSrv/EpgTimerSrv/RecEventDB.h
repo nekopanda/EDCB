@@ -5,6 +5,8 @@
 #include <map>
 
 #include "../../Common/EpgTimerUtil.h"
+#include "../../Common/TimeUtil.h"
+#include "../../Common/PathUtil.h"
 
 #include "LightTsUtils.h"
 #include "EpgDBManager.h"
@@ -16,6 +18,9 @@ struct REC_EVENT_INFO : public EPGDB_EVENT_INFO {
 	BYTE* rawDataPtr;
 
 	int64_t startTime64;
+	wstring folderPath;
+	wstring filePath;
+	bool fileExist;
 
 	REC_EVENT_INFO()
 		: EPGDB_EVENT_INFO()
@@ -24,7 +29,10 @@ struct REC_EVENT_INFO : public EPGDB_EVENT_INFO {
 		, rawDataLen(0)
 		, rawDataPtr(NULL)
 		, startTime64(0)
+		, fileExist(false)
 	{ }
+
+	bool HasEpgInfo() const { return rawDataLen > 0; }
 };
 
 struct REC_EVENT_SERVICE_DATA {
@@ -65,9 +73,13 @@ public:
 	void AddRecInfo(const REC_FILE_INFO& item) {
 		REC_EVENT_INFO* eventInfo = CreateNew(item.id);
 		eventInfo->recFileId = item.id;
-		CMediaData* buffer = LoadTs(eventInfo, item.recFilePath, item.serviceID);
-		if (buffer != NULL) {
-			buffers.push_back(buffer);
+
+		if (item.recFilePath.size() > 0) {
+			AddToDirectoryPath(eventInfo, item.recFilePath);
+			CMediaData* buffer = LoadTs(eventInfo, item.recFilePath, item.serviceID);
+			if (buffer != NULL) {
+				buffers.push_back(buffer);
+			}
 		}
 	}
 
@@ -171,6 +183,45 @@ public:
 		return ret;
 	}
 
+	void UpdateFileExist() {
+		DWORD time = GetTickCount();
+		int count = 0;
+
+		// ディレクトリの更新を検知
+		for (auto& entry : directoryInfoMap) {
+			int64_t lastModified = GetFileLastModified(entry.first);
+			if (entry.second.lastModified != lastModified) {
+				entry.second.updated = true;
+				entry.second.lastModified = lastModified;
+			}
+		}
+
+		// 更新されたディレクトリにあるファイルは存在確認を再度行う
+		for (auto& entry : eventMap) {
+			if (entry.second->folderPath.size() > 0) {
+				if (directoryInfoMap[entry.second->folderPath].updated) {
+					entry.second->fileExist = GetFileExist(entry.second->filePath);
+					count++;
+				}
+			}
+		}
+
+		// リセットしておく
+		for (auto& entry : directoryInfoMap) {
+			entry.second.updated = false;
+		}
+
+		_OutputDebugString(L"UpdateFileExist(%d) %dmsec\r\n", count, GetTickCount() - time);
+	}
+
+	const REC_EVENT_INFO* Get(DWORD id) {
+		auto it = eventMap.find(id);
+		if (it != eventMap.end()) {
+			return it->second;
+		}
+		return NULL;
+	}
+
 	bool HasEpgInfo(DWORD id) {
 		auto it = eventMap.find(id);
 		if (it != eventMap.end()) {
@@ -187,6 +238,19 @@ private:
 	REC_EVENT_MAP eventMap;
 	SERVICE_EVENT_MAP serviceMap;
 
+	struct DirectoryInfo {
+		int64_t lastModified;
+		bool updated;
+
+		DirectoryInfo()
+			: lastModified(0)
+			, updated(false)
+		{ }
+	};
+
+	// ディレクトリの更新日時監視
+	map<wstring, DirectoryInfo> directoryInfoMap;
+
 	CMediaData rawDataBuffer;
 
 	std::vector<CMediaData*> buffers;
@@ -201,6 +265,12 @@ private:
 		}
 		CMediaData* buffer;
 	};
+
+	void AddToDirectoryPath(REC_EVENT_INFO* eventInfo, const wstring& filepath) {
+		eventInfo->filePath = filepath;
+		GetFileFolder(filepath, eventInfo->folderPath);
+		directoryInfoMap[eventInfo->folderPath].updated = true;
+	}
 
 	bool LoadFile() {
 		if (filePath.empty()) {
@@ -332,7 +402,7 @@ private:
 
 				eventInfo->rawDataLen = buffer->GetSize();
 				eventInfo->rawDataPtr = buffer->GetData();
-				eventInfo->startTime64 = _SYSTEMTIMEtoINT64(&eventInfo->start_time);
+				eventInfo->startTime64 = ConvertI64Time(eventInfo->start_time);
 
 				_OutputDebugString(L"RecEventEB LoadTs %s : %d KB\r\n", recFilePath.c_str(), dwTotalRead / 1024);
 				return buffer;
@@ -353,13 +423,17 @@ private:
 			REC_EVENT_INFO* eventInfo = GetOrNew(fileId);
 			eventInfo->recFileId = fileId;
 
-			if (eventInfo->rawDataLen == 0 && eventInfo->loadErrorCount <= 4) {
-				CMediaData* buffer = LoadTs(eventInfo, recInfo.second.recFilePath, serviceId);
-				if (buffer != NULL) {
-					buffers.push_back(buffer);
-				}
-				else {
-					eventInfo->loadErrorCount++;
+			if (recInfo.second.recFilePath.size() > 0) {
+				AddToDirectoryPath(eventInfo, recInfo.second.recFilePath);
+
+				if (eventInfo->rawDataLen == 0 && eventInfo->loadErrorCount <= 4) {
+					CMediaData* buffer = LoadTs(eventInfo, recInfo.second.recFilePath, serviceId);
+					if (buffer != NULL) {
+						buffers.push_back(buffer);
+					}
+					else {
+						eventInfo->loadErrorCount++;
+					}
 				}
 			}
 		}

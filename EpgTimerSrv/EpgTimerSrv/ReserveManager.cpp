@@ -540,13 +540,25 @@ vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll()
 {
 	CBlockLock lock(&this->managerLock);
 
+	// 存在確認を更新
+	recEventDB.UpdateFileExist();
+
 	vector<REC_FILE_INFO> infoList;
 	infoList.reserve(this->recInfoText.GetMap().size());
 	for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().begin(); itr != this->recInfoText.GetMap().end(); itr++ ){
 		infoList.push_back(itr->second);
-		// EPGデータ有無フラグを追加
+
+		// 追加データ
 		REC_FILE_INFO& info = infoList.back();
-		info.autoAddInfoFlag = recEventDB.HasEpgInfo(info.id);
+		const REC_EVENT_INFO* extra_info = recEventDB.Get(info.id);
+		if (extra_info != NULL) {
+			info.fileExist = extra_info->fileExist;
+			info.autoAddInfoFlag = extra_info->HasEpgInfo();
+		}
+		else {
+			info.fileExist = false;
+			info.autoAddInfoFlag = false;
+		}
 	}
 
 	return infoList;
@@ -2073,7 +2085,7 @@ bool CReserveManager::AutoAddReserveEPG(
 	typedef pair<int64_t, const RESERVE_DATA*> RESERVE_PAIR;
 	vector<RESERVE_PAIR> tmpList; tmpList.reserve(addList.size());
 	for(auto rsv : addList) {
-		tmpList.push_back(RESERVE_PAIR(_SYSTEMTIMEtoINT64(&rsv->startTime), rsv));
+		tmpList.push_back(RESERVE_PAIR(ConvertI64Time(rsv->startTime), rsv));
 	}
 	std::sort(tmpList.begin(), tmpList.end(), [](RESERVE_PAIR a, RESERVE_PAIR b) {
 		return a.first < b.first;

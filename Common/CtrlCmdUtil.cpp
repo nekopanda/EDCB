@@ -1065,6 +1065,7 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const REC_FILE_INFO& v
 		pos += WriteVALUE(ver, buff, pos, val.protectFlag);
 	}
 	if (ver >= 6) {
+		pos += WriteVALUE(ver, buff, pos, val.fileExist);
 		pos += WriteVALUE(ver, buff, pos, val.autoAddInfoFlag);
 		pos += WriteVALUE(ver, buff, pos, val.autoAddInfo);
 	}
@@ -1105,6 +1106,7 @@ BOOL ReadVALUE( WORD ver, REC_FILE_INFO* val, const BYTE* buff, DWORD buffSize, 
 			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->protectFlag );
 		}
 		if (ver >= 6) {
+			READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->fileExist);
 			READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->autoAddInfoFlag);
 			READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->autoAddInfo);
 		}
