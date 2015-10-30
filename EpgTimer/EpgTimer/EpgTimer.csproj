@@ -90,6 +90,7 @@
     <Compile Include="BlackoutWindow.xaml.cs">
       <DependentUpon>BlackoutWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Common\CallerInfo.cs" />
     <Compile Include="Common\BoxExchangeEditor.cs" />
     <Compile Include="UserCtrlView\DataViewBase.cs" />
     <Compile Include="UserCtrlView\ListViewController.cs" />
@@ -574,4 +575,5 @@
   </Target>
   <Target Name="AfterBuild">
   </Target>
-  --></Project>
+  -->
+</Project>

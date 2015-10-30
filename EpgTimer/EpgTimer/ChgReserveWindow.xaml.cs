@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 
 namespace EpgTimer
@@ -11,8 +15,18 @@ namespace EpgTimer
     /// <summary>
     /// ChgReserveWindow.xaml の相互作用ロジック
     /// </summary>
-    public partial class ChgReserveWindow : Window
+    public partial class ChgReserveWindow : Window, INotifyPropertyChanged
     {
+        #region INotifyPropertyChanged実装
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void RaisePropertyChanged([CallerMemberName]string propertyName = "")
+        {
+            if (PropertyChanged != null) { PropertyChanged(this, new PropertyChangedEventArgs(propertyName)); }
+        }
+
+        #endregion
+
         private ReserveData reserveInfo = null;
         private MenuUtil mutil = CommonManager.Instance.MUtil;
         private MenuBinds mBinds = new MenuBinds();
@@ -20,16 +34,57 @@ namespace EpgTimer
         protected enum AddMode { Add, Re_Add, Change }
         private AddMode addMode = AddMode.Change;   //予約モード、再予約モード、変更モード
         private byte openMode = 0;                  //EPGViewで番組表を表示するかどうか
-        private bool resModeProgram = true;         //プログラム予約かEPG予約か
 
+        private bool initialized = false;
         private ReserveData resInfoDisplay = null;
         private EpgEventInfo eventInfoDisplay = null;
         private EpgEventInfo eventInfoNew = null;
         private EpgEventInfo eventInfoSelected = null;
 
+        #region ReserveMode 変更通知プロパティ
+
+        private UIReserveMode _ReserveMode = UIReserveMode.None;
+
+        public UIReserveMode ReserveMode
+        {
+            get { return this._ReserveMode; }
+            set
+            {
+                if (this._ReserveMode != value)
+                {
+                    this._ReserveMode = value;
+                    this.RaisePropertyChanged();
+                    this.ReserveModeChanged();
+                }
+            }
+        }
+
+        #endregion
+
+        #region CanSelectAutoAdd 変更通知プロパティ
+
+        private bool _CanSelectAutoAdd;
+
+        public bool CanSelectAutoAdd
+        {
+            get { return this._CanSelectAutoAdd; }
+            set
+            {
+                if (this._CanSelectAutoAdd != value)
+                {
+                    this._CanSelectAutoAdd = value;
+                    this.RaisePropertyChanged();
+                }
+            }
+        }
+
+        #endregion
+
         public ChgReserveWindow()
         {
             InitializeComponent();
+
+            this.DataContext = this;
 
             //コマンドの登録
             this.CommandBindings.Add(new CommandBinding(EpgCmds.Cancel, (sender, e) => DialogResult = false));
@@ -83,6 +138,14 @@ namespace EpgTimer
             }
         }
 
+        private UIReserveMode GetReserveModeFromInfo()
+        {
+            if (reserveInfo == null) return UIReserveMode.Program;
+            if (reserveInfo.Comment.StartsWith("EPG自動予約")) return UIReserveMode.EPGAuto;
+            if (reserveInfo.EventID != 0xFFFF) return UIReserveMode.EPGManual;
+            return UIReserveMode.Program;
+        }
+
         /// <summary>初期値の予約情報をセットする</summary>
         /// <param name="info">[IN] 初期値の予約情報</param>
         public void SetReserveInfo(ReserveData info)
@@ -91,12 +154,9 @@ namespace EpgTimer
             recSettingView.SetDefSetting(reserveInfo.RecSetting, reserveInfo.EventID == 0xFFFF);
         }
 
-        private void SetResModeProgram(bool mode)
+        private void SetResModeProgram()
         {
-            resModeProgram = mode;
-
-            radioButton_Epg.IsChecked = !resModeProgram;
-            radioButton_Program.IsChecked = resModeProgram;
+            bool resModeProgram = (ReserveMode == UIReserveMode.Program);
 
             textBox_title.IsEnabled = resModeProgram;
             comboBox_service.IsEnabled = resModeProgram;
@@ -122,7 +182,7 @@ namespace EpgTimer
 
             if (tabItem_program.IsSelected)
             {
-                if (resModeProgram == true)
+                if (ReserveMode == UIReserveMode.Program)
                 {
                     var resInfo = new ReserveData();
                     GetReserveTimeInfo(ref resInfo);
@@ -178,7 +238,9 @@ namespace EpgTimer
             if (addMode == AddMode.Add || reserveInfo == null)
             {
                 addMode = AddMode.Add;
-                SetResModeProgram(true);
+                reserveInfo = null;
+                ReserveMode = UIReserveMode.Program;
+                CanSelectAutoAdd = false;
 
                 if (comboBox_service.Items.Count > 0)
                 {
@@ -191,12 +253,16 @@ namespace EpgTimer
             }
             else
             {
-                SetResModeProgram(reserveInfo.EventID == 0xFFFF);
+                ReserveMode = GetReserveModeFromInfo();
+                CanSelectAutoAdd = (ReserveMode == UIReserveMode.EPGAuto);
+
                 SetReserveTimeInfo(reserveInfo);
             }
 
             ResetProgramContent();                  //番組詳細を初期表示
             tabControl.SelectedIndex = openMode;
+
+            initialized = true;
         }
 
         private void SetReserveTime(DateTime startTime, DateTime endTime)
@@ -333,7 +399,7 @@ namespace EpgTimer
                 recSettingView.GetRecSetting(ref setInfo);
 
                 //ダイアログを閉じないときはreserveInfoを変更しないよう注意する
-                if (resModeProgram == true)
+                if (ReserveMode == UIReserveMode.Program)
                 {
                     var resInfo = new ReserveData();
                     if (GetReserveTimeInfo(ref resInfo) == -2)
@@ -353,7 +419,7 @@ namespace EpgTimer
                     }
                     reserveInfo.StartTimeEpg = reserveInfo.StartTime;
                 }
-                else
+                else if(ReserveMode == UIReserveMode.EPGManual)
                 {
                     //EPG予約に変える場合、またはEPG予約で別の番組に変わる場合
                     if (eventInfoNew != null)
@@ -361,6 +427,11 @@ namespace EpgTimer
                         //基本的にAddReserveEpgWindowと同じ処理内容
                         if (mutil.IsEnableReserveAdd(eventInfoNew) == false) return;
                         CommonManager.ConvertEpgToReserveData(eventInfoNew, ref reserveInfo);
+                        reserveInfo.Comment = "";
+                    }
+                    // 自動予約から個別予約に変える場合
+                    else if(GetReserveModeFromInfo() == UIReserveMode.EPGAuto)
+                    {
                         reserveInfo.Comment = "";
                     }
                 }
@@ -374,6 +445,12 @@ namespace EpgTimer
                 else
                 {
                     mutil.ReserveAdd(mutil.ToList(reserveInfo));
+                }
+
+                // EPG自動予約以外になったら戻せないようにしておく
+                if(ReserveMode != UIReserveMode.EPGAuto)
+                {
+                    CanSelectAutoAdd = false;
                 }
             }
             catch (Exception ex)
@@ -398,32 +475,18 @@ namespace EpgTimer
             DialogResult = true;
         }
 
-        //一応大丈夫だが、クリックのたびに実行されないようにしておく。
-        private void radioButton_Epg_Click(object sender, RoutedEventArgs e)
-        {
-            if (resModeProgram == true && radioButton_Epg.IsChecked == true)
-            {
-                SetResModeProgram(false);
-                ReserveModeChanged();
-            }
-        }
-
-        private void radioButton_Program_Click(object sender, RoutedEventArgs e)
-        {
-            if (resModeProgram == false && radioButton_Program.IsChecked == true)
-            {
-                SetResModeProgram(true);
-                ReserveModeChanged();
-            }
-        }
-
         private void ReserveModeChanged()
         {
-            if (resModeProgram == true)
+            // UIに反映させる
+            SetResModeProgram();
+
+            if (!initialized) return;
+
+            if (ReserveMode == UIReserveMode.Program)
             {
                 eventInfoNew = null;
             }
-            else
+            else if (ReserveMode == UIReserveMode.EPGManual)
             {
                 var resInfo = new ReserveData();
                 GetReserveTimeInfo(ref resInfo);
@@ -441,13 +504,17 @@ namespace EpgTimer
                     {
                         MessageBox.Show("変更可能な番組がありません。\r\n" +
                                         "EPGの期間外か、EPGデータが読み込まれていません。");
-                        SetResModeProgram(true);
+                        ReserveMode = UIReserveMode.Program;
                     }
                     else
                     {
                         SetReserveTimeInfo(CommonManager.ConvertEpgToReserveData(eventInfoNew));
                     }
                 }
+            }
+            else if (ReserveMode == UIReserveMode.EPGAuto)
+            {
+                SetReserveTimeInfo(reserveInfo);
             }
 
             eventInfoSelected = eventInfoNew;
@@ -457,6 +524,31 @@ namespace EpgTimer
         {
             MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
             mainWindow.ListFoucsOnVisibleChanged();
+        }
+    }
+
+    public enum UIReserveMode
+    {
+        None = 0,
+        EPGAuto = 1,
+        EPGManual = 2,
+        Program = 3
+    }
+
+    // ReserveModeをラジオボタンのIsCheckedにバインドするときのコンバーター
+    public class UIReserveModeConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null || parameter == null) return false;
+            return (int)((UIReserveMode)value) == int.Parse(parameter.ToString());
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null || parameter == null) return false;
+            if ((bool)value) return (UIReserveMode)int.Parse(parameter.ToString());
+            return null;
         }
     }
 }
