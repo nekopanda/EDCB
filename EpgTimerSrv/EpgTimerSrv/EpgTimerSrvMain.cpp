@@ -460,6 +460,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					}
 				}
 				ctx->sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_EPGDATA);
+				ctx->sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
 				ctx->sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 
 				if( ctx->sys->useSyoboi ){
