@@ -8,8 +8,11 @@ using CtrlCmdCLI.Def;
 
 namespace EpgTimer
 {
-    public class CustomEpgTabInfo
+    public class CustomEpgTabInfo : IEquatable<CustomEpgTabInfo>
     {
+        private static int count = 0;
+        private int uniqId;
+
         public CustomEpgTabInfo()
         {
             ViewServiceList = new List<UInt64>();
@@ -21,6 +24,7 @@ namespace EpgTimer
             SearchMode = false;
             SearchKey = new EpgSearchKeyInfo();
             FilterEnded = false;
+            uniqId = ++count;
         }
         public String TabName
         {
@@ -98,10 +102,16 @@ namespace EpgTimer
             dest.SearchKey.serviceList = SearchKey.serviceList.ToList();
             dest.SearchKey.titleOnlyFlag = SearchKey.titleOnlyFlag;
             dest.SearchKey.videoList = SearchKey.videoList.ToList();
+
+            dest.uniqId = uniqId;
         }
         public override string ToString()
         {
             return TabName;
+        }
+        public bool Equals(CustomEpgTabInfo other)
+        {
+            return (uniqId == other.uniqId);
         }
     }
 }
