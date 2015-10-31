@@ -8,10 +8,6 @@
 
 #include "../../Common/TimeUtil.h"
 
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
-
 
 // CEpgDataCap_BonDlg ダイアログ
 
@@ -233,6 +229,7 @@ void CEpgDataCap_BonDlg::OnDestroy()
 	DeleteTaskBar(GetSafeHwnd(), TRAYICON_ID);
 
 	WINDOWPLACEMENT Pos;
+	Pos.length = sizeof(WINDOWPLACEMENT);
 	GetWindowPlacement(m_hWnd, &Pos);
 
 	WritePrivateProfileInt(L"SET_WINDOW", L"top", Pos.rcNormalPosition.top, this->moduleIniPath.c_str());
@@ -921,7 +918,7 @@ void CEpgDataCap_BonDlg::ReloadBonDriver()
 	this->bonList.clear();
 	ComboBox_ResetContent(GetDlgItem(IDC_COMBO_TUNER));
 
-	this->main.EnumBonDriver(&bonList);
+	this->bonList = this->main.EnumBonDriver();
 
 	int selectIndex = 0;
 	vector<wstring>::iterator itr;

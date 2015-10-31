@@ -4,6 +4,10 @@
 
 #include "../../Common/TimeUtil.h"
 #include "../../Common/BlockLock.h"
+#include "../../Common/StringUtil.h"
+#include "../../Common/PathUtil.h"
+#include "../../Common/EpgTimerUtil.h"
+#include "../../Common/EpgDataCap3Util.h"
 using std::unique_ptr;
 
 CEpgDBManager::CEpgDBManager(void)
@@ -27,13 +31,11 @@ CEpgDBManager::~CEpgDBManager(void)
 void CEpgDBManager::ClearEpgData()
 {
 	CBlockLock lock(&this->epgMapLock);
-	try{
+	{
 		map<LONGLONG, EPGDB_SERVICE_DATA*>::iterator itr;
 		for( itr = this->epgMap.begin(); itr != this->epgMap.end(); itr++ ){
 			SAFE_DELETE(itr->second);
 		}
-	}catch(...){
-		_OutputDebugString(L"★CEpgDBManager::ClearEpgData() Exception");
 	}
 	this->epgMap.clear();
 }
@@ -93,13 +95,14 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 	}
 	do{
 		if( (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ){
-			//本当に拡張子DLL?
-			if( IsExt(findData.cFileName, L".dat" ) == TRUE ){
+			LONGLONG fileTime = (LONGLONG)findData.ftLastWriteTime.dwHighDateTime << 32 | findData.ftLastWriteTime.dwLowDateTime;
+			if( fileTime != 0 ){
 				//見つかったファイルを一覧に追加
-				wstring epgFilePath = L"";
-				Format(epgFilePath, L"%s\\%s", epgDataPath.c_str(), findData.cFileName);
-
-				epgFileList.push_back(epgFilePath);
+				//名前順。ただしTSID==0xFFFFの場合は同じチャンネルの連続によりストリームがクリアされない可能性があるので後ろにまとめる
+				WCHAR prefix = fileTime + 7*24*60*60*I64_1SEC < GetNowI64Time() ? L'0' :
+				               Tolower(findData.cFileName).find(L"ffff_epg.dat") == wstring::npos ? L'1' : L'2';
+				wstring item = prefix + epgDataPath + L'\\' + findData.cFileName;
+				epgFileList.insert(std::lower_bound(epgFileList.begin(), epgFileList.end(), item), item);
 			}
 		}
 	}while(FindNextFile(find, &findData));
@@ -107,41 +110,116 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 	FindClose(find);
 
 	//EPGファイルの解析
-	for( size_t i=0; i<epgFileList.size(); i++ ){
-		HANDLE file = CreateFile( epgFileList[i].c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-		if( file != INVALID_HANDLE_VALUE ){
-			FILETIME CreationTime;
-			FILETIME LastAccessTime;
-			FILETIME LastWriteTime;
-			GetFileTime(file, &CreationTime, &LastAccessTime, &LastWriteTime);
-
-			LONGLONG fileTime = ((LONGLONG)LastWriteTime.dwHighDateTime)<<32 | (LONGLONG)LastWriteTime.dwLowDateTime;
-			if( fileTime + 7*24*60*60*I64_1SEC < GetNowI64Time() ){
-				//1週間以上前のファイルなので削除
-				CloseHandle(file);
-				DeleteFile( epgFileList[i].c_str() );
-				_OutputDebugString(L"★delete %s", epgFileList[i].c_str());
+	for( vector<wstring>::iterator itr = epgFileList.begin(); itr != epgFileList.end(); itr++ ){
+		if( sys->loadStop ){
+			//キャンセルされた
+			epgUtil.UnInitialize();
+			return 0;
+		}
+		//一時ファイルの状態を調べる。取得側のCreateFile(tmp)→CloseHandle(tmp)→CopyFile(tmp,master)→DeleteFile(tmp)の流れをある程度仮定
+		wstring path = itr->c_str() + 1;
+		HANDLE tmpFile = CreateFile((path + L".tmp").c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		DWORD tmpError = GetLastError();
+		if( tmpFile != INVALID_HANDLE_VALUE ){
+			tmpError = NO_ERROR;
+			FILETIME ft;
+			if( GetFileTime(tmpFile, NULL, NULL, &ft) == FALSE || ((LONGLONG)ft.dwHighDateTime << 32 | ft.dwLowDateTime) + 300*I64_1SEC < GetNowI64Time() ){
+				//おそらく後始末されていない一時ファイルなので無視
+				tmpError = ERROR_FILE_NOT_FOUND;
+			}
+			CloseHandle(tmpFile);
+		}
+		if( (*itr)[0] == L'0' ){
+			if( tmpError != NO_ERROR && tmpError != ERROR_SHARING_VIOLATION ){
+				//1週間以上前かつ一時ファイルがないので削除
+				DeleteFile(path.c_str());
+				_OutputDebugString(L"★delete %s\r\n", path.c_str());
+			}
+		}else{
+			BYTE readBuff[188*256];
+			BOOL swapped = FALSE;
+			HANDLE file = INVALID_HANDLE_VALUE;
+			if( tmpError == NO_ERROR ){
+				//一時ファイルがあって書き込み中でない→コピー直前かもしれないので3秒待つ
+				Sleep(3000);
+			}else if( tmpError == ERROR_SHARING_VIOLATION ){
+				//一時ファイルがあって書き込み中→もうすぐ上書きされるかもしれないのでできるだけ退避させる
+				HANDLE masterFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+				if( masterFile != INVALID_HANDLE_VALUE ){
+					file = CreateFile((path + L".swp").c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+					if( file != INVALID_HANDLE_VALUE ){
+						swapped = TRUE;
+						DWORD read;
+						while( ReadFile(masterFile, readBuff, sizeof(readBuff), &read, NULL) && read != 0 ){
+							DWORD written;
+							WriteFile(file, readBuff, read, &written, NULL);
+						}
+						SetFilePointer(file, 0, 0, FILE_BEGIN);
+						tmpFile = CreateFile((path + L".tmp").c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+						if( tmpFile != INVALID_HANDLE_VALUE || GetLastError() != ERROR_SHARING_VIOLATION ){
+							//退避中に書き込みが終わった
+							if( tmpFile != INVALID_HANDLE_VALUE ){
+								CloseHandle(tmpFile);
+							}
+							CloseHandle(file);
+							file = INVALID_HANDLE_VALUE;
+						}
+					}
+					CloseHandle(masterFile);
+				}
+				if( file == INVALID_HANDLE_VALUE ){
+					Sleep(3000);
+				}
+			}
+			if( file == INVALID_HANDLE_VALUE ){
+				file = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			}
+			if( file == INVALID_HANDLE_VALUE ){
+				_OutputDebugString(L"Error %s\r\n", path.c_str());
 			}else{
-
-				DWORD fileSize = GetFileSize( file, NULL );
-				BYTE readBuff[188*1024];
-				DWORD readSize = 0;
-				while( readSize < fileSize ){
-					if( sys->loadStop != FALSE ){
-						//キャンセルされた
-						CloseHandle(file);
-						epgUtil.UnInitialize();
-						return 0;
+				//PATを送る(ストリームを確実にリセットするため)
+				DWORD seekPos = 0;
+				DWORD read;
+				for( DWORD i=0; ReadFile(file, readBuff, 188, &read, NULL) && read == 188; i+=188 ){
+					//PID
+					if( ((readBuff[1] & 0x1F) << 8 | readBuff[2]) == 0 ){
+						//payload_unit_start_indicator
+						if( (readBuff[1] & 0x40) != 0 ){
+							if( seekPos != 0 ){
+								break;
+							}
+						}else if( seekPos == 0 ){
+							continue;
+						}
+						seekPos = i + 188;
+						epgUtil.AddTSPacket(readBuff, 188);
 					}
-					DWORD read=0;
-					ReadFile( file, &readBuff, 188*1024, &read, NULL );
+				}
+				SetFilePointer(file, seekPos, 0, FILE_BEGIN);
+				//TOTを先頭に持ってきて送る(ストリームの時刻を確定させるため)
+				BOOL ignoreTOT = FALSE;
+				while( ReadFile(file, readBuff, 188, &read, NULL) && read == 188 ){
+					if( ((readBuff[1] & 0x1F) << 8 | readBuff[2]) == 0x14 ){
+						ignoreTOT = TRUE;
+						epgUtil.AddTSPacket(readBuff, 188);
+						break;
+					}
+				}
+				SetFilePointer(file, seekPos, 0, FILE_BEGIN);
+				while( ReadFile(file, readBuff, sizeof(readBuff), &read, NULL) && read != 0 ){
 					for( DWORD i=0; i<read; i+=188 ){
-						epgUtil.AddTSPacket(readBuff+i, 188);
+						if( ignoreTOT && ((readBuff[i+1] & 0x1F) << 8 | readBuff[i+2]) == 0x14 ){
+							ignoreTOT = FALSE;
+						}else{
+							epgUtil.AddTSPacket(readBuff+i, 188);
+						}
 					}
-					readSize+=read;
 					Sleep(0);
 				}
 				CloseHandle(file);
+			}
+			if( swapped ){
+				DeleteFile((path + L".swp").c_str());
 			}
 		}
 		Sleep(0);
@@ -186,15 +264,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 		}
 		sys->epgMap.insert(pair<LONGLONG, EPGDB_SERVICE_DATA*>(key, item));
 
-		DWORD epgInfoListSize = 0;
-		EPG_EVENT_INFO* epgInfoList = NULL;
-		if( epgUtil.GetEpgInfoList(item->serviceInfo.ONID, item->serviceInfo.TSID, item->serviceInfo.SID, &epgInfoListSize, &epgInfoList) == TRUE ){
-			for( DWORD j=0; j<epgInfoListSize; j++ ){
-				EPGDB_EVENT_INFO* itemEvent = new EPGDB_EVENT_INFO;
-				sys->ConvertEpgInfo(item->serviceInfo.ONID, item->serviceInfo.TSID, item->serviceInfo.SID, epgInfoList+j, itemEvent);
-				item->eventMap.insert(pair<WORD, EPGDB_EVENT_INFO*>(itemEvent->event_id, itemEvent));
-			}
-		}
+		epgUtil.EnumEpgInfoList(item->serviceInfo.ONID, item->serviceInfo.TSID, item->serviceInfo.SID, EnumEpgInfoListProc, item);
 	}
 
 	} //CBlockLock
@@ -258,6 +328,7 @@ BOOL CEpgDBManager::ConvertEpgInfo(WORD ONID, WORD TSID, WORD SID, EPG_EVENT_INF
 			item.stream_content = src->audioInfo->audioList[i].stream_content;
 			item.component_type = src->audioInfo->audioList[i].component_type;
 			item.component_tag = src->audioInfo->audioList[i].component_tag;
+			item.stream_type = src->audioInfo->audioList[i].stream_type;
 			item.simulcast_group_tag = src->audioInfo->audioList[i].simulcast_group_tag;
 			item.ES_multi_lingual_flag = src->audioInfo->audioList[i].ES_multi_lingual_flag;
 			item.main_component_flag = src->audioInfo->audioList[i].main_component_flag;
@@ -290,6 +361,31 @@ BOOL CEpgDBManager::ConvertEpgInfo(WORD ONID, WORD TSID, WORD SID, EPG_EVENT_INF
 			item.event_id = src->eventRelayInfo->eventDataList[i].event_id;
 			dest->eventRelayInfo->eventDataList.push_back(item);
 		}
+	}
+	return TRUE;
+}
+
+BOOL CALLBACK CEpgDBManager::EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param)
+{
+	EPGDB_SERVICE_DATA* item = (EPGDB_SERVICE_DATA*)param;
+
+	try{
+		if( epgInfoList == NULL ){
+			item->eventList.reserve(epgInfoListSize);
+			item->eventArray = new EPGDB_EVENT_INFO[epgInfoListSize];
+		}else{
+			for( DWORD i=0; i<epgInfoListSize; i++ ){
+				size_t j = item->eventList.size();
+				ConvertEpgInfo(item->serviceInfo.ONID, item->serviceInfo.TSID, item->serviceInfo.SID, &epgInfoList[i], &item->eventArray[j]);
+				item->eventList.push_back(&item->eventArray[j]);
+				//実装上は既ソートだが仕様ではないので挿入ソートしておく
+				for( ; j>0 && item->eventList[j] < item->eventList[j-1]; j-- ){
+					std::swap(item->eventList[j], item->eventList[j-1]);
+				}
+			}
+		}
+	}catch( std::bad_alloc& ){
+		return FALSE;
 	}
 	return TRUE;
 }
@@ -437,9 +533,12 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 	}else{
 		if( andKey.size() > 0 ){
 			andKeyList.push_back(andKey);
+			//旧い処理では対象を全角空白のまま比較していたため正規表現も全角のケースが多い。特別に置き換える
+			Replace(andKeyList.back(), L"　", L" ");
 		}
 		if( key->notKey.size() > 0 ){
 			notKeyList.push_back(key->notKey);
+			Replace(notKeyList.back(), L"　", L" ");
 		}
 	}
 
@@ -516,8 +615,10 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 		itrService = this->epgMap.find(key->serviceList[i]);
 		if( itrService != this->epgMap.end() ){
 			//サービス発見
-			map<WORD, EPGDB_EVENT_INFO*>::iterator itrEvent;
-			for( itrEvent = itrService->second->eventMap.begin(); itrEvent != itrService->second->eventMap.end(); itrEvent++ ){
+			vector<EPGDB_EVENT_INFO*>::iterator itrEvent_;
+			for( itrEvent_ = itrService->second->eventList.begin(); itrEvent_ != itrService->second->eventList.end(); itrEvent_++ ){
+				pair<WORD, EPGDB_EVENT_INFO*> autoEvent(std::make_pair((*itrEvent_)->event_id, *itrEvent_));
+				pair<WORD, EPGDB_EVENT_INFO*>* itrEvent = &autoEvent;
 				wstring matchKey = L"";
 				if( key->freeCAFlag == 1 ){
 					//無料放送のみ
@@ -771,11 +872,11 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 
 	if( regExpFlag == TRUE ){
 		//正規表現モード
-		if( regExp == NULL ){
-			regExp.CreateInstance(CLSID_RegExp);
-		}
-		if( regExp != NULL && word.size() > 0 && keyList->size() > 0 ){
-			try{
+		try{
+			if( regExp == NULL ){
+				regExp.CreateInstance(CLSID_RegExp);
+			}
+			if( regExp != NULL && word.size() > 0 && keyList->size() > 0 ){
 				_bstr_t target( word.c_str() );
 				_bstr_t pattern( (*keyList)[0].c_str() );
 
@@ -790,12 +891,13 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 						IMatch2Ptr pMatch( pMatchCol->Item[0] );
 						_bstr_t value( pMatch->Value );
 
-						*findKey = value;
+						*findKey = !value ? L"" : value;
 					}
 					return TRUE;
 				}
-			}catch(...){
 			}
+		}catch( _com_error& ){
+			//_OutputDebugString(L"%s\r\n", e.ErrorMessage());
 		}
 		return FALSE;
 	}else{
@@ -936,17 +1038,11 @@ BOOL CEpgDBManager::EnumEventInfo(LONGLONG serviceKey, void (*enumProc)(vector<E
 	BOOL ret = TRUE;
 	map<LONGLONG, EPGDB_SERVICE_DATA*>::iterator itr;
 	itr = this->epgMap.find(serviceKey);
-	if( itr != this->epgMap.end() ){
-		map<WORD, EPGDB_EVENT_INFO*>::iterator itrInfo;
-		for( itrInfo = itr->second->eventMap.begin(); itrInfo != itr->second->eventMap.end(); itrInfo++ ){
-			result.push_back(itrInfo->second);
-		}
-	}
-	if( result.size() == 0 ){
+	if( itr == this->epgMap.end() || itr->second->eventList.empty() ){
 		ret = FALSE;
 	}else{
 		//ここはロック状態なのでコールバック先で排他制御すべきでない
-		enumProc(&result, param);
+		enumProc(&itr->second->eventList, param);
 	}
 
 	return ret;
@@ -962,10 +1058,7 @@ BOOL CEpgDBManager::EnumEventAll(void (*enumProc)(vector<EPGDB_SERVICE_EVENT_INF
 	for( itr = this->epgMap.begin(); itr != this->epgMap.end(); itr++ ){
 		result.resize(result.size() + 1);
 		result.back().serviceInfo = itr->second->serviceInfo;
-		map<WORD, EPGDB_EVENT_INFO*>::iterator itrInfo;
-		for( itrInfo = itr->second->eventMap.begin(); itrInfo != itr->second->eventMap.end(); itrInfo++ ){
-			result.back().eventList.push_back(itrInfo->second);
-		}
+		result.back().eventList = itr->second->eventList;
 	}
 	if( result.size() == 0 ){
 		ret = FALSE;
@@ -993,10 +1086,12 @@ BOOL CEpgDBManager::SearchEpg(
 	map<LONGLONG, EPGDB_SERVICE_DATA*>::iterator itr;
 	itr = this->epgMap.find(key);
 	if( itr != this->epgMap.end() ){
-		map<WORD, EPGDB_EVENT_INFO*>::iterator itrInfo;
-		itrInfo = itr->second->eventMap.find(EventID);
-		if( itrInfo != itr->second->eventMap.end() ){
-			result->DeepCopy(*itrInfo->second);
+		EPGDB_EVENT_INFO infoKey;
+		infoKey.event_id = EventID;
+		vector<EPGDB_EVENT_INFO*>::iterator itrInfo;
+		itrInfo = std::lower_bound(itr->second->eventList.begin(), itr->second->eventList.end(), &infoKey, EPGDB_SERVICE_DATA::CompareEventInfo);
+		if( itrInfo != itr->second->eventList.end() && (*itrInfo)->event_id == EventID ){
+			result->DeepCopy(**itrInfo);
 			ret = TRUE;
 		}
 	}
@@ -1021,13 +1116,13 @@ BOOL CEpgDBManager::SearchEpg(
 	map<LONGLONG, EPGDB_SERVICE_DATA*>::iterator itr;
 	itr = this->epgMap.find(key);
 	if( itr != this->epgMap.end() ){
-		map<WORD, EPGDB_EVENT_INFO*>::iterator itrInfo;
-		for( itrInfo = itr->second->eventMap.begin(); itrInfo != itr->second->eventMap.end(); itrInfo++ ){
-			if( itrInfo->second->StartTimeFlag == 1 && itrInfo->second->DurationFlag == 1 ){
-				if( startTime == ConvertI64Time(itrInfo->second->start_time) &&
-					durationSec == itrInfo->second->durationSec
+		vector<EPGDB_EVENT_INFO*>::iterator itrInfo;
+		for( itrInfo = itr->second->eventList.begin(); itrInfo != itr->second->eventList.end(); itrInfo++ ){
+			if( (*itrInfo)->StartTimeFlag == 1 && (*itrInfo)->DurationFlag == 1 ){
+				if( startTime == ConvertI64Time((*itrInfo)->start_time) &&
+					durationSec == (*itrInfo)->durationSec
 					){
-						result->DeepCopy(*itrInfo->second);
+						result->DeepCopy(**itrInfo);
 						ret = TRUE;
 						break;
 				}
