@@ -176,10 +176,12 @@ namespace EpgTimer.Setting
                 textBox_service_width.Text = Settings.Instance.ServiceWidth.ToString();
                 textBox_dragScroll.Text = Settings.Instance.DragScroll.ToString();
                 textBox_minimumHeight.Text = Settings.Instance.MinimumHeight.ToString();
+                textBox_reserve_minHeight.Text = Settings.Instance.ReserveMinHeight.ToString();
                 checkBox_title_indent.IsChecked = Settings.Instance.EpgTitleIndent;
                 checkBox_epg_popup.IsChecked = Settings.Instance.EpgPopup;
                 checkBox_gradation.IsChecked = Settings.Instance.EpgGradation;
                 checkBox_gradationHeader.IsChecked = Settings.Instance.EpgGradationHeader;
+                checkBox_reserve_popup.IsChecked = Settings.Instance.ReservePopup;
 
                 if (Settings.Instance.UseCustomEpgView == false)
                 {
@@ -291,6 +293,7 @@ namespace EpgTimer.Setting
                 Settings.Instance.ServiceWidth = Convert.ToDouble(textBox_service_width.Text);
                 Settings.Instance.DragScroll = Convert.ToDouble(textBox_dragScroll.Text);
                 Settings.Instance.MinimumHeight = Convert.ToDouble(textBox_minimumHeight.Text);
+                Settings.Instance.ReserveMinHeight = Convert.ToDouble(textBox_reserve_minHeight.Text);
                 if (checkBox_title_indent.IsChecked == true)
                 {
                     Settings.Instance.EpgTitleIndent = true;
@@ -316,6 +319,7 @@ namespace EpgTimer.Setting
                 {
                     Settings.Instance.EpgGradationHeader = false;
                 }
+                Settings.Instance.ReservePopup = (checkBox_reserve_popup.IsChecked == true);
 
                 Settings.Instance.ContentColorList[0x00] = ((ColorSelectionItem)(comboBox0.SelectedItem)).ColorName;
                 Settings.Instance.ContentColorList[0x01] = ((ColorSelectionItem)(comboBox1.SelectedItem)).ColorName;

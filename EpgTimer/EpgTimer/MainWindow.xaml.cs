@@ -876,6 +876,7 @@ namespace EpgTimer
                     }
                     epgView.UpdateSetting();
                     cmd.SendReloadSetting();
+                    tunerReserveView.UpdateReserveData();
                     ResetButtonView();
                     ResetTaskMenu();
                 }
