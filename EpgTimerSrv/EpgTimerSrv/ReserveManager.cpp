@@ -40,13 +40,11 @@ void CReserveManager::Initialize()
 
 	ReloadSetting();
 
-	DWORD time = GetTickCount();
 	this->recInfoText.ParseText((settingPath + L"\\" + REC_INFO_TEXT_NAME).c_str());
-	_OutputDebugString(L"recInfoText.ParseText %dmsec\r\n", GetTickCount() - time); time = GetTickCount();
 	this->recInfoText.ReadSupplementFileAll();
-	_OutputDebugString(L"recInfoText.ReadSupplementFileAll %dmsec\r\n", GetTickCount() - time); time = GetTickCount();
+
 	this->recInfo2Text.ParseText((settingPath + L"\\" + REC_INFO2_TEXT_NAME).c_str());
-	_OutputDebugString(L"recInfo2Text.ParseText %dmsec\r\n", GetTickCount() - time); time = GetTickCount();
+	
 	this->recEventDB.Load(settingPath + L"\\" + REC_EPG_DATA_NAME, recInfoText.GetMap());
 	this->recEventDB.Save();
 

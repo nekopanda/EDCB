@@ -1003,7 +1003,7 @@ void CEpgTimerSrvMain::UpdateRecFileInfo() {
 		for (const auto& entry : list) {
 			epgAutoAdd.AddRecList(entry.first, entry.second);
 		}
-		_OutputDebugString(L"UpdateRecFileInfo %dmsec\r\n", GetTickCount() - time);
+		//_OutputDebugString(L"UpdateRecFileInfo %dmsec\r\n", GetTickCount() - time);
 	}
 }
 
@@ -1016,6 +1016,8 @@ bool CEpgTimerSrvMain::RemoveNolinkedReserve(vector<DWORD> beforeReserveIds) {
 		beforeIdSet.insert(id);
 	}
 
+	__int64 now = GetNowI64Time();
+
 	std::vector<DWORD> removeIds;
 	for (DWORD id : beforeIdSet) {
 		RESERVE_DATA rsv;
@@ -1024,13 +1026,17 @@ bool CEpgTimerSrvMain::RemoveNolinkedReserve(vector<DWORD> beforeReserveIds) {
 			if (rsv.comment.compare(0, 7, EPG_AUTO_ADD_TEXT) == 0) {
 				// 該当自動予約がない？
 				if (rsv.autoAddInfo.size() == 0) {
-					// 一応番組情報はあるか確認
-					EPGDB_EVENT_INFO evi;
-					if (epgDB.SearchEpg(rsv.originalNetworkID, rsv.transportStreamID, rsv.serviceID, rsv.eventID, &evi)) {
-						
-						_OutputDebugString(L"自動予約設定変更の伴い予約を削除: %s\r\n", evi.shortInfo->event_name.c_str());
+					// 番組情報はある？
+					EPGDB_EVENT_INFO info;
+					if (epgDB.SearchEpg(rsv.originalNetworkID, rsv.transportStreamID, rsv.serviceID, rsv.eventID, &info)) {
+						// 時間未定でなく開始時刻を過ぎていない？
+						if (info.StartTimeFlag != 0 && now < ConvertI64Time(info.start_time)) {
 
-						removeIds.push_back(id);
+							_OutputDebugString(L"自動予約設定変更の伴い予約を削除: %s\r\n", info.shortInfo->event_name.c_str());
+
+							removeIds.push_back(id);
+						}
+						
 					}
 				}
 			}

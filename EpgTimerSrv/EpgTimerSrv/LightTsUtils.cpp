@@ -808,7 +808,7 @@ bool CSiSectionPAT::Parse()
 CSiSectionPAT::CProg CSiSectionPAT::GetProgramInfo(int n) const
 {
 	if (n < 0 || n >= ProgramCount) {
-		OutputDebugString(L"IndexOutOfRangeException");
+		_OutputDebugString(L"Error: Index out of range: %s:%d", __FILE__, __LINE__);
 	}
 	return CProg(&m_pData[8 + n * 4]);
 }
@@ -846,7 +846,7 @@ bool CSiSectionEIT::Parse()
 CSiSectionEIT::CEvent CSiSectionEIT::GetEventInfo(int n)
 {
 	if (n < 0 || n >= (int)EventList.size()) {
-		OutputDebugString(L"IndexOutOfRange");
+		_OutputDebugString(L"Error: Index out of range: %s:%d", __FILE__, __LINE__);
 	}
 	return EventList[n];
 }

@@ -7,6 +7,7 @@
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/TimeUtil.h"
 #include "../../Common/PathUtil.h"
+#include "../../Common/FileUtil.h"
 
 #include "LightTsUtils.h"
 #include "EpgDBManager.h"
@@ -87,9 +88,6 @@ public:
 			return true;
 		}
 
-		OutputDebugString(L"Start Save RecEventDB\r\n");
-		DWORD time = GetTickCount();
-
 		// ファイルを開く
 		HANDLE hFile = _CreateDirectoryAndFile(this->filePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (hFile == INVALID_HANDLE_VALUE) {
@@ -120,8 +118,6 @@ public:
 				return false;
 			}
 		}
-
-		_OutputDebugString(L"End Save RecEventDB %dmsec\r\n", GetTickCount() - time);
 
 		return true;
 	}
@@ -157,7 +153,6 @@ public:
 
 	void UpdateFileExist() {
 		DWORD time = GetTickCount();
-		int count = 0;
 
 		directoryCache.UpdateDirectoryInfo();
 		for (auto recInfo : GetAll()) {
@@ -166,7 +161,7 @@ public:
 			}
 		}
 
-		_OutputDebugString(L"UpdateFileExist(%d) %dmsec\r\n", count, GetTickCount() - time);
+		_OutputDebugString(L"UpdateFileExist %dmsec\r\n", GetTickCount() - time);
 	}
 
 	int GetNewCount() const {
@@ -355,7 +350,7 @@ private:
 
 				eventInfo->startTime64 = ConvertI64Time(eventInfo->start_time);
 
-				_OutputDebugString(L"RecEventEB LoadTs %s : %d KB\r\n", recFilePath.c_str(), dwTotalRead / 1024);
+				return;
 			}
 			if (dwTotalRead > 128 * 1024 * 1024) { // 128MB以上読んだ
 				_OutputDebugString(L"RecEventEB LoadTs Failed %s : %d KB\r\n", recFilePath.c_str(), dwTotalRead / 1024);

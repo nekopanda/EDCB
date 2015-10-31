@@ -2,6 +2,7 @@
 #include "ParseTextInstances.h"
 #include "TimeUtil.h"
 #include "PathUtil.h"
+#include "FileUtil.h"
 
 //タブ区切りの次のトークンに移動する
 static LPCWSTR NextToken(LPCWSTR* token)
