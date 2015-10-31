@@ -78,22 +78,6 @@ public:
 	vector<CH_DATA5> GetChDataList() const;
 	//パラメータなしの通知を追加する
 	void AddNotifyAndPostBat(DWORD notifyID);
-	//録画ファイルを検索
-	vector<REC_FILE_BASIC_INFO> SearchRecFile(const EPGDB_SEARCH_KEY_INFO& item) {
-		CBlockLock lock(&this->managerLock);
-
-		vector<DWORD> ids = recEventDB.SearchRecFile(item);
-		const auto& recFileMap = recInfoText.GetMap();
-		vector<REC_FILE_BASIC_INFO> list;
-		list.reserve(ids.size());
-		for (DWORD id : ids) {
-			auto it = recFileMap.find(id);
-			if (it != recFileMap.end()) {
-				list.push_back(it->second);
-			}
-		}
-		return list;
-	}
 
 	// 自動予約が削除されたことを通知
 	void AutoAddDeleted(const EPG_AUTO_ADD_DATA& item) {
@@ -102,22 +86,36 @@ public:
 		reserveText.RemoveReserveAutoAddId(item.dataID, item.reserveList);
 	}
 	// 自動予約と録画ファイルの関連付けを更新
-	void AutoAddUpdateRecInfo(const EPG_AUTO_ADD_DATA& item, vector<REC_FILE_BASIC_INFO>* recFileIds) {
+	vector<REC_FILE_BASIC_INFO> AutoAddUpdateRecInfo(const EPG_AUTO_ADD_DATA& item) {
 		CBlockLock lock(&this->managerLock);
 		recInfoText.RemoveReserveAutoAddId(item.dataID, item.recFileList);
 		vector<REC_FILE_BASIC_INFO> recFiles = SearchRecFile(item.searchInfo);
 		recInfoText.AddReserveAutoAddId(item, recFiles);
-		if (recFileIds != NULL) {
-			*recFileIds = std::move(recFiles);
-		}
+		return recFiles;
 	}
+	// 新規録画ファイル分の関連付けを追加して古いデータとマージ
+	// EPG自動予約IDと関連録画ファイルリストのリストを返す
+	vector<pair<DWORD, vector<REC_FILE_BASIC_INFO> > > UpdateAndMergeNewRecInfo(const map<DWORD, EPG_AUTO_ADD_DATA>& epgAutoAdd) {
+		CBlockLock lock(&this->managerLock);
+		vector<pair<DWORD, vector<REC_FILE_BASIC_INFO> > > ret;
+		for (const auto& entry : epgAutoAdd) {
+			vector<REC_FILE_BASIC_INFO> recFiles = SearchRecFile(entry.second.searchInfo, true);
+			recInfoText.AddReserveAutoAddId(entry.second, recFiles);
+			ret.push_back(std::make_pair(entry.first, recFiles));
+		}
+		recEventDB.MergeNew();
+		return ret;
+	}
+	// マージしていない新規録画ファイルの個数
+	int GetNewRecInfoCount() {
+		CBlockLock lock(&this->managerLock);
+		return recEventDB.GetNewCount();
+	}
+
 	// 自動予約で番組予約を追加
 	bool AutoAddReserveEPG(
 		const EPG_AUTO_ADD_DATA& data, int autoAddHour_, bool chkGroupEvent_,
 		vector<RESERVE_DATA>* reserveData);
-
-	bool IsNewRecFile() const { return newRecFile; }
-	void ResetNewRecFile() { newRecFile = false; }
 
 private:
 	struct CHK_RESERVE_DATA {
@@ -170,6 +168,23 @@ private:
 	//予約情報を追加する
 	vector<const RESERVE_DATA*> AddReserveData2(const vector<RESERVE_DATA>& reserveList, bool setComment = false, bool setReserveStatus = false);
 
+	//録画ファイルを検索
+	vector<REC_FILE_BASIC_INFO> SearchRecFile(const EPGDB_SEARCH_KEY_INFO& item, bool fromNew = false) {
+		CBlockLock lock(&this->managerLock);
+
+		vector<DWORD> ids = recEventDB.SearchRecFile(item, fromNew);
+		const auto& recFileMap = recInfoText.GetMap();
+		vector<REC_FILE_BASIC_INFO> list;
+		list.reserve(ids.size());
+		for (DWORD id : ids) {
+			auto it = recFileMap.find(id);
+			if (it != recFileMap.end()) {
+				list.push_back(it->second);
+			}
+		}
+		return list;
+	}
+
 	mutable CRITICAL_SECTION managerLock;
 
 	CNotifyManager& notifyManager;
@@ -215,7 +230,6 @@ private:
 	int epgCapBasicOnlyFlags;
 	int shutdownModePending;
 	bool reserveModified;
-	bool newRecFile;
 
 	HANDLE watchdogStopEvent;
 	HANDLE watchdogThread;

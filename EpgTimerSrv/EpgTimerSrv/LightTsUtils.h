@@ -39,6 +39,7 @@ public:
 	DWORD AddData(const BYTE *pData, const DWORD dwDataSize);
 	DWORD AddData(const CMediaData& data);
 	DWORD AddByte(const BYTE byData);
+	template <typename T> DWORD Add(T data) { return AddData((BYTE*)&data, sizeof(T)); }
 	DWORD TrimHead(const DWORD dwTrimSize = 1UL);
 	DWORD TrimTail(const DWORD dwTrimSize = 1UL);
 
@@ -55,6 +56,17 @@ protected:
 	DWORD m_dwBuffSize;
 	BYTE *m_pData;
 };
+
+template <typename T>
+bool ReadFromMemory(T* data, BYTE*& cur, const BYTE* end) {
+	int size = sizeof(T);
+	if (cur + size > end) {
+		return false;
+	}
+	*data = *(T*)cur;
+	cur += size;
+	return true;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // ARIB STD-B10 Part2 Annex C MJD+JTC èàóùÉNÉâÉX
@@ -1210,7 +1222,7 @@ private:
 class CEitConverter : protected CDescHandler {
 public:
 	bool Initialize() { return arib.Initialize(); }
-	void Feed(CSiSectionEIT& eit, EPGDB_EVENT_INFO* dest);
+	void Feed(CSiSectionEIT& eit, int idx, EPGDB_EVENT_INFO* dest);
 
 private:
 	EP3AribStrinbDecoder arib;
@@ -1242,9 +1254,10 @@ public:
 
 	virtual void StorePacket(CTsPacket* pPacket);
 
-	void SetTarget(EPGDB_EVENT_INFO* eventInfo, int serviceId) {
+	void SetTarget(EPGDB_EVENT_INFO* eventInfo, int serviceId, int eventId) {
 		m_EventInfo = eventInfo;
 		m_TargetServiceId = serviceId;
+		m_TargetEventId = eventId;
 	}
 	int GetTSID() { return m_ProgTbl.TSID; }
 	bool IsDetected() { return m_Detected; }
@@ -1265,6 +1278,7 @@ protected:
 	bool m_Detected;
 	EPGDB_EVENT_INFO* m_EventInfo;
 	int m_TargetServiceId;
+	int m_TargetEventId;
 	ProgramTable m_ProgTbl;
 
 	CMediaData m_PATData;

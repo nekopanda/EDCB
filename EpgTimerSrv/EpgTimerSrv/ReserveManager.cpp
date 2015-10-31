@@ -17,7 +17,6 @@ CReserveManager::CReserveManager(CNotifyManager& notifyManager_, CEpgDBManager& 
 	, epgCapWork(false)
 	, shutdownModePending(-1)
 	, reserveModified(false)
-	, newRecFile(true)
 	, watchdogStopEvent(NULL)
 	, watchdogThread(NULL)
 {
@@ -40,9 +39,14 @@ void CReserveManager::Initialize()
 	this->reserveText.ParseText((settingPath + L"\\" + RESERVE_TEXT_NAME).c_str());
 
 	ReloadSetting();
-	this->recInfoText.ParseText((settingPath + L"\\" + REC_INFO_TEXT_NAME).c_str());
-	this->recInfo2Text.ParseText((settingPath + L"\\" + REC_INFO2_TEXT_NAME).c_str());
 
+	DWORD time = GetTickCount();
+	this->recInfoText.ParseText((settingPath + L"\\" + REC_INFO_TEXT_NAME).c_str());
+	_OutputDebugString(L"recInfoText.ParseText %dmsec\r\n", GetTickCount() - time); time = GetTickCount();
+	this->recInfoText.ReadSupplementFileAll();
+	_OutputDebugString(L"recInfoText.ReadSupplementFileAll %dmsec\r\n", GetTickCount() - time); time = GetTickCount();
+	this->recInfo2Text.ParseText((settingPath + L"\\" + REC_INFO2_TEXT_NAME).c_str());
+	_OutputDebugString(L"recInfo2Text.ParseText %dmsec\r\n", GetTickCount() - time); time = GetTickCount();
 	this->recEventDB.Load(settingPath + L"\\" + REC_EPG_DATA_NAME, recInfoText.GetMap());
 	this->recEventDB.Save();
 
@@ -1445,7 +1449,6 @@ DWORD CReserveManager::Check()
 
 					this->reserveText.DelReserve(itrRes->first);
 					this->reserveModified = true;
-					this->newRecFile = true;
 					modified = true;
 
 					//—\–ñI—¹‚ğ’Ê’m

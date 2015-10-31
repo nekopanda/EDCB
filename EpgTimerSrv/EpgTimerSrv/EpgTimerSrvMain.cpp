@@ -995,14 +995,15 @@ bool CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data)
 void CEpgTimerSrvMain::UpdateRecFileInfo() {
 	CBlockLock lock(&this->settingLock);
 
-	if (reserveManager.IsNewRecFile()) {
-		// 新しい録画ファイルがある場合は録画ファイルとの関連付けを再構築
-		for (const auto& entry : epgAutoAdd.GetMap()) {
-			vector<REC_FILE_BASIC_INFO> list;
-			reserveManager.AutoAddUpdateRecInfo(entry.second, &list);
-			epgAutoAdd.SetRecList(entry.first, list);
+	if (reserveManager.GetNewRecInfoCount() > 0) {
+		DWORD time = GetTickCount();
+		// 新規録画ファイルがある場合は録画ファイルとの関連付けを更新
+		auto list = reserveManager.UpdateAndMergeNewRecInfo(epgAutoAdd.GetMap());
+		// 新規関連付け分を追加
+		for (const auto& entry : list) {
+			epgAutoAdd.AddRecList(entry.first, entry.second);
 		}
-		reserveManager.ResetNewRecFile();
+		_OutputDebugString(L"UpdateRecFileInfo %dmsec\r\n", GetTickCount() - time);
 	}
 }
 
@@ -1098,8 +1099,7 @@ bool CEpgTimerSrvMain::ChgAutoAdd(vector<EPG_AUTO_ADD_DATA>& val) {
 				for (const RESERVE_BASIC_DATA& rsv : val[i].reserveList) {
 					reserveList.push_back(rsv.reserveID);
 				}
-				vector<REC_FILE_BASIC_INFO> list;
-				reserveManager.AutoAddUpdateRecInfo(val[i], &list);
+				auto list = reserveManager.AutoAddUpdateRecInfo(val[i]);
 				epgAutoAdd.SetRecList(val[i].dataID, list);
 				modified = true;
 			}
@@ -1123,10 +1123,9 @@ bool CEpgTimerSrvMain::AddAutoAdd(vector<EPG_AUTO_ADD_DATA>& val) {
 	{
 		CBlockLock lock(&settingLock);
 		for (size_t i = 0; i < val.size(); i++) {
-			vector<REC_FILE_BASIC_INFO> list;
 			DWORD id = epgAutoAdd.AddData(val[i]);
 			val[i] = epgAutoAdd.GetMap().at(id);
-			reserveManager.AutoAddUpdateRecInfo(val[i], &list);
+			auto list = reserveManager.AutoAddUpdateRecInfo(val[i]);
 			epgAutoAdd.SetRecList(val[i].dataID, list);
 		}
 		epgAutoAdd.SaveText();

@@ -14,11 +14,9 @@
 struct REC_EVENT_INFO : public EPGDB_EVENT_INFO {
 	DWORD recFileId;
 	DWORD loadErrorCount;
-	DWORD rawDataLen;
-	BYTE* rawDataPtr;
+	CMediaData rawData;
 
 	int64_t startTime64;
-	wstring folderPath;
 	wstring filePath;
 	bool fileExist;
 
@@ -26,13 +24,11 @@ struct REC_EVENT_INFO : public EPGDB_EVENT_INFO {
 		: EPGDB_EVENT_INFO()
 		, recFileId(0)
 		, loadErrorCount(0)
-		, rawDataLen(0)
-		, rawDataPtr(NULL)
 		, startTime64(0)
 		, fileExist(false)
 	{ }
 
-	bool HasEpgInfo() const { return rawDataLen > 0; }
+	bool HasEpgInfo() const { return rawData.GetSize() > 0; }
 };
 
 struct REC_EVENT_SERVICE_DATA {
@@ -44,6 +40,10 @@ struct REC_EVENT_SERVICE_DATA {
 };
 
 // 録画ファイルの番組情報データベース
+// 新しく追加されたファイルはNewに入れられる
+// mergeNew()を呼び出すとデータ本体とマージされる
+// 
+//
 class CRecEventDB {
 	//
 public:
@@ -64,7 +64,7 @@ public:
 			return false;
 		}
 		LoadRecFiles(recFiles);
-		RecreateServiceMap();
+		needUpdateServiceMap = true;
 
 		_OutputDebugString(L"End Load RecEventDB %dmsec\r\n", GetTickCount() - time);
 		return true;
@@ -73,22 +73,17 @@ public:
 	void AddRecInfo(const REC_FILE_INFO& item) {
 		REC_EVENT_INFO* eventInfo = CreateNew(item.id);
 		eventInfo->recFileId = item.id;
+		eventInfo->filePath = item.recFilePath;
 
 		if (item.recFilePath.size() > 0) {
-			AddToDirectoryPath(eventInfo, item.recFilePath);
-			CMediaData* buffer = LoadTs(eventInfo, item.recFilePath, item.serviceID);
-			if (buffer != NULL) {
-				buffers.push_back(buffer);
-			}
+			directoryCache.CachePath(item.recFilePath);
+			LoadTs(eventInfo, item.recFilePath, item.serviceID, item.eventID, false);
+			needUpdateServiceMap = true;
 		}
 	}
 
 	bool Save() {
 		if (filePath.empty()) {
-			return true;
-		}
-		if (buffers.size() == 0) {
-			// 新しいデータがないので書き込む必要がない
 			return true;
 		}
 
@@ -102,18 +97,17 @@ public:
 			return false;
 		}
 
-		// バッファに書き込む
 		{
+			// バッファに書き込む
 			CMediaData buffer;
 
-			DWORD dwVersion = 1;
-			buffer.AddData((BYTE*)&dwVersion, 4);
+			buffer.Add((DWORD)1); // バージョン
 
-			for (std::pair<DWORD, REC_EVENT_INFO*> entry : eventMap) {
-				buffer.AddData((BYTE*)&entry.first, 4);
-				buffer.AddData((BYTE*)&entry.second->loadErrorCount, 4);
-				buffer.AddData((BYTE*)&entry.second->rawDataLen, 4);
-				buffer.AddData(entry.second->rawDataPtr, entry.second->rawDataLen);
+			for (auto recInfo : GetAll()) {
+				buffer.Add(recInfo->recFileId);
+				buffer.Add(recInfo->loadErrorCount);
+				buffer.Add(recInfo->rawData.GetSize());
+				buffer.AddData(recInfo->rawData.GetData(), recInfo->rawData.GetSize());
 			}
 
 			// ファイルに書き込む
@@ -125,95 +119,61 @@ public:
 				OutputDebugString(L"Error? CRecEventDB::Save() \r\n");
 				return false;
 			}
-
-			// 読み込み直す
-			Clear();
-			rawDataBuffer = std::move(buffer);
 		}
-
-		LoadRawData();
-		RecreateServiceMap();
 
 		_OutputDebugString(L"End Save RecEventDB %dmsec\r\n", GetTickCount() - time);
 
-		return false;
+		return true;
 	}
 
 	void Clear() {
+		for (std::pair<DWORD, REC_EVENT_INFO*> entry : eventMapNew) {
+			SAFE_DELETE(entry.second);
+		}
+		eventMapNew.clear();
+		serviceMapNew.clear();
 		for (std::pair<DWORD, REC_EVENT_INFO*> entry : eventMap) {
 			SAFE_DELETE(entry.second);
 		}
 		eventMap.clear();
 		serviceMap.clear();
+	}
 
-		for (CMediaData* buffer : buffers) {
-			delete buffer;
-		}
-		buffers.clear();
+	void MergeNew() {
+		eventMap.insert(eventMapNew.begin(), eventMapNew.end());
+		AddToserviceMapNew(eventMapNew, serviceMap);
+		eventMapNew.clear();
+		serviceMapNew.clear();
 	}
 	
 	// 録画ファイルを検索　マッチした録画ファイルのIDを返す
-	vector<DWORD> SearchRecFile(const EPGDB_SEARCH_KEY_INFO& item) {
-		vector<REC_EVENT_INFO*> list;
-		IRegExpPtr regExp;
-		
-		// 検索
-		EPGDB_SEARCH_KEY_INFO key = item;
-		if (key.andKey.compare(0, 7, L"^!{999}") == 0) {
-			//無効を示すキーワードを削除
-			key.andKey.erase(0, 7);
+	vector<DWORD> SearchRecFile(const EPGDB_SEARCH_KEY_INFO& item, bool fromNew = false) {
+		if (fromNew) {
+			UpdateServiceMap();
+			return SearchRecFile_(item, serviceMapNew);
 		}
-		CEpgDBManager::SearchEvent(&key, serviceMap, [&](CEpgDBManager::SEARCH_RESULT_EVENT result) {
-			REC_EVENT_INFO* eventInfo = (REC_EVENT_INFO*)result.info;
-			list.push_back(eventInfo);
-		}, regExp);
-
-		// 日時順にソート
-		std::sort(list.begin(), list.end(), [](REC_EVENT_INFO* a, REC_EVENT_INFO* b) {
-			return a->startTime64 < b->startTime64;
-		});
-
-		// IDリストに変換
-		vector<DWORD> ret;
-		ret.reserve(list.size());
-		for (REC_EVENT_INFO* info : list) {
-			ret.push_back(info->recFileId);
-		}
-
-		return ret;
+		return SearchRecFile_(item, serviceMap);
 	}
 
 	void UpdateFileExist() {
 		DWORD time = GetTickCount();
 		int count = 0;
 
-		// ディレクトリの更新を検知
-		for (auto& entry : directoryInfoMap) {
-			int64_t lastModified = GetFileLastModified(entry.first);
-			if (entry.second.lastModified != lastModified) {
-				entry.second.updated = true;
-				entry.second.lastModified = lastModified;
+		directoryCache.UpdateDirectoryInfo();
+		for (auto recInfo : GetAll()) {
+			if (recInfo->filePath.size() > 0) {
+				recInfo->fileExist = directoryCache.Exist(recInfo->filePath, true);
 			}
-		}
-
-		// 更新されたディレクトリにあるファイルは存在確認を再度行う
-		for (auto& entry : eventMap) {
-			if (entry.second->folderPath.size() > 0) {
-				if (directoryInfoMap[entry.second->folderPath].updated) {
-					entry.second->fileExist = GetFileExist(entry.second->filePath);
-					count++;
-				}
-			}
-		}
-
-		// リセットしておく
-		for (auto& entry : directoryInfoMap) {
-			entry.second.updated = false;
 		}
 
 		_OutputDebugString(L"UpdateFileExist(%d) %dmsec\r\n", count, GetTickCount() - time);
 	}
 
+	int GetNewCount() const {
+		return (int)eventMapNew.size();
+	}
+
+	// mergeNew呼び出し後じゃないと新しいのはGetできない
 	const REC_EVENT_INFO* Get(DWORD id) {
 		auto it = eventMap.find(id);
 		if (it != eventMap.end()) {
@@ -225,35 +185,21 @@ public:
 	bool HasEpgInfo(DWORD id) {
 		auto it = eventMap.find(id);
 		if (it != eventMap.end()) {
-			return (it->second->rawDataLen > 0);
+			return it->second->HasEpgInfo();
 		}
 		return false;
 	}
 
-	//const SERVICE_EVENT_MAP& GetServiceMap() const { return serviceMap; }
-	//const REC_EVENT_MAP& GetEventMap() const { return eventMap; }
-
 private:
 	wstring filePath;
+	REC_EVENT_MAP eventMapNew;
+	SERVICE_EVENT_MAP serviceMapNew;
+	bool needUpdateServiceMap;
+
 	REC_EVENT_MAP eventMap;
 	SERVICE_EVENT_MAP serviceMap;
 
-	struct DirectoryInfo {
-		int64_t lastModified;
-		bool updated;
-
-		DirectoryInfo()
-			: lastModified(0)
-			, updated(false)
-		{ }
-	};
-
-	// ディレクトリの更新日時監視
-	map<wstring, DirectoryInfo> directoryInfoMap;
-
-	CMediaData rawDataBuffer;
-
-	std::vector<CMediaData*> buffers;
+	CDirectoryCache directoryCache;
 
 	CTsPacketParser packetParser;
 	CEitDetector eitDetector;
@@ -266,10 +212,12 @@ private:
 		CMediaData* buffer;
 	};
 
-	void AddToDirectoryPath(REC_EVENT_INFO* eventInfo, const wstring& filepath) {
-		eventInfo->filePath = filepath;
-		GetFileFolder(filepath, eventInfo->folderPath);
-		directoryInfoMap[eventInfo->folderPath].updated = true;
+	vector<REC_EVENT_INFO*> GetAll() {
+		vector<REC_EVENT_INFO*> v;
+		v.reserve(eventMap.size() + eventMapNew.size());
+		for (auto& entry : eventMap) v.push_back(entry.second);
+		for (auto& entry : eventMapNew) v.push_back(entry.second);
+		return v;
 	}
 
 	bool LoadFile() {
@@ -284,66 +232,68 @@ private:
 			OutputDebugString(L"CRecEventDB::Load(): Error: Cannot open file\r\n");
 			return false;
 		}
+
+		CMediaData rawDataBuffer;
 		DWORD dwFileSize = GetFileSize(hFile, NULL);
 		if (dwFileSize != INVALID_FILE_SIZE && dwFileSize != 0) {
 			rawDataBuffer.SetSize(dwFileSize);
 			DWORD dwRead;
 			if (ReadFile(hFile, rawDataBuffer.GetData(), dwFileSize, &dwRead, NULL) && dwRead != 0) {
-				LoadRawData();
+				LoadRawData(rawDataBuffer.GetData(), rawDataBuffer.GetSize());
 				CloseHandle(hFile);
 				return true;
 			}
-			rawDataBuffer.ClearBuffer();
 		}
 		CloseHandle(hFile);
 		return false;
 	}
 
 	bool LoadEventInfo(REC_EVENT_INFO* eventInfo, BYTE* cur, BYTE* end) {
-		if (cur + 4 > end) return false;
-		DWORD patLen = *(DWORD*)cur; cur += 4;
+		WORD eventId; if (!ReadFromMemory(&eventId, cur, end)) return false;
+		DWORD patLen; if (!ReadFromMemory(&patLen, cur, end)) return false;
 		BYTE* patData = cur; cur += patLen;
-		if (cur + 4 > end) return false;
-		DWORD eitLen = *(DWORD*)cur; cur += 4;
+		DWORD eitLen; if (!ReadFromMemory(&eitLen, cur, end)) return false;
 		BYTE* eitData = cur; cur += patLen;
 		if (cur > end) return false;
 
 		CMediaData eitSectionData(eitData, eitLen);
 		CSiSectionEIT eit(&eitSectionData);
 		if (eit.Check() && eit.Parse()) {
-			eitDetector.GetEITConverter()->Feed(eit, eventInfo);
-			return true;
+			for (int i = 0; i < eit.GetEventListCount(); ++i) {
+				if (eit.GetEventInfo(i).GetEventID() == eventId) {
+					eitDetector.GetEITConverter()->Feed(eit, i, eventInfo);
+					return true;
+				}
+			}
 		}
 		return false;
 	}
 
-	void LoadRawData() {
+	void LoadRawData(BYTE* data, DWORD size) {
 		if (eitDetector.Initialize() == false) return;
 
-		BYTE* cur = rawDataBuffer.GetData();
-		BYTE* end = cur + rawDataBuffer.GetSize();
+		BYTE* cur = data;
+		BYTE* end = cur + size;
 
-		if (cur + 4 > end) return;
-		DWORD dwVersion = *(DWORD*)(cur + 0);
-		cur += 4;
-
+		DWORD dwVersion; if (!ReadFromMemory(&dwVersion, cur, end)) return;
 		if (dwVersion != 1) {
 			// 未対応バージョン
 			return;
 		}
 
-		while (cur + 12 <= end) {
-			DWORD fileId = *(DWORD*)(cur + 0);
-			DWORD loadErrorCount = *(DWORD*)(cur + 4);
-			DWORD dataLen = *(DWORD*)(cur + 8);
-			cur += 12;
+		while (cur < end) {
+			DWORD fileId; if (!ReadFromMemory(&fileId, cur, end)) break;
+			DWORD loadErrorCount; if (!ReadFromMemory(&loadErrorCount, cur, end)) break;
+			DWORD dataLen; if (!ReadFromMemory(&dataLen, cur, end)) break;
 
 			REC_EVENT_INFO* eventInfo = CreateNew(fileId);
+
 			eventInfo->recFileId = fileId;
 			eventInfo->loadErrorCount = loadErrorCount;
-			eventInfo->rawDataLen = dataLen;
-			eventInfo->rawDataPtr = cur;
+
 			if (dataLen > 0) {
+				eventInfo->rawData.AddData(cur, dataLen);
+
 				if (cur + dataLen > end) {
 					_OutputDebugString(L"RecEventDB読み込み中サイズエラー");
 				}
@@ -351,24 +301,27 @@ private:
 					if (LoadEventInfo(eventInfo, cur, end) == false) {
 						_OutputDebugString(L"RecEventDB読み込み中サイズエラー");
 					}
+					else {
+						eventInfo->startTime64 = ConvertI64Time(eventInfo->start_time);
+					}
 					cur += dataLen;
 				}
 			}
 		}
 	}
 
-	CMediaData* LoadTs(REC_EVENT_INFO* eventInfo, const std::wstring& recFilePath, int serviceId) {
-		if (eitDetector.Initialize() == false) return NULL;
+	void LoadTs(REC_EVENT_INFO* eventInfo, const std::wstring& recFilePath, WORD serviceId, WORD eventId, bool withCache) {
+		if (eitDetector.Initialize() == false) return;
 
-		HANDLE hFile = CreateFile(recFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		HANDLE hFile = directoryCache.Open(recFilePath.c_str(), withCache);
 		if (hFile == INVALID_HANDLE_VALUE) {
-			return NULL;
+			return;
 		}
 
 		packetParser.SetOutputFilter(&eitDetector);
 		packetParser.Reset();
 		eitDetector.Reset();
-		eitDetector.SetTarget(eventInfo, serviceId);
+		eitDetector.SetTarget(eventInfo, serviceId, eventId);
 
 		CMediaData buffer;
 		buffer.SetSize(256 * 1024);
@@ -376,7 +329,7 @@ private:
 		// 中間位置までシーク
 		DWORD sizeHigh = 0;
 		DWORD sizeLow = GetFileSize(hFile, &sizeHigh);
-		int64_t mid = ((int64_t(sizeHigh) << 32) + sizeLow) / 2;
+		int64_t mid = ((int64_t(sizeHigh) << 32) + sizeLow) / 4;
 		LONG distLow = (LONG)mid;
 		LONG distHidh = (LONG)(mid >> 32);
 		SetFilePointer(hFile, distLow, &distHidh, FILE_BEGIN);
@@ -388,50 +341,49 @@ private:
 			packetParser.InputRawData(buffer.GetData(), dwRead);
 			if (eitDetector.IsDetected()) {
 				CloseHandle(hFile);
-
-				CMediaData* buffer = new CMediaData();
-
+				
 				CMediaData* patData = eitDetector.GetPATData();
 				CMediaData* eitData = eitDetector.GetEITData();
 				DWORD patSize = patData->GetSize();
 				DWORD eitSize = eitData->GetSize();
-				buffer->AddData((BYTE*)&patSize, 4);
-				buffer->AddData(*patData);
-				buffer->AddData((BYTE*)&eitSize, 4);
-				buffer->AddData(*eitData);
+				eventInfo->rawData.ClearBuffer();
+				eventInfo->rawData.Add(eventId);
+				eventInfo->rawData.Add(patSize);
+				eventInfo->rawData.AddData(*patData);
+				eventInfo->rawData.Add(eitSize);
+				eventInfo->rawData.AddData(*eitData);
 
-				eventInfo->rawDataLen = buffer->GetSize();
-				eventInfo->rawDataPtr = buffer->GetData();
 				eventInfo->startTime64 = ConvertI64Time(eventInfo->start_time);
 
 				_OutputDebugString(L"RecEventEB LoadTs %s : %d KB\r\n", recFilePath.c_str(), dwTotalRead / 1024);
-				return buffer;
 			}
 			if (dwTotalRead > 128 * 1024 * 1024) { // 128MB以上読んだ
+				_OutputDebugString(L"RecEventEB LoadTs Failed %s : %d KB\r\n", recFilePath.c_str(), dwTotalRead / 1024);
 				break;
 			}
 		}
 
 		CloseHandle(hFile);
-		return NULL;
 	}
 
 	void LoadRecFiles(const REC_INFO_MAP& recFiles) {
+		// 録画ファイルのパスをキャッシュしておく
+		for (const auto& recInfo : recFiles) {
+			directoryCache.CachePath(recInfo.second.recFilePath);
+		}
+		directoryCache.UpdateDirectoryInfo();
+
 		for (const auto& recInfo : recFiles) {
 			DWORD fileId = recInfo.first;
-			WORD serviceId = recInfo.second.serviceID;
 			REC_EVENT_INFO* eventInfo = GetOrNew(fileId);
 			eventInfo->recFileId = fileId;
+			eventInfo->filePath = recInfo.second.recFilePath;
 
 			if (recInfo.second.recFilePath.size() > 0) {
-				AddToDirectoryPath(eventInfo, recInfo.second.recFilePath);
 
-				if (eventInfo->rawDataLen == 0 && eventInfo->loadErrorCount <= 4) {
-					CMediaData* buffer = LoadTs(eventInfo, recInfo.second.recFilePath, serviceId);
-					if (buffer != NULL) {
-						buffers.push_back(buffer);
-					}
-					else {
+				if (eventInfo->HasEpgInfo() == false && eventInfo->loadErrorCount <= 4) {
+					LoadTs(eventInfo, recInfo.second.recFilePath, recInfo.second.serviceID, recInfo.second.eventID, true);
+					if (!eventInfo->HasEpgInfo()) {
 						eventInfo->loadErrorCount++;
 					}
 				}
@@ -439,33 +391,71 @@ private:
 		}
 	}
 
-	void RecreateServiceMap() {
-		serviceMap.clear();
-		for (std::pair<DWORD, REC_EVENT_INFO*> entry : eventMap) {
+	void UpdateServiceMap() {
+		if (needUpdateServiceMap) {
+			serviceMapNew.clear();
+			AddToserviceMapNew(eventMapNew, serviceMapNew);
+			needUpdateServiceMap = false;
+		}
+	}
+
+	void AddToserviceMapNew(REC_EVENT_MAP& from, SERVICE_EVENT_MAP& to) {
+		for (std::pair<DWORD, REC_EVENT_INFO*> entry : from) {
 			REC_EVENT_INFO* eventInfo = entry.second;
-			if (eventInfo->rawDataLen > 0) {
+			if (eventInfo->HasEpgInfo()) {
 				// 有効なデータがあるときだけ
 				LONGLONG key = _Create64Key(eventInfo->original_network_id, eventInfo->transport_stream_id, eventInfo->service_id);
-				serviceMap[key].eventList.push_back(eventInfo);
+				to[key].eventList.push_back(eventInfo);
 			}
 		}
 	}
 
 	REC_EVENT_INFO* GetOrNew(DWORD fileId) {
-		auto it = eventMap.find(fileId);
-		if (it == eventMap.end()) {
+		auto it = eventMapNew.find(fileId);
+		if (it == eventMapNew.end()) {
 			REC_EVENT_INFO* data = new REC_EVENT_INFO();
-			eventMap[fileId] = data;
+			eventMapNew[fileId] = data;
 			return data;
 		}
 		return it->second;
 	}
 
 	REC_EVENT_INFO* CreateNew(DWORD fileId) {
-		auto it = eventMap.find(fileId);
-		if (it != eventMap.end()) {
+		auto it = eventMapNew.find(fileId);
+		if (it != eventMapNew.end()) {
 			delete it->second;
 		}
-		return eventMap[fileId] = new REC_EVENT_INFO();
+		return eventMapNew[fileId] = new REC_EVENT_INFO();
+	}
+
+	// 録画ファイルを検索　マッチした録画ファイルのIDを返す
+	vector<DWORD> SearchRecFile_(const EPGDB_SEARCH_KEY_INFO& item, SERVICE_EVENT_MAP& targetEvents) {
+		vector<REC_EVENT_INFO*> list;
+		IRegExpPtr regExp;
+
+		// 検索
+		EPGDB_SEARCH_KEY_INFO key = item;
+		if (key.andKey.compare(0, 7, L"^!{999}") == 0) {
+			//無効を示すキーワードを削除
+			key.andKey.erase(0, 7);
+		}
+		CEpgDBManager::SearchEvent(&key, targetEvents, [&](CEpgDBManager::SEARCH_RESULT_EVENT result) {
+			REC_EVENT_INFO* eventInfo = (REC_EVENT_INFO*)result.info;
+			list.push_back(eventInfo);
+		}, regExp);
+
+		// 日時順にソート
+		std::stable_sort(list.begin(), list.end(), [](REC_EVENT_INFO* a, REC_EVENT_INFO* b) {
+			return a->startTime64 < b->startTime64;
+		});
+
+		// IDリストに変換
+		vector<DWORD> ret;
+		ret.reserve(list.size());
+		for (REC_EVENT_INFO* info : list) {
+			ret.push_back(info->recFileId);
+		}
+
+		return ret;
 	}
 };

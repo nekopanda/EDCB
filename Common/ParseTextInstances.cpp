@@ -248,7 +248,7 @@ DWORD CParseRecInfoText::AddRecInfo(const REC_FILE_INFO& item)
 {
 	REC_FILE_INFO info = item;
 	info.id = this->itemMap.empty() ? 1 : this->itemMap.rbegin()->first + 1;
-	OnAddRecInfo(info);
+	ReadSupplementFile(info, [](const wstring& filepath) { return FileOpenRead(filepath); });
 	this->itemMap[info.id] = info;
 
 	//非プロテクトの要素数がkeepCount以下になるまで削除
@@ -279,6 +279,31 @@ bool CParseRecInfoText::DelRecInfo(DWORD id)
 		return true;
 	}
 	return false;
+}
+
+void CParseRecInfoText::ReadSupplementFileAll() {
+#if 1
+	// ディレクトリキャッシュを使って高速化
+	CDirectoryCache dirCache;
+	for (auto& entry : itemMap) {
+		// パスを登録するため必ず失敗する関数を渡して処理させる
+		// ちょっときれいじゃないけどこれが一番楽
+		ReadSupplementFile(entry.second, [&](const wstring& filepath) {
+			dirCache.CachePath(filepath);
+			return INVALID_HANDLE_VALUE;
+		});
+	}
+	dirCache.UpdateDirectoryInfo();
+	for (auto& entry : itemMap) {
+		ReadSupplementFile(entry.second, [&](const wstring& filepath) {
+			return dirCache.Open(filepath);
+		});
+	}
+#else
+	for (auto& entry : itemMap) {
+		ReadSupplementFile(entry.second, [](const wstring& filepath) { return FileOpenRead(filepath); });
+	}
+#endif
 }
 
 bool CParseRecInfoText::ChgProtectRecInfo(DWORD id, BYTE flag)
@@ -375,7 +400,6 @@ bool CParseRecInfoText::ParseLine(const wstring& parseLine, pair<DWORD, REC_FILE
 	item.second.comment.assign(token[0], token[1]);
 	item.second.protectFlag = _wtoi(NextToken(token)) != 0;
 	item.second.id = this->itemMap.empty() ? 1 : this->itemMap.rbegin()->first + 1;
-	OnAddRecInfo(item.second);
 	item.first = item.second.id;
 	return true;
 }
@@ -421,7 +445,7 @@ bool CParseRecInfoText::SelectIDToSave(vector<DWORD>& sortList) const
 	return true;
 }
 
-void CParseRecInfoText::OnAddRecInfo(REC_FILE_INFO& item)
+void CParseRecInfoText::ReadSupplementFile(REC_FILE_INFO& item, const std::function<HANDLE(const wstring&)>& FileOpenFunc)
 {
 	if( item.recFilePath.empty() ){
 		return;
@@ -432,11 +456,11 @@ void CParseRecInfoText::OnAddRecInfo(REC_FILE_INFO& item)
 		{ L".program.txt", &item.programInfo },
 	};
 	for( int i = 0; i < 2; i++ ){
-		HANDLE hFile = CreateFile((item.recFilePath + infoList[i].ext).c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		HANDLE hFile = FileOpenFunc(item.recFilePath + infoList[i].ext);
 		if( hFile == INVALID_HANDLE_VALUE && this->recInfoFolder.empty() == false ){
 			wstring recFileName;
 			GetFileName(item.recFilePath, recFileName);
-			hFile = CreateFile((this->recInfoFolder + L"\\" + recFileName + infoList[i].ext).c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			hFile = FileOpenFunc(this->recInfoFolder + L"\\" + recFileName + infoList[i].ext);
 		}
 		if( hFile != INVALID_HANDLE_VALUE ){
 			DWORD dwSize = GetFileSize(hFile, NULL);
@@ -891,6 +915,17 @@ bool CParseEpgAutoAddText::SetRecList(DWORD id, const vector<REC_FILE_BASIC_INFO
 	map<DWORD, EPG_AUTO_ADD_DATA>::iterator itr = this->itemMap.find(id);
 	if (itr != this->itemMap.end()) {
 		itr->second.recFileList = recList;
+		return true;
+	}
+	return false;
+}
+
+bool CParseEpgAutoAddText::AddRecList(DWORD id, const vector<REC_FILE_BASIC_INFO>& recList)
+{
+	map<DWORD, EPG_AUTO_ADD_DATA>::iterator itr = this->itemMap.find(id);
+	if (itr != this->itemMap.end()) {
+		auto& dst = itr->second.recFileList;
+		dst.insert(dst.end(), recList.begin(), recList.end());
 		return true;
 	}
 	return false;

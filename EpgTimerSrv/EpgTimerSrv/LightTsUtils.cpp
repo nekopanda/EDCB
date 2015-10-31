@@ -882,10 +882,10 @@ SYSTEMTIME GetSystemTimeFromInt64(__int64 i64) {
 	return systime;
 }
 
-void CEitConverter::Feed(CSiSectionEIT& eit, EPGDB_EVENT_INFO* dest) {
+void CEitConverter::Feed(CSiSectionEIT& eit, int idx, EPGDB_EVENT_INFO* dest) {
 	this->dest = dest;
 
-	CSiSectionEIT::CEvent& ev = eit.GetEventInfo(0);
+	CSiSectionEIT::CEvent& ev = eit.GetEventInfo(idx);
 
 	dest->original_network_id = eit.GetOriginalNID();
 	dest->transport_stream_id = eit.GetTSID();
@@ -1122,15 +1122,15 @@ void CEitDetector::OnEIT(CSiSectionParser *pSiSectionParser, CMediaData *pSectio
 
 	CSiSectionEIT eit(pSection);
 	if (eit.Check() && eit.Parse()) {
-		if (eit.GetTableID() == 0x4E) {
+		if (eit.GetTableID() == 0x4E) { // 自ストリームの現在と次の番組
 			int serviceId = eit.GetServiceID();
 			if (serviceId == m_TargetServiceId) {
-				m_EITData.SetData(pSection->GetData(), pSection->GetSize());
-
-				// 自ストリームの現在と次の番組
-				if (eit.GetEventListCount() > 0) {
-					m_EITConverter.Feed(eit, m_EventInfo);
-					m_Detected = true;
+				for (int i = 0; i < eit.GetEventListCount(); ++i) {
+					if (m_TargetEventId == eit.GetEventInfo(i).GetEventID()) {
+						m_EITData.SetData(pSection->GetData(), pSection->GetSize());
+						m_EITConverter.Feed(eit, i, m_EventInfo);
+						m_Detected = true;
+					}
 				}
 			}
 		}

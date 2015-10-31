@@ -1,5 +1,8 @@
 #pragma once
 
+#include <set>
+#include <functional>
+
 #include "ParseText.h"
 #include "StructDef.h"
 
@@ -61,10 +64,13 @@ class CParseRecInfoText : public CParseText<DWORD, REC_FILE_INFO>
 public:
 	CParseRecInfoText() : keepCount(UINT_MAX), recInfoDelFile(false) {}
 	using CParseText<DWORD, REC_FILE_INFO>::SaveText;
+
 	//録画済み情報を追加する
 	DWORD AddRecInfo(const REC_FILE_INFO& item);
 	//録画済み情報を削除する
 	bool DelRecInfo(DWORD id);
+	//補足の録画情報ファイルを読み込む
+	void ReadSupplementFileAll();
 	//プロテクト情報を変更する
 	bool ChgProtectRecInfo(DWORD id, BYTE flag);
 	void GetProtectFiles(map<wstring, wstring>* fileMap) const;
@@ -79,8 +85,8 @@ protected:
 	bool ParseLine(const wstring& parseLine, pair<DWORD, REC_FILE_INFO>& item);
 	bool SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring& saveLine) const;
 	bool SelectIDToSave(vector<DWORD>& sortList) const;
-	//情報が追加される直前の補足作業
-	void OnAddRecInfo(REC_FILE_INFO& item);
+	//補足の録画情報ファイルを読み込む
+	void ReadSupplementFile(REC_FILE_INFO& item, const std::function<HANDLE(const wstring&)>& FileOpenFunc);
 	//情報が削除される直前の補足作業
 	void OnDelRecInfo(const REC_FILE_INFO& item);
 	DWORD keepCount;
@@ -160,6 +166,7 @@ public:
 	//予約登録数を変更する(イテレータに影響しない)
 	bool SetAddList(DWORD id, const vector<RESERVE_BASIC_DATA>& addList);
 	bool SetRecList(DWORD id, const vector<REC_FILE_BASIC_INFO>& recList);
+	bool AddRecList(DWORD id, const vector<REC_FILE_BASIC_INFO>& recList);
 	bool DelData(DWORD id);
 protected:
 	bool ParseLine(const wstring& parseLine, pair<DWORD, EPG_AUTO_ADD_DATA>& item);

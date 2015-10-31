@@ -560,9 +560,9 @@ namespace EpgTimer
                 if (EpgAutoAddInfo != null)
                 {
                     int printCount = Math.Min(10, EpgAutoAddInfo.recFileList.Count);
-                    for(int i = printCount; i > 0; --i)
+                    for (int i = 0; i < printCount; ++i)
                     {
-                        RecFileBasicInfo file = EpgAutoAddInfo.recFileList[i-1];
+                        RecFileBasicInfo file = EpgAutoAddInfo.recFileList[EpgAutoAddInfo.recFileList.Count - i - 1];
 
                         text += file.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ");
                         text += file.Title;
