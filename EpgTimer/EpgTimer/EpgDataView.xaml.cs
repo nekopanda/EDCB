@@ -332,7 +332,7 @@ namespace EpgTimer
                             {
                                 dlg.Owner = (Window)topWindow.RootVisual;
                             }
-                            dlg.SetDefSetting(setInfo);
+                            dlg.SetDefSetting(setInfo, true);
                             if (dlg.ShowDialog() == true)
                             {
                                 dlg.GetSetting(ref setInfo);

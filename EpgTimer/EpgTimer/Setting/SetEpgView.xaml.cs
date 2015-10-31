@@ -486,9 +486,10 @@ namespace EpgTimer.Setting
             {
                 dlg.Owner = (Window)topWindow.RootVisual;
             }
+            CustomEpgTabInfo info = new CustomEpgTabInfo();
+            dlg.SetDefSetting(info, false);
             if (dlg.ShowDialog() == true)
             {
-                CustomEpgTabInfo info = new CustomEpgTabInfo();
                 dlg.GetSetting(ref info);
                 listBox_tab.Items.Add(info);
             }
@@ -505,7 +506,7 @@ namespace EpgTimer.Setting
                     dlg.Owner = (Window)topWindow.RootVisual;
                 }
                 CustomEpgTabInfo setInfo = listBox_tab.SelectedItem as CustomEpgTabInfo;
-                dlg.SetDefSetting(setInfo);
+                dlg.SetDefSetting(setInfo, false);
                 if (dlg.ShowDialog() == true)
                 {
                     dlg.GetSetting(ref setInfo);

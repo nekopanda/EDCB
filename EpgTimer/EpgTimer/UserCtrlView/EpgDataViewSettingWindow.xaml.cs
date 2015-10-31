@@ -36,15 +36,26 @@ namespace EpgTimer
                 button_OK.Style = null;
                 button_cancel.Style = null;
             }
+            checkBox_save_settings.IsChecked = false;
         }
 
         /// <summary>
         /// デフォルト表示の設定値
         /// </summary>
         /// <param name="setInfo"></param>
-        public void SetDefSetting(CustomEpgTabInfo setInfo)
+        public void SetDefSetting(CustomEpgTabInfo setInfo, bool show)
         {
             epgDataViewSetting.SetSetting(setInfo);
+
+            if (show)
+            {
+                checkBox_save_settings.Visibility = Visibility.Visible;
+                checkBox_save_settings.IsChecked = (Settings.Instance.AlwaysSaveEpgSetting == true);
+            }
+            else
+            {
+                checkBox_save_settings.Visibility = Visibility.Hidden;
+            }
         }
 
         /// <summary>
@@ -54,6 +65,24 @@ namespace EpgTimer
         public void GetSetting(ref CustomEpgTabInfo info)
         {
             epgDataViewSetting.GetSetting(ref info);
+
+            if (checkBox_save_settings.Visibility == Visibility.Visible)
+            {
+                if (checkBox_save_settings.IsChecked == true)
+                {
+                    int index = Settings.Instance.CustomEpgTabList.IndexOf(info);
+                    if (index >= 0)
+                    {
+                        Settings.Instance.CustomEpgTabList[index] = info;
+                    }
+                    Settings.Instance.AlwaysSaveEpgSetting = true;
+                }
+                else
+                {
+                    Settings.Instance.AlwaysSaveEpgSetting = false;
+                }
+
+            }
         }
 
 
