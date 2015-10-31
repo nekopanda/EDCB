@@ -36,6 +36,8 @@ public:
 
 	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, void (*enumProc)(vector<SEARCH_RESULT_EVENT>*, void*), void* param);
 
+	BOOL SearchEpgByKey(vector<EPGDB_SEARCH_KEY_INFO>* key, void (*enumProc)(vector<SEARCH_RESULT_EVENT>*, void*), void* param);
+
 	BOOL GetServiceList(vector<EPGDB_SERVICE_INFO>* list);
 
 	BOOL EnumEventInfo(LONGLONG serviceKey, vector<std::unique_ptr<EPGDB_EVENT_INFO>>* result);
