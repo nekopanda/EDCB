@@ -1980,6 +1980,33 @@ void CReserveManager::AddNotifyAndPostBat(DWORD notifyID)
 	AddPostBatWork(workList, L"PostNotify.bat");
 }
 
+
+void CReserveManager::AutoAddDeleted(const EPG_AUTO_ADD_DATA& item) {
+	CBlockLock lock(&this->managerLock);
+	recInfoText.RemoveReserveAutoAddId(item.dataID, item.recFileList);
+	reserveText.RemoveReserveAutoAddId(item.dataID, item.reserveList);
+}
+
+vector<REC_FILE_BASIC_INFO> CReserveManager::AutoAddUpdateRecInfo(const EPG_AUTO_ADD_DATA& item) {
+	CBlockLock lock(&this->managerLock);
+	recInfoText.RemoveReserveAutoAddId(item.dataID, item.recFileList);
+	vector<REC_FILE_BASIC_INFO> recFiles = SearchRecFile(item.searchInfo);
+	recInfoText.AddReserveAutoAddId(item, recFiles);
+	return recFiles;
+}
+
+vector<pair<DWORD, vector<REC_FILE_BASIC_INFO> > > CReserveManager::UpdateAndMergeNewRecInfo(const map<DWORD, EPG_AUTO_ADD_DATA>& epgAutoAdd) {
+	CBlockLock lock(&this->managerLock);
+	vector<pair<DWORD, vector<REC_FILE_BASIC_INFO> > > ret;
+	for (const auto& entry : epgAutoAdd) {
+		vector<REC_FILE_BASIC_INFO> recFiles = SearchRecFile(entry.second.searchInfo, true);
+		recInfoText.AddReserveAutoAddId(entry.second, recFiles);
+		ret.push_back(std::make_pair(entry.first, recFiles));
+	}
+	recEventDB.MergeNew();
+	return ret;
+}
+
 bool CReserveManager::AutoAddReserveEPG(
 	const EPG_AUTO_ADD_DATA& data, int autoAddHour_, bool chkGroupEvent_,
 	vector<RESERVE_DATA>* reserveData)
@@ -2206,4 +2233,20 @@ void CReserveManager::AddRecInfoMacro(vector<pair<string, wstring>>& macroList, 
 	macroList.push_back(pair<string, wstring>("Title2", strVal));
 	CheckFileName(strVal);
 	macroList.push_back(pair<string, wstring>("Title2F", strVal));
+}
+
+vector<REC_FILE_BASIC_INFO> CReserveManager::SearchRecFile(const EPGDB_SEARCH_KEY_INFO& item, bool fromNew) {
+	CBlockLock lock(&this->managerLock);
+
+	vector<DWORD> ids = recEventDB.SearchRecFile(item, fromNew);
+	const auto& recFileMap = recInfoText.GetMap();
+	vector<REC_FILE_BASIC_INFO> list;
+	list.reserve(ids.size());
+	for (DWORD id : ids) {
+		auto it = recFileMap.find(id);
+		if (it != recFileMap.end()) {
+			list.push_back(it->second);
+		}
+	}
+	return list;
 }
