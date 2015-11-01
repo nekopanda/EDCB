@@ -25,6 +25,53 @@ namespace EpgTimer
     // sed 's/_\(.*\)(void){$/public \1(){/' |
     // sed 's/\t/    /g'
 
+    /// <summary>EpgTimerSrv側ではandKeyへの装飾で処理しているので、ここで吸収する</summary>
+    public class SearchAndKey : ICtrlCmdReadWrite
+    {
+        /// <summary>純粋なキー</summary>
+        public string andKey;
+
+        //ほかのフラグに合わせ、byte型にしておく。
+        /// <summary>大文字小文字を区別する</summary>
+        public byte caseFlag;
+        /// <summary>自動登録を無効にする</summary>
+        public byte keyDisabledFlag;
+
+        public SearchAndKey()
+        {
+            andKey = "";
+            caseFlag = 0;
+            keyDisabledFlag = 0;
+        }
+
+        public void Write(MemoryStream s, ushort version)
+        {
+            //andKey装飾のフラグをここで処理
+            string andKey_Send = (caseFlag == 1 ? "C!{999}" : "") + andKey;
+            andKey_Send = (keyDisabledFlag == 1 ? "^!{999}" : "") + andKey_Send;
+
+            var w = new CtrlCmdWriter(s, version);
+            w.Write(andKey_Send);
+        }
+        public void Read(MemoryStream s, ushort version)
+        {
+            var r = new CtrlCmdReader(s, version);
+            r.Read(ref andKey);
+
+            //andKey装飾のフラグをここで処理
+            if (andKey.StartsWith("^!{999}") == true)//"^!{999}"が前
+            {
+                keyDisabledFlag = 1;
+                andKey = andKey.Substring(7);
+            }
+            if (andKey.StartsWith("C!{999}") == true)
+            {
+                caseFlag = 1;
+                andKey = andKey.Substring(7);
+            }
+        }
+    }
+
     /// <summary>録画フォルダ情報</summary>
     public class RecFileSetInfo : ICtrlCmdReadWrite
     {
@@ -364,20 +411,39 @@ namespace EpgTimer
     {
         /// <summary>dataID</summary>
         public uint dataID;
+        private SearchAndKey andKey_;
+
         /// <summary>検索キー</summary>
-        public string andKey;
+        public string andKey
+        {
+            get { return andKey_.andKey; }
+            set { andKey_.andKey = value; }
+        }
+        /// <summary>大文字小文字を区別する</summary>
+        public byte caseFlag
+        {
+            get { return andKey_.caseFlag; }
+            set { andKey_.caseFlag = value; }
+        }
+        /// <summary>自動登録を無効にする</summary>
+        public byte keyDisabledFlag
+        {
+            get { return andKey_.keyDisabledFlag; }
+            set { andKey_.keyDisabledFlag = value; }
+        }
+
 
         public EpgAutoAddBasicInfo()
         {
             dataID = 0;
-            andKey = "";
+            andKey_ = new SearchAndKey();
         }
         public void Write(MemoryStream s, ushort version)
         {
             var w = new CtrlCmdWriter(s, version);
             w.Begin();
             w.Write(dataID);
-            w.Write(andKey);
+            w.Write(andKey_);
             w.End();
         }
         public void Read(MemoryStream s, ushort version)
@@ -385,7 +451,7 @@ namespace EpgTimer
             var r = new CtrlCmdReader(s, version);
             r.Begin();
             r.Read(ref dataID);
-            r.Read(ref andKey);
+            r.Read(ref andKey_);
             r.End();
         }
     }
@@ -1185,7 +1251,7 @@ namespace EpgTimer
     /// <summary>検索条件</summary>
     public class EpgSearchKeyInfo : ICtrlCmdReadWrite
     {
-        public string andKey;
+        private SearchAndKey andKey_;
         public string notKey;
         public int regExpFlag;
         public int titleOnlyFlag;
@@ -1209,16 +1275,26 @@ namespace EpgTimer
         /// <summary>最大番組長(分/0は無制限)</summary>
         public ushort chkDurationMax;
 
-        //以下は、EpgTimerSrv側ではandKeyへの装飾で処理しているので、ここで吸収する。
-        //ほかのフラグに合わせ、byte型にしておく。
+        public string andKey
+        {
+            get { return andKey_.andKey; }
+            set { andKey_.andKey = value; }
+        }
         /// <summary>大文字小文字を区別する</summary>
-        public byte caseFlag;
+        public byte caseFlag {
+            get { return andKey_.caseFlag; }
+            set { andKey_.caseFlag = value; }
+        }
         /// <summary>自動登録を無効にする</summary>
-        public byte keyDisabledFlag;
+        public byte keyDisabledFlag
+        {
+            get { return andKey_.keyDisabledFlag; }
+            set { andKey_.keyDisabledFlag = value; }
+        }
 
         public EpgSearchKeyInfo()
         {
-            andKey = "";
+            andKey_ = new SearchAndKey();
             notKey = "";
             regExpFlag = 0;
             titleOnlyFlag = 0;
@@ -1236,18 +1312,12 @@ namespace EpgTimer
             chkRecNoService = 0;
             chkDurationMin = 0;
             chkDurationMax = 0;
-            caseFlag = 0;
-            keyDisabledFlag = 0;
         }
         public void Write(MemoryStream s, ushort version)
         {
-            //andKey装飾のフラグをここで処理
-            string andKey_Send = (caseFlag == 1 ? "C!{999}" : "") + andKey;
-            andKey_Send = (keyDisabledFlag == 1 ? "^!{999}" : "") + andKey_Send;
-
             var w = new CtrlCmdWriter(s, version);
             w.Begin();
-            w.Write(andKey_Send);
+            w.Write(andKey_);
             w.Write(notKey);
             w.Write(regExpFlag);
             w.Write(titleOnlyFlag);
@@ -1277,7 +1347,7 @@ namespace EpgTimer
         {
             var r = new CtrlCmdReader(s, version);
             r.Begin();
-            r.Read(ref andKey);
+            r.Read(ref andKey_);
             r.Read(ref notKey);
             r.Read(ref regExpFlag);
             r.Read(ref titleOnlyFlag);
@@ -1302,18 +1372,6 @@ namespace EpgTimer
                 r.Read(ref chkDurationMax);
             }
             r.End();
-
-            //andKey装飾のフラグをここで処理
-            if (andKey.StartsWith("^!{999}") == true)//"^!{999}"が前
-            {
-                keyDisabledFlag = 1;
-                andKey = andKey.Substring(7);
-            }
-            if (andKey.StartsWith("C!{999}") == true)
-            {
-                caseFlag = 1;
-                andKey = andKey.Substring(7);
-            }
         }
     }
 
