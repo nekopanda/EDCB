@@ -34,6 +34,7 @@ namespace EpgTimer.Setting
             {
                 tabItem2.IsEnabled = false;
                 tabItem3.IsEnabled = false;
+                textBox_setPath.IsEnabled = false;
                 textBox_exe.IsEnabled = false;
                 button_exe.IsEnabled = false;
                 listBox_recFolder.IsEnabled = false;
@@ -69,186 +70,201 @@ namespace EpgTimer.Setting
 
 
                 StringBuilder buff = new StringBuilder(512);
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", SettingPath.DefSettingFolderPath, buff, 512, SettingPath.CommonIniPath);
-                textBox_setPath.Text = buff.ToString();
 
-                string defRecExe = SettingPath.ModulePath.TrimEnd('\\') +"\\EpgDataCap_Bon.exe";
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString("SET", "RecExePath", defRecExe, buff, 512, SettingPath.CommonIniPath);
-                textBox_exe.Text = buff.ToString();
-
-                int num = IniFileHandler.GetPrivateProfileInt("SET", "RecFolderNum", 0, SettingPath.CommonIniPath);
-                if (num == 0)
+                if (textBox_setPath.IsEnabled)
                 {
-                    listBox_recFolder.Items.Add(SettingPath.SettingFolderPath);
+                    buff.Clear();
+                    IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", SettingPath.DefSettingFolderPath, buff, 512, SettingPath.CommonIniPath);
+                    textBox_setPath.Text = buff.ToString();
                 }
-                else
+
+                if (textBox_exe.IsEnabled)
                 {
-                    for (uint i = 0; i < num; i++)
+                    string defRecExe = SettingPath.ModulePath.TrimEnd('\\') + "\\EpgDataCap_Bon.exe";
+                    buff.Clear();
+                    IniFileHandler.GetPrivateProfileString("SET", "RecExePath", defRecExe, buff, 512, SettingPath.CommonIniPath);
+                    textBox_exe.Text = buff.ToString();
+                }
+
+                if (listBox_recFolder.IsEnabled)
+                {
+                    int num = IniFileHandler.GetPrivateProfileInt("SET", "RecFolderNum", 0, SettingPath.CommonIniPath);
+                    if (num == 0)
                     {
-                        string key = "RecFolderPath" + i.ToString();
-                        buff.Clear();
-                        IniFileHandler.GetPrivateProfileString("SET", key, "", buff, 512, SettingPath.CommonIniPath);
-                        if (buff.Length > 0)
+                        listBox_recFolder.Items.Add(SettingPath.SettingFolderPath);
+                    }
+                    else
+                    {
+                        for (uint i = 0; i < num; i++)
                         {
-                            listBox_recFolder.Items.Add(buff.ToString());
+                            string key = "RecFolderPath" + i.ToString();
+                            buff.Clear();
+                            IniFileHandler.GetPrivateProfileString("SET", key, "", buff, 512, SettingPath.CommonIniPath);
+                            if (buff.Length > 0)
+                            {
+                                listBox_recFolder.Items.Add(buff.ToString());
+                            }
                         }
                     }
                 }
 
-                string[] files = Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt");
-                SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
-                foreach (string info in files)
+                if (tabItem2.IsEnabled)
                 {
-                    try
+                    string[] files = Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt");
+                    SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
+                    foreach (string info in files)
                     {
-                        TunerInfo item = new TunerInfo();
-                        String fileName = System.IO.Path.GetFileName(info);
-                        item.BonDriver = GetBonFileName(fileName);
-                        item.BonDriver += ".dll";
-                        item.TunerNum = IniFileHandler.GetPrivateProfileInt(item.BonDriver, "Count", 0, SettingPath.TimerSrvIniPath).ToString();
-                        if (IniFileHandler.GetPrivateProfileInt(item.BonDriver, "GetEpg", 1, SettingPath.TimerSrvIniPath) == 0)
+                        try
                         {
-                            item.IsEpgCap = false;
-                        }
-                        else
-                        {
-                            item.IsEpgCap = true;
-                        }
-                        item.EPGNum = IniFileHandler.GetPrivateProfileInt(item.BonDriver, "EPGCount", 0, SettingPath.TimerSrvIniPath).ToString();
-                        int priority = IniFileHandler.GetPrivateProfileInt(item.BonDriver, "Priority", 0xFFFF, SettingPath.TimerSrvIniPath);
-                        while (true)
-                        {
-                            if (tunerInfo.ContainsKey(priority) == true)
+                            TunerInfo item = new TunerInfo();
+                            String fileName = System.IO.Path.GetFileName(info);
+                            item.BonDriver = GetBonFileName(fileName);
+                            item.BonDriver += ".dll";
+                            item.TunerNum = IniFileHandler.GetPrivateProfileInt(item.BonDriver, "Count", 0, SettingPath.TimerSrvIniPath).ToString();
+                            if (IniFileHandler.GetPrivateProfileInt(item.BonDriver, "GetEpg", 1, SettingPath.TimerSrvIniPath) == 0)
                             {
-                                priority++;
+                                item.IsEpgCap = false;
                             }
                             else
                             {
-                                tunerInfo.Add(priority, item);
-                                break;
+                                item.IsEpgCap = true;
+                            }
+                            item.EPGNum = IniFileHandler.GetPrivateProfileInt(item.BonDriver, "EPGCount", 0, SettingPath.TimerSrvIniPath).ToString();
+                            int priority = IniFileHandler.GetPrivateProfileInt(item.BonDriver, "Priority", 0xFFFF, SettingPath.TimerSrvIniPath);
+                            while (true)
+                            {
+                                if (tunerInfo.ContainsKey(priority) == true)
+                                {
+                                    priority++;
+                                }
+                                else
+                                {
+                                    tunerInfo.Add(priority, item);
+                                    break;
+                                }
                             }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                    }
-                }
-                foreach (TunerInfo info in tunerInfo.Values)
-                {
-                    listBox_bon.Items.Add(info);
-                }
-                if (listBox_bon.Items.Count > 0)
-                {
-                    listBox_bon.SelectedIndex = 0;
-                }
-
-                comboBox_HH.DataContext = CommonManager.Instance.HourDictionary.Values;
-                comboBox_HH.SelectedIndex = 0;
-                comboBox_MM.DataContext = CommonManager.Instance.MinDictionary.Values;
-                comboBox_MM.SelectedIndex = 0;
-
-                serviceList = new List<ServiceItem2>();
-                try
-                {
-                    foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
-                    {
-                        ServiceItem2 item = new ServiceItem2();
-                        item.ServiceInfo = info;
-                        if (info.EpgCapFlag == 1)
+                        catch (Exception ex)
                         {
-                            item.IsSelected = true;
+                            MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                         }
-                        else
-                        {
-                            item.IsSelected = false;
-                        }
-                        serviceList.Add(item);
+                    }
+                    foreach (TunerInfo info in tunerInfo.Values)
+                    {
+                        listBox_bon.Items.Add(info);
+                    }
+                    if (listBox_bon.Items.Count > 0)
+                    {
+                        listBox_bon.SelectedIndex = 0;
                     }
                 }
-                catch
-                {
-                }
-                listView_service.DataContext = serviceList;
 
-                if (IniFileHandler.GetPrivateProfileInt("SET", "BSBasicOnly", 1, SettingPath.CommonIniPath) == 1)
+                if (tabItem3.IsEnabled)
                 {
-                    checkBox_bs.IsChecked = true;
-                }
-                else
-                {
-                    checkBox_bs.IsChecked = false;
-                }
-                if (IniFileHandler.GetPrivateProfileInt("SET", "CS1BasicOnly", 1, SettingPath.CommonIniPath) == 1)
-                {
-                    checkBox_cs1.IsChecked = true;
-                }
-                else
-                {
-                    checkBox_cs1.IsChecked = false;
-                }
-                if (IniFileHandler.GetPrivateProfileInt("SET", "CS2BasicOnly", 1, SettingPath.CommonIniPath) == 1)
-                {
-                    checkBox_cs2.IsChecked = true;
-                }
-                else
-                {
-                    checkBox_cs2.IsChecked = false;
-                }
+                    comboBox_HH.DataContext = CommonManager.Instance.HourDictionary.Values;
+                    comboBox_HH.SelectedIndex = 0;
+                    comboBox_MM.DataContext = CommonManager.Instance.MinDictionary.Values;
+                    comboBox_MM.SelectedIndex = 0;
 
-                buff.Clear();
-                timeList = new ObservableCollection<EpgCaptime>();
-                int capCount = IniFileHandler.GetPrivateProfileInt("EPG_CAP", "Count", 0, SettingPath.TimerSrvIniPath);
-                if (capCount == 0)
-                {
-                    EpgCaptime item = new EpgCaptime();
-                    item.IsSelected = true;
-                    item.Time = "23:00";
-                    item.BSBasicOnly = checkBox_bs.IsChecked == true;
-                    item.CS1BasicOnly = checkBox_cs1.IsChecked == true;
-                    item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
-                    timeList.Add(item);
-                }
-                else
-                {
-                    for (int i = 0; i < capCount; i++)
+                    serviceList = new List<ServiceItem2>();
+                    try
                     {
-                        buff.Clear();
+                        foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+                        {
+                            ServiceItem2 item = new ServiceItem2();
+                            item.ServiceInfo = info;
+                            if (info.EpgCapFlag == 1)
+                            {
+                                item.IsSelected = true;
+                            }
+                            else
+                            {
+                                item.IsSelected = false;
+                            }
+                            serviceList.Add(item);
+                        }
+                    }
+                    catch
+                    {
+                    }
+                    listView_service.DataContext = serviceList;
+
+                    if (IniFileHandler.GetPrivateProfileInt("SET", "BSBasicOnly", 1, SettingPath.CommonIniPath) == 1)
+                    {
+                        checkBox_bs.IsChecked = true;
+                    }
+                    else
+                    {
+                        checkBox_bs.IsChecked = false;
+                    }
+                    if (IniFileHandler.GetPrivateProfileInt("SET", "CS1BasicOnly", 1, SettingPath.CommonIniPath) == 1)
+                    {
+                        checkBox_cs1.IsChecked = true;
+                    }
+                    else
+                    {
+                        checkBox_cs1.IsChecked = false;
+                    }
+                    if (IniFileHandler.GetPrivateProfileInt("SET", "CS2BasicOnly", 1, SettingPath.CommonIniPath) == 1)
+                    {
+                        checkBox_cs2.IsChecked = true;
+                    }
+                    else
+                    {
+                        checkBox_cs2.IsChecked = false;
+                    }
+
+                    buff.Clear();
+                    timeList = new ObservableCollection<EpgCaptime>();
+                    int capCount = IniFileHandler.GetPrivateProfileInt("EPG_CAP", "Count", 0, SettingPath.TimerSrvIniPath);
+                    if (capCount == 0)
+                    {
                         EpgCaptime item = new EpgCaptime();
-                        IniFileHandler.GetPrivateProfileString("EPG_CAP", i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                        item.Time = buff.ToString();
-                        if (IniFileHandler.GetPrivateProfileInt("EPG_CAP", i.ToString() + "Select", 0, SettingPath.TimerSrvIniPath) == 1)
-                        {
-                            item.IsSelected = true;
-                        }
-                        else
-                        {
-                            item.IsSelected = false;
-                        }
-                        // 取得種別(bit0(LSB)=BS,bit1=CS1,bit2=CS2)。負値のときは共通設定に従う
-                        int flags = IniFileHandler.GetPrivateProfileInt("EPG_CAP", i.ToString() + "BasicOnlyFlags", -1, SettingPath.TimerSrvIniPath);
-                        if (flags >= 0)
-                        {
-                            item.BSBasicOnly = (flags & 1) != 0;
-                            item.CS1BasicOnly = (flags & 2) != 0;
-                            item.CS2BasicOnly = (flags & 4) != 0;
-                        }
-                        else
-                        {
-                            item.BSBasicOnly = checkBox_bs.IsChecked == true;
-                            item.CS1BasicOnly = checkBox_cs1.IsChecked == true;
-                            item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
-                        }
+                        item.IsSelected = true;
+                        item.Time = "23:00";
+                        item.BSBasicOnly = checkBox_bs.IsChecked == true;
+                        item.CS1BasicOnly = checkBox_cs1.IsChecked == true;
+                        item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
                         timeList.Add(item);
                     }
+                    else
+                    {
+                        for (int i = 0; i < capCount; i++)
+                        {
+                            buff.Clear();
+                            EpgCaptime item = new EpgCaptime();
+                            IniFileHandler.GetPrivateProfileString("EPG_CAP", i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
+                            item.Time = buff.ToString();
+                            if (IniFileHandler.GetPrivateProfileInt("EPG_CAP", i.ToString() + "Select", 0, SettingPath.TimerSrvIniPath) == 1)
+                            {
+                                item.IsSelected = true;
+                            }
+                            else
+                            {
+                                item.IsSelected = false;
+                            }
+                            // 取得種別(bit0(LSB)=BS,bit1=CS1,bit2=CS2)。負値のときは共通設定に従う
+                            int flags = IniFileHandler.GetPrivateProfileInt("EPG_CAP", i.ToString() + "BasicOnlyFlags", -1, SettingPath.TimerSrvIniPath);
+                            if (flags >= 0)
+                            {
+                                item.BSBasicOnly = (flags & 1) != 0;
+                                item.CS1BasicOnly = (flags & 2) != 0;
+                                item.CS2BasicOnly = (flags & 4) != 0;
+                            }
+                            else
+                            {
+                                item.BSBasicOnly = checkBox_bs.IsChecked == true;
+                                item.CS1BasicOnly = checkBox_cs1.IsChecked == true;
+                                item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
+                            }
+                            timeList.Add(item);
+                        }
+                    }
+                    ListView_time.DataContext = timeList;
+
+                    textBox_ngCapMin.Text = IniFileHandler.GetPrivateProfileInt("SET", "NGEpgCapTime", 20, SettingPath.TimerSrvIniPath).ToString();
+                    textBox_ngTunerMin.Text = IniFileHandler.GetPrivateProfileInt("SET", "NGEpgCapTunerTime", 20, SettingPath.TimerSrvIniPath).ToString();
                 }
-                ListView_time.DataContext = timeList;
-
-                textBox_ngCapMin.Text = IniFileHandler.GetPrivateProfileInt("SET", "NGEpgCapTime", 20, SettingPath.TimerSrvIniPath).ToString();
-                textBox_ngTunerMin.Text = IniFileHandler.GetPrivateProfileInt("SET", "NGEpgCapTunerTime", 20, SettingPath.TimerSrvIniPath).ToString();
-
             }
             catch (Exception ex)
             {

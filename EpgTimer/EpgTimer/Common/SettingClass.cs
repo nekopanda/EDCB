@@ -12,34 +12,81 @@ using System.Windows;
 
 namespace EpgTimer
 {
+    // EpgTimerNW では参照も更新もしない
+    // CtlCmd 経由で取得、更新するよう書き換えるのが望ましい。
     class IniFileHandler
     {
-        [DllImport("KERNEL32.DLL")]
+        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true)]
         public static extern uint
-          GetPrivateProfileString(string lpAppName,
+          GetPrivateProfileStringW(string lpAppName,
           string lpKeyName, string lpDefault,
           StringBuilder lpReturnedString, uint nSize,
           string lpFileName);
 
-        [DllImport("KERNEL32.DLL",
-            EntryPoint = "GetPrivateProfileStringA")]
-        public static extern uint
-          GetPrivateProfileStringByByteArray(string lpAppName,
-          string lpKeyName, string lpDefault,
-          byte[] lpReturnedString, uint nSize,
-          string lpFileName);
+        public static uint GetPrivateProfileString(string lpAppName, string lpKeyName, string lpDefault, StringBuilder lpReturnedString, uint nSize, string lpFileName)
+        {
+            if (CommonManager.Instance.NWMode == false)
+            {
+                return GetPrivateProfileStringW(lpAppName, lpKeyName, lpDefault, lpReturnedString, nSize, lpFileName);
+            }
+            else
+            {
+                // lpDefault を返すほうが親切かも。
+                // ただしここに来ないように修正するほうが望ましい。
+                return 0;
+            }
+        }
 
-        [DllImport("KERNEL32.DLL")]
+/*
+        // 現在使われていないようなので、コメントアウトしておく。
+        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true,
+            EntryPoint = "GetPrivateProfileStringW")]
+        public static extern uint
+            GetPrivateProfileStringByByteArray(string lpAppName,
+            string lpKeyName, string lpDefault,
+            byte[] lpReturnedString, uint nSize,
+            string lpFileName);
+*/
+
+        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true)]
         public static extern int
-          GetPrivateProfileInt(string lpAppName,
+          GetPrivateProfileIntW(string lpAppName,
           string lpKeyName, int nDefault, string lpFileName);
 
-        [DllImport("KERNEL32.DLL")]
-        public static extern uint WritePrivateProfileString(
+        public static int GetPrivateProfileInt(string lpAppName, string lpKeyName, int nDefault, string lpFileName)
+        {
+            if (CommonManager.Instance.NWMode == false)
+            {
+                return GetPrivateProfileIntW(lpAppName, lpKeyName, nDefault, lpFileName);
+            }
+            else
+            {
+                // 一応 nDefault を返す。
+                // ただしここに来ないように修正するほうが望ましい。
+                return nDefault;
+            }
+        }
+
+        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true)]
+        public static extern uint WritePrivateProfileStringW(
           string lpAppName,
           string lpKeyName,
           string lpString,
           string lpFileName);
+
+        public static uint WritePrivateProfileString(string lpAppName, string lpKeyName, string lpString, string lpFileName)
+        {
+            if (CommonManager.Instance.NWMode == false)
+            {
+                return WritePrivateProfileStringW(lpAppName, lpKeyName, lpString, lpFileName);
+            }
+            else
+            {
+                // ここに来ないように修正するほうが望ましい。
+                return 0;
+            }
+        }
+
     }
 
     class SettingPath
