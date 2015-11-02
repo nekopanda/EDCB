@@ -1,63 +1,123 @@
-BonDriverを使用したEPGデータの取得、予約録画を行うためのツール群です。
-
+tkntrec氏版EDCBを改変したバージョンです。
 
 ◆このプログラムを使用して発生した全ての問題に対して責任は持ちません。
 
+サイト
+https://github.com/nekopanda/EDCB
 
-■注意■
-　すべてを新規作成したので人柱１０以前の過去バージョンとは互換性がなく
-　なっています。
-　設定ファイルも互換性がないため、人柱１０以前からのバージョンアップの
-　場合は一度すべてを削除してください。
-　まだ動作の不安定な部分やおかしい部分などが残っている可能性があります。
-　スクランブルを解除する機能はありません。
+
+■Readmeファイルについて■
+Readmeがいくつかありますが、以下のような構成です。
+※説明は私の独自解釈を含むため一部誤っている可能性がありますがご了承ください。
+
+◇Readme.txt
+　このファイルです。この改変modについての説明や基本的な使い方などが書いてあります。
+
+◇Readme_EDCB.txt
+　オリジナルEDCB（人柱版10.69）に付属のReadme.txtです。
+　更新履歴だけHistory.txtに移動しています。
+
+◇Readme_EpgDataCap_Bon.txt
+　オリジナルEDCBに付属のEpgDataCap_BonのReadmeです。
+　EpgDataCap_BonはBonDriverからTSデータを受信して、録画やEPGデータの取得を行うプログラムです。
+
+◇Readme_EpgTimer.txt
+　EpgTimerのReadmeです。若干アップデートはありますが、ほぼオリジナルのままです。
+　EpgTimerはメインのユーザインターフェースです。録画予約や設定などはほぼこいつから操作します。
+
+◇Readme_Mod.txt
+　xtne6f氏により執筆された人柱版10.69からの改変説明です。
+
+◇Readme_Mod_S.txt
+　xtne6f氏によるEpgTimerSrv整理版の改変説明です。
+　EpgTimerSrvは裏で予約録画などを実行するいわばEDCBの司令塔のようなプログラムです。
+　xtne6f氏により「わりと徹底的に整理」されました。
+
+◇ReadMe_Material_WebUI.txt
+　2chの有志によるEpgTimerのWebUI「マテリアルWebUI」のReadmeです。
+　非常に美しく洗練されたWebUIを作っていただいたので同梱させていただきました。
+　なお、同梱バージョンはtkntrec氏版設定がデフォルトでオンになっていて、iniファイルで
+　HTTPサーバを有効化すればすぐに使える状態になっています。
+　（下記「ブラウザから操作できるようにする」を参照）
+
+◇History.txt
+　更新履歴ですが最近の更新情報はありません。
+　最近の更新情報が見たい方はGitHubで見てください。
+
+
+■このmodの改変説明■
+EPG自動予約で登録された予約とその自動予約との紐づけ、EPG自動予約で録画された録画ファイルと
+その自動予約との紐づけ。これまでのEDCBではこれらがきちんと実装されていませんでした。
+このmodでは、この２つの紐づけを実装し、それによって可能となった機能をいくつか追加しています。
+
+●EPG自動予約の条件を変更したり自動予約自体を削除したりすると、連動して登録された予約が削除されます。
+　削除の対象はEPG自動予約によって追加された予約（予約状況が「EPG自動予約」で始まる予約）で、かつ、
+　他の自動予約の対象となっていない番組の予約です。自動予約を無効にした場合は、削除した場合と同じように
+　予約を削除します。これまでのEDCBの動作であった「EPG自動予約だけを削除」することはできません。
+　削除して欲しくない予約は、「予約変更」ウィンドウで「EPG個別予約」に変更してください。
+
+　なお、「予約全削除」や「予約ごと削除」では、個別予約された予約であろうと他の自動予約の対象であろうと
+　問答無用で削除するので、これらと同じ動作ではありません。
+
+●「予約変更」ウィンドウでEPG自動予約から個別予約に変更できるようにしました。
+　これまではEPG自動予約から個別予約への変更は、予約を一度削除して番組表から再度予約を追加するという操作が
+　必要でしたが、「予約変更」ウィンドウで変更できるようにしました。
+
+● 「自動予約登録」→「EPG予約」タブの各自動予約項目のツールチップの表示内容を変更
+　これまでは自動予約の設定を表示していましたが、このmodではその自動予約の対象となっている
+　録画予約と録画済みをそれぞれ最大10件まで表示します。
+
+● 「EPG予約条件」ウィンドウに「録画済み」タブを追加
+　録画済みを全件表示したいときはここを見てください。目的外の番組が録画されてしまった場合などは
+　「自動予約登録を変更」で条件を変更して登録するとすぐに反映されます。
+
+● 「予約一覧」タブ、「録画済み一覧」タブに「該当自動予約」列を追加
+  その番組が対象となっているEPG自動予約がすべて表示されます。()内の数値は内部で使われているEPG自動予約のIDです。
+
+● 「録画済み一覧」タブに「存在」列を追加
+　録画ファイルが存在するかを表示します。自動では更新されないので更新したい場合は追加した
+　「リスト更新」ボタンを押してください。
+
+● 録画予約、録画済みのコンテキストメニューに「自動予約変更」を追加
+　EPG自動予約の変更ダイアログを表示します。
+
+● 「自動予約登録」→「EPG予約」タブに「最後の録画」列を追加
+　その自動予約の対象となっている録画済みのうち最も最近のものを表示します。時刻は番組の開始時刻です。
+
+◇注意１
+　紐づけは、予約された番組が＊現在の自動予約＊の対象となっているかで判断します。
+　同じように録画済みも録画された番組が＊現在の自動予約＊の対象となっているかで判断します。
+　自動予約の設定を変更すると紐づけも更新されます。
+
+　どの自動予約によって予約登録されたか、あるいは、どの自動予約によって録画されたのかは、一切考慮しません。
+　予約登録されたあと、番組情報が変わる、または、自動予約の設定を変更するなどによって、
+　予約登録された番組や録画された番組が、自動予約の対象外になれば、紐づけは消滅します。
+　（予約がどの自動予約で追加されたのかは予約状況に書いてあります。）
+
+◇注意２
+　録画済みファイルの番組情報はTSファイルから取得されます。過去の録画ファイルも録画先にファイルが
+　残っていればそれを読み取りますが、ファイルが残っていない、または、何らかの理由で番組情報の取得に
+　失敗すると、そのファイルは紐づけできなくなります。
 
 
 ■動作環境■
-OS    ：Windows XP SP3以降
-CPU   ：Intel Core 2 Duo以上推奨
-メモリ：1GB以上推奨
+動作には.NetFramework4.0とVC++2015のランタイムが必要です。
+.NetFramework4.0はXP以外は普通入っています。VC++2015のランタイムはインストールが必要です。
 
-動作には.NetFramework4.0とVC++2010のランタイムが必要です。
-他に各BonDriverや外部モジュールで使用するランタイムが必要な場合があります。
-
-Microsoft .NET Framework 4 (スタンドアロンのインストーラー)
-http://www.microsoft.com/downloads/details.aspx?familyid=0A391ABD-25C1-4FC0-919F-B21F31AB88B7&displaylang=ja
-Microsoft Visual C++ 2010 再頒布可能パッケージ (x86)
-http://www.microsoft.com/downloads/details.aspx?FamilyID=a7b7a05e-6de6-4d3a-a423-37bf0912db84&displaylang=ja
-Microsoft Visual C++ 2010 再頒布可能パッケージ (x64)
-http://www.microsoft.com/downloads/details.aspx?familyid=BD512D9E-43C8-4655-81BF-9350143D5867&displaylang=ja
+Visual Studio 2015 の Visual C++ 再頒布可能パッケージ
+https://www.microsoft.com/ja-jp/download/details.aspx?id=48145
 
 
-■64bitOSへの対応■
-　x64フォルダにあるモジュールは64bitでビルドしたモジュールになっていま
-　す。64bitネイティブで動作することが可能です。
+■64bitバイナリ■
+　x64フォルダにあるモジュールは64bitでビルドしたモジュールになっています。
+　一応ビルドできますが、テストしてませんし利用もしていません。
+　64bitOSでも32bitバイナリで問題ありません。
+
 　64bit版を使用するにはBonDriverも64bitでビルドされている必要があります。
 　32bitのモジュールが１つでも必要な場合は使用できません。
 
 
-■ソース（src.zip）の取り扱いについて■
-　特にGPLとかにはしないのでフリーソフトに限っては自由に改変してもらった
-　り組み込んでもらって構わないです。
-　改変したり組み込んだりして公開する場合は該当部分のソースぐらいは一緒
-　に公開してください。（強制ではないので別に公開しなくてもいいです）
-　商用、シェアウェアなどに許可なく組み込むのは不可です。
-
-
-■EpgDataCap3.dll、CtrlCmdCLI.dll、SendTSTCP.dll、BonDriver_TCP.dllの
-取り扱いについて
-　フリーソフトに組み込む場合は特に制限は設けません。
-　このdllを使用したことによって発生した問題について保証は一切行いません。
-　商用、シェアウェアなどに許可なく組み込むのは不可です。
-
-
-■twitter.dllの取り扱いについて
-　そのままEpgDataCap_Bon以外のソフトで使用するのは不可です。
-　APIキーを所得し、ビルドし直したものを使用するのは構いません。
-　商用、シェアウェアなどに許可なく組み込むのは不可です。
-
-
-■基本的な使用準備■
+■基本的な使用準備■（Readme_EDCB.txtから転載）
 　１．64bitOSで64bitネイティブで動作させるには「x64」フォルダを、
 　　　それ以外の場合は「x86」フォルダを使用してください。
 
@@ -66,7 +126,7 @@ http://www.microsoft.com/downloads/details.aspx?familyid=BD512D9E-43C8-4655-81BF
 　　　らかじめ設定をしておく
 
 　３．EpgDataCap_Bon.exeを起動し、「設定」→「基本設定」タブで「設定関
-　　　係保存フォルダ」を設定する。
+　　　係保存フォルダ」（相対パスは不可、絶対パスで）を設定する。
 
 　４．チューナーから使用チューナーを選んで「チャンネルスキャン」を行う。
 　　　地デジで5分程はかかると思います。
@@ -112,28 +172,135 @@ EpgTimer.exeの詳細はReadme_EpgTimer.txt
 ◆あります。
 
 
-■バグ報告について
-　http://2sen.dip.jp/dtv/の掲示板をバグ報告用として利用させて頂いてます
-　が、アクセス規制の煽りを食らって書き込みやアップロードできない状態に
-　なることがあります。
-　バグ報告に関するレスは修正という形で取らせてもらうのが大半になると思
-　います。
-　バグ報告以外の内容に関しては基本的に対応は行いません。
-　要望に関しては簡単にできそうな物なら組み込んでいこうと考えています。
-　◆バグ報告には、使用環境（ハード、アプリ、BonDriver、バージョンなど）、
-　◆何から予約登録を行い、どのような設定でだったかなどの詳細も記載願い
-　◆ます。
-　◆多種多様な環境を構築できるようになってきたため、詳細の記載なき報告
-　◆は基本的に確認を行いません（行えません）。
-　◆DbgView、DbgMonなどを使用してログの取得を行ってもらえると、解決の糸
-　◆口が見つかりやすくなります。
-　◆再現性のある予約録画に関する内容はログの取得を行ってください。ログ
-　◆のないものは基本的に調査を行えません。
+■ブラウザから操作できるようにする（マテリアルWebUI）■
+　使用前に一度EpgTimerの設定を開いてOKで閉じてください。動作に必要な情
+　報が保存されます。
+　EpgTimerSrv.iniのSETにEnableHttpSrvとHttpPortを追加することで有効にす
+　る事が可能です。
+　EnableHttpSrv　0:無効、1:有効（デフォルト 0）
+　HttpPort　使用ポートを指定（デフォルト 5510）
+
+　http://127.0.0.1:5510/ のようにアクセスしてください。
+
+　HTTPサーバ機能についての詳細はReadme_Mod_S.txtの「Civetwebの組み込みについて」
+　を参照してください。
 
 
-■動作確認環境■
-OS    　　：Windows7 Ultimate 64bit版
-CPU   　　：Intel Core i7 860
-メモリ　　：4GB
-VGA       ：ATI Radeon HD 4670
-チューナー：PT1×1、PT2×1
+■旧バージョンから移行時の注意■
+録画済み番組情報"RecInfo2Data.bin"はテキスト形式になって"RecInfo2.txt"に移動しま
+した。移行する場合は「同一番組無効登録」機能のための情報がリセットされるので注意
+してください。
+
+
+■tkntrec氏によるUIの機能強化■
+特にReadmeは用意されていないので、tkntrec氏による主な変更をここに書いておきます。
+Githubのプロジェクトページ（https://github.com/tkntrec/EDCB）からの転載です。
+
+◇検索(自動予約登録)と右クリックメニューまわりを中心に若干の機能追加・変更をしています。
+
+◇「EPG予約条件」ウィンドウ関係
+　●「自動予約登録を削除」「予約全削除」「前へ」「次へ」ボタン追加。
+　●検索結果一覧の右クリックに「番組名で再検索(サブウィンドウ)」を追加。
+
+◇右クリックメニュー関係
+　●各画面の右クリックメニューを「番組表」をベースにだいたい揃えた。
+　●右クリックメニュー項目の表示/非表示を選択出来るようにした。
+　●[設定]-[動作設定]-[その他]の[右クリックメニューの設定]から変更出来ます。
+
+◇その他
+　●各設定ウィンドウをESCで閉じられるようにした。
+　●追加設定の説明などを含むコミット
+　　設定画面ではなく、設定ファイル(XML)で直接指定するオプションについての説明です。
+　　・f52b17c 無効予約アイテムの文字色の変更
+　　・44dd565 状態表示列の文字色の変更
+　　・1c22086 各設定画面でのフォルダ選択時に「ファイル選択ダイアログ」を使用するオプション
+　　・c62755d 「番組表へジャンプ」の強調表示時間の変更
+　　・c8e4bcf EpgTimerNWでサーバとの接続維持を試みるオプション
+
+
+■そもそもtkntrec氏版って？■
+本家が更新されなくなった後、複数の方が開発を引き継いで、主にGitHubで開発しています。
+現在、アクティブに更新されているのはxtne6f氏とtkntrec氏です。
+各開発者の方はGitでお互いに更新を取り込んだりしていますが、おおざっぱに図にすると
+以下のようになります。
+
+【EDCB】EpgDataCap_Bonについて語るスレ 41 より
+┏━━━━━━━━━━━━━━━━━━━━━━━┓
+┃●相関図　　　　　　　　　　　　　　　　　　　┃
+┃　　　　　　　　　　　　　　　　　　　　　　　┃
+┃本家　　　　　　　　　　　　　　　　　　　　　┃
+┃　↓ 　　　　　　　　　　　　　　　　　　　　 ┃
+┃epgdatacapbon版　　　　　　　　　　　　　　　 ┃
+┃　↓　　　　　　　　　　　　　　　　　　　　　┃
+┃niisaka版──┐ 　　　　　　　　　　　　　　　┃
+┃　↓　 　　　│ 　　　　　　　　　　　　　　　┃
+┃Velmy版　　xtne6f版 　　　　　　　　　　　　　┃
+┃　 　　＼　　↓ 　　　　　　　　　　　　　　　┃
+┃　 　　　　tkntrec版 　　　　　　　　　　　　 ┃
+┃　　　　　　　　　　　　　　　　　　　　　　　┃
+┃※お互いに取り込んでる機能あり　　　　　　　　┃
+┗━━━━━━━━━━━━━━━━━━━━━━━┛
+
+tkntrec氏以外の方による変更は、Readme_Mod.txtおよびReadme_Mod_S.txtを参照してください。
+
+
+
+
+■ライセンス表示■
+◇Civetweb
+HTTPサーバとして組み込んでいます。
+
+Copyright (c) 2013-2015 The CivetWeb developers
+
+Copyright (c) 2004-2013 Sergey Lyubka
+
+Copyright (c) 2013 No Face Press, LLC (Thomas Davis)
+
+Copyright (c) 2013 F-Secure Corporation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+The CivetWeb developers CREDITS
+https://github.com/civetweb/civetweb/blob/master/CREDITS.md
+
+◇Lua
+
+http://www.lua.org/license.html
+
+Copyright (C) 1994-2015 Lua.org, PUC-Rio.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+◇Lua File System
+
+http://keplerproject.github.io/luafilesystem/license.html
+
+Copyright (c) 2003 Kepler Project.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+◇LuaBinaries
+LuaBinariesによりビルドされたLuaのDLL(lua52.dll)を同梱しています。
+
+http://luabinaries.sourceforge.net/license.html
+
+Copyright (c) 2005-2015 Tecgraf/PUC-Rio and the Kepler Project.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+

@@ -1,0 +1,24 @@
+EDCB Material WebUI
+
+
+xtne6f氏版EDCBのwebUIをマテリアルデザインっぽくします
+
+EDCBのReadme_Mod_S.txtをよく読みHttpPublicの中身をdocument_rootに入れ
+(デフォルトはEpgTimerSrv.exeと同じ場所にHttpPublicを)
+EDCBソースのiniフォルダのサンプルのapiフォルダも入れてください
+表示できない場合lua52.dllが入ってるか確認してください
+
+
+注意
+  チャンネルが増えたりしたら設定を保存しなおしてください
+  番組表に表示されません
+  tkntrec氏版をお使いのかたは必ずtkntrec氏版を有効にしてください
+  有効せずに使用しEPG予約を変更しようとすると番組長などの追加機能の設定がリセットされます
+
+動作確認
+  PCのChrome,Opera,firefoxで AndroidのChrome,Operaで一応確認しています
+  IEは非対応です
+
+
+改変・利用などはもちろん自由にしてもらってかまいません
+これ以上の機能追加はあまり期待できないのでむしろお願いします
