@@ -54,7 +54,8 @@ namespace EpgTimer
             setOtherAppView.SaveSetting();
 
             Settings.SaveToXmlFile();
-            ChSet5.SaveFile();
+            // EpgTimer 側から更新することはないはず
+            //ChSet5.SaveFile();
             CommonManager.Instance.ReloadCustContentColorList();
 
             this.DialogResult = true;
