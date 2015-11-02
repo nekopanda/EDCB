@@ -69,6 +69,10 @@ public:
 private:
 	// SERVICE_EVENT_MAP‚ÍŒŸõ—p
 	wstring filePath;
+
+	// filepath -> id
+	map<wstring, DWORD> idMap;
+
 	REC_EVENT_MAP eventMapNew;
 	SERVICE_EVENT_MAP serviceMapNew;
 	bool needUpdateServiceMap;
@@ -90,12 +94,15 @@ private:
 	};
 
 	vector<REC_EVENT_INFO*> GetAll();
-	
-	bool LoadFile();
+
+	void RegistRecFiles(const REC_INFO_MAP& recFiles);
+
+	bool LoadDBFile();
 	bool LoadEventInfo(REC_EVENT_INFO* eventInfo, BYTE* cur, BYTE* end);
-	void LoadRawData(BYTE* data, DWORD size);
-	void LoadTs(REC_EVENT_INFO* eventInfo, const std::wstring& recFilePath, WORD serviceId, WORD eventId, bool withCache);
-	void LoadRecFiles(const REC_INFO_MAP& recFiles);
+	void LoadDBRawData(BYTE* data, DWORD size);
+
+	void ReadTsFile(REC_EVENT_INFO* eventInfo, const std::wstring& recFilePath, WORD serviceId, WORD eventId, bool withCache);
+	void ReadTsFiles(const REC_INFO_MAP& recFiles);
 
 	void UpdateServiceMap();
 	void AddToServiceMap(REC_EVENT_MAP& from, SERVICE_EVENT_MAP& to);

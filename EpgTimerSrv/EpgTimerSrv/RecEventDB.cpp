@@ -14,11 +14,11 @@ bool CRecEventDB::Load(const std::wstring& filePath, const REC_INFO_MAP& recFile
 	Clear();
 
 	this->filePath = filePath;
-	if (LoadFile() == false) {
-		OutputDebugString(L"RecEventDBの読み込みに失敗しました\r\n");
-		return false;
-	}
-	LoadRecFiles(recFiles);
+
+	RegistRecFiles(recFiles);
+	LoadDBFile();
+	ReadTsFiles(recFiles);
+	
 	needUpdateServiceMap = true;
 
 	_OutputDebugString(L"End Load RecEventDB %dmsec\r\n", GetTickCount() - time);
@@ -26,13 +26,15 @@ bool CRecEventDB::Load(const std::wstring& filePath, const REC_INFO_MAP& recFile
 }
 
 void CRecEventDB::AddRecInfo(const REC_FILE_INFO& item) {
-	REC_EVENT_INFO* eventInfo = CreateNew(item.id);
-	eventInfo->recFileId = item.id;
-	eventInfo->filePath = item.recFilePath;
-
+	// パスがない（録画に成功していない）項目は無視
 	if (item.recFilePath.size() > 0) {
+		idMap[item.recFilePath] = item.id;
+		REC_EVENT_INFO* eventInfo = CreateNew(item.id);
+		eventInfo->recFileId = item.id;
+		eventInfo->filePath = item.recFilePath;
+
 		directoryCache.CachePath(item.recFilePath);
-		LoadTs(eventInfo, item.recFilePath, item.serviceID, item.eventID, false);
+		ReadTsFile(eventInfo, item.recFilePath, item.serviceID, item.eventID, false);
 		needUpdateServiceMap = true;
 	}
 }
@@ -56,7 +58,8 @@ bool CRecEventDB::Save() {
 		buffer.Add((DWORD)1); // バージョン
 
 		for (auto recInfo : GetAll()) {
-			buffer.Add(recInfo->recFileId);
+			buffer.Add((DWORD)recInfo->filePath.size());
+			buffer.AddData((BYTE*)recInfo->filePath.c_str(), recInfo->filePath.size() * sizeof(wchar_t));
 			buffer.Add(recInfo->loadErrorCount);
 			buffer.Add(recInfo->rawData.GetSize());
 			buffer.AddData(recInfo->rawData.GetData(), recInfo->rawData.GetSize());
@@ -143,8 +146,21 @@ vector<REC_EVENT_INFO*> CRecEventDB::GetAll() {
 	return v;
 }
 
+void CRecEventDB::RegistRecFiles(const REC_INFO_MAP& recFiles) {
+	for (const auto& recInfo : recFiles) {
+		DWORD fileId = recInfo.first;
+		if (recInfo.second.recFilePath.size() > 0) {
+			idMap[recInfo.second.recFilePath] = fileId;
+			REC_EVENT_INFO* eventInfo = CreateNew(fileId);
+			eventInfo->recFileId = fileId;
+			eventInfo->filePath = recInfo.second.recFilePath;
+			directoryCache.CachePath(recInfo.second.recFilePath);
+		}
+	}
+	directoryCache.UpdateDirectoryInfo();
+}
 
-bool CRecEventDB::LoadFile() {
+bool CRecEventDB::LoadDBFile() {
 	if (filePath.empty()) {
 		return false;
 	}
@@ -153,7 +169,7 @@ bool CRecEventDB::LoadFile() {
 		if (GetLastError() == ERROR_FILE_NOT_FOUND) {
 			return true;
 		}
-		OutputDebugString(L"CRecEventDB::Load(): Error: Cannot open file\r\n");
+		OutputDebugString(L"CRecEventDB::LoadDBFile(): Error: Cannot open file\r\n");
 		return false;
 	}
 
@@ -163,7 +179,7 @@ bool CRecEventDB::LoadFile() {
 		rawDataBuffer.SetSize(dwFileSize);
 		DWORD dwRead;
 		if (ReadFile(hFile, rawDataBuffer.GetData(), dwFileSize, &dwRead, NULL) && dwRead != 0) {
-			LoadRawData(rawDataBuffer.GetData(), rawDataBuffer.GetSize());
+			LoadDBRawData(rawDataBuffer.GetData(), rawDataBuffer.GetSize());
 			CloseHandle(hFile);
 			return true;
 		}
@@ -193,7 +209,7 @@ bool CRecEventDB::LoadEventInfo(REC_EVENT_INFO* eventInfo, BYTE* cur, BYTE* end)
 	return false;
 }
 
-void CRecEventDB::LoadRawData(BYTE* data, DWORD size) {
+void CRecEventDB::LoadDBRawData(BYTE* data, DWORD size) {
 	if (eitDetector.Initialize() == false) return;
 
 	BYTE* cur = data;
@@ -206,35 +222,46 @@ void CRecEventDB::LoadRawData(BYTE* data, DWORD size) {
 	}
 
 	while (cur < end) {
-		DWORD fileId; if (!ReadFromMemory(&fileId, cur, end)) break;
+		DWORD filepathLen; if (!ReadFromMemory(&filepathLen, cur, end)) break;
+		if (cur + filepathLen * sizeof(wchar_t) > end) break;
+		wstring filepath((wchar_t*)cur, filepathLen); cur += filepathLen * sizeof(wchar_t);
+
 		DWORD loadErrorCount; if (!ReadFromMemory(&loadErrorCount, cur, end)) break;
 		DWORD dataLen; if (!ReadFromMemory(&dataLen, cur, end)) break;
 
-		REC_EVENT_INFO* eventInfo = CreateNew(fileId);
+		if (cur < end) {
+			auto it = idMap.find(filepath);
+			if (it != idMap.end()) {
+				auto it2 = eventMapNew.find(it->second);
+				if (it2 != eventMapNew.end()) {
+					REC_EVENT_INFO* eventInfo = it2->second;
 
-		eventInfo->recFileId = fileId;
-		eventInfo->loadErrorCount = loadErrorCount;
+					eventInfo->loadErrorCount = loadErrorCount;
 
-		if (dataLen > 0) {
-			eventInfo->rawData.AddData(cur, dataLen);
+					if (dataLen > 0) {
+						eventInfo->rawData.AddData(cur, dataLen);
 
-			if (cur + dataLen > end) {
-				_OutputDebugString(L"RecEventDB読み込み中サイズエラー");
-			}
-			else {
-				if (LoadEventInfo(eventInfo, cur, end) == false) {
-					_OutputDebugString(L"RecEventDB読み込み中サイズエラー");
+						if (cur + dataLen > end) {
+							_OutputDebugString(L"RecEventDB読み込み中サイズエラー");
+						}
+						else {
+							if (LoadEventInfo(eventInfo, cur, end) == false) {
+								_OutputDebugString(L"RecEventDB読み込み中サイズエラー");
+							}
+							else {
+								eventInfo->startTime64 = ConvertI64Time(eventInfo->start_time);
+							}
+						}
+					}
 				}
-				else {
-					eventInfo->startTime64 = ConvertI64Time(eventInfo->start_time);
-				}
-				cur += dataLen;
 			}
 		}
+
+		cur += dataLen;
 	}
 }
 
-void CRecEventDB::LoadTs(REC_EVENT_INFO* eventInfo, const std::wstring& recFilePath, WORD serviceId, WORD eventId, bool withCache) {
+void CRecEventDB::ReadTsFile(REC_EVENT_INFO* eventInfo, const std::wstring& recFilePath, WORD serviceId, WORD eventId, bool withCache) {
 	if (eitDetector.Initialize() == false) return;
 
 	HANDLE hFile = directoryCache.Open(recFilePath.c_str(), withCache);
@@ -290,25 +317,20 @@ void CRecEventDB::LoadTs(REC_EVENT_INFO* eventInfo, const std::wstring& recFileP
 	CloseHandle(hFile);
 }
 
-void CRecEventDB::LoadRecFiles(const REC_INFO_MAP& recFiles) {
-	// 録画ファイルのパスをキャッシュしておく
+void CRecEventDB::ReadTsFiles(const REC_INFO_MAP& recFiles) {
 	for (const auto& recInfo : recFiles) {
-		directoryCache.CachePath(recInfo.second.recFilePath);
-	}
-	directoryCache.UpdateDirectoryInfo();
-
-	for (const auto& recInfo : recFiles) {
-		DWORD fileId = recInfo.first;
-		REC_EVENT_INFO* eventInfo = GetOrNew(fileId);
-		eventInfo->recFileId = fileId;
-		eventInfo->filePath = recInfo.second.recFilePath;
-
 		if (recInfo.second.recFilePath.size() > 0) {
-
-			if (eventInfo->HasEpgInfo() == false && eventInfo->loadErrorCount <= 4) {
-				LoadTs(eventInfo, recInfo.second.recFilePath, recInfo.second.serviceID, recInfo.second.eventID, true);
-				if (!eventInfo->HasEpgInfo()) {
-					eventInfo->loadErrorCount++;
+			auto it = idMap.find(recInfo.second.recFilePath);
+			if (it != idMap.end()) {
+				auto it2 = eventMapNew.find(it->second);
+				if (it2 != eventMapNew.end()) {
+					REC_EVENT_INFO* eventInfo = it2->second;
+					if (eventInfo->HasEpgInfo() == false && eventInfo->loadErrorCount <= 4) {
+						ReadTsFile(eventInfo, recInfo.second.recFilePath, recInfo.second.serviceID, recInfo.second.eventID, true);
+						if (!eventInfo->HasEpgInfo()) {
+							eventInfo->loadErrorCount++;
+						}
+					}
 				}
 			}
 		}
