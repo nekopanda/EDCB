@@ -2,6 +2,7 @@
 #include "ParseTextInstances.h"
 #include "TimeUtil.h"
 #include "PathUtil.h"
+#include "FileUtil.h"
 
 //タブ区切りの次のトークンに移動する
 static LPCWSTR NextToken(LPCWSTR* token)
@@ -248,7 +249,7 @@ DWORD CParseRecInfoText::AddRecInfo(const REC_FILE_INFO& item)
 {
 	REC_FILE_INFO info = item;
 	info.id = this->itemMap.empty() ? 1 : this->itemMap.rbegin()->first + 1;
-	OnAddRecInfo(info);
+	ReadSupplementFile(info, [](const wstring& filepath) { return FileOpenRead(filepath); });
 	this->itemMap[info.id] = info;
 
 	//非プロテクトの要素数がkeepCount以下になるまで削除
@@ -281,6 +282,31 @@ bool CParseRecInfoText::DelRecInfo(DWORD id)
 	return false;
 }
 
+void CParseRecInfoText::ReadSupplementFileAll() {
+#if 1
+	// ディレクトリキャッシュを使って高速化
+	CDirectoryCache dirCache;
+	for (auto& entry : itemMap) {
+		// パスを登録するため必ず失敗する関数を渡して処理させる
+		// ちょっときれいじゃないけどこれが一番楽
+		ReadSupplementFile(entry.second, [&](const wstring& filepath) {
+			dirCache.CachePath(filepath);
+			return INVALID_HANDLE_VALUE;
+		});
+	}
+	dirCache.UpdateDirectoryInfo();
+	for (auto& entry : itemMap) {
+		ReadSupplementFile(entry.second, [&](const wstring& filepath) {
+			return dirCache.Open(filepath);
+		});
+	}
+#else
+	for (auto& entry : itemMap) {
+		ReadSupplementFile(entry.second, [](const wstring& filepath) { return FileOpenRead(filepath); });
+	}
+#endif
+}
+
 bool CParseRecInfoText::ChgProtectRecInfo(DWORD id, BYTE flag)
 {
 	map<DWORD, REC_FILE_INFO>::iterator itr = this->itemMap.find(id);
@@ -299,6 +325,31 @@ void CParseRecInfoText::GetProtectFiles(map<wstring, wstring>* fileMap) const
 			pair<wstring, wstring> file(itr->second.recFilePath, itr->second.recFilePath);
 			transform(file.first.begin(), file.first.end(), file.first.begin(), toupper);
 			fileMap->insert(file);
+		}
+	}
+}
+
+void CParseRecInfoText::RemoveReserveAutoAddId(DWORD id, const vector<REC_FILE_BASIC_INFO>& list)
+{
+	for (const auto& recFile : list) {
+		auto itRsv = itemMap.find(recFile.id);
+		if (itRsv != itemMap.end()) {
+			for (auto it = itRsv->second.autoAddInfo.begin(); it != itRsv->second.autoAddInfo.end(); ++it) {
+				if (it->dataID == id) {
+					itRsv->second.autoAddInfo.erase(it);
+					break;
+				}
+			}
+		}
+	}
+}
+
+void CParseRecInfoText::AddReserveAutoAddId(const EPG_AUTO_ADD_DATA& data, const vector<REC_FILE_BASIC_INFO>& list)
+{
+	for (const auto& recFile : list) {
+		auto itRsv = itemMap.find(recFile.id);
+		if (itRsv != itemMap.end()) {
+			itRsv->second.autoAddInfo.push_back(data);
 		}
 	}
 }
@@ -350,7 +401,6 @@ bool CParseRecInfoText::ParseLine(const wstring& parseLine, pair<DWORD, REC_FILE
 	item.second.comment.assign(token[0], token[1]);
 	item.second.protectFlag = _wtoi(NextToken(token)) != 0;
 	item.second.id = this->itemMap.empty() ? 1 : this->itemMap.rbegin()->first + 1;
-	OnAddRecInfo(item.second);
 	item.first = item.second.id;
 	return true;
 }
@@ -396,7 +446,7 @@ bool CParseRecInfoText::SelectIDToSave(vector<DWORD>& sortList) const
 	return true;
 }
 
-void CParseRecInfoText::OnAddRecInfo(REC_FILE_INFO& item)
+void CParseRecInfoText::ReadSupplementFile(REC_FILE_INFO& item, const std::function<HANDLE(const wstring&)>& FileOpenFunc)
 {
 	if( item.recFilePath.empty() ){
 		return;
@@ -407,11 +457,11 @@ void CParseRecInfoText::OnAddRecInfo(REC_FILE_INFO& item)
 		{ L".program.txt", &item.programInfo },
 	};
 	for( int i = 0; i < 2; i++ ){
-		HANDLE hFile = CreateFile((item.recFilePath + infoList[i].ext).c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		HANDLE hFile = FileOpenFunc(item.recFilePath + infoList[i].ext);
 		if( hFile == INVALID_HANDLE_VALUE && this->recInfoFolder.empty() == false ){
 			wstring recFileName;
 			GetFileName(item.recFilePath, recFileName);
-			hFile = CreateFile((this->recInfoFolder + L"\\" + recFileName + infoList[i].ext).c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			hFile = FileOpenFunc(this->recInfoFolder + L"\\" + recFileName + infoList[i].ext);
 		}
 		if( hFile != INVALID_HANDLE_VALUE ){
 			DWORD dwSize = GetFileSize(hFile, NULL);
@@ -516,7 +566,9 @@ bool CParseReserveText::ChgReserve(const RESERVE_DATA& item)
 {
 	map<DWORD, RESERVE_DATA>::iterator itr = this->itemMap.find(item.reserveID);
 	if( itr != this->itemMap.end() ){
+		RESERVE_DATA tmp = std::move(itr->second);
 		itr->second = item;
+		itr->second.autoAddInfo = tmp.autoAddInfo;
 		this->sortByEventCache.clear();
 		return true;
 	}
@@ -802,6 +854,31 @@ const vector<pair<ULONGLONG, DWORD>>& CParseReserveText::GetSortByEventList() co
 	return this->sortByEventCache;
 }
 
+void CParseReserveText::RemoveReserveAutoAddId(DWORD id, const vector<RESERVE_BASIC_DATA>& list)
+{
+	for (const auto& reserveData : list) {
+		auto itRsv = itemMap.find(reserveData.reserveID);
+		if (itRsv != itemMap.end()) {
+			for (auto it = itRsv->second.autoAddInfo.begin(); it != itRsv->second.autoAddInfo.end(); ++it) {
+				if (it->dataID == id) {
+					itRsv->second.autoAddInfo.erase(it);
+					break;
+				}
+			}
+		}
+	}
+}
+
+void CParseReserveText::AddReserveAutoAddId(const EPG_AUTO_ADD_DATA& data, const vector<RESERVE_DATA>& list)
+{
+	for (const auto& reserveData : list) {
+		auto itRsv = itemMap.find(reserveData.reserveID);
+		if (itRsv != itemMap.end()) {
+			itRsv->second.autoAddInfo.push_back(data);
+		}
+	}
+}
+
 DWORD CParseEpgAutoAddText::AddData(const EPG_AUTO_ADD_DATA& item)
 {
 	map<DWORD, EPG_AUTO_ADD_DATA>::iterator itr = this->itemMap.insert(pair<DWORD, EPG_AUTO_ADD_DATA>(this->nextID, item)).first;
@@ -813,17 +890,43 @@ bool CParseEpgAutoAddText::ChgData(const EPG_AUTO_ADD_DATA& item)
 {
 	map<DWORD, EPG_AUTO_ADD_DATA>::iterator itr = this->itemMap.find(item.dataID);
 	if( itr != this->itemMap.end() ){
+		EPG_AUTO_ADD_DATA tmp = std::move(itr->second);
 		itr->second = item;
+		itr->second.addCount = tmp.addCount;
+		itr->second.reserveList = tmp.reserveList;
+		itr->second.recFileList = tmp.recFileList;
 		return true;
 	}
 	return false;
 }
 
-bool CParseEpgAutoAddText::SetAddCount(DWORD id, DWORD addCount)
+bool CParseEpgAutoAddText::SetAddList(DWORD id, const vector<RESERVE_BASIC_DATA>& addList)
 {
 	map<DWORD, EPG_AUTO_ADD_DATA>::iterator itr = this->itemMap.find(id);
 	if( itr != this->itemMap.end() ){
-		itr->second.addCount = addCount;
+		itr->second.addCount = addList.size();
+		itr->second.reserveList = addList;
+		return true;
+	}
+	return false;
+}
+
+bool CParseEpgAutoAddText::SetRecList(DWORD id, const vector<REC_FILE_BASIC_INFO>& recList)
+{
+	map<DWORD, EPG_AUTO_ADD_DATA>::iterator itr = this->itemMap.find(id);
+	if (itr != this->itemMap.end()) {
+		itr->second.recFileList = recList;
+		return true;
+	}
+	return false;
+}
+
+bool CParseEpgAutoAddText::AddRecList(DWORD id, const vector<REC_FILE_BASIC_INFO>& recList)
+{
+	map<DWORD, EPG_AUTO_ADD_DATA>::iterator itr = this->itemMap.find(id);
+	if (itr != this->itemMap.end()) {
+		auto& dst = itr->second.recFileList;
+		dst.insert(dst.end(), recList.begin(), recList.end());
 		return true;
 	}
 	return false;

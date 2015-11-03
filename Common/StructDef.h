@@ -48,6 +48,18 @@ typedef struct _REC_SETTING_DATA{
 	};
 } REC_SETTING_DATA;
 
+struct _EPG_AUTO_ADD_DATA;
+
+typedef struct _EPG_AUTO_ADD_BASIC_INFO {
+	DWORD dataID;
+	wstring andKey;
+	_EPG_AUTO_ADD_BASIC_INFO(void) {
+		dataID = 0;
+		andKey = L"";
+	}
+	_EPG_AUTO_ADD_BASIC_INFO(const _EPG_AUTO_ADD_DATA& o);
+}EPG_AUTO_ADD_BASIC_INFO;
+
 //登録予約情報
 typedef struct _RESERVE_DATA{
 	wstring title;					//番組名
@@ -69,7 +81,8 @@ typedef struct _RESERVE_DATA{
 	DWORD reserveStatus;			//予約追加状態 内部で使用
 	//CMD_VER 5以降
 	vector<wstring> recFileNameList;	//録画予定ファイル名
-	//DWORD param1;					//将来用
+	//CMD_VER 6以降
+	vector<EPG_AUTO_ADD_BASIC_INFO> autoAddInfo;	//該当自動予約
 	_RESERVE_DATA(void){
 		title=L"";
 		ZeroMemory(&startTime, sizeof(SYSTEMTIME));
@@ -88,12 +101,55 @@ typedef struct _RESERVE_DATA{
 	};
 } RESERVE_DATA;
 
-typedef struct _REC_FILE_INFO{
+typedef struct _RESERVE_BASIC_DATA {
+	wstring title;					//番組名
+	SYSTEMTIME startTime;			//録画開始時間
+	DWORD durationSecond;			//録画総時間
+	WORD originalNetworkID;			//ONID
+	WORD transportStreamID;			//TSID
+	WORD serviceID;					//SID
+	WORD eventID;					//EventID
+	DWORD reserveID;				//予約識別ID 予約登録時は0
+	_RESERVE_BASIC_DATA(void) {
+		title = L"";
+		ZeroMemory(&startTime, sizeof(SYSTEMTIME));
+		durationSecond = 0;
+		originalNetworkID = 0;
+		transportStreamID = 0;
+		serviceID = 0;
+		eventID = 0;
+		reserveID = 0;
+	};
+	_RESERVE_BASIC_DATA & operator= (const _RESERVE_DATA & o) {
+		title = o.title;
+		startTime = o.startTime;
+		durationSecond = o.durationSecond;
+		originalNetworkID = o.originalNetworkID;
+		originalNetworkID = o.originalNetworkID;
+		transportStreamID = o.transportStreamID;
+		serviceID = o.serviceID;
+		eventID = o.eventID;
+		reserveID = o.reserveID;
+		return *this;
+	};
+} RESERVE_BASIC_DATA;
+
+typedef struct _REC_FILE_BASIC_INFO {
 	DWORD id;					//ID
 	wstring recFilePath;		//録画ファイルパス
 	wstring title;				//番組名
 	SYSTEMTIME startTime;		//開始時間
 	DWORD durationSecond;		//録画時間
+	_REC_FILE_BASIC_INFO(void) {
+		id = 0;
+		recFilePath = L"";
+		title = L"";
+		ZeroMemory(&startTime, sizeof(SYSTEMTIME));
+		durationSecond = 0;
+	}
+} REC_FILE_BASIC_INFO;
+
+typedef struct _REC_FILE_INFO : public REC_FILE_BASIC_INFO {
 	wstring serviceName;		//サービス名
 	WORD originalNetworkID;		//ONID
 	WORD transportStreamID;		//TSID
@@ -108,12 +164,12 @@ typedef struct _REC_FILE_INFO{
 	wstring errInfo;			//.errファイルの内容
 	//CMD_VER 4以降
 	BYTE protectFlag;
-	_REC_FILE_INFO(void){
-		id = 0;
-		recFilePath = L"";
-		title = L"";
-		ZeroMemory(&startTime, sizeof(SYSTEMTIME));
-		durationSecond = 0;
+	//CMD_VER 6以降
+	BYTE fileExist;			//ファイルが存在するか
+	BYTE autoAddInfoFlag;
+	vector<EPG_AUTO_ADD_BASIC_INFO> autoAddInfo;
+
+	_REC_FILE_INFO(void) : REC_FILE_BASIC_INFO() {
 		serviceName = L"";
 		originalNetworkID = 0;
 		transportStreamID = 0;
@@ -127,6 +183,9 @@ typedef struct _REC_FILE_INFO{
 		programInfo = L"";
 		errInfo = L"";
 		protectFlag = 0;
+		fileExist = 0;
+		autoAddInfoFlag = 0;
+		autoAddInfo.clear();
 	};
 	_REC_FILE_INFO & operator= (const _RESERVE_DATA & o) {
 		id = 0;
@@ -147,6 +206,9 @@ typedef struct _REC_FILE_INFO{
 		programInfo = L"";
 		errInfo = L"";
 		protectFlag = 0;
+		fileExist = 0;
+		autoAddInfoFlag = 0;
+		autoAddInfo.clear();
 		return *this;
 	};
 } REC_FILE_INFO;
@@ -335,6 +397,9 @@ typedef struct _EPGDB_EVENT_INFO{
 	EPGDB_EVENTGROUP_INFO* eventRelayInfo;	//イベントリレー情報
 
 	BYTE freeCAFlag;						//ノンスクランブルフラグ
+
+	wstring serviceName;
+
 	_EPGDB_EVENT_INFO(void){
 		shortInfo = NULL;
 		extInfo = NULL;
@@ -363,6 +428,7 @@ typedef struct _EPGDB_EVENT_INFO{
 		DurationFlag = o.DurationFlag;
 		durationSec = o.durationSec;
 		freeCAFlag = o.freeCAFlag;
+		serviceName = o.serviceName;
 		SAFE_DELETE(shortInfo);
 		SAFE_DELETE(extInfo);
 		SAFE_DELETE(contentInfo);
@@ -468,7 +534,14 @@ typedef struct _EPG_AUTO_ADD_DATA{
 	EPGDB_SEARCH_KEY_INFO searchInfo;	//検索キー
 	REC_SETTING_DATA recSetting;	//録画設定
 	DWORD addCount;		//予約登録数
+	vector<RESERVE_BASIC_DATA> reserveList; // 自動予約リスト
+	vector<REC_FILE_BASIC_INFO> recFileList; // 録画した番組リスト
 } EPG_AUTO_ADD_DATA;
+
+inline _EPG_AUTO_ADD_BASIC_INFO::_EPG_AUTO_ADD_BASIC_INFO(const _EPG_AUTO_ADD_DATA& o) {
+	dataID = o.dataID;
+	andKey = o.searchInfo.andKey;
+}
 
 typedef struct _MANUAL_AUTO_ADD_DATA{
 	DWORD dataID;

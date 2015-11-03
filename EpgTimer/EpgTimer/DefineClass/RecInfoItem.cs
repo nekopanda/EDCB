@@ -139,6 +139,18 @@ namespace EpgTimer
                 return view;
             }
         }
+        public String FileExist
+        {
+            get
+            {
+                String view = "";
+                if (RecInfo != null)
+                {
+                    view = (RecInfo.FileExist != 0) ? "○" : "×";
+                }
+                return view;
+            }
+        }
         public String RecFilePath
         {
             get
@@ -234,6 +246,30 @@ namespace EpgTimer
                     view += "Scrambles : " + RecInfo.Scrambles.ToString() + "\r\n";
                 }
                 return view;
+            }
+        }
+        public String ReserveInfo
+        {
+            get
+            {
+                String info = "";
+                if (RecInfo != null)
+                {
+                    if(RecInfo.AutoAddInfoFlag != 0)
+                    {
+                        var reserveList = RecInfo.AutoAddInfo;
+                        foreach(var data in reserveList)
+                        {
+                            if (info.Length > 0) info += ",";
+                            info += data.andKey + "(" + data.dataID + ")";
+                        }
+                    }
+                    else
+                    {
+                        info = "(データなし)";
+                    }
+                }
+                return info;
             }
         }
     }

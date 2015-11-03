@@ -96,6 +96,13 @@ namespace EpgTimer
                 EpgCmds.ShowDialog.Execute(sender, this);
             }
         }
+
+        private void button_reload_Click(object sender, RoutedEventArgs e)
+        {
+            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
+            ReloadInfoData();
+        }
+
         //リストのカギマークからの呼び出し
         public void ChgProtectRecInfoFromCheckbox(RecInfoItem hitItem)
         {

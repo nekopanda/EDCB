@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <set>
 #include <vector>
 #include <algorithm>
 using std::string;
@@ -28,7 +29,11 @@ BOOL _GetDiskFreeSpaceEx(
   PULARGE_INTEGER lpTotalNumberOfBytes,    // ディスク全体のバイト数
   PULARGE_INTEGER lpTotalNumberOfFreeBytes // ディスク全体の空きバイト数
 );
+
 void _OutputDebugString(const TCHAR *pOutputString, ...);
 void GetLastErrMsg(DWORD err, wstring& msg);
+
+LONG FilterException(struct _EXCEPTION_POINTERS * ExceptionInfo);
+
 
 #endif

@@ -84,6 +84,10 @@ namespace EpgTimer
             {
                 menu.IsEnabled = dataList.HasNoProtected();
             }
+            else if (menu.Tag == EpgCmdsEx.ShowAutoAddDialogMenu)
+            {
+                mcs_chgAutoAddMenuOpening(menu, (dataList.Count) == 0 ? null : dataList[0].AutoAddInfo);
+            }
         }
     }
 }

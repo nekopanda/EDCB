@@ -184,6 +184,22 @@ namespace EpgTimer
                 return view;
             }
         }
+        public String AutoAddInfo
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                String info = "";
+                var reserveList = ReserveInfo.AutoAddInfo;
+                foreach (var data in reserveList)
+                {
+                    if (info.Length > 0) info += ",";
+                    info += data.andKey + "(" + data.dataID + ")";
+                }
+                return info;
+            }
+        }
         public List<String> RecFolder
         {
             get

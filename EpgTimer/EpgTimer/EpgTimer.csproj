@@ -90,6 +90,7 @@
     <Compile Include="BlackoutWindow.xaml.cs">
       <DependentUpon>BlackoutWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Common\CallerInfo.cs" />
     <Compile Include="Common\BoxExchangeEditor.cs" />
     <Compile Include="UserCtrlView\DataViewBase.cs" />
     <Compile Include="UserCtrlView\ListViewController.cs" />
@@ -108,6 +109,7 @@
       <DependentUpon>ConnectWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="DefineClass\ListColumnInfo.cs" />
+    <Compile Include="DefineClass\RecFileBasicItem.cs" />
     <Compile Include="EpgView\EpgMainViewBase.cs" />
     <Compile Include="EpgView\EpgViewBase.cs" />
     <Compile Include="Menu\CmdExe.cs" />
@@ -131,6 +133,9 @@
       <DependentUpon>NotifyLogWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="DefineClass\NotifySrvInfoItem.cs" />
+    <Compile Include="UserCtrlView\AutoAddRecInfoView.xaml.cs">
+      <DependentUpon>AutoAddRecInfoView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Menu\SetContextMenuWindow.xaml.cs">
       <DependentUpon>SetContextMenuWindow.xaml</DependentUpon>
     </Compile>
@@ -290,6 +295,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="NotifyLogWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserCtrlView\AutoAddRecInfoView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

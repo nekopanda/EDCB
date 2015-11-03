@@ -25,6 +25,53 @@ namespace EpgTimer
     // sed 's/_\(.*\)(void){$/public \1(){/' |
     // sed 's/\t/    /g'
 
+    /// <summary>EpgTimerSrv側ではandKeyへの装飾で処理しているので、ここで吸収する</summary>
+    public class SearchAndKey : ICtrlCmdReadWrite
+    {
+        /// <summary>純粋なキー</summary>
+        public string andKey;
+
+        //ほかのフラグに合わせ、byte型にしておく。
+        /// <summary>大文字小文字を区別する</summary>
+        public byte caseFlag;
+        /// <summary>自動登録を無効にする</summary>
+        public byte keyDisabledFlag;
+
+        public SearchAndKey()
+        {
+            andKey = "";
+            caseFlag = 0;
+            keyDisabledFlag = 0;
+        }
+
+        public void Write(MemoryStream s, ushort version)
+        {
+            //andKey装飾のフラグをここで処理
+            string andKey_Send = (caseFlag == 1 ? "C!{999}" : "") + andKey;
+            andKey_Send = (keyDisabledFlag == 1 ? "^!{999}" : "") + andKey_Send;
+
+            var w = new CtrlCmdWriter(s, version);
+            w.Write(andKey_Send);
+        }
+        public void Read(MemoryStream s, ushort version)
+        {
+            var r = new CtrlCmdReader(s, version);
+            r.Read(ref andKey);
+
+            //andKey装飾のフラグをここで処理
+            if (andKey.StartsWith("^!{999}") == true)//"^!{999}"が前
+            {
+                keyDisabledFlag = 1;
+                andKey = andKey.Substring(7);
+            }
+            if (andKey.StartsWith("C!{999}") == true)
+            {
+                caseFlag = 1;
+                andKey = andKey.Substring(7);
+            }
+        }
+    }
+
     /// <summary>録画フォルダ情報</summary>
     public class RecFileSetInfo : ICtrlCmdReadWrite
     {
@@ -171,6 +218,67 @@ namespace EpgTimer
         }
     }
 
+    /// <summary>登録予約基本情報</summary>
+    public class ReserveBasicData : ICtrlCmdReadWrite
+    {
+        /// <summary>番組名</summary>
+        public string Title;
+        /// <summary>録画開始時間</summary>
+        public DateTime StartTime;
+        /// <summary>録画総時間</summary>
+        public uint DurationSecond;
+        /// <summary>ONID</summary>
+        public ushort OriginalNetworkID;
+        /// <summary>TSID</summary>
+        public ushort TransportStreamID;
+        /// <summary>SID</summary>
+        public ushort ServiceID;
+        /// <summary>EventID</summary>
+        public ushort EventID;
+        /// <summary>予約識別ID 予約登録時は0</summary>
+        public uint ReserveID;
+
+        public ReserveBasicData()
+        {
+            Title = "";
+            StartTime = new DateTime();
+            DurationSecond = 0;
+            OriginalNetworkID = 0;
+            TransportStreamID = 0;
+            ServiceID = 0;
+            EventID = 0;
+            ReserveID = 0;
+        }
+        public void Write(MemoryStream s, ushort version)
+        {
+            var w = new CtrlCmdWriter(s, version);
+            w.Begin();
+            w.Write(Title);
+            w.Write(StartTime);
+            w.Write(DurationSecond);
+            w.Write(OriginalNetworkID);
+            w.Write(TransportStreamID);
+            w.Write(ServiceID);
+            w.Write(EventID);
+            w.Write(ReserveID);
+            w.End();
+        }
+        public void Read(MemoryStream s, ushort version)
+        {
+            var r = new CtrlCmdReader(s, version);
+            r.Begin();
+            r.Read(ref Title);
+            r.Read(ref StartTime);
+            r.Read(ref DurationSecond);
+            r.Read(ref OriginalNetworkID);
+            r.Read(ref TransportStreamID);
+            r.Read(ref ServiceID);
+            r.Read(ref EventID);
+            r.Read(ref ReserveID);
+            r.End();
+        }
+    }
+
     /// <summary>登録予約情報</summary>
     public class ReserveData : ICtrlCmdReadWrite
     {
@@ -210,6 +318,9 @@ namespace EpgTimer
         public List<string> RecFileNameList;
         /// <summary>将来用</summary>
         private uint UnusedParam1;
+        /// <summary>該当自動予約登録</summary>
+        public List<EpgAutoAddBasicInfo> AutoAddInfo;
+
         public ReserveData()
         {
             Title = "";
@@ -230,6 +341,7 @@ namespace EpgTimer
             ReserveStatus = 0;
             RecFileNameList = new List<string>();
             UnusedParam1 = 0;
+            AutoAddInfo = new List<EpgAutoAddBasicInfo>();
         }
         public void Write(MemoryStream s, ushort version)
         {
@@ -255,6 +367,10 @@ namespace EpgTimer
             {
                 w.Write(RecFileNameList);
                 w.Write(UnusedParam1);
+            }
+            if (version >= 6)
+            {
+                w.Write(AutoAddInfo);
             }
             w.End();
         }
@@ -283,6 +399,104 @@ namespace EpgTimer
                 r.Read(ref RecFileNameList);
                 r.Read(ref UnusedParam1);
             }
+            if (version >= 6)
+            {
+                r.Read(ref AutoAddInfo);
+            }
+            r.End();
+        }
+    }
+
+    public class EpgAutoAddBasicInfo : ICtrlCmdReadWrite
+    {
+        /// <summary>dataID</summary>
+        public uint dataID;
+        private SearchAndKey andKey_;
+
+        /// <summary>検索キー</summary>
+        public string andKey
+        {
+            get { return andKey_.andKey; }
+            set { andKey_.andKey = value; }
+        }
+        /// <summary>大文字小文字を区別する</summary>
+        public byte caseFlag
+        {
+            get { return andKey_.caseFlag; }
+            set { andKey_.caseFlag = value; }
+        }
+        /// <summary>自動登録を無効にする</summary>
+        public byte keyDisabledFlag
+        {
+            get { return andKey_.keyDisabledFlag; }
+            set { andKey_.keyDisabledFlag = value; }
+        }
+
+
+        public EpgAutoAddBasicInfo()
+        {
+            dataID = 0;
+            andKey_ = new SearchAndKey();
+        }
+        public void Write(MemoryStream s, ushort version)
+        {
+            var w = new CtrlCmdWriter(s, version);
+            w.Begin();
+            w.Write(dataID);
+            w.Write(andKey_);
+            w.End();
+        }
+        public void Read(MemoryStream s, ushort version)
+        {
+            var r = new CtrlCmdReader(s, version);
+            r.Begin();
+            r.Read(ref dataID);
+            r.Read(ref andKey_);
+            r.End();
+        }
+    }
+
+    public class RecFileBasicInfo : ICtrlCmdReadWrite
+    {
+        /// <summary>ID</summary>
+        public uint ID;
+        /// <summary>録画ファイルパス</summary>
+        public string RecFilePath;
+        /// <summary>番組名</summary>
+        public string Title;
+        /// <summary>開始時間</summary>
+        public DateTime StartTime;
+        /// <summary>録画時間</summary>
+        public uint DurationSecond;
+
+        public RecFileBasicInfo()
+        {
+            ID = 0;
+            RecFilePath = "";
+            Title = "";
+            StartTime = new DateTime();
+            DurationSecond = 0;
+        }
+        public void Write(MemoryStream s, ushort version)
+        {
+            var w = new CtrlCmdWriter(s, version);
+            w.Begin();
+            w.Write(ID);
+            w.Write(RecFilePath);
+            w.Write(Title);
+            w.Write(StartTime);
+            w.Write(DurationSecond);
+            w.End();
+        }
+        public void Read(MemoryStream s, ushort version)
+        {
+            var r = new CtrlCmdReader(s, version);
+            r.Begin();
+            r.Read(ref ID);
+            r.Read(ref RecFilePath);
+            r.Read(ref Title);
+            r.Read(ref StartTime);
+            r.Read(ref DurationSecond);
             r.End();
         }
     }
@@ -324,6 +538,11 @@ namespace EpgTimer
         /// <summary>.errファイルの内容</summary>
         public string ErrInfo;
         public byte ProtectFlag;
+
+        public byte FileExist;
+        public byte AutoAddInfoFlag;
+        public List<EpgAutoAddBasicInfo> AutoAddInfo;
+
         public RecFileInfo()
         {
             ID = 0;
@@ -344,6 +563,9 @@ namespace EpgTimer
             ProgramInfo = "";
             ErrInfo = "";
             ProtectFlag = 0;
+            FileExist = 0;
+            AutoAddInfoFlag = 0;
+            AutoAddInfo = new List<EpgAutoAddBasicInfo>();
         }
         public void Write(MemoryStream s, ushort version)
         {
@@ -369,6 +591,12 @@ namespace EpgTimer
             if (version >= 4)
             {
                 w.Write(ProtectFlag);
+            }
+            if (version >= 6)
+            {
+                w.Write(FileExist);
+                w.Write(AutoAddInfoFlag);
+                w.Write(AutoAddInfo);
             }
             w.End();
         }
@@ -396,6 +624,12 @@ namespace EpgTimer
             if (version >= 4)
             {
                 r.Read(ref ProtectFlag);
+            }
+            if (version >= 6)
+            {
+                r.Read(ref FileExist);
+                r.Read(ref AutoAddInfoFlag);
+                r.Read(ref AutoAddInfo);
             }
             r.End();
         }
@@ -1017,7 +1251,7 @@ namespace EpgTimer
     /// <summary>検索条件</summary>
     public class EpgSearchKeyInfo : ICtrlCmdReadWrite
     {
-        public string andKey;
+        private SearchAndKey andKey_;
         public string notKey;
         public int regExpFlag;
         public int titleOnlyFlag;
@@ -1041,16 +1275,26 @@ namespace EpgTimer
         /// <summary>最大番組長(分/0は無制限)</summary>
         public ushort chkDurationMax;
 
-        //以下は、EpgTimerSrv側ではandKeyへの装飾で処理しているので、ここで吸収する。
-        //ほかのフラグに合わせ、byte型にしておく。
+        public string andKey
+        {
+            get { return andKey_.andKey; }
+            set { andKey_.andKey = value; }
+        }
         /// <summary>大文字小文字を区別する</summary>
-        public byte caseFlag;
+        public byte caseFlag {
+            get { return andKey_.caseFlag; }
+            set { andKey_.caseFlag = value; }
+        }
         /// <summary>自動登録を無効にする</summary>
-        public byte keyDisabledFlag;
+        public byte keyDisabledFlag
+        {
+            get { return andKey_.keyDisabledFlag; }
+            set { andKey_.keyDisabledFlag = value; }
+        }
 
         public EpgSearchKeyInfo()
         {
-            andKey = "";
+            andKey_ = new SearchAndKey();
             notKey = "";
             regExpFlag = 0;
             titleOnlyFlag = 0;
@@ -1068,18 +1312,12 @@ namespace EpgTimer
             chkRecNoService = 0;
             chkDurationMin = 0;
             chkDurationMax = 0;
-            caseFlag = 0;
-            keyDisabledFlag = 0;
         }
         public void Write(MemoryStream s, ushort version)
         {
-            //andKey装飾のフラグをここで処理
-            string andKey_Send = (caseFlag == 1 ? "C!{999}" : "") + andKey;
-            andKey_Send = (keyDisabledFlag == 1 ? "^!{999}" : "") + andKey_Send;
-
             var w = new CtrlCmdWriter(s, version);
             w.Begin();
-            w.Write(andKey_Send);
+            w.Write(andKey_);
             w.Write(notKey);
             w.Write(regExpFlag);
             w.Write(titleOnlyFlag);
@@ -1109,7 +1347,7 @@ namespace EpgTimer
         {
             var r = new CtrlCmdReader(s, version);
             r.Begin();
-            r.Read(ref andKey);
+            r.Read(ref andKey_);
             r.Read(ref notKey);
             r.Read(ref regExpFlag);
             r.Read(ref titleOnlyFlag);
@@ -1134,18 +1372,6 @@ namespace EpgTimer
                 r.Read(ref chkDurationMax);
             }
             r.End();
-
-            //andKey装飾のフラグをここで処理
-            if (andKey.StartsWith("^!{999}") == true)//"^!{999}"が前
-            {
-                keyDisabledFlag = 1;
-                andKey = andKey.Substring(7);
-            }
-            if (andKey.StartsWith("C!{999}") == true)
-            {
-                caseFlag = 1;
-                andKey = andKey.Substring(7);
-            }
         }
     }
 
@@ -1159,12 +1385,19 @@ namespace EpgTimer
         public RecSettingData recSetting;
         /// <summary>予約登録数</summary>
         public uint addCount;
+        /// <summary>録画予約リスト</summary>
+        public List<ReserveBasicData> reserveList;
+        /// <summary>録画済みリスト</summary>
+        public List<RecFileBasicInfo> recFileList;
+
         public EpgAutoAddData()
         {
             dataID = 0;
             searchInfo = new EpgSearchKeyInfo();
             recSetting = new RecSettingData();
             addCount = 0;
+            reserveList = new List<ReserveBasicData>();
+            recFileList = new List<RecFileBasicInfo>();
         }
         public void Write(MemoryStream s, ushort version)
         {
@@ -1176,6 +1409,11 @@ namespace EpgTimer
             if (version >= 5)
             {
                 w.Write(addCount);
+            }
+            if (version >= 6)
+            {
+                w.Write(reserveList);
+                w.Write(recFileList);
             }
             w.End();
         }
@@ -1189,6 +1427,11 @@ namespace EpgTimer
             if (version >= 5)
             {
                 r.Read(ref addCount);
+            }
+            if (version >= 6)
+            {
+                r.Read(ref reserveList);
+                r.Read(ref recFileList);
             }
             r.End();
         }

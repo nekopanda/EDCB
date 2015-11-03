@@ -340,3 +340,19 @@ int WINAPI GetTimeDelayEP(
 
 	return ptr->GetTimeDelay();
 }
+
+#include "ARIB8CharDecode.h"
+#include "../../Common/StringUtil.h"
+
+int WINAPI DecodeARIBCharacters(
+	const BYTE *pSrcData, const DWORD dwSrcLen, void(*pfn)(const WCHAR*, void*), void* ctx
+	)
+{
+	CARIB8CharDecode arib;
+	std::string str;
+	arib.PSISI(pSrcData, dwSrcLen, &str);
+	std::wstring wstr;
+	AtoW(str, wstr);
+	pfn(wstr.c_str(), ctx);
+	return 0;
+}
