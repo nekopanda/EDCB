@@ -16,6 +16,10 @@ using std::vector;
 #include <TCHAR.h>
 #include <windows.h>
 
+// 古いコンパイラは未サポートなので無視
+#if _MSC_VER < 1900
+#	define noexcept
+#endif
 
 template<class T> inline void SAFE_DELETE(T*& p) { delete p; p = NULL; }
 template<class T> inline void SAFE_DELETE_ARRAY(T*& p) { delete[] p; p = NULL; }

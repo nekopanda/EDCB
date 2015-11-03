@@ -3,6 +3,7 @@
 #include "stdafx.h"
 
 #include <crtdbg.h>
+#include <stdint.h>
 
 #include "LightTsUtils.h"
 

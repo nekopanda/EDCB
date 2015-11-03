@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 #include "Util.h"
 
 __int64 GetFileLastModified(const wstring& path);
