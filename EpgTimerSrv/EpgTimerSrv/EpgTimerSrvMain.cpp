@@ -1475,24 +1475,34 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	case CMD2_EPG_SRV_FILE_COPY:
 		{
 			wstring val;
-			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) && CompareNoCase(val, L"ChSet5.txt") == 0 ){
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
 				wstring path;
-				GetSettingPath(path);
-				HANDLE hFile = CreateFile((path + L"\\ChSet5.txt").c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-				if( hFile != INVALID_HANDLE_VALUE ){
-					DWORD dwFileSize = GetFileSize(hFile, NULL);
-					if( dwFileSize != INVALID_FILE_SIZE && dwFileSize != 0 ){
-						BYTE* data = new BYTE[dwFileSize];
-						DWORD dwRead;
-						if( ReadFile(hFile, data, dwFileSize, &dwRead, NULL) && dwRead != 0 ){
-							resParam->dataSize = dwRead;
-							resParam->data = data;
-						}else{
-							delete[] data;
+				if( CompareNoCase(val, L"ChSet5.txt") == 0 ){
+					GetSettingPath(path);
+					path += L"\\ChSet5.txt";
+				}else if( CompareNoCase(val, L"Common.ini") == 0 ){
+					GetCommonIniPath(path);
+				}else if( CompareNoCase(val, L"EpgTimerSrv.ini") == 0 ){
+					GetEpgTimerSrvIniPath(path);
+				}
+				if( !path.empty() ){
+					HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+					if (hFile != INVALID_HANDLE_VALUE) {
+						DWORD dwFileSize = GetFileSize(hFile, NULL);
+						if (dwFileSize != INVALID_FILE_SIZE && dwFileSize != 0) {
+							BYTE* data = new BYTE[dwFileSize];
+							DWORD dwRead;
+							if (ReadFile(hFile, data, dwFileSize, &dwRead, NULL) && dwRead != 0) {
+								resParam->dataSize = dwRead;
+								resParam->data = data;
+							}
+							else {
+								delete[] data;
+							}
 						}
+						CloseHandle(hFile);
+						resParam->param = CMD_SUCCESS;
 					}
-					CloseHandle(hFile);
-					resParam->param = CMD_SUCCESS;
 				}
 			}
 		}
