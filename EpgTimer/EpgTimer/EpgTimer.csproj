@@ -95,6 +95,10 @@
     </Compile>
     <Compile Include="Common\CallerInfo.cs" />
     <Compile Include="Common\BoxExchangeEditor.cs" />
+    <Compile Include="DefineClass\InfoWindowViewModel.cs" />
+    <Compile Include="InfoWindow.xaml.cs">
+      <DependentUpon>InfoWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UserCtrlView\DataViewBase.cs" />
     <Compile Include="UserCtrlView\ListViewController.cs" />
     <Compile Include="Menu\MenuSettingData.cs" />
@@ -290,6 +294,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="ConnectWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="InfoWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
