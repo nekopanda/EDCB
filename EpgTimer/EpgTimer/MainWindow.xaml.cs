@@ -43,6 +43,9 @@ namespace EpgTimer
 
         private bool idleShowBalloon = false;
 
+        private InfoWindowViewModel infoWindowViewModel = null;
+        private InfoWindow infoWindow = null;
+
         public MainWindow()
         {
             string appName = System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location);
@@ -245,6 +248,7 @@ namespace EpgTimer
                 ButtonGen("NetworkTV終了", nwTVEndButton_Click);
                 ButtonGen("情報通知ログ", logViewButton_Click);
                 ButtonGen("再接続", connectButton_Click);
+                ButtonGen("予約簡易表示", showInfoWindowButton_Click);
 
                 //検索ボタンは他と共通でショートカット割り振られているので、コマンド側で処理する。
                 this.CommandBindings.Add(new CommandBinding(EpgCmds.Search, searchButton_Click));
@@ -281,6 +285,13 @@ namespace EpgTimer
                     //予約一覧の表示に使用したりするのであらかじめ読込んでおく(暫定処置)
                     CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
                     CommonManager.Instance.DB.ReloadEpgData();
+                }
+
+                // 設定から情報を読み取るので設定をロードした後作る
+                infoWindowViewModel = new InfoWindowViewModel();
+                if(Settings.Instance.InfoWindowEnabled)
+                {
+                    ShowInfoWindow();
                 }
             }
             catch (Exception ex)
@@ -581,6 +592,13 @@ namespace EpgTimer
             }
             else
             {
+                // 予約簡易表示ウィンドウを閉じる
+                Settings.Instance.InfoWindowEnabled = (infoWindow != null);
+                if(infoWindow != null)
+                {
+                    infoWindow.TrueClose();
+                }
+
                 if (initExe == true)
                 {
                     SaveData();
@@ -811,6 +829,7 @@ namespace EpgTimer
                         CommonManager.Instance.CtrlCmd.SendNotifyProfileUpdate();
                     }
                     reserveView.UpdateInfo();
+                    infoWindowViewModel.UpdateInfo();
                     tunerReserveView.UpdateInfo();
                     recInfoView.UpdateInfo();
                     autoAddView.UpdateAutoAddInfo();
@@ -1057,6 +1076,7 @@ namespace EpgTimer
                             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
                             CommonManager.Instance.DB.ReloadReserveInfo();
                             reserveView.UpdateInfo();
+                            infoWindowViewModel.UpdateInfo();
                             epgView.UpdateReserveData();
                             tunerReserveView.UpdateInfo();
                             autoAddView.UpdateAutoAddInfo();
@@ -1073,6 +1093,7 @@ namespace EpgTimer
                             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
                             CommonManager.Instance.DB.ReloadEpgData();
                             reserveView.UpdateInfo();
+                            infoWindowViewModel.UpdateInfo();
                             epgView.UpdateEpgData();
                         }));
                     }
@@ -1284,6 +1305,7 @@ namespace EpgTimer
                 case UpdateNotifyItem.RecStart:
                     TaskTrayBaloonWork("録画開始", status.param4);
                     reserveView.UpdateInfo();
+                    infoWindowViewModel.UpdateInfo();
                     epgView.UpdateReserveData();
                     break;
                 case UpdateNotifyItem.RecEnd:
@@ -1311,6 +1333,7 @@ namespace EpgTimer
                         //自動取得falseのときはReloadEpgData()ではじかれているので元々読込まれない。
                         CommonManager.Instance.DB.ReloadEpgData();
                         reserveView.UpdateInfo();//ジャンルや番組内容などが更新される
+                        infoWindowViewModel.UpdateInfo();
                         epgView.UpdateEpgData();
                         GC.Collect();
                     }
@@ -1322,6 +1345,7 @@ namespace EpgTimer
                         //というより後ろでタスクトレイのルーチンが取得をかけるので遅延の効果がない。
                         CommonManager.Instance.DB.ReloadReserveInfo();
                         reserveView.UpdateInfo();
+                        infoWindowViewModel.UpdateInfo();
                         autoAddView.UpdateAutoAddInfo();
                         epgView.UpdateReserveData();
                         tunerReserveView.UpdateInfo();
@@ -1363,6 +1387,7 @@ namespace EpgTimer
                         {
                             IniFileHandler.UpdateSrvProfileIniNW();
                             reserveView.UpdateInfo();
+                            infoWindowViewModel.UpdateInfo();
                             autoAddView.UpdateAutoAddInfo();
                             epgView.UpdateReserveData();
                             tunerReserveView.UpdateInfo();
@@ -1421,6 +1446,7 @@ namespace EpgTimer
                     {
                         //更新しない場合でも、再描画だけはかけておく
                         reserveView.UpdateInfo();
+                        infoWindowViewModel.UpdateInfo();
                         tunerReserveView.UpdateInfo();
                         autoAddView.UpdateAutoAddInfo();
                         epgView.UpdateReserveData();
@@ -1536,6 +1562,32 @@ namespace EpgTimer
             {
                 this.autoAddView.manualAutoAddView.listView_key.Focus();
             }
+        }
+
+        private void ShowInfoWindow()
+        {
+            if (infoWindow == null)
+            {
+                infoWindowViewModel.UpdateInfo();
+                infoWindow = new InfoWindow(infoWindowViewModel);
+                infoWindow.Closed += InfoWindow_Closed;
+                infoWindow.Show();
+            }
+            else
+            {
+                infoWindow.Activate();
+            }
+        }
+
+        private void InfoWindow_Closed(object sender, EventArgs e)
+        {
+            infoWindow.Closed -= InfoWindow_Closed;
+            infoWindow = null;
+        }
+
+        private void showInfoWindowButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowInfoWindow();
         }
 
     }

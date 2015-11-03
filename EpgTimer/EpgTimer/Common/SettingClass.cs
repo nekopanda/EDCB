@@ -289,6 +289,9 @@ namespace EpgTimer
         private int keyDeleteDisplayItemNum;
         private bool displayNotifyEpgChange;
         private int displayNotifyJumpTime;
+        private SerializableDictionary<string, WINDOWPLACEMENT> placement;
+        private bool infoWindowTopMost;
+        private bool infoWindowEnabled;
 
         public bool UseCustomEpgView
         {
@@ -975,7 +978,22 @@ namespace EpgTimer
             get { return displayNotifyJumpTime; }
             set { displayNotifyJumpTime = value; }
         }
-        
+        public SerializableDictionary<string, WINDOWPLACEMENT> Placement
+        {
+            get { return placement; }
+            set { placement = value; }
+        }
+        public bool InfoWindowTopMost
+        {
+            get { return infoWindowTopMost; }
+            set { infoWindowTopMost = value; }
+        }
+        public bool InfoWindowEnabled
+        {
+            get { return infoWindowEnabled; }
+            set { infoWindowEnabled = value; }
+        }
+
         public Settings()
         {
             useCustomEpgView = false;
@@ -1113,6 +1131,9 @@ namespace EpgTimer
             keyDeleteDisplayItemNum = 10;
             displayNotifyEpgChange = false;
             displayNotifyJumpTime = 3;
+            placement = new SerializableDictionary<string, WINDOWPLACEMENT>();
+            infoWindowTopMost = true;
+            infoWindowEnabled = false;
         }
 
         [NonSerialized()]
