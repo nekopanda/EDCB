@@ -200,7 +200,7 @@ namespace EpgTimer
                 return info;
             }
         }
-        public List<String> RecFileName
+        public List<String> RecFolder
         {
             get
             {
@@ -213,7 +213,7 @@ namespace EpgTimer
                 return list;
             }
         }
-        public List<String> RecFolder
+        public List<String> RecFileName
         {
             get
             {
