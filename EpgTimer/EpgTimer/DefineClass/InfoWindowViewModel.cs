@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Windows.Forms;
 
 namespace EpgTimer
 {
@@ -31,6 +32,25 @@ namespace EpgTimer
                 if (this._ReserveList != value)
                 {
                     this._ReserveList = value;
+                    this.RaisePropertyChanged();
+                }
+            }
+        }
+
+        #endregion
+
+        #region IsTopMost 変更通知プロパティ
+
+        private bool _IsTopMost = Settings.Instance.InfoWindowTopMost;
+
+        public bool IsTopMost
+        {
+            get { return this._IsTopMost; }
+            set
+            {
+                if (this._IsTopMost != value)
+                {
+                    this._IsTopMost = value;
                     this.RaisePropertyChanged();
                 }
             }
