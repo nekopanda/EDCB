@@ -96,9 +96,11 @@
     <Compile Include="Common\CallerInfo.cs" />
     <Compile Include="Common\BoxExchangeEditor.cs" />
     <Compile Include="DefineClass\InfoWindowViewModel.cs" />
+    <Compile Include="DefineClass\SerializableDictionary.cs" />
     <Compile Include="InfoWindow.xaml.cs">
       <DependentUpon>InfoWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="RestorableWindow.cs" />
     <Compile Include="UserCtrlView\DataViewBase.cs" />
     <Compile Include="UserCtrlView\ListViewController.cs" />
     <Compile Include="Menu\MenuSettingData.cs" />
@@ -578,6 +580,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\drag.cur" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\TaskIconInfo.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
