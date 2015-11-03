@@ -594,7 +594,8 @@ namespace EpgTimer
             {
                 // 予約簡易表示ウィンドウを閉じる
                 Settings.Instance.InfoWindowEnabled = (infoWindow != null);
-                if(infoWindow != null)
+                Settings.Instance.InfoWindowTopMost = infoWindowViewModel.IsTopMost;
+                if (infoWindow != null)
                 {
                     infoWindow.TrueClose();
                 }
@@ -1575,7 +1576,7 @@ namespace EpgTimer
             }
             else
             {
-                infoWindow.Activate();
+                infoWindow.WindowActivate();
             }
         }
 
