@@ -30,7 +30,6 @@ namespace EpgTimer
                     _instance = new ChSet5();
                 return _instance;
             }
-            set { _instance = value; }
         }
 
         public ChSet5()
