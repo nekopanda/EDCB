@@ -303,7 +303,10 @@ namespace EpgTimer.Setting
         {
             try
             {
-                System.IO.Directory.CreateDirectory(textBox_setPath.Text);
+                if (textBox_setPath.IsEnabled)
+                {
+                    System.IO.Directory.CreateDirectory(textBox_setPath.Text);
+                }
 
                 IniFileHandler.WritePrivateProfileString("SET", "DataSavePath",
                     string.Compare(textBox_setPath.Text.TrimEnd('\\'), SettingPath.DefSettingFolderPath, true) == 0 ? null : textBox_setPath.Text, SettingPath.CommonIniPath);
