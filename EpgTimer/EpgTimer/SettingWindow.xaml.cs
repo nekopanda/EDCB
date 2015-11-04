@@ -53,6 +53,9 @@ namespace EpgTimer
             setEpgView.SaveSetting();
             setOtherAppView.SaveSetting();
 
+            // Common.ini や EpgTimerSrv.ini の更新分をサーバー側へ通知する
+            IniSetting.Instance.UpToDate();
+
             Settings.SaveToXmlFile();
             // EpgTimer 側から更新することはないはず
             //ChSet5.SaveFile();

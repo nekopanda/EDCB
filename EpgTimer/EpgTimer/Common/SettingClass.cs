@@ -25,6 +25,19 @@ namespace EpgTimer
 
         public static uint GetPrivateProfileString(string lpAppName, string lpKeyName, string lpDefault, StringBuilder lpReturnedString, uint nSize, string lpFileName)
         {
+            try
+            {
+                string s = IniSetting.Instance[lpFileName][lpAppName][lpKeyName];
+                lpReturnedString.Append(s);
+                return (uint)lpReturnedString.Length;
+            }
+            catch
+            {
+                // EpgTimerSrv の FILE_COPY にパッチが当たってないと IniSetting が組み立てられないので
+                // こちらの例外で補足する。
+                // catch 内で GetPrivateProfileString をしたくないので、何もせずに外に出る。
+            }
+
             if (CommonManager.Instance.NWMode == false)
             {
                 return GetPrivateProfileStringW(lpAppName, lpKeyName, lpDefault, lpReturnedString, nSize, lpFileName);
@@ -37,16 +50,16 @@ namespace EpgTimer
             }
         }
 
-/*
-        // 現在使われていないようなので、コメントアウトしておく。
-        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true,
-            EntryPoint = "GetPrivateProfileStringW")]
-        public static extern uint
-            GetPrivateProfileStringByByteArray(string lpAppName,
-            string lpKeyName, string lpDefault,
-            byte[] lpReturnedString, uint nSize,
-            string lpFileName);
-*/
+        /*
+                // 現在使われていないようなので、コメントアウトしておく。
+                [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true,
+                    EntryPoint = "GetPrivateProfileStringW")]
+                public static extern uint
+                    GetPrivateProfileStringByByteArray(string lpAppName,
+                    string lpKeyName, string lpDefault,
+                    byte[] lpReturnedString, uint nSize,
+                    string lpFileName);
+        */
 
         [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true)]
         public static extern int
@@ -55,6 +68,18 @@ namespace EpgTimer
 
         public static int GetPrivateProfileInt(string lpAppName, string lpKeyName, int nDefault, string lpFileName)
         {
+            try
+            {
+                string s = IniSetting.Instance[lpFileName][lpAppName][lpKeyName];
+                return s == null ? nDefault : Convert.ToInt32(s);
+            }
+            catch
+            {
+                // EpgTimerSrv の FILE_COPY にパッチが当たってないと IniSetting が組み立てられないので
+                // こちらの例外で補足する。
+                // catch 内で GetPrivateProfileInt をしたくないので、何もせずに外に出る。
+            }
+
             if (CommonManager.Instance.NWMode == false)
             {
                 return GetPrivateProfileIntW(lpAppName, lpKeyName, nDefault, lpFileName);
@@ -76,6 +101,17 @@ namespace EpgTimer
 
         public static uint WritePrivateProfileString(string lpAppName, string lpKeyName, string lpString, string lpFileName)
         {
+            try
+            {
+                IniSetting.Instance[lpFileName][lpAppName][lpKeyName] = lpString;
+                return (uint)lpString.Length;
+            }
+            catch
+            {
+                // EpgTimerSrv の FILE_COPY にパッチが当たってないと IniSetting が組み立てられないので
+                // こちらの例外で補足する。
+                // catch 内で WritePrivateProfileStringW をしたくないので、何もせずに外に出る。
+            }
             if (CommonManager.Instance.NWMode == false)
             {
                 return WritePrivateProfileStringW(lpAppName, lpKeyName, lpString, lpFileName);
@@ -86,7 +122,217 @@ namespace EpgTimer
                 return 0;
             }
         }
+    }
 
+    // サーバーから取得したINIファイルをパースして構造体で保持する
+    //
+    //
+    class IniSetting
+    {
+        public class SectionList
+        {
+            public class PairList
+            {
+                private Dictionary<string, string> _items;
+                private Dictionary<string, string> _updates;
+                public string this[string key]
+                {
+                    get
+                    {
+                        string k = key.ToUpper();
+                        return _updates.ContainsKey(k) ? _updates[k] : _items.ContainsKey(k) ? _items[k] : null;
+                    }
+                    set { _updates[key.ToUpper()] = value; }
+                }
+                public Dictionary<string, string>.KeyCollection Keys
+                {
+                    get { return _updates.Keys; }
+                }
+                public PairList()
+                {
+                    _items = new Dictionary<string, string>();
+                    _updates = new Dictionary<string, string>();
+                }
+                public void AddPair(string key, string value)
+                {
+                    _items.Add(key.ToUpper(), value);
+                }
+                public void Clear()
+                {
+                    _items.Clear();
+                }
+                public void Flush()
+                {
+                    _updates.Clear();
+                }
+            }
+
+            private string _file;
+            private DateTime _lastAccess;
+            public SectionList(string file)
+            {
+                _file = file;
+                _lastAccess = DateTime.MinValue;
+            }
+
+            private Dictionary<string, PairList> _sections;
+            public PairList this[string section]
+            {
+                get
+                {
+                    string _s = section.ToUpper();
+                    if (_sections.ContainsKey(_s) == false)
+                    {
+                        _sections.Add(_s, new PairList());
+                    }
+                    return _sections[_s];
+                }
+            }
+
+            public void LoadFile()
+            {
+                try
+                {
+                    // 前回取得から5分以内は再取得しない
+                    if ((DateTime.Now - _lastAccess).TotalSeconds < 300)
+                        return;
+
+                    byte[] binData;
+                    if (CommonManager.Instance.CtrlCmd.SendFileCopy(_file, out binData) == ErrCode.CMD_SUCCESS)
+                    {
+                        System.IO.MemoryStream stream = new System.IO.MemoryStream(binData);
+                        System.IO.StreamReader reader = new System.IO.StreamReader(stream, System.Text.Encoding.Default);
+
+                        if (_sections == null)
+                        {
+                            _sections = new Dictionary<string, PairList>();
+                        }
+                        else
+                        {
+                            foreach (string s in _sections.Keys)
+                            {
+                                _sections[s].Clear();
+                            }
+                        }
+
+                        string section = "";
+
+                        while (reader.Peek() >= 0)
+                        {
+                            string buff = reader.ReadLine();
+                            if (buff.IndexOf(";") == 0)
+                            {
+                                //コメント行
+                            }
+                            else if (buff.IndexOf("[") == 0)
+                            {
+                                //セクション開始
+                                int last = buff.IndexOf(']', 1);
+                                if (last > 1)
+                                {
+                                    section = buff.Substring(1, last - 1);
+                                }
+                            }
+                            else if (section.Length > 0)
+                            {
+                                string[] list = buff.Split('=');
+                                this[section].AddPair(list[0], list[1]);
+                            }
+                        }
+                        reader.Close();
+                    }
+                    _lastAccess = DateTime.Now;
+                }
+                catch
+                {
+                    _lastAccess = DateTime.MinValue;
+                }
+            }
+            public void UpToDate()
+            {
+                if (_sections != null)
+                {
+                    // 更新があった差分だけのINIファイルの中身を組み立てる
+                    // データの削除はしていないようなので、データ削除については未実装
+                    string update = "";
+                    foreach (string s in _sections.Keys)
+                    {
+                        string section = "";
+                        foreach (string k in _sections[s].Keys)
+                        {
+                            section += k + "=" + _sections[s][k] + "\r\n";
+                        }
+                        if (section.Length > 0)
+                        {
+                            update += "[" + s + "]\r\n" + section;
+                        }
+                    }
+
+                    if (update.Length > 0)
+                    {
+                        // ファイル送信 CtrlCmd の実装対応待ち
+
+                        // 更新が必要な差分だけサーバーに送信。 
+                        //if (CommonManager.Instance.CtrlCmd.SendIniFile(_file, update) == ErrCode.CMD_SUCCESS)
+                        {
+                            // サーバーに送信できたので、更新履歴を消しておく
+                            foreach (string s in _sections.Keys)
+                            {
+                                _sections[s].Flush();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private static IniSetting _instance;
+        public static IniSetting Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = new IniSetting();
+                }
+                return _instance;
+            }
+        }
+
+        private Dictionary<string, SectionList> _files;
+        public SectionList this [string file]
+        {
+            get
+            {
+                if (_files == null)
+                {
+                    _files = new Dictionary<string, SectionList>();
+                }
+
+                file = file.Substring(file.LastIndexOf('\\') + 1).ToUpper();
+                if (_files.ContainsKey(file) == false)
+                {
+                    _files.Add(file, new SectionList(file));
+                }
+
+                _files[file].LoadFile();
+                return _files[file];
+            }
+        }
+        public void UpToDate()
+        {
+            if (_files != null)
+            {
+                foreach (string _f in _files.Keys)
+                {
+                    _files[_f].UpToDate();
+                }
+            }
+        }
+        public void Clear()
+        {
+            _instance = null;
+        }
     }
 
     class SettingPath

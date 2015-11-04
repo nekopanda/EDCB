@@ -559,6 +559,10 @@ namespace EpgTimer
 
         bool ConnectCmd(bool showDialog)
         {
+            // 接続先が変わる前に保持している INI データをクリアする。
+            IniSetting.Instance.UpToDate();
+            IniSetting.Instance.Clear();
+
             if (showDialog == true)
             {
                 ConnectWindow dlg = new ConnectWindow();
