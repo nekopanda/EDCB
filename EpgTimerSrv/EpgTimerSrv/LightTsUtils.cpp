@@ -1,5 +1,6 @@
-//  (C) Copyright Nekopanda 2015.
-
+// 軽量TSパーサ
+// TvTestのコードを流用しているためこのコードのライセンスはGPLです。
+//
 #include "stdafx.h"
 
 #include <crtdbg.h>

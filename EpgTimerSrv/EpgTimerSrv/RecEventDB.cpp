@@ -1,7 +1,8 @@
-//  (C) Copyright Nekopanda 2015.
 #include "stdafx.h"
 
 #include "RecEventDB.h"
+
+#if ENABLE_GPL_CODE
 
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/TimeUtil.h"
@@ -404,3 +405,5 @@ vector<DWORD> CRecEventDB::SearchRecFile_(const EPGDB_SEARCH_KEY_INFO& item, SER
 
 	return ret;
 }
+
+#endif
