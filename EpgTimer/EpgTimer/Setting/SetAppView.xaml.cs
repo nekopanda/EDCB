@@ -48,16 +48,16 @@ namespace EpgTimer.Setting
 
             if (CommonManager.Instance.NWMode == true)
             {
-                tabItem1.IsEnabled = false;
-                tabItem2.IsEnabled = false;
+                tabItem1.IsEnabled = IniFileHandler.IsSyncWithServer;
+                tabItem2.IsEnabled = IniFileHandler.IsSyncWithServer;
                 tabItem7.IsEnabled = false;
-                tabControl1.SelectedItem = tabItem3;
+                tabControl1.SelectedItem = IniFileHandler.IsSyncWithServer ? tabItem1 : tabItem3;
                 checkBox_tcpServer.IsEnabled = false;
                 label41.IsEnabled = false;
                 textBox_tcpPort.IsEnabled = false;
-                checkBox_autoDelRecInfo.IsEnabled = false;
-                label42.IsEnabled = false;
-                textBox_autoDelRecInfo.IsEnabled = false;
+                checkBox_autoDelRecInfo.IsEnabled = IniFileHandler.IsSyncWithServer;
+                label42.IsEnabled = IniFileHandler.IsSyncWithServer;
+                textBox_autoDelRecInfo.IsEnabled = IniFileHandler.IsSyncWithServer;
                 checkBox_timeSync.IsEnabled = false;
                 checkBox_wakeReconnect.IsEnabled = true;
                 checkBox_suspendClose.IsEnabled = true;
@@ -356,12 +356,9 @@ namespace EpgTimer.Setting
         {
             if (tabItem4.IsEnabled)
             {
-                if (checkBox_timeSync.IsEnabled)
+                if (IniFileHandler.GetPrivateProfileInt("SET", "TimeSync", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
-                    if (IniFileHandler.GetPrivateProfileInt("SET", "TimeSync", 0, SettingPath.TimerSrvIniPath) == 1)
-                    {
-                        checkBox_timeSync.IsChecked = true;
-                    }
+                    checkBox_timeSync.IsChecked = true;
                 }
 
                 try
@@ -382,31 +379,23 @@ namespace EpgTimer.Setting
                 {
                 }
 
-                if (checkBox_autoDelRecInfo.IsEnabled)
+                if (IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfo", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
-                    if (IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfo", 0, SettingPath.TimerSrvIniPath) == 1)
-                    {
-                        checkBox_autoDelRecInfo.IsChecked = true;
-                    }
-                    textBox_autoDelRecInfo.Text = IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfoNum", 100, SettingPath.TimerSrvIniPath).ToString();
+                    checkBox_autoDelRecInfo.IsChecked = true;
                 }
+                textBox_autoDelRecInfo.Text = IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfoNum", 100, SettingPath.TimerSrvIniPath).ToString();
 
-                if (checkBox_srvResident.IsEnabled)
-                {
-                    int residentMode = IniFileHandler.GetPrivateProfileInt("SET", "ResidentMode", 0, SettingPath.TimerSrvIniPath);
-                    checkBox_srvResident.IsChecked = residentMode >= 1;
-                    checkBox_srvShowTray.IsChecked = residentMode >= 2;
-                    checkBox_srvNoBalloonTip.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "NoBalloonTip", 0, SettingPath.TimerSrvIniPath) != 0;
-                }
+                int residentMode = IniFileHandler.GetPrivateProfileInt("SET", "ResidentMode", 0, SettingPath.TimerSrvIniPath);
+                checkBox_srvResident.IsChecked = residentMode >= 1;
+                checkBox_srvShowTray.IsChecked = residentMode >= 2;
+                checkBox_srvNoBalloonTip.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "NoBalloonTip", 0, SettingPath.TimerSrvIniPath) != 0;
 
-                if (checkBox_tcpServer.IsEnabled)
+                if (IniFileHandler.GetPrivateProfileInt("SET", "EnableTCPSrv", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
-                    if (IniFileHandler.GetPrivateProfileInt("SET", "EnableTCPSrv", 0, SettingPath.TimerSrvIniPath) == 1)
-                    {
-                        checkBox_tcpServer.IsChecked = true;
-                    }
-                    textBox_tcpPort.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath).ToString();
+                    checkBox_tcpServer.IsChecked = true;
                 }
+                textBox_tcpPort.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath).ToString();
+
                 Settings.GetDefSearchSetting(ref defSearchKey);
             }
         }

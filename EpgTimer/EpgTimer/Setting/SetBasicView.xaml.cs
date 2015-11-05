@@ -33,17 +33,18 @@ namespace EpgTimer.Setting
             if (CommonManager.Instance.NWMode == true)
             {
                 tabItem2.IsEnabled = false;
-                tabItem3.IsEnabled = false;
+                tabItem3.IsEnabled = IniFileHandler.IsSyncWithServer;
                 textBox_setPath.IsEnabled = false;
+                button_setPath.IsEnabled = false;
                 textBox_exe.IsEnabled = false;
                 button_exe.IsEnabled = false;
-                listBox_recFolder.IsEnabled = false;
-                button_rec_up.IsEnabled = false;
-                button_rec_down.IsEnabled = false;
-                button_rec_del.IsEnabled = false;
+                listBox_recFolder.IsEnabled = IniFileHandler.IsSyncWithServer;
+                button_rec_up.IsEnabled = IniFileHandler.IsSyncWithServer;
+                button_rec_down.IsEnabled = IniFileHandler.IsSyncWithServer;
+                button_rec_del.IsEnabled = IniFileHandler.IsSyncWithServer;
                 textBox_recFolder.IsEnabled = false;
                 button_rec_open.IsEnabled = false;
-                button_rec_add.IsEnabled = false;
+                button_rec_add.IsEnabled = IniFileHandler.IsSyncWithServer;
             }
 
             try
@@ -71,20 +72,14 @@ namespace EpgTimer.Setting
 
                 StringBuilder buff = new StringBuilder(512);
 
-                if (textBox_setPath.IsEnabled)
-                {
-                    buff.Clear();
-                    IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", SettingPath.DefSettingFolderPath, buff, 512, SettingPath.CommonIniPath);
-                    textBox_setPath.Text = buff.ToString();
-                }
+                buff.Clear();
+                IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", SettingPath.DefSettingFolderPath, buff, 512, SettingPath.CommonIniPath);
+                textBox_setPath.Text = buff.ToString();
 
-                if (textBox_exe.IsEnabled)
-                {
-                    string defRecExe = SettingPath.ModulePath.TrimEnd('\\') + "\\EpgDataCap_Bon.exe";
-                    buff.Clear();
-                    IniFileHandler.GetPrivateProfileString("SET", "RecExePath", defRecExe, buff, 512, SettingPath.CommonIniPath);
-                    textBox_exe.Text = buff.ToString();
-                }
+                string defRecExe = SettingPath.ModulePath.TrimEnd('\\') + "\\EpgDataCap_Bon.exe";
+                buff.Clear();
+                IniFileHandler.GetPrivateProfileString("SET", "RecExePath", defRecExe, buff, 512, SettingPath.CommonIniPath);
+                textBox_exe.Text = buff.ToString();
 
                 if (listBox_recFolder.IsEnabled)
                 {
@@ -108,7 +103,7 @@ namespace EpgTimer.Setting
                     }
                 }
 
-                if (tabItem2.IsEnabled)
+                if (tabItem2.IsEnabled && Directory.Exists(SettingPath.SettingFolderPath))
                 {
                     string[] files = Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt");
                     SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
@@ -306,20 +301,25 @@ namespace EpgTimer.Setting
                 if (textBox_setPath.IsEnabled)
                 {
                     System.IO.Directory.CreateDirectory(textBox_setPath.Text);
+                    IniFileHandler.WritePrivateProfileString("SET", "DataSavePath",
+                        string.Compare(textBox_setPath.Text.TrimEnd('\\'), SettingPath.DefSettingFolderPath, true) == 0 ? null : textBox_setPath.Text, SettingPath.CommonIniPath);
                 }
-
-                IniFileHandler.WritePrivateProfileString("SET", "DataSavePath",
-                    string.Compare(textBox_setPath.Text.TrimEnd('\\'), SettingPath.DefSettingFolderPath, true) == 0 ? null : textBox_setPath.Text, SettingPath.CommonIniPath);
-                IniFileHandler.WritePrivateProfileString("SET", "RecExePath",
-                    string.Compare(textBox_exe.Text, SettingPath.ModulePath.TrimEnd('\\') + "\\EpgDataCap_Bon.exe", true) == 0 ? null : textBox_exe.Text, SettingPath.CommonIniPath);
-                int recFolderCount = listBox_recFolder.Items.Count == 1 &&
-                    string.Compare(((string)listBox_recFolder.Items[0]).TrimEnd('\\'), textBox_setPath.Text.TrimEnd('\\'), true) == 0 ? 0 : listBox_recFolder.Items.Count;
-                IniFileHandler.WritePrivateProfileString("SET", "RecFolderNum", recFolderCount.ToString(), SettingPath.CommonIniPath);
-                for (int i = 0; i < recFolderCount; i++)
+                if (textBox_exe.IsEnabled)
                 {
-                    string key = "RecFolderPath" + i.ToString();
-                    string val = listBox_recFolder.Items[i] as string;
-                    IniFileHandler.WritePrivateProfileString("SET", key, val, SettingPath.CommonIniPath);
+                    IniFileHandler.WritePrivateProfileString("SET", "RecExePath",
+                        string.Compare(textBox_exe.Text, SettingPath.ModulePath.TrimEnd('\\') + "\\EpgDataCap_Bon.exe", true) == 0 ? null : textBox_exe.Text, SettingPath.CommonIniPath);
+                }
+                if (listBox_recFolder.IsEnabled)
+                {
+                    int recFolderCount = listBox_recFolder.Items.Count == 1 &&
+                    string.Compare(((string)listBox_recFolder.Items[0]).TrimEnd('\\'), textBox_setPath.Text.TrimEnd('\\'), true) == 0 ? 0 : listBox_recFolder.Items.Count;
+                    IniFileHandler.WritePrivateProfileString("SET", "RecFolderNum", recFolderCount.ToString(), SettingPath.CommonIniPath);
+                    for (int i = 0; i < recFolderCount; i++)
+                    {
+                        string key = "RecFolderPath" + i.ToString();
+                        string val = listBox_recFolder.Items[i] as string;
+                        IniFileHandler.WritePrivateProfileString("SET", key, val, SettingPath.CommonIniPath);
+                    }
                 }
 
                 for (int i = 0; i < listBox_bon.Items.Count; i++)
@@ -497,6 +497,7 @@ namespace EpgTimer.Setting
             {
                 if (listBox_recFolder.SelectedItem != null)
                 {
+                    textBox_recFolder.Text = listBox_recFolder.SelectedItem.ToString();
                     listBox_recFolder.Items.RemoveAt(listBox_recFolder.SelectedIndex);
                 }
             }

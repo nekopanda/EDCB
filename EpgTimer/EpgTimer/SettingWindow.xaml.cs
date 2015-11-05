@@ -66,6 +66,7 @@ namespace EpgTimer
 
         private void button_cancel_Click(object sender, RoutedEventArgs e)
         {
+            IniSetting.Instance.Clear();
             this.DialogResult = false;
         }
     }
