@@ -338,6 +338,8 @@ namespace EpgTimer
         CMD_EPG_SRV_ENUM_PLUGIN = 1061,
         /// <summary>TVTestのチャンネル切り替え用の情報を取得する</summary>
         CMD_EPG_SRV_GET_CHG_CH_TVTEST = 1062,
+        /// <summary>INIファイルを更新する</summary>
+        CMD_EPG_SRV_UPDATE_SETTING = 1063,
         /// <summary>ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え</summary>
         CMD_EPG_SRV_NWTV_SET_CH = 1070,
         /// <summary>ネットワークモードで起動中のEpgDataCap_Bonを終了</summary>
@@ -575,6 +577,14 @@ namespace EpgTimer
             ErrCode ret = SendCmdStream(CtrlCmd.CMD_EPG_SRV_FILE_COPY, w.Stream, ref res);
             resVal = ret == ErrCode.CMD_SUCCESS ? res.ToArray() : null;
             return ret;
+        }
+        /// <summary>INIファイルを更新する</summary>
+        public ErrCode SendUpdateSetting(string val)
+        {
+            var w = new CtrlCmdWriter(new MemoryStream());
+            w.Write(val);
+            MemoryStream res = null;
+            return SendCmdStream(CtrlCmd.CMD_EPG_SRV_UPDATE_SETTING, w.Stream, ref res);
         }
 
         private ErrCode SendPipe(CtrlCmd param, MemoryStream send, ref MemoryStream res)

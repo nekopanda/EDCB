@@ -28,7 +28,7 @@ namespace EpgTimer
             try
             {
                 string s = IniSetting.Instance[lpFileName][lpAppName][lpKeyName];
-                lpReturnedString.Append(s);
+                lpReturnedString.Append(s == null ? lpDefault : s);
                 return (uint)lpReturnedString.Length;
             }
             catch
@@ -51,14 +51,14 @@ namespace EpgTimer
         }
 
         /*
-                // 現在使われていないようなので、コメントアウトしておく。
-                [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true,
-                    EntryPoint = "GetPrivateProfileStringW")]
-                public static extern uint
-                    GetPrivateProfileStringByByteArray(string lpAppName,
-                    string lpKeyName, string lpDefault,
-                    byte[] lpReturnedString, uint nSize,
-                    string lpFileName);
+        // 現在使われていないようなので、コメントアウトしておく。
+        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true,
+            EntryPoint = "GetPrivateProfileStringW")]
+        public static extern uint
+            GetPrivateProfileStringByByteArray(string lpAppName,
+            string lpKeyName, string lpDefault,
+            byte[] lpReturnedString, uint nSize,
+            string lpFileName);
         */
 
         [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true)]
@@ -122,6 +122,17 @@ namespace EpgTimer
                 return 0;
             }
         }
+        public static bool IsSyncWithServer
+        {
+            get
+            {
+                if (!IniSetting.Instance.IsAvailable)
+                {
+                    object o = IniSetting.Instance["Common.ini"];
+                }
+                return IniSetting.Instance.IsAvailable;
+            }
+        }
     }
 
     // サーバーから取得したINIファイルをパースして構造体で保持する
@@ -144,7 +155,7 @@ namespace EpgTimer
                     }
                     set { _updates[key.ToUpper()] = value; }
                 }
-                public Dictionary<string, string>.KeyCollection Keys
+                public Dictionary<string, string>.KeyCollection UpdatedKeys
                 {
                     get { return _updates.Keys; }
                 }
@@ -160,10 +171,6 @@ namespace EpgTimer
                 public void Clear()
                 {
                     _items.Clear();
-                }
-                public void Flush()
-                {
-                    _updates.Clear();
                 }
             }
 
@@ -189,7 +196,7 @@ namespace EpgTimer
                 }
             }
 
-            public void LoadFile()
+            public void LoadFile(ref bool supportSendFileCopy)
             {
                 try
                 {
@@ -200,6 +207,8 @@ namespace EpgTimer
                     byte[] binData;
                     if (CommonManager.Instance.CtrlCmd.SendFileCopy(_file, out binData) == ErrCode.CMD_SUCCESS)
                     {
+                        supportSendFileCopy = true;
+
                         System.IO.MemoryStream stream = new System.IO.MemoryStream(binData);
                         System.IO.StreamReader reader = new System.IO.StreamReader(stream, System.Text.Encoding.Default);
 
@@ -248,41 +257,44 @@ namespace EpgTimer
                     _lastAccess = DateTime.MinValue;
                 }
             }
-            public void UpToDate()
+
+            public string GetIniData()
             {
+                string ini = "";
                 if (_sections != null)
                 {
                     // 更新があった差分だけのINIファイルの中身を組み立てる
-                    // データの削除はしていないようなので、データ削除については未実装
-                    string update = "";
+                    // データの削除処理はしていないようなので、データ削除については未実装
                     foreach (string s in _sections.Keys)
                     {
-                        string section = "";
-                        foreach (string k in _sections[s].Keys)
+                        if (_sections[s].UpdatedKeys.Count > 0)
                         {
-                            section += k + "=" + _sections[s][k] + "\r\n";
-                        }
-                        if (section.Length > 0)
-                        {
-                            update += "[" + s + "]\r\n" + section;
-                        }
-                    }
-
-                    if (update.Length > 0)
-                    {
-                        // ファイル送信 CtrlCmd の実装対応待ち
-
-                        // 更新が必要な差分だけサーバーに送信。 
-                        //if (CommonManager.Instance.CtrlCmd.SendIniFile(_file, update) == ErrCode.CMD_SUCCESS)
-                        {
-                            // サーバーに送信できたので、更新履歴を消しておく
-                            foreach (string s in _sections.Keys)
+                            //セクション名を追加
+                            ini += "[" + s + "]\r\n";
+                            foreach (string k in _sections[s].UpdatedKeys)
                             {
-                                _sections[s].Flush();
+                                //データペアを追加
+                                ini += k + "=" + _sections[s][k] + "\r\n";
                             }
                         }
                     }
+
+                    //保存すべきデータがあれば、ファイル名を ";<ファイル名>" の形式で先頭に追加
+                    if (ini.Length > 0)
+                    {
+                        ini = ";<" + _file + ">\r\n" + ini;
+                    }
                 }
+                return ini;
+            }
+
+            public void Flush()
+            {
+                if (_sections != null)
+                {
+                    _sections.Clear();
+                }
+                _lastAccess = DateTime.MinValue;
             }
         }
 
@@ -296,6 +308,15 @@ namespace EpgTimer
                     _instance = new IniSetting();
                 }
                 return _instance;
+            }
+        }
+
+        private bool _available;
+        public bool IsAvailable
+        {
+            get
+            {
+                return _available;
             }
         }
 
@@ -315,20 +336,35 @@ namespace EpgTimer
                     _files.Add(file, new SectionList(file));
                 }
 
-                _files[file].LoadFile();
+                _files[file].LoadFile(ref _available);
                 return _files[file];
             }
         }
+
         public void UpToDate()
         {
-            if (_files != null)
+            if (_available)
             {
-                foreach (string _f in _files.Keys)
+                string output = "";
+                foreach (string f in _files.Keys)
                 {
-                    _files[_f].UpToDate();
+                    output += _files[f].GetIniData();
+                }
+                if (output.Length > 0)
+                {
+                    // 更新が必要な差分だけサーバーに送信。 
+                    if (CommonManager.Instance.CtrlCmd.SendUpdateSetting(output) == ErrCode.CMD_SUCCESS)
+                    {
+                        // サーバーに送信できたので、更新履歴を消しておく
+                        foreach (string f in _files.Keys)
+                        {
+                            _files[f].Flush();
+                        }
+                    }
                 }
             }
         }
+
         public void Clear()
         {
             _instance = null;

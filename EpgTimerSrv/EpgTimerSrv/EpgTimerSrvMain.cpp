@@ -1477,16 +1477,19 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			wstring val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
 				wstring path;
+				DWORD flags = OPEN_EXISTING;
 				if( CompareNoCase(val, L"ChSet5.txt") == 0 ){
 					GetSettingPath(path);
 					path += L"\\ChSet5.txt";
 				}else if( CompareNoCase(val, L"Common.ini") == 0 ){
 					GetCommonIniPath(path);
+					flags = OPEN_ALWAYS;
 				}else if( CompareNoCase(val, L"EpgTimerSrv.ini") == 0 ){
 					GetEpgTimerSrvIniPath(path);
+					flags = OPEN_ALWAYS;
 				}
 				if( !path.empty() ){
-					HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+					HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, flags, FILE_ATTRIBUTE_NORMAL, NULL);
 					if (hFile != INVALID_HANDLE_VALUE) {
 						DWORD dwFileSize = GetFileSize(hFile, NULL);
 						if (dwFileSize != INVALID_FILE_SIZE && dwFileSize != 0) {
@@ -1503,6 +1506,64 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 						CloseHandle(hFile);
 						resParam->param = CMD_SUCCESS;
 					}
+				}
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_UPDATE_SETTING:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_UPDATE_SETTING\r\n");
+			resParam->param = CMD_ERR;
+			wstring val;
+			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL)) {
+				wstring path;
+				wstring section;
+				size_t pos = 0, found;
+				while ((found = val.find_first_of(L'\n', pos)) != wstring::npos) {
+					wstring line = wstring(val, pos, found - pos);
+					if (line.at(line.length() - 1) == L'\r')
+						line.resize(line.length() - 1);
+					pos = found + 1;
+
+					// ファイル名の取得 ";<filename>" 
+					if (line.length() > 3 && line[0] == L';' && line[1] == L'<' && line.find_first_of(L'>') == line.length() - 1) {
+						wstring filename = wstring(line, 2, line.length() - 3);
+						section.clear();
+						if (CompareNoCase(filename, L"Common.ini") == 0) {
+							GetCommonIniPath(path);
+						}
+						else if (CompareNoCase(filename, L"EpgTimerSrv.ini") == 0) {
+							GetEpgTimerSrvIniPath(path);
+						}
+						else {
+							break;
+						}
+					}
+					else if (path.length() > 0) {
+						// セクション名の取得 "[section]" 
+						if (line.length() > 2 && line[0] == L'[' && line.find_first_of(L']') == line.length() - 1) {
+							section = wstring(line, 1, line.length() - 2);
+						}
+						else if (section.length() > 0) {
+							// キー＆バリューの取得
+							size_t delim = line.find_first_of(L'=');
+							if (delim == 0 || delim == wstring::npos)
+								break;
+							wstring key = wstring(line, 0, delim);
+							wstring value = wstring(line, delim + 1);
+							WritePrivateProfileStringW(section.c_str(), key.c_str(), value.c_str(), path.c_str());
+						}
+						else {
+							break;
+						}
+					}
+					else {
+						break;
+					}
+				}
+				if (found == wstring::npos) {
+					sys->ReloadSetting();
+					resParam->param = CMD_SUCCESS;
 				}
 			}
 		}
