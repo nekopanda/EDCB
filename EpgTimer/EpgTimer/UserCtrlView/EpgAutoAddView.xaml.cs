@@ -24,7 +24,7 @@ namespace EpgTimer
     {
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private List<EpgAutoDataItem> resultList = new List<EpgAutoDataItem>();
-        private bool ReloadInfo = true;
+        private bool ReloadInfo = false;
 
         private Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();
 
@@ -111,6 +111,11 @@ namespace EpgTimer
             {
                 listView_key.DataContext = null;
                 resultList.Clear();
+
+                if (CommonManager.Instance.NWMode == true && CommonManager.Instance.NW.IsConnected == false)
+                {
+                    return true;
+                }
 
                 ErrCode err = CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
                 if (err == ErrCode.CMD_ERR_CONNECT)

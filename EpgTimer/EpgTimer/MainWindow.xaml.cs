@@ -34,8 +34,8 @@ namespace EpgTimer
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
         private PipeServer pipeServer = null;
-        private string pipeName = "\\\\.\\pipe\\EpgTimerGUI_Ctrl_BonPipe_";
-        private string pipeEventName = "Global\\EpgTimerGUI_Ctrl_BonConnect_";
+        private string pipeName = "\\\\.\\pipe\\EpgTimerGUI_Ctrl_BonPipe_" + System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
+        private string pipeEventName = "Global\\EpgTimerGUI_Ctrl_BonConnect_" + System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
 
         private bool closeFlag = false;
         private bool initExe = false;
@@ -44,23 +44,16 @@ namespace EpgTimer
 
         private bool idleShowBalloon = false;
 
+        private string appName = System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location);
+
         public MainWindow()
         {
-            string appName = System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location);
-            CommonManager.Instance.NWMode = appName == "EpgTimerNW";
-            //CommonManager.Instance.NWMode = true;
-
-            if (CommonManager.Instance.NWMode == true)
+            Settings.LoadFromXmlFile();
+            CommonManager.Instance.NWMode = Settings.Instance.NWMode;
+            if (CommonManager.Instance.NWMode)
             {
-                Settings.LoadFromXmlFileNW();
                 CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
-                cmd.SetSendMode(true);
-                cmd.SetNWSetting("", Settings.Instance.NWServerPort);
-            }
-            else
-            {
-                Settings.LoadFromXmlFile();
-            }
+             }
             CommonManager.Instance.ReloadCustContentColorList();
 
             if (Settings.Instance.NoStyle == 0)
@@ -84,78 +77,6 @@ namespace EpgTimer
                 closeFlag = true;
                 Close();
                 return;
-            }
-
-            if (CommonManager.Instance.NWMode == false)
-            {
-                bool startExe = false;
-                try
-                {
-                    if (ServiceCtrlClass.ServiceIsInstalled("EpgTimer Service") == true)
-                    {
-                        if (ServiceCtrlClass.IsStarted("EpgTimer Service") == false)
-                        {
-                            bool check = false;
-                            for (int i = 0; i < 5; i++)
-                            {
-                                if (ServiceCtrlClass.StartService("EpgTimer Service") == true)
-                                {
-                                    check = true;
-                                }
-                                System.Threading.Thread.Sleep(1000);
-                                if (ServiceCtrlClass.IsStarted("EpgTimer Service") == true)
-                                {
-                                    check = true;
-                                }
-                            }
-                            if (check == false)
-                            {
-                                MessageBox.Show("サービスの開始に失敗しました。\r\nVista以降のOSでは、管理者権限で起動されている必要があります。");
-                                closeFlag = true;
-                                Close();
-                                return;
-                            }
-                            else
-                            {
-                                serviceMode = true;
-                                startExe = true;
-                            }
-                        }
-                        else
-                        {
-                            serviceMode = true;
-                            startExe = true;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                    serviceMode = false;
-                }
-                try
-                {
-                    if (serviceMode == false)
-                    {
-                        String moduleFolder = SettingPath.ModulePath.TrimEnd('\\');
-                        String exePath = moduleFolder + "\\EpgTimerSrv.exe";
-                        System.Diagnostics.Process process = System.Diagnostics.Process.Start(exePath);
-                        startExe = true;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                    startExe = false;
-                }
-
-                if (startExe == false)
-                {
-                    MessageBox.Show("EpgTimerSrv.exeの起動ができませんでした");
-                    closeFlag = true;
-                    Close();
-                    return;
-                }
             }
 
             InitializeComponent();
@@ -335,19 +256,6 @@ namespace EpgTimer
 
                 ResetButtonView();
 
-                if (CommonManager.Instance.NWMode == false)
-                {
-                    pipeServer = new PipeServer();
-                    pipeName += System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
-                    pipeEventName += System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
-                    pipeServer.StartServer(pipeEventName, pipeName, OutsideCmdCallback, this);
-
-                    for (int i = 0; i < 150 && cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id) != ErrCode.CMD_SUCCESS; i++)
-                    {
-                        Thread.Sleep(100);
-                    }
-                }
-
                 //タスクトレイの表示
                 taskTray = new TaskTrayClass(this);
                 taskTray.Icon = Properties.Resources.TaskIconBlue;
@@ -472,10 +380,7 @@ namespace EpgTimer
             }
             else if (String.Compare("再接続", tag) == 0)
             {
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    ConnectCmd(true);
-                }
+                ConnectCmd(true);
             }
         }
 
@@ -577,33 +482,148 @@ namespace EpgTimer
                 }
             }
 
+            Title = appName;
+
+            CommonManager.Instance.NW.DisconnectServer();
+            CommonManager.Instance.NWMode = Settings.Instance.NWMode;
+            cmd.SetSendMode(CommonManager.Instance.NWMode);
+            cmd.SetNWSetting("", Settings.Instance.NWServerPort);
+
             bool connected = false;
-            String srvIP = Settings.Instance.NWServerIP;
-            try
+            if (CommonManager.Instance.NWMode == false)
             {
-                foreach (var address in System.Net.Dns.GetHostAddresses(srvIP))
+                bool startExe = false;
+                try
                 {
-                    srvIP = address.ToString();
-                    if (CommonManager.Instance.NW.ConnectServer(srvIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, OutsideCmdCallback, this) == true)
+                    if (ServiceCtrlClass.ServiceIsInstalled("EpgTimer Service") == true)
                     {
-                        connected = true;
-                        break;
+                        if (ServiceCtrlClass.IsStarted("EpgTimer Service") == false)
+                        {
+                            bool check = false;
+                            for (int i = 0; i < 5; i++)
+                            {
+                                if (ServiceCtrlClass.StartService("EpgTimer Service") == true)
+                                {
+                                    check = true;
+                                }
+                                System.Threading.Thread.Sleep(1000);
+                                if (ServiceCtrlClass.IsStarted("EpgTimer Service") == true)
+                                {
+                                    check = true;
+                                }
+                            }
+                            if (check == false)
+                            {
+                                MessageBox.Show("サービスの開始に失敗しました。\r\nVista以降のOSでは、管理者権限で起動されている必要があります。");
+                                closeFlag = !showDialog;
+                                Close();
+                                return false;
+                            }
+                            else
+                            {
+                                serviceMode = true;
+                                startExe = true;
+                            }
+                        }
+                        else
+                        {
+                            serviceMode = true;
+                            startExe = true;
+                        }
                     }
                 }
-            }
-            catch
-            {
-            }
-            if (connected == false)
-            {
-                if (showDialog == true)
+                catch (Exception ex)
                 {
-                    MessageBox.Show("サーバーへの接続に失敗しました");
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    serviceMode = false;
                 }
-                return false;
+                try
+                {
+                    if (serviceMode == false)
+                    {
+                        String moduleFolder = SettingPath.ModulePath.TrimEnd('\\');
+                        String exePath = moduleFolder + "\\EpgTimerSrv.exe";
+                        if (System.IO.File.Exists(exePath))
+                        {
+                            System.Diagnostics.Process process = System.Diagnostics.Process.Start(exePath);
+                            startExe = true;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    startExe = false;
+                }
+
+                if (startExe == false)
+                {
+                    if (showDialog == true)
+                    {
+                        MessageBox.Show("EpgTimerSrv.exeの起動ができませんでした");
+                        closeFlag = true;
+                        Close();
+                    }
+                    CommonManager.Instance.NWMode = true; // ローカル接続できないのでネットワークモードとして動作させる
+                    return false;
+                }
+
+                CommonManager.Instance.DB.SetNoAutoReloadEPG(false);
+
+                if (pipeServer == null)
+                {
+                    pipeServer = new PipeServer();
+                    pipeServer.StartServer(pipeEventName, pipeName, OutsideCmdCallback, this);
+
+                    for (int i = 0; i < 150 && cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id) != ErrCode.CMD_SUCCESS; i++)
+                    {
+                        Thread.Sleep(100);
+                    }
+                }
+                connected = true;
+            }
+            else
+            {
+                if (pipeServer != null)
+                {
+                    cmd.SetConnectTimeOut(3000);
+                    cmd.SendUnRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
+                    pipeServer.StopServer();
+                    pipeServer = null;
+                }
+                CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
+
+                String srvIP = Settings.Instance.NWServerIP;
+                try
+                {
+                    foreach (var address in System.Net.Dns.GetHostAddresses(srvIP))
+                    {
+                        srvIP = address.ToString();
+                        if (CommonManager.Instance.NW.ConnectServer(srvIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, OutsideCmdCallback, this) == true)
+                        {
+                            connected = true;
+                            if (Settings.Instance.NWServerIP == "")
+                            {
+                                Settings.Instance.NWServerIP = srvIP;
+                            }
+                            break;
+                        }
+                    }
+                }
+                catch
+                {
+                }
+                if (connected == false)
+                {
+                    if (showDialog == true)
+                    {
+                        MessageBox.Show("サーバーへの接続に失敗しました");
+                    }
+                    cmd.SetNWSetting("", 0);
+                }
             }
 
-            ChSet5.LoadFile();
+
 
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
@@ -617,17 +637,32 @@ namespace EpgTimer
             autoAddView.UpdateAutoAddInfo();
             recInfoView.UpdateInfo();
             epgView.UpdateEpgData();
-            return true;
+
+            if (connected)
+            {
+                ChSet5.LoadFile();
+
+                if (CommonManager.Instance.NWMode)
+                {
+                    Title = appName + " - " + Settings.Instance.NWServerIP + ":" + Settings.Instance.NWServerPort.ToString();
+                }
+                else
+                {
+                    Title = appName + " - ローカル接続";
+                }
+            }
+            else
+            {
+                Title = appName + " - 未接続";
+            }
+            return connected;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (CommonManager.Instance.NWMode == true)
+            if ((Settings.Instance.NWMode == true && Settings.Instance.WakeReconnectNW == false) || ConnectCmd(false) == false)
             {
-                if (Settings.Instance.WakeReconnectNW == false || ConnectCmd(false) == false)
-                {
-                    ConnectCmd(true);
-                }
+                ConnectCmd(true);
             }
         }
 
@@ -1118,10 +1153,7 @@ namespace EpgTimer
 
         void connectButton_Click(object sender, RoutedEventArgs e)
         {
-            if (CommonManager.Instance.NWMode == true)
-            {
-                ConnectCmd(true);
-            }
+            ConnectCmd(true);
         }
 
         private int OutsideCmdCallback(object pParam, CMD_STREAM pCmdParam, ref CMD_STREAM pResParam)

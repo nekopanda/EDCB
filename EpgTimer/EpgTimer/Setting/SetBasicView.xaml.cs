@@ -254,11 +254,11 @@ namespace EpgTimer.Setting
                             }
                             timeList.Add(item);
                         }
-                    }
-                    ListView_time.DataContext = timeList;
+                        ListView_time.DataContext = timeList;
 
-                    textBox_ngCapMin.Text = IniFileHandler.GetPrivateProfileInt("SET", "NGEpgCapTime", 20, SettingPath.TimerSrvIniPath).ToString();
-                    textBox_ngTunerMin.Text = IniFileHandler.GetPrivateProfileInt("SET", "NGEpgCapTunerTime", 20, SettingPath.TimerSrvIniPath).ToString();
+                        textBox_ngCapMin.Text = IniFileHandler.GetPrivateProfileInt("SET", "NGEpgCapTime", 20, SettingPath.TimerSrvIniPath).ToString();
+                        textBox_ngTunerMin.Text = IniFileHandler.GetPrivateProfileInt("SET", "NGEpgCapTunerTime", 20, SettingPath.TimerSrvIniPath).ToString();
+                    }
                 }
             }
             catch (Exception ex)
@@ -339,65 +339,68 @@ namespace EpgTimer.Setting
                     IniFileHandler.WritePrivateProfileString(info.BonDriver, "Priority", i.ToString(), SettingPath.TimerSrvIniPath);
                 }
 
-                if (checkBox_bs.IsChecked == true)
+                if (tabItem3.IsEnabled)
                 {
-                    IniFileHandler.WritePrivateProfileString("SET", "BSBasicOnly", "1", SettingPath.CommonIniPath);
-                }
-                else
-                {
-                    IniFileHandler.WritePrivateProfileString("SET", "BSBasicOnly", "0", SettingPath.CommonIniPath);
-                }
-                if (checkBox_cs1.IsChecked == true)
-                {
-                    IniFileHandler.WritePrivateProfileString("SET", "CS1BasicOnly", "1", SettingPath.CommonIniPath);
-                }
-                else
-                {
-                    IniFileHandler.WritePrivateProfileString("SET", "CS1BasicOnly", "0", SettingPath.CommonIniPath);
-                }
-                if (checkBox_cs2.IsChecked == true)
-                {
-                    IniFileHandler.WritePrivateProfileString("SET", "CS2BasicOnly", "1", SettingPath.CommonIniPath);
-                }
-                else
-                {
-                    IniFileHandler.WritePrivateProfileString("SET", "CS2BasicOnly", "0", SettingPath.CommonIniPath);
-                }
-
-                foreach (ServiceItem2 info in serviceList)
-                {
-                    UInt64 key = ((UInt64)info.ServiceInfo.ONID) << 32 | ((UInt64)info.ServiceInfo.TSID) << 16 | ((UInt64)info.ServiceInfo.SID);
-                    try
+                    if (checkBox_bs.IsChecked == true)
                     {
-                        if (info.IsSelected == true)
-                        {
-                            ChSet5.Instance.ChList[key].EpgCapFlag = 1;
-                        }
-                        else
-                        {
-                            ChSet5.Instance.ChList[key].EpgCapFlag = 0;
-                        }
-                    }
-                    catch
-                    {
-                    }
-                }
-
-                IniFileHandler.WritePrivateProfileString("EPG_CAP", "Count", timeList.Count.ToString(), SettingPath.TimerSrvIniPath);
-                for (int i = 0; i < timeList.Count; i++)
-                {
-                    EpgCaptime item = timeList[i] as EpgCaptime;
-                    IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString(), item.Time, SettingPath.TimerSrvIniPath);
-                    if (item.IsSelected == true)
-                    {
-                        IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "Select", "1", SettingPath.TimerSrvIniPath);
+                        IniFileHandler.WritePrivateProfileString("SET", "BSBasicOnly", "1", SettingPath.CommonIniPath);
                     }
                     else
                     {
-                        IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "Select", "0", SettingPath.TimerSrvIniPath);
+                        IniFileHandler.WritePrivateProfileString("SET", "BSBasicOnly", "0", SettingPath.CommonIniPath);
                     }
-                    int flags = (item.BSBasicOnly ? 1 : 0) | (item.CS1BasicOnly ? 2 : 0) | (item.CS2BasicOnly ? 4 : 0);
-                    IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "BasicOnlyFlags", flags.ToString(), SettingPath.TimerSrvIniPath);
+                    if (checkBox_cs1.IsChecked == true)
+                    {
+                        IniFileHandler.WritePrivateProfileString("SET", "CS1BasicOnly", "1", SettingPath.CommonIniPath);
+                    }
+                    else
+                    {
+                        IniFileHandler.WritePrivateProfileString("SET", "CS1BasicOnly", "0", SettingPath.CommonIniPath);
+                    }
+                    if (checkBox_cs2.IsChecked == true)
+                    {
+                        IniFileHandler.WritePrivateProfileString("SET", "CS2BasicOnly", "1", SettingPath.CommonIniPath);
+                    }
+                    else
+                    {
+                        IniFileHandler.WritePrivateProfileString("SET", "CS2BasicOnly", "0", SettingPath.CommonIniPath);
+                    }
+
+                    foreach (ServiceItem2 info in serviceList)
+                    {
+                        UInt64 key = ((UInt64)info.ServiceInfo.ONID) << 32 | ((UInt64)info.ServiceInfo.TSID) << 16 | ((UInt64)info.ServiceInfo.SID);
+                        try
+                        {
+                            if (info.IsSelected == true)
+                            {
+                                ChSet5.Instance.ChList[key].EpgCapFlag = 1;
+                            }
+                            else
+                            {
+                                ChSet5.Instance.ChList[key].EpgCapFlag = 0;
+                            }
+                        }
+                        catch
+                        {
+                        }
+                    }
+
+                    IniFileHandler.WritePrivateProfileString("EPG_CAP", "Count", timeList.Count.ToString(), SettingPath.TimerSrvIniPath);
+                    for (int i = 0; i < timeList.Count; i++)
+                    {
+                        EpgCaptime item = timeList[i] as EpgCaptime;
+                        IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString(), item.Time, SettingPath.TimerSrvIniPath);
+                        if (item.IsSelected == true)
+                        {
+                            IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "Select", "1", SettingPath.TimerSrvIniPath);
+                        }
+                        else
+                        {
+                            IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "Select", "0", SettingPath.TimerSrvIniPath);
+                        }
+                        int flags = (item.BSBasicOnly ? 1 : 0) | (item.CS1BasicOnly ? 2 : 0) | (item.CS2BasicOnly ? 4 : 0);
+                        IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "BasicOnlyFlags", flags.ToString(), SettingPath.TimerSrvIniPath);
+                    }
                 }
 
 

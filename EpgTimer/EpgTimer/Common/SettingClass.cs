@@ -521,6 +521,7 @@ namespace EpgTimer
         private string filePlayExe;
         private string filePlayCmd;
         private List<IEPGStationInfo> iEpgStationList;
+        private bool nwMode;
         private string nwServerIP;
         private UInt32 nwServerPort;
         private UInt32 nwWaitPort;
@@ -1037,6 +1038,11 @@ namespace EpgTimer
         {
             get { return iEpgStationList; }
             set { iEpgStationList = value; }
+        }
+        public bool NWMode
+        {
+            get { return nwMode; }
+            set { nwMode = value; }
         }
         public string NWServerIP
         {
@@ -1586,6 +1592,8 @@ namespace EpgTimer
                 {
                     Instance.viewButtonList.Add("設定");
                     Instance.viewButtonList.Add("（空白）");
+                    Instance.viewButtonList.Add("再接続");
+                    Instance.viewButtonList.Add("（空白）");
                     Instance.viewButtonList.Add("検索");
                     Instance.viewButtonList.Add("（空白）");
                     Instance.viewButtonList.Add("スタンバイ");
@@ -1600,6 +1608,8 @@ namespace EpgTimer
                 if (Instance.taskMenuList.Count == 0)
                 {
                     Instance.taskMenuList.Add("設定");
+                    Instance.taskMenuList.Add("（セパレータ）");
+                    Instance.taskMenuList.Add("再接続");
                     Instance.taskMenuList.Add("（セパレータ）");
                     Instance.taskMenuList.Add("スタンバイ");
                     Instance.taskMenuList.Add("休止");
@@ -1649,157 +1659,7 @@ namespace EpgTimer
                     Instance.autoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
                 }
             }
-        }
- 
-        /// <summary>
-        /// EpgTimerNW用の設定ファイルロード関数
-        /// </summary>
-        public static void LoadFromXmlFileNW()
-        {
-            string path = GetSettingPath();
-
-            try
-            {
-                FileStream fs = new FileStream(path,
-                    FileMode.Open,
-                    FileAccess.Read, FileShare.None);
-                System.Xml.Serialization.XmlSerializer xs =
-                    new System.Xml.Serialization.XmlSerializer(
-                        typeof(Settings));
-                //読み込んで逆シリアル化する
-                object obj = xs.Deserialize(fs);
-                fs.Close();
-                Instance = (Settings)obj;
-
-            }
-            catch (Exception ex)
-            {
-                if (ex.GetBaseException().GetType() != typeof(System.IO.FileNotFoundException))
-                {
-                    string backPath = path + ".back";
-                    if (System.IO.File.Exists(backPath) == true)
-                    {
-                        if (MessageBox.Show("設定ファイルが異常な可能性があります。\r\nバックアップファイルから読み込みますか？", "", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                        {
-                            try
-                            {
-                                FileStream fs = new FileStream(backPath,
-                                    FileMode.Open,
-                                    FileAccess.Read, FileShare.None);
-                                System.Xml.Serialization.XmlSerializer xs =
-                                    new System.Xml.Serialization.XmlSerializer(
-                                        typeof(Settings));
-                                //読み込んで逆シリアル化する
-                                object obj = xs.Deserialize(fs);
-                                fs.Close();
-                                Instance = (Settings)obj;
-                            }
-                            catch (Exception ex2)
-                            {
-                                MessageBox.Show(ex2.Message + "\r\n" + ex2.StackTrace);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                    }
-                }
-            }
-            finally
-            {
-                if (Instance.contentColorList.Count == 0)
-                {
-                    DefaultcontentColorList();
-                }
-                else if (Instance.contentColorList.Count == 0x10)
-                {
-                    Instance.contentColorList.Add("White");
-                }
-                if (Instance.ContentCustColorList.Count == 0)
-                {
-                    for (int i = 0; i < 0x11+4; i++)
-                    {
-                        Instance.ContentCustColorList.Add(0xFFFFFFFF);
-                    }
-                }
-                if (Instance.timeColorList.Count == 0)
-                {
-                    DefaulttimeColorList();
-                }
-                if (Instance.TimeCustColorList.Count == 0)
-                {
-                    for (int i = 0; i < 4; i++)
-                    {
-                        Instance.TimeCustColorList.Add(0xFFFFFFFF);
-                    }
-                }
-                if (Instance.viewButtonList.Count == 0)
-                {
-                    Instance.viewButtonList.Add("設定");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("再接続");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("検索");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("EPG取得");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("EPG再読み込み");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("終了");
-                }
-                if (Instance.taskMenuList.Count == 0)
-                {
-                    Instance.taskMenuList.Add("設定");
-                    Instance.taskMenuList.Add("（セパレータ）");
-                    Instance.taskMenuList.Add("再接続");
-                    Instance.taskMenuList.Add("（セパレータ）");
-                    Instance.taskMenuList.Add("終了");
-                }
-                if (Instance.reserveListColumn.Count == 0)
-                {
-                    Instance.reserveListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("EventName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Comment", double.NaN));
-                }
-                if (Instance.recInfoListColumn.Count == 0)
-                {
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("IsProtect", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("EventName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Drops", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Scrambles", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Result", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("RecFilePath", double.NaN));
-                }
-                if (Instance.autoAddEpgColumn.Count == 0)
-                {
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("AndKey", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("NotKey", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RegExp", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
-                }
-                if (Instance.autoAddManualColumn.Count == 0)
-                {
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("DayOfWeek", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Time", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Title", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("StationName", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                }
-                //Instance.nwTvMode = true;
-            }
-        }
+        } 
 
         public static void SaveToXmlFile()
         {

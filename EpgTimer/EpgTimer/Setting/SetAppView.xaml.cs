@@ -301,6 +301,7 @@ namespace EpgTimer.Setting
                 buttonItem.Add(new ViewMenuItem("カスタム２", false));
                 buttonItem.Add(new ViewMenuItem("NetworkTV終了", false));
                 buttonItem.Add(new ViewMenuItem("情報通知ログ", false));
+                buttonItem.Add(new ViewMenuItem("再接続", false));
 
                 taskItem.Add(new ViewMenuItem("（セパレータ）", false));
                 taskItem.Add(new ViewMenuItem("設定", false));
