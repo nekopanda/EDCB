@@ -231,6 +231,11 @@ namespace EpgTimer
                 listView_recinfo.DataContext = null;
                 resultList.Clear();
 
+                if (CommonManager.Instance.NWMode == true && CommonManager.Instance.NW.IsConnected == false)
+                {
+                    return true;
+                }
+
                 ErrCode err = CommonManager.Instance.DB.ReloadrecFileInfo();
                 if (err == ErrCode.CMD_ERR_CONNECT)
                 {

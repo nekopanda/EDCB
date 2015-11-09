@@ -566,7 +566,10 @@ namespace EpgTimer
                 {
                     if (CommonManager.Instance.NW.IsConnected == false)
                     {
-                        return false;
+                        tunerReserveView.ClearInfo();
+                        tunerReserveTimeView.ClearInfo();
+                        tunerReserveNameView.ClearInfo();
+                        return true;
                     }
                 } 
                 ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();

@@ -1200,7 +1200,8 @@ namespace EpgTimer
                         {
                             if (CommonManager.Instance.NW.IsConnected == false)
                             {
-                                return false;
+                                ClearInfo();
+                                return true;
                             }
                         }
                         ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
@@ -1270,7 +1271,8 @@ namespace EpgTimer
                 {
                     if (CommonManager.Instance.NW.IsConnected == false)
                     {
-                        return false;
+                        ClearInfo();
+                        return true;
                     }
                 }
                 ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
