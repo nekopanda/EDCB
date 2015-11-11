@@ -1087,6 +1087,20 @@ static void SearchPgCallback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, v
 	resParam->data = NewWriteVALUE(&valp, resParam->dataSize);
 }
 
+//大変行儀が悪いが、正しくver渡すために外に置いておく。
+static WORD CommitedVerForNewCMD=(WORD)CMD_VER;//一応初期化
+static void SearchPg2Callback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, void* param)
+{
+	vector<const EPGDB_EVENT_INFO*> valp;
+	valp.reserve(pval->size());
+	for( size_t i = 0; i < pval->size(); i++ ){
+		valp.push_back((*pval)[i].info);
+	}
+	CMD_STREAM *resParam = (CMD_STREAM*)param;
+	resParam->param = CMD_SUCCESS;
+	resParam->data = NewWriteVALUE2WithVersion(CommitedVerForNewCMD, &valp, resParam->dataSize);
+}
+
 static void EnumPgInfoCallback(const vector<EPGDB_EVENT_INFO>* pval, void* param)
 {
 	CMD_STREAM *resParam = (CMD_STREAM*)param;
@@ -1765,6 +1779,20 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 	case CMD2_EPG_SRV_GET_EPG_FILE2:
 		OutputDebugString(L"CMD2_EPG_SRV_GET_EPG_FILE2\r\n");
 		resParam->param = CMD_NON_SUPPORT;
+		break;
+	case CMD2_EPG_SRV_SEARCH_PG2:
+		OutputDebugString(L"CMD2_EPG_SRV_SEARCH_PG2\r\n");
+		if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
+			resParam->param = CMD_ERR_BUSY;
+		}else{
+			DWORD readSize;
+			if( ReadVALUE(&CommitedVerForNewCMD, cmdParam->data, cmdParam->dataSize, &readSize) ){
+				vector<EPGDB_SEARCH_KEY_INFO> key;
+				if( ReadVALUE2(CommitedVerForNewCMD, &key, cmdParam->data + readSize, cmdParam->dataSize - readSize, NULL) ){
+					sys->epgDB.SearchEpg(&key, SearchPg2Callback, resParam);
+				}
+			}
+		}
 		break;
 	case CMD2_EPG_SRV_ENUM_AUTO_ADD2:
 		{
