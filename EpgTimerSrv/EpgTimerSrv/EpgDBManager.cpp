@@ -382,6 +382,47 @@ BOOL CEpgDBManager::SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, void (*enumPro
 	return ret;
 }
 
+BOOL CEpgDBManager::SearchEpgByKey(vector<EPGDB_SEARCH_KEY_INFO>* key, void (*enumProc)(vector<SEARCH_RESULT_EVENT>*, void*), void* param)
+{
+	CBlockLock lock(&this->epgMapLock);
+
+	BOOL ret = TRUE;
+	vector<SEARCH_RESULT_EVENT> result;
+	
+	SEARCH_RESULT_EVENT dummy;
+	EPGDB_EVENT_INFO dummyinfo;
+
+	dummyinfo.original_network_id = 0;
+	dummyinfo.transport_stream_id = 0;
+	dummyinfo.service_id = 0;
+	dummyinfo.event_id = 0;
+	dummyinfo.shortInfo = NULL; //無くてもコンストラクタが初期化する
+	GetSystemTime(&dummyinfo.start_time);//途中にコンバート関数があるので、まともな値を入れておく。
+	dummy.info = &dummyinfo;
+
+	CoInitialize(NULL);
+	{
+		IRegExpPtr regExp;
+		for( size_t i=0; i<key->size(); i++ ){
+			map<ULONGLONG, SEARCH_RESULT_EVENT> resultMap;
+			SearchEvent( &(*key)[i], &resultMap, regExp );
+
+			map<ULONGLONG, SEARCH_RESULT_EVENT>::iterator itr;
+			for( itr = resultMap.begin(); itr != resultMap.end(); itr++ ){
+				result.push_back(itr->second);
+			}
+
+			result.push_back(dummy);
+		}
+	}
+	CoUninitialize();
+
+	//ここはロック状態なのでコールバック先で排他制御すべきでない
+	enumProc(&result, param);
+
+	return ret;
+}
+
 void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARCH_RESULT_EVENT>* resultMap, IRegExpPtr& regExp)
 {
 	if( key == NULL || resultMap == NULL ){

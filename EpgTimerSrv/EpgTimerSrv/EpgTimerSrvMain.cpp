@@ -1101,6 +1101,12 @@ static void SearchPg2Callback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, 
 	resParam->data = NewWriteVALUE2WithVersion(CommitedVerForNewCMD, &valp, resParam->dataSize);
 }
 
+//戻り値の型を変更出来るように、一応分けておく
+static void SearchPgByKey2Callback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, void* param)
+{
+	SearchPg2Callback(pval, param);
+}
+
 static void EnumPgInfoCallback(const vector<EPGDB_EVENT_INFO>* pval, void* param)
 {
 	CMD_STREAM *resParam = (CMD_STREAM*)param;
@@ -1790,6 +1796,20 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 				vector<EPGDB_SEARCH_KEY_INFO> key;
 				if( ReadVALUE2(CommitedVerForNewCMD, &key, cmdParam->data + readSize, cmdParam->dataSize - readSize, NULL) ){
 					sys->epgDB.SearchEpg(&key, SearchPg2Callback, resParam);
+				}
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_SEARCH_PG_BYKEY2:
+		OutputDebugString(L"CMD2_EPG_SRV_SEARCH_PG_BYKEY2\r\n");
+		if( sys->epgDB.IsInitialLoadingDataDone() == FALSE ){
+			resParam->param = CMD_ERR_BUSY;
+		}else{
+			DWORD readSize;
+			if( ReadVALUE(&CommitedVerForNewCMD, cmdParam->data, cmdParam->dataSize, &readSize) ){
+				vector<EPGDB_SEARCH_KEY_INFO> key;
+				if( ReadVALUE2(CommitedVerForNewCMD, &key, cmdParam->data + readSize, cmdParam->dataSize - readSize, NULL) ){
+					sys->epgDB.SearchEpgByKey(&key, SearchPgByKey2Callback, resParam);
 				}
 			}
 		}
