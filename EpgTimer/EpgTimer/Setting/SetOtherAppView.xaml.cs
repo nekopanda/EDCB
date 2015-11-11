@@ -53,38 +53,41 @@ namespace EpgTimer.Setting
                 textBox_playExe.Text = Settings.Instance.FilePlayExe;
                 textBox_playCmd.Text = Settings.Instance.FilePlayCmd;
 
-                string[] files = Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt");
-                SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
-                foreach (string info in files)
+                if (comboBox_bon.IsEnabled && Directory.Exists(SettingPath.SettingFolderPath))
                 {
-                    try
+                    string[] files = Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt");
+                    SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
+                    foreach (string info in files)
                     {
-                        String bonName = "";
-                        String fileName = System.IO.Path.GetFileName(info);
-                        bonName = GetBonFileName(fileName);
-                        bonName += ".dll";
-                        comboBox_bon.Items.Add(bonName);
+                        try
+                        {
+                            String bonName = "";
+                            String fileName = System.IO.Path.GetFileName(info);
+                            bonName = GetBonFileName(fileName);
+                            bonName += ".dll";
+                            comboBox_bon.Items.Add(bonName);
+                        }
+                        catch
+                        {
+                        }
                     }
-                    catch
+                    if (comboBox_bon.Items.Count > 0)
                     {
+                        comboBox_bon.SelectedIndex = 0;
                     }
-                }
-                if (comboBox_bon.Items.Count > 0)
-                {
-                    comboBox_bon.SelectedIndex = 0;
-                }
 
-                StringBuilder buff = new StringBuilder(512);
-                buff.Clear();
-
-                int num = IniFileHandler.GetPrivateProfileInt("TVTEST", "Num", 0, SettingPath.TimerSrvIniPath);
-                for (uint i = 0; i < num; i++)
-                {
+                    StringBuilder buff = new StringBuilder(512);
                     buff.Clear();
-                    IniFileHandler.GetPrivateProfileString("TVTEST", i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                    if (buff.Length > 0)
+
+                    int num = IniFileHandler.GetPrivateProfileInt("TVTEST", "Num", 0, SettingPath.TimerSrvIniPath);
+                    for (uint i = 0; i < num; i++)
                     {
-                        listBox_bon.Items.Add(buff.ToString());
+                        buff.Clear();
+                        IniFileHandler.GetPrivateProfileString("TVTEST", i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
+                        if (buff.Length > 0)
+                        {
+                            listBox_bon.Items.Add(buff.ToString());
+                        }
                     }
                 }
             }
@@ -151,11 +154,14 @@ namespace EpgTimer.Setting
                 Settings.Instance.NwTvModeTCP = false;
             }
 
-            IniFileHandler.WritePrivateProfileString("TVTEST", "Num", listBox_bon.Items.Count.ToString(), SettingPath.TimerSrvIniPath);
-            for (int i = 0; i < listBox_bon.Items.Count; i++)
+            if (listBox_bon.IsEnabled)
             {
-                string val = listBox_bon.Items[i] as string;
-                IniFileHandler.WritePrivateProfileString("TVTEST", i.ToString(), val, SettingPath.TimerSrvIniPath);
+                IniFileHandler.WritePrivateProfileString("TVTEST", "Num", listBox_bon.Items.Count.ToString(), SettingPath.TimerSrvIniPath);
+                for (int i = 0; i < listBox_bon.Items.Count; i++)
+                {
+                    string val = listBox_bon.Items[i] as string;
+                    IniFileHandler.WritePrivateProfileString("TVTEST", i.ToString(), val, SettingPath.TimerSrvIniPath);
+                }
             }
 
             Settings.Instance.FilePlayExe = textBox_playExe.Text;

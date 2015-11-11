@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,34 +12,363 @@ using System.Windows;
 
 namespace EpgTimer
 {
+    // EpgTimerNW では参照も更新もしない
+    // CtlCmd 経由で取得、更新するよう書き換えるのが望ましい。
     class IniFileHandler
     {
-        [DllImport("KERNEL32.DLL")]
+        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true)]
         public static extern uint
-          GetPrivateProfileString(string lpAppName,
+          GetPrivateProfileStringW(string lpAppName,
           string lpKeyName, string lpDefault,
           StringBuilder lpReturnedString, uint nSize,
           string lpFileName);
 
-        [DllImport("KERNEL32.DLL",
-            EntryPoint = "GetPrivateProfileStringA")]
-        public static extern uint
-          GetPrivateProfileStringByByteArray(string lpAppName,
-          string lpKeyName, string lpDefault,
-          byte[] lpReturnedString, uint nSize,
-          string lpFileName);
+        public static uint GetPrivateProfileString(string lpAppName, string lpKeyName, string lpDefault, StringBuilder lpReturnedString, uint nSize, string lpFileName)
+        {
+            try
+            {
+                string s = IniSetting.Instance[lpFileName][lpAppName][lpKeyName];
+                lpReturnedString.Append(s == null ? lpDefault : s);
+                return (uint)lpReturnedString.Length;
+            }
+            catch
+            {
+                // EpgTimerSrv の FILE_COPY にパッチが当たってないと IniSetting が組み立てられないので
+                // こちらの例外で補足する。
+                // catch 内で GetPrivateProfileString をしたくないので、何もせずに外に出る。
+            }
 
-        [DllImport("KERNEL32.DLL")]
+            if (CommonManager.Instance.NWMode == false)
+            {
+                return GetPrivateProfileStringW(lpAppName, lpKeyName, lpDefault, lpReturnedString, nSize, lpFileName);
+            }
+            else
+            {
+                // lpDefault を返すほうが親切かも。
+                // ただしここに来ないように修正するほうが望ましい。
+                return 0;
+            }
+        }
+
+        /*
+        // 現在使われていないようなので、コメントアウトしておく。
+        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true,
+            EntryPoint = "GetPrivateProfileStringW")]
+        public static extern uint
+            GetPrivateProfileStringByByteArray(string lpAppName,
+            string lpKeyName, string lpDefault,
+            byte[] lpReturnedString, uint nSize,
+            string lpFileName);
+        */
+
+        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true)]
         public static extern int
-          GetPrivateProfileInt(string lpAppName,
+          GetPrivateProfileIntW(string lpAppName,
           string lpKeyName, int nDefault, string lpFileName);
 
-        [DllImport("KERNEL32.DLL")]
-        public static extern uint WritePrivateProfileString(
+        public static int GetPrivateProfileInt(string lpAppName, string lpKeyName, int nDefault, string lpFileName)
+        {
+            try
+            {
+                string s = IniSetting.Instance[lpFileName][lpAppName][lpKeyName];
+                return s == null ? nDefault : Convert.ToInt32(s);
+            }
+            catch
+            {
+                // EpgTimerSrv の FILE_COPY にパッチが当たってないと IniSetting が組み立てられないので
+                // こちらの例外で補足する。
+                // catch 内で GetPrivateProfileInt をしたくないので、何もせずに外に出る。
+            }
+
+            if (CommonManager.Instance.NWMode == false)
+            {
+                return GetPrivateProfileIntW(lpAppName, lpKeyName, nDefault, lpFileName);
+            }
+            else
+            {
+                // 一応 nDefault を返す。
+                // ただしここに来ないように修正するほうが望ましい。
+                return nDefault;
+            }
+        }
+
+        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true)]
+        public static extern uint WritePrivateProfileStringW(
           string lpAppName,
           string lpKeyName,
           string lpString,
           string lpFileName);
+
+        public static uint WritePrivateProfileString(string lpAppName, string lpKeyName, string lpString, string lpFileName)
+        {
+            try
+            {
+                IniSetting.Instance[lpFileName][lpAppName][lpKeyName] = lpString;
+                return (uint)lpString.Length;
+            }
+            catch
+            {
+                // EpgTimerSrv の FILE_COPY にパッチが当たってないと IniSetting が組み立てられないので
+                // こちらの例外で補足する。
+                // catch 内で WritePrivateProfileStringW をしたくないので、何もせずに外に出る。
+            }
+            if (CommonManager.Instance.NWMode == false)
+            {
+                return WritePrivateProfileStringW(lpAppName, lpKeyName, lpString, lpFileName);
+            }
+            else
+            {
+                // ここに来ないように修正するほうが望ましい。
+                return 0;
+            }
+        }
+        public static bool IsSyncWithServer
+        {
+            get
+            {
+                if (!IniSetting.Instance.IsAvailable)
+                {
+                    object o = IniSetting.Instance["Common.ini"];
+                }
+                return IniSetting.Instance.IsAvailable;
+            }
+        }
+    }
+
+    // サーバーから取得したINIファイルをパースして構造体で保持する
+    //
+    //
+    class IniSetting
+    {
+        public class SectionList
+        {
+            public class PairList
+            {
+                private Dictionary<string, string> _items;
+                private Dictionary<string, string> _updates;
+                public string this[string key]
+                {
+                    get
+                    {
+                        string k = key.ToUpper();
+                        return _updates.ContainsKey(k) ? _updates[k] : _items.ContainsKey(k) ? _items[k] : null;
+                    }
+                    set { _updates[key.ToUpper()] = value; }
+                }
+                public Dictionary<string, string>.KeyCollection UpdatedKeys
+                {
+                    get { return _updates.Keys; }
+                }
+                public PairList()
+                {
+                    _items = new Dictionary<string, string>();
+                    _updates = new Dictionary<string, string>();
+                }
+                public void AddPair(string key, string value)
+                {
+                    _items.Add(key.ToUpper(), value);
+                }
+                public void Clear()
+                {
+                    _items.Clear();
+                }
+            }
+
+            private string _file;
+            private DateTime _lastAccess;
+            public SectionList(string file)
+            {
+                _file = file;
+                _lastAccess = DateTime.MinValue;
+            }
+
+            private Dictionary<string, PairList> _sections;
+            public PairList this[string section]
+            {
+                get
+                {
+                    string _s = section.ToUpper();
+                    if (_sections.ContainsKey(_s) == false)
+                    {
+                        _sections.Add(_s, new PairList());
+                    }
+                    return _sections[_s];
+                }
+            }
+
+            public void LoadFile(ref bool supportSendFileCopy)
+            {
+                try
+                {
+                    // 前回取得から5分以内は再取得しない
+                    if ((DateTime.Now - _lastAccess).TotalSeconds < 300)
+                        return;
+
+                    byte[] binData;
+                    if (CommonManager.Instance.CtrlCmd.SendFileCopy(_file, out binData) == ErrCode.CMD_SUCCESS)
+                    {
+                        supportSendFileCopy = true;
+
+                        System.IO.MemoryStream stream = new System.IO.MemoryStream(binData);
+                        System.IO.StreamReader reader = new System.IO.StreamReader(stream, System.Text.Encoding.Default);
+
+                        if (_sections == null)
+                        {
+                            _sections = new Dictionary<string, PairList>();
+                        }
+                        else
+                        {
+                            foreach (string s in _sections.Keys)
+                            {
+                                _sections[s].Clear();
+                            }
+                        }
+
+                        string section = "";
+
+                        while (reader.Peek() >= 0)
+                        {
+                            string buff = reader.ReadLine();
+                            if (buff.IndexOf(";") == 0)
+                            {
+                                //コメント行
+                            }
+                            else if (buff.IndexOf("[") == 0)
+                            {
+                                //セクション開始
+                                int last = buff.IndexOf(']', 1);
+                                if (last > 1)
+                                {
+                                    section = buff.Substring(1, last - 1);
+                                }
+                            }
+                            else if (section.Length > 0)
+                            {
+                                string[] list = buff.Split('=');
+                                this[section].AddPair(list[0], list[1]);
+                            }
+                        }
+                        reader.Close();
+                    }
+                    _lastAccess = DateTime.Now;
+                }
+                catch
+                {
+                    _lastAccess = DateTime.MinValue;
+                }
+            }
+
+            public string GetIniData()
+            {
+                string ini = "";
+                if (_sections != null)
+                {
+                    // 更新があった差分だけのINIファイルの中身を組み立てる
+                    // データの削除処理はしていないようなので、データ削除については未実装
+                    foreach (string s in _sections.Keys)
+                    {
+                        if (_sections[s].UpdatedKeys.Count > 0)
+                        {
+                            //セクション名を追加
+                            ini += "[" + s + "]\r\n";
+                            foreach (string k in _sections[s].UpdatedKeys)
+                            {
+                                //データペアを追加
+                                ini += k + "=" + _sections[s][k] + "\r\n";
+                            }
+                        }
+                    }
+
+                    //保存すべきデータがあれば、ファイル名を ";<ファイル名>" の形式で先頭に追加
+                    if (ini.Length > 0)
+                    {
+                        ini = ";<" + _file + ">\r\n" + ini;
+                    }
+                }
+                return ini;
+            }
+
+            public void Flush()
+            {
+                if (_sections != null)
+                {
+                    _sections.Clear();
+                }
+                _lastAccess = DateTime.MinValue;
+            }
+        }
+
+        private static IniSetting _instance;
+        public static IniSetting Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = new IniSetting();
+                }
+                return _instance;
+            }
+        }
+
+        private bool _available;
+        public bool IsAvailable
+        {
+            get
+            {
+                return _available;
+            }
+        }
+
+        private Dictionary<string, SectionList> _files;
+        public SectionList this [string file]
+        {
+            get
+            {
+                if (_files == null)
+                {
+                    _files = new Dictionary<string, SectionList>();
+                }
+
+                file = file.Substring(file.LastIndexOf('\\') + 1).ToUpper();
+                if (_files.ContainsKey(file) == false)
+                {
+                    _files.Add(file, new SectionList(file));
+                }
+
+                _files[file].LoadFile(ref _available);
+                return _files[file];
+            }
+        }
+
+        public void UpToDate()
+        {
+            if (_available)
+            {
+                string output = "";
+                foreach (string f in _files.Keys)
+                {
+                    output += _files[f].GetIniData();
+                }
+                if (output.Length > 0)
+                {
+                    // 更新が必要な差分だけサーバーに送信。 
+                    if (CommonManager.Instance.CtrlCmd.SendUpdateSetting(output) == ErrCode.CMD_SUCCESS)
+                    {
+                        // サーバーに送信できたので、更新履歴を消しておく
+                        foreach (string f in _files.Keys)
+                        {
+                            _files[f].Flush();
+                        }
+                    }
+                }
+            }
+        }
+
+        public void Clear()
+        {
+            _instance = null;
+        }
     }
 
     class SettingPath
@@ -192,6 +521,7 @@ namespace EpgTimer
         private string filePlayExe;
         private string filePlayCmd;
         private List<IEPGStationInfo> iEpgStationList;
+        private bool nwMode;
         private string nwServerIP;
         private UInt32 nwServerPort;
         private UInt32 nwWaitPort;
@@ -245,6 +575,9 @@ namespace EpgTimer
         private bool minHide;
         private bool mouseScrollAuto;
         private int noStyle;
+        private double reserveMinHeight;
+        private bool reservePopup;
+        private bool alwaysSaveEpgSetting;
 
         public bool UseCustomEpgView
         {
@@ -706,6 +1039,11 @@ namespace EpgTimer
             get { return iEpgStationList; }
             set { iEpgStationList = value; }
         }
+        public bool NWMode
+        {
+            get { return nwMode; }
+            set { nwMode = value; }
+        }
         public string NWServerIP
         {
             get { return nwServerIP; }
@@ -971,6 +1309,21 @@ namespace EpgTimer
             get { return noStyle; }
             set { noStyle = value; }
         }
+        public double ReserveMinHeight
+        {
+            get { return reserveMinHeight; }
+            set { reserveMinHeight = value; }
+        }
+        public bool ReservePopup
+        {
+            get { return reservePopup; }
+            set { reservePopup = value; }
+        }
+        public bool AlwaysSaveEpgSetting
+        {
+            get { return alwaysSaveEpgSetting; }
+            set { alwaysSaveEpgSetting = value; }
+        }
         
         
         public Settings()
@@ -1103,6 +1456,9 @@ namespace EpgTimer
             minHide = true;
             mouseScrollAuto = false;
             noStyle = 0;
+            reserveMinHeight = 2;
+            reservePopup = false;
+            alwaysSaveEpgSetting = false;
         }
 
         [NonSerialized()]
@@ -1236,6 +1592,8 @@ namespace EpgTimer
                 {
                     Instance.viewButtonList.Add("設定");
                     Instance.viewButtonList.Add("（空白）");
+                    Instance.viewButtonList.Add("再接続");
+                    Instance.viewButtonList.Add("（空白）");
                     Instance.viewButtonList.Add("検索");
                     Instance.viewButtonList.Add("（空白）");
                     Instance.viewButtonList.Add("スタンバイ");
@@ -1250,6 +1608,8 @@ namespace EpgTimer
                 if (Instance.taskMenuList.Count == 0)
                 {
                     Instance.taskMenuList.Add("設定");
+                    Instance.taskMenuList.Add("（セパレータ）");
+                    Instance.taskMenuList.Add("再接続");
                     Instance.taskMenuList.Add("（セパレータ）");
                     Instance.taskMenuList.Add("スタンバイ");
                     Instance.taskMenuList.Add("休止");
@@ -1299,157 +1659,7 @@ namespace EpgTimer
                     Instance.autoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
                 }
             }
-        }
- 
-        /// <summary>
-        /// EpgTimerNW用の設定ファイルロード関数
-        /// </summary>
-        public static void LoadFromXmlFileNW()
-        {
-            string path = GetSettingPath();
-
-            try
-            {
-                FileStream fs = new FileStream(path,
-                    FileMode.Open,
-                    FileAccess.Read, FileShare.None);
-                System.Xml.Serialization.XmlSerializer xs =
-                    new System.Xml.Serialization.XmlSerializer(
-                        typeof(Settings));
-                //読み込んで逆シリアル化する
-                object obj = xs.Deserialize(fs);
-                fs.Close();
-                Instance = (Settings)obj;
-
-            }
-            catch (Exception ex)
-            {
-                if (ex.GetBaseException().GetType() != typeof(System.IO.FileNotFoundException))
-                {
-                    string backPath = path + ".back";
-                    if (System.IO.File.Exists(backPath) == true)
-                    {
-                        if (MessageBox.Show("設定ファイルが異常な可能性があります。\r\nバックアップファイルから読み込みますか？", "", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                        {
-                            try
-                            {
-                                FileStream fs = new FileStream(backPath,
-                                    FileMode.Open,
-                                    FileAccess.Read, FileShare.None);
-                                System.Xml.Serialization.XmlSerializer xs =
-                                    new System.Xml.Serialization.XmlSerializer(
-                                        typeof(Settings));
-                                //読み込んで逆シリアル化する
-                                object obj = xs.Deserialize(fs);
-                                fs.Close();
-                                Instance = (Settings)obj;
-                            }
-                            catch (Exception ex2)
-                            {
-                                MessageBox.Show(ex2.Message + "\r\n" + ex2.StackTrace);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                    }
-                }
-            }
-            finally
-            {
-                if (Instance.contentColorList.Count == 0)
-                {
-                    DefaultcontentColorList();
-                }
-                else if (Instance.contentColorList.Count == 0x10)
-                {
-                    Instance.contentColorList.Add("White");
-                }
-                if (Instance.ContentCustColorList.Count == 0)
-                {
-                    for (int i = 0; i < 0x11+4; i++)
-                    {
-                        Instance.ContentCustColorList.Add(0xFFFFFFFF);
-                    }
-                }
-                if (Instance.timeColorList.Count == 0)
-                {
-                    DefaulttimeColorList();
-                }
-                if (Instance.TimeCustColorList.Count == 0)
-                {
-                    for (int i = 0; i < 4; i++)
-                    {
-                        Instance.TimeCustColorList.Add(0xFFFFFFFF);
-                    }
-                }
-                if (Instance.viewButtonList.Count == 0)
-                {
-                    Instance.viewButtonList.Add("設定");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("再接続");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("検索");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("EPG取得");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("EPG再読み込み");
-                    Instance.viewButtonList.Add("（空白）");
-                    Instance.viewButtonList.Add("終了");
-                }
-                if (Instance.taskMenuList.Count == 0)
-                {
-                    Instance.taskMenuList.Add("設定");
-                    Instance.taskMenuList.Add("（セパレータ）");
-                    Instance.taskMenuList.Add("再接続");
-                    Instance.taskMenuList.Add("（セパレータ）");
-                    Instance.taskMenuList.Add("終了");
-                }
-                if (Instance.reserveListColumn.Count == 0)
-                {
-                    Instance.reserveListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("EventName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Comment", double.NaN));
-                }
-                if (Instance.recInfoListColumn.Count == 0)
-                {
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("IsProtect", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("EventName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Drops", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Scrambles", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Result", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("RecFilePath", double.NaN));
-                }
-                if (Instance.autoAddEpgColumn.Count == 0)
-                {
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("AndKey", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("NotKey", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RegExp", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
-                }
-                if (Instance.autoAddManualColumn.Count == 0)
-                {
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("DayOfWeek", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Time", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Title", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("StationName", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                }
-                //Instance.nwTvMode = true;
-            }
-        }
+        } 
 
         public static void SaveToXmlFile()
         {

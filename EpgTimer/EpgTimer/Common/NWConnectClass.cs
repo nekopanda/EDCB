@@ -121,6 +121,15 @@ namespace EpgTimer
                 return true;
             }
         }
+        public bool DisconnectServer()
+        {
+            if (connectFlag)
+            {
+                cmd.SendUnRegistTCP(connectedPort);
+                connectFlag = false;
+            }
+            return StopTCPServer();
+        }
 
         private bool StartTCPServer(UInt32 port)
         {
@@ -153,53 +162,60 @@ namespace EpgTimer
 
         public void DoAcceptTcpClientCallback(IAsyncResult ar)
         {
-            TcpListener listener = (TcpListener)ar.AsyncState;
-
-            TcpClient client = listener.EndAcceptTcpClient(ar);
-            client.ReceiveBufferSize = 1024 * 1024;
-
-            NetworkStream stream = client.GetStream();
-
-            CMD_STREAM stCmd = new CMD_STREAM();
-            CMD_STREAM stRes = new CMD_STREAM();
-            //コマンド受信
-            if (cmdProc != null)
+            try
             {
-                byte[] bHead = new byte[8];
+                TcpListener listener = (TcpListener)ar.AsyncState;
 
-                if (stream.Read(bHead, 0, bHead.Length) == 8)
+                TcpClient client = listener.EndAcceptTcpClient(ar);
+                client.ReceiveBufferSize = 1024 * 1024;
+
+                NetworkStream stream = client.GetStream();
+
+                CMD_STREAM stCmd = new CMD_STREAM();
+                CMD_STREAM stRes = new CMD_STREAM();
+                //コマンド受信
+                if (cmdProc != null)
                 {
-                    stCmd.uiParam = BitConverter.ToUInt32(bHead, 0);
-                    stCmd.uiSize = BitConverter.ToUInt32(bHead, 4);
-                    if (stCmd.uiSize > 0)
-                    {
-                        stCmd.bData = new Byte[stCmd.uiSize];
-                    }
-                    int readSize = 0;
-                    while (readSize < stCmd.uiSize)
-                    {
-                        readSize += stream.Read(stCmd.bData, readSize, (int)stCmd.uiSize);
-                    }
-                    cmdProc.Invoke(cmdParam, stCmd, ref stRes);
+                    byte[] bHead = new byte[8];
 
-                    Array.Copy(BitConverter.GetBytes(stRes.uiParam), 0, bHead, 0, sizeof(uint));
-                    Array.Copy(BitConverter.GetBytes(stRes.uiSize), 0, bHead, 4, sizeof(uint));
-                    stream.Write(bHead, 0, 8);
-                    if (stRes.uiSize > 0)
+                    if (stream.Read(bHead, 0, bHead.Length) == 8)
                     {
-                        stream.Write(stRes.bData, 0, (int)stRes.uiSize);
+                        stCmd.uiParam = BitConverter.ToUInt32(bHead, 0);
+                        stCmd.uiSize = BitConverter.ToUInt32(bHead, 4);
+                        if (stCmd.uiSize > 0)
+                        {
+                            stCmd.bData = new Byte[stCmd.uiSize];
+                        }
+                        int readSize = 0;
+                        while (readSize < stCmd.uiSize)
+                        {
+                            readSize += stream.Read(stCmd.bData, readSize, (int)stCmd.uiSize);
+                        }
+                        cmdProc.Invoke(cmdParam, stCmd, ref stRes);
+
+                        Array.Copy(BitConverter.GetBytes(stRes.uiParam), 0, bHead, 0, sizeof(uint));
+                        Array.Copy(BitConverter.GetBytes(stRes.uiSize), 0, bHead, 4, sizeof(uint));
+                        stream.Write(bHead, 0, 8);
+                        if (stRes.uiSize > 0)
+                        {
+                            stream.Write(stRes.bData, 0, (int)stRes.uiSize);
+                        }
                     }
                 }
-            }
-            else
-            {
-                stRes.uiSize = 0;
-                stRes.uiParam = 1;
-            }
-            stream.Dispose();
-            client.Client.Close();
+                else
+                {
+                    stRes.uiSize = 0;
+                    stRes.uiParam = 1;
+                }
+                stream.Dispose();
+                client.Client.Close();
 
-            server.BeginAcceptTcpClient(new AsyncCallback(DoAcceptTcpClientCallback), server);
+                server.BeginAcceptTcpClient(new AsyncCallback(DoAcceptTcpClientCallback), server);
+            }
+            catch
+            {
+                // server.Stop() すると例外が発生するのでここで catch して終了させる
+            }
         }
     
     }

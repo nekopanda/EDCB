@@ -110,6 +110,11 @@ namespace EpgTimer
                 listView_key.DataContext = null;
                 resultList.Clear();
 
+                if (CommonManager.Instance.NWMode == true && CommonManager.Instance.NW.IsConnected == false)
+                {
+                    return true;
+                }
+
                 ErrCode err = CommonManager.Instance.DB.ReloadManualAutoAddInfo();
                 if (err == ErrCode.CMD_ERR_CONNECT)
                 {

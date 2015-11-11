@@ -14,7 +14,12 @@
         <TabControl Name="tabControl">
             <TabItem Header="基本" Name="tabItem_basic">
                 <Grid>
-                    <GroupBox Header="フォント" Margin="6,6,6,0" Name="groupBox3" Height="102" VerticalAlignment="Top">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                    </Grid.RowDefinitions>
+                    <GroupBox Header="フォント" Margin="6,6,6,6" Name="groupBox3" VerticalAlignment="Top" Grid.Row="0">
                         <Grid>
                             <Label Content="タイトル" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label1" VerticalAlignment="Top" />
                             <Label Content="フォント" Height="28" HorizontalAlignment="Left" Margin="96,6,0,0" Name="label2" VerticalAlignment="Top" />
@@ -51,7 +56,7 @@
                             <Button Content="" Height="25" HorizontalAlignment="Left" Margin="643,35,0,0" Name="button_colorTitle2" Style="{StaticResource ButtonStyle1}" VerticalAlignment="Top" Width="58" Click="button_colorTitle2_Click" />
                         </Grid>
                     </GroupBox>
-                    <GroupBox Header="表示" Height="213" Margin="6,114,7,0" Name="groupBox2" VerticalAlignment="Top" >
+                    <GroupBox Header="表示" Margin="6,6,6,6" Name="groupBox2" VerticalAlignment="Top" Grid.Row="1">
                         <Grid>
                             <Label Content="マウススクロールサイズ" Height="28" HorizontalAlignment="Left" Margin="11,6,0,0" Name="label7" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="165,6,0,0" Name="textBox_mouse_scroll" VerticalAlignment="Top" Width="55" />
@@ -71,6 +76,13 @@
                             <CheckBox Content="自動" Height="16" HorizontalAlignment="Left" Margin="226,11,0,0" Name="checkBox_scrollAuto" VerticalAlignment="Top" />
                             <Label Content="最低表示行数" Height="28" HorizontalAlignment="Left" Margin="551,6,0,0" Name="label36" VerticalAlignment="Top" />
                             <TextBox Height="24" HorizontalAlignment="Left" Margin="650,8,0,0" Name="textBox_minimumHeight" VerticalAlignment="Top" Width="55" />
+                        </Grid>
+                    </GroupBox>
+                    <GroupBox Header="使用予定チューナーの表示設定" Margin="6,6,6,6" Name="groupBox" VerticalAlignment="Top" Grid.Row="2">
+                        <Grid>
+                            <CheckBox Content="番組内容をポップアップ表示する" HorizontalAlignment="Left" Margin="11,11,0,0" Name="checkBox_reserve_popup" VerticalAlignment="Top" />
+                            <Label Content="1分あたりの高さ" Height="28" HorizontalAlignment="Left" Margin="327,6,0,0" VerticalAlignment="Top" />
+                            <TextBox Height="24" HorizontalAlignment="Left" Margin="470,8,0,0" Name="textBox_reserve_minHeight" VerticalAlignment="Top" Width="55" />
                         </Grid>
                     </GroupBox>
                 </Grid>

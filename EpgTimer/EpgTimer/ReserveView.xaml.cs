@@ -25,7 +25,7 @@ namespace EpgTimer
     /// </summary>
     public partial class ReserveView : UserControl
     {
-        private bool RedrawReserve = true;
+        private bool RedrawReserve = false;
         private List<ReserveItem> reserveList = new List<ReserveItem>();
         private Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();
 
@@ -170,7 +170,8 @@ namespace EpgTimer
                 {
                     if (CommonManager.Instance.NW.IsConnected == false)
                     {
-                        return false;
+                        listView_reserve.DataContext = null;
+                        return true;
                     }
                 }
                 ErrCode err = CommonManager.Instance.DB.ReloadReserveInfo();
