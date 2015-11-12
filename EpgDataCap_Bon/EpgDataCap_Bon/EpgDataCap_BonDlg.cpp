@@ -33,8 +33,6 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	this->moduleIniPath = strPath.c_str();
 	GetCommonIniPath(strPath);
 	this->commonIniPath = strPath.c_str();
-	GetEpgTimerSrvIniPath(strPath);
-	this->timerSrvIniPath = strPath.c_str();
 
 	this->initONID = GetPrivateProfileInt( L"Set", L"LastONID", -1, this->moduleIniPath.c_str() );
 	this->initTSID = GetPrivateProfileInt( L"Set", L"LastTSID", -1, this->moduleIniPath.c_str() );
@@ -156,7 +154,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	//ウインドウの復元
 	WINDOWPLACEMENT Pos;
 	Pos.length = sizeof(WINDOWPLACEMENT);
-	Pos.flags = NULL;
+	Pos.flags = 0;
 	if( this->iniMin == FALSE ){
 		Pos.showCmd = SW_SHOW;
 	}else{
