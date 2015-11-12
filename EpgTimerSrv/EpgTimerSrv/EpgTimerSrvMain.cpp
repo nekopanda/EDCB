@@ -1477,35 +1477,40 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 			wstring val;
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
 				wstring path;
-				DWORD flags = OPEN_EXISTING;
+				DWORD flags;
 				if( CompareNoCase(val, L"ChSet5.txt") == 0 ){
 					GetSettingPath(path);
 					path += L"\\ChSet5.txt";
+					flags = OPEN_EXISTING;
 				}else if( CompareNoCase(val, L"Common.ini") == 0 ){
 					GetCommonIniPath(path);
 					flags = OPEN_ALWAYS;
 				}else if( CompareNoCase(val, L"EpgTimerSrv.ini") == 0 ){
 					GetEpgTimerSrvIniPath(path);
 					flags = OPEN_ALWAYS;
+				}else if( CompareNoCase(val, L"EpgDataCap_Bon.ini") == 0 ){
+					GetModuleFolderPath(path);
+					path += L"\\EpgDataCap_Bon.ini";
+					flags = OPEN_EXISTING;
+				}else{
+					break;
 				}
-				if( !path.empty() ){
-					HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, flags, FILE_ATTRIBUTE_NORMAL, NULL);
-					if (hFile != INVALID_HANDLE_VALUE) {
-						DWORD dwFileSize = GetFileSize(hFile, NULL);
-						if (dwFileSize != INVALID_FILE_SIZE && dwFileSize != 0) {
-							BYTE* data = new BYTE[dwFileSize];
-							DWORD dwRead;
-							if (ReadFile(hFile, data, dwFileSize, &dwRead, NULL) && dwRead != 0) {
-								resParam->dataSize = dwRead;
-								resParam->data = data;
-							}
-							else {
-								delete[] data;
-							}
+				HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, flags, FILE_ATTRIBUTE_NORMAL, NULL);
+				if (hFile != INVALID_HANDLE_VALUE) {
+					DWORD dwFileSize = GetFileSize(hFile, NULL);
+					if (dwFileSize != INVALID_FILE_SIZE && dwFileSize != 0) {
+						BYTE* data = new BYTE[dwFileSize];
+						DWORD dwRead;
+						if (ReadFile(hFile, data, dwFileSize, &dwRead, NULL) && dwRead != 0) {
+							resParam->dataSize = dwRead;
+							resParam->data = data;
 						}
-						CloseHandle(hFile);
-						resParam->param = CMD_SUCCESS;
+						else {
+							delete[] data;
+						}
 					}
+					CloseHandle(hFile);
+					resParam->param = CMD_SUCCESS;
 				}
 			}
 		}
@@ -1541,7 +1546,10 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 					}
 					else if (path.length() > 0) {
 						// セクション名の取得 "[section]" 
-						if (line.length() > 2 && line[0] == L'[' && line.find_first_of(L']') == line.length() - 1) {
+						if (line.length() > 2 && line[0] == L'[') {
+							if (line.find_first_of(L']') != line.length() - 1) {
+								break;
+							}
 							section = wstring(line, 1, line.length() - 2);
 						}
 						else if (section.length() > 0) {
@@ -1551,6 +1559,14 @@ int CALLBACK CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam
 								break;
 							wstring key = wstring(line, 0, delim);
 							wstring value = wstring(line, delim + 1);
+							if (key.at(0) == L';')
+							{
+								// ";key=" の書式のとき、キーの削除をする
+								if (value.length() > 0)
+									break;
+								WritePrivateProfileStringW(section.c_str(), key.c_str()+1, NULL, path.c_str());
+								break;
+							}
 							WritePrivateProfileStringW(section.c_str(), key.c_str(), value.c_str(), path.c_str());
 						}
 						else {

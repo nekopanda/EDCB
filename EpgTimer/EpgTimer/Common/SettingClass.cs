@@ -73,6 +73,11 @@ namespace EpgTimer
                 string s = IniSetting.Instance[lpFileName][lpAppName][lpKeyName];
                 return s == null ? nDefault : Convert.ToInt32(s);
             }
+            catch(FormatException)
+            {
+                // Convert.ToInt32("") などするとここに来る
+                return nDefault;
+            }
             catch
             {
                 // EpgTimerSrv の FILE_COPY にパッチが当たってないと IniSetting が組み立てられないので
@@ -104,7 +109,7 @@ namespace EpgTimer
             try
             {
                 IniSetting.Instance[lpFileName][lpAppName][lpKeyName] = lpString;
-                return (uint)lpString.Length;
+                return lpString == null ? 0 : (uint)lpString.Length;
             }
             catch
             {
@@ -150,10 +155,9 @@ namespace EpgTimer
                 {
                     get
                     {
-                        string k = key.ToUpper();
-                        return _updates.ContainsKey(k) ? _updates[k] : _items.ContainsKey(k) ? _items[k] : null;
+                        return _updates.ContainsKey(key) ? _updates[key] : _items.ContainsKey(key) ? _items[key] : null;
                     }
-                    set { _updates[key.ToUpper()] = value; }
+                    set { _updates[key] = value; }
                 }
                 public Dictionary<string, string>.KeyCollection UpdatedKeys
                 {
@@ -161,12 +165,12 @@ namespace EpgTimer
                 }
                 public PairList()
                 {
-                    _items = new Dictionary<string, string>();
-                    _updates = new Dictionary<string, string>();
+                    _items = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    _updates = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 }
                 public void AddPair(string key, string value)
                 {
-                    _items.Add(key.ToUpper(), value);
+                    _items.Add(key, value);
                 }
                 public void Clear()
                 {
@@ -187,12 +191,11 @@ namespace EpgTimer
             {
                 get
                 {
-                    string _s = section.ToUpper();
-                    if (_sections.ContainsKey(_s) == false)
+                    if (_sections.ContainsKey(section) == false)
                     {
-                        _sections.Add(_s, new PairList());
+                        _sections.Add(section, new PairList());
                     }
-                    return _sections[_s];
+                    return _sections[section];
                 }
             }
 
@@ -214,7 +217,7 @@ namespace EpgTimer
 
                         if (_sections == null)
                         {
-                            _sections = new Dictionary<string, PairList>();
+                            _sections = new Dictionary<string, PairList>(StringComparer.OrdinalIgnoreCase);
                         }
                         else
                         {
@@ -264,7 +267,6 @@ namespace EpgTimer
                 if (_sections != null)
                 {
                     // 更新があった差分だけのINIファイルの中身を組み立てる
-                    // データの削除処理はしていないようなので、データ削除については未実装
                     foreach (string s in _sections.Keys)
                     {
                         if (_sections[s].UpdatedKeys.Count > 0)
@@ -273,8 +275,17 @@ namespace EpgTimer
                             ini += "[" + s + "]\r\n";
                             foreach (string k in _sections[s].UpdatedKeys)
                             {
-                                //データペアを追加
-                                ini += k + "=" + _sections[s][k] + "\r\n";
+                                string v = _sections[s][k];
+                                if (v == null)
+                                {
+                                    //削除するキーを ";key=" の形式で指定する
+                                    ini += ";" + k + "=\r\n";
+                                }
+                                else
+                                {
+                                    //データペアを追加
+                                    ini += k + "=" + _sections[s][k] + "\r\n";
+                                }
                             }
                         }
                     }
@@ -327,10 +338,10 @@ namespace EpgTimer
             {
                 if (_files == null)
                 {
-                    _files = new Dictionary<string, SectionList>();
+                    _files = new Dictionary<string, SectionList>(StringComparer.OrdinalIgnoreCase);
                 }
 
-                file = file.Substring(file.LastIndexOf('\\') + 1).ToUpper();
+                file = file.Substring(file.LastIndexOf('\\') + 1);
                 if (_files.ContainsKey(file) == false)
                 {
                     _files.Add(file, new SectionList(file));

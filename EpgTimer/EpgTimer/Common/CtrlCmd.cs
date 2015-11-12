@@ -338,8 +338,10 @@ namespace EpgTimer
         CMD_EPG_SRV_ENUM_PLUGIN = 1061,
         /// <summary>TVTestのチャンネル切り替え用の情報を取得する</summary>
         CMD_EPG_SRV_GET_CHG_CH_TVTEST = 1062,
+        /// <summary>設定ファイル(ini)の更新を通知させる (tkntrec氏版)</summary>
+        CMD_EPG_SRV_PROFILE_UPDATE = 1063,
         /// <summary>INIファイルを更新する</summary>
-        CMD_EPG_SRV_UPDATE_SETTING = 1063,
+        CMD_EPG_SRV_UPDATE_SETTING = 1064,
         /// <summary>ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え</summary>
         CMD_EPG_SRV_NWTV_SET_CH = 1070,
         /// <summary>ネットワークモードで起動中のEpgDataCap_Bonを終了</summary>
