@@ -12,9 +12,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     /// <summary>
@@ -28,12 +25,6 @@ namespace EpgTimer
 
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_andIn.Style = null;
-                    button_notIn.Style = null;
-                }
-
                 foreach (String info in Settings.Instance.AndKeyList)
                 {
                     ComboBox_andKey.Items.Add(info);
@@ -45,6 +36,15 @@ namespace EpgTimer
             }
             catch
             {
+            }
+        }
+
+        protected virtual void ComboBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            var tb = e.OriginalSource as TextBox;
+            if (tb != null)
+            {
+                ((ComboBox)sender).Text = tb.Text;
             }
         }
 
@@ -65,60 +65,32 @@ namespace EpgTimer
             dlg.ShowDialog();
             ComboBox_notKey.Text = dlg.KeyWord;
         }
-        
-        public void SaveSearchLog()
+
+        public void AddSearchLog()
+        {
+            AddSerchLog(ComboBox_andKey, Settings.Instance.AndKeyList, 30);
+            AddSerchLog(ComboBox_notKey, Settings.Instance.NotKeyList, 30);
+        }
+
+        private void AddSerchLog(ComboBox box, List<string> log, byte MaxLog)
         {
             try
             {
-                bool find = false;
-                if (ComboBox_andKey.Text.Length > 0)
-                {
-                    foreach (String info in Settings.Instance.AndKeyList)
-                    {
-                        if (String.Compare(ComboBox_andKey.Text, info, true) == 0)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if (find == false)
-                    {
-                        Settings.Instance.AndKeyList.Add(ComboBox_andKey.Text);
-                        ComboBox_andKey.Items.Add(ComboBox_andKey.Text);
-                        if (Settings.Instance.AndKeyList.Count > 30)
-                        {
-                            Settings.Instance.AndKeyList.RemoveAt(0);
-                        }
-                    }
-                }
+                string searchWord = box.Text;
+                if (searchWord == null || searchWord == "") return;
 
-                find = false;
-                if (ComboBox_notKey.Text.Length > 0)
-                {
-                    foreach (String info in Settings.Instance.NotKeyList)
-                    {
-                        if (String.Compare(ComboBox_notKey.Text, info, true) == 0)
-                        {
-                            find = true;
-                            break;
-                        }
-                    }
-                    if (find == false)
-                    {
-                        Settings.Instance.NotKeyList.Add(ComboBox_notKey.Text);
-                        ComboBox_notKey.Items.Add(ComboBox_notKey.Text);
-                        if (Settings.Instance.NotKeyList.Count > 30)
-                        {
-                            Settings.Instance.NotKeyList.RemoveAt(0);
-                        }
-                    }
-                }
-                Settings.SaveToXmlFile();
+                box.Items.Remove(searchWord);
+                box.Items.Insert(0, searchWord);
+                box.Text = searchWord;
 
+                log.Remove(searchWord);
+                log.Insert(0, searchWord);
+                if (log.Count > MaxLog)
+                {
+                    log.RemoveAt(log.Count - 1);
+                }
             }
-            catch
-            {
-            }
+            catch { }
         }
 
         public void GetSearchKey(ref EpgSearchKeyInfo key)
@@ -130,10 +102,9 @@ namespace EpgTimer
 
         public void SetSearchKey(EpgSearchKeyInfo key)
         {
-            searchKeyDescView.SetSearchKey(key);
-            string s = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
-            ComboBox_andKey.Text = s.Substring(s.StartsWith("C!{999}") ? 7 : 0);
+            ComboBox_andKey.Text = key.andKey;
             ComboBox_notKey.Text = key.notKey;
+            searchKeyDescView.SetSearchKey(key);
         }
     }
 }

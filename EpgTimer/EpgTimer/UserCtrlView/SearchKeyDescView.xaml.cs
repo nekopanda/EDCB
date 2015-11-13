@@ -15,9 +15,6 @@ using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Collections;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     /// <summary>
@@ -34,28 +31,6 @@ namespace EpgTimer
             InitializeComponent();
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_content_add.Style = null;
-                    button_content_del.Style = null;
-                    button_all_on.Style = null;
-                    button_video_on.Style = null;
-                    button_bs_on.Style = null;
-                    button_cs_on.Style = null;
-                    button_tere_on.Style = null;
-                    button_1seg_on.Style = null;
-                    button_other_on.Style = null;
-                    button_all_off.Style = null;
-                    button_bs_on2.Style = null;
-                    button_cs_on2.Style = null;
-                    button_tere_on2.Style = null;
-                    button_1seg_on2.Style = null;
-                    button_other_on2.Style = null;
-                    button_date_del.Style = null;
-                    button_timeAdd.Style = null;
-                    button_weekAdd.Style = null;
-                }
-
                 foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
                 {
                     ServiceItem item = new ServiceItem();
@@ -66,7 +41,7 @@ namespace EpgTimer
                 }
                 listView_service.ItemsSource = serviceList;
 
-                comboBox_content.DataContext = CommonManager.Instance.ContentKindDictionary.Values;
+                comboBox_content.DataContext = CommonManager.Instance.ContentKindList;
                 comboBox_content.SelectedIndex = 0;
 
                 comboBox_time_sw.DataContext = CommonManager.Instance.DayOfWeekDictionary.Values;
@@ -96,9 +71,16 @@ namespace EpgTimer
             }
         }
 
+        public void SetChangeMode(int chgMode)
+        {
+            CommonManager.Instance.VUtil.SetSpecificChgAppearance(listBox_content);
+            listBox_content.Focus();
+            if (listBox_content.Items.Count != 0) listBox_content.SelectedIndex = 0;
+        }
+
         public void SetSearchKey(EpgSearchKeyInfo key)
         {
-            defKey = key;
+            defKey = key.Clone();
             UpdateView();
         }
 
@@ -106,41 +88,11 @@ namespace EpgTimer
         {
             try
             {
-                if (checkBox_regExp.IsChecked == true)
-                {
-                    key.regExpFlag = 1;
-                    key.aimaiFlag = 0;
-                }
-                else
-                {
-                    key.regExpFlag = 0;
-                    if (checkBox_aimai.IsChecked == true)
-                    {
-                        key.aimaiFlag = 1;
-                    }
-                    else
-                    {
-                        key.aimaiFlag = 0;
-                    }
-                }
-                if (checkBox_titleOnly.IsChecked == true)
-                {
-                    key.titleOnlyFlag = 1;
-                }
-                else
-                {
-                    key.titleOnlyFlag = 0;
-                }
-                key.andKey = key.andKey.Substring(key.andKey.StartsWith("^!{999}") ? 7 : 0);
-                key.andKey = key.andKey.Substring(key.andKey.StartsWith("C!{999}") ? 7 : 0);
-                if (checkBox_case.IsChecked == true)
-                {
-                    key.andKey = "C!{999}" + key.andKey;
-                }
-                if (checkBox_keyDisabled.IsChecked == true)
-                {
-                    key.andKey = "^!{999}" + key.andKey;
-                }
+                key.regExpFlag = (byte)(checkBox_regExp.IsChecked == true ? 1 : 0);
+                key.aimaiFlag = (byte)(checkBox_aimai.IsChecked == true ? 1 : 0);
+                key.titleOnlyFlag = (byte)(checkBox_titleOnly.IsChecked == true ? 1 : 0);
+                key.caseFlag = (byte)(checkBox_case.IsChecked == true ? 1 : 0);
+                key.keyDisabledFlag = (byte)(checkBox_keyDisabled.IsChecked == true ? 1 : 0);
 
                 key.contentList.Clear();
                 foreach (ContentKindInfo info in listBox_content.Items)
@@ -150,14 +102,7 @@ namespace EpgTimer
                     item.content_nibble_level_2 = info.Nibble2;
                     key.contentList.Add(item);
                 }
-                if (checkBox_notContent.IsChecked == true)
-                {
-                    key.notContetFlag = 1;
-                }
-                else
-                {
-                    key.notContetFlag = 0;
-                }
+                key.notContetFlag = (byte)(checkBox_notContent.IsChecked == true ? 1 : 0);
 
                 key.serviceList.Clear();
                 foreach (ServiceItem info in listView_service.Items)
@@ -173,14 +118,7 @@ namespace EpgTimer
                 {
                     key.dateList.Add(info.DateInfo);
                 }
-                if (checkBox_notDate.IsChecked == true)
-                {
-                    key.notDateFlag = 1;
-                }
-                else
-                {
-                    key.notDateFlag = 0;
-                }
+                key.notDateFlag = (byte)(checkBox_notDate.IsChecked == true ? 1 : 0);
 
                 if (radioButton_free_2.IsChecked == true)
                 {
@@ -197,15 +135,13 @@ namespace EpgTimer
                     key.freeCAFlag = 0;
                 }
 
-                if (checkBox_chkRecEnd.IsChecked == true)
-                {
-                    key.chkRecEnd = 1;
-                }
-                else
-                {
-                    key.chkRecEnd = 0;
-                }
-                key.chkRecDay = Convert.ToUInt16(textBox_chkRecDay.Text.ToString());
+                var mutil = CommonManager.Instance.MUtil;
+
+                key.chkRecEnd = (byte)(checkBox_chkRecEnd.IsChecked == true ? 1 : 0);
+                key.chkRecDay = mutil.MyToNumerical(textBox_chkRecDay, Convert.ToUInt16, ushort.MinValue);
+                key.chkRecNoService = (byte)(radioButton_chkRecNoService2.IsChecked == true ? 1 : 0);
+                key.chkDurationMin = mutil.MyToNumerical(textBox_chkDurationMin, Convert.ToUInt16, ushort.MinValue);
+                key.chkDurationMax = mutil.MyToNumerical(textBox_chkDurationMax, Convert.ToUInt16, ushort.MinValue);
             }
             catch (Exception ex)
             {
@@ -217,47 +153,11 @@ namespace EpgTimer
         {
             try
             {
-                if (defKey.regExpFlag == 1)
-                {
-                    checkBox_regExp.IsChecked = true;
-                    checkBox_aimai.IsChecked = false;
-                }
-                else
-                {
-                    checkBox_regExp.IsChecked = false;
-                    if (defKey.aimaiFlag == 1)
-                    {
-                        checkBox_aimai.IsChecked = true;
-                    }
-                    else
-                    {
-                        checkBox_aimai.IsChecked = false;
-                    }
-                }
-                if (defKey.titleOnlyFlag == 1)
-                {
-                    checkBox_titleOnly.IsChecked = true;
-                }
-                else
-                {
-                    checkBox_titleOnly.IsChecked = false;
-                }
-                if (defKey.andKey.StartsWith("^!{999}"))
-                {
-                    checkBox_keyDisabled.IsChecked = true;
-                }
-                else
-                {
-                    checkBox_keyDisabled.IsChecked = false;
-                }
-                if (defKey.andKey.StartsWith("C!{999}") || defKey.andKey.StartsWith("^!{999}C!{999}"))
-                {
-                    checkBox_case.IsChecked = true;
-                }
-                else
-                {
-                    checkBox_case.IsChecked = false;
-                }
+                checkBox_regExp.IsChecked = (defKey.regExpFlag == 1);
+                checkBox_aimai.IsChecked = (defKey.aimaiFlag == 1);
+                checkBox_titleOnly.IsChecked = (defKey.titleOnlyFlag == 1);
+                checkBox_case.IsChecked = (defKey.caseFlag == 1);
+                checkBox_keyDisabled.IsChecked = (defKey.keyDisabledFlag == 1);
 
                 listBox_content.Items.Clear();
                 foreach (EpgContentData item in defKey.contentList)
@@ -299,45 +199,29 @@ namespace EpgTimer
                     listBox_date.Items.Add(item);
                 }
 
-                if (defKey.notContetFlag == 1)
+                checkBox_notContent.IsChecked = (defKey.notContetFlag == 1);
+                checkBox_notDate.IsChecked = (defKey.notDateFlag == 1);
+
+                switch (defKey.freeCAFlag)
                 {
-                    checkBox_notContent.IsChecked = true;
-                }
-                else
-                {
-                    checkBox_notContent.IsChecked = false;
-                }
-                if (defKey.notDateFlag == 1)
-                {
-                    checkBox_notDate.IsChecked = true;
-                }
-                else
-                {
-                    checkBox_notDate.IsChecked = false;
+                    case 1:
+                        radioButton_free_2.IsChecked = true;
+                        break;
+                    case 2:
+                        radioButton_free_3.IsChecked = true;
+                        break;
+                    default:
+                        radioButton_free_1.IsChecked = true;
+                        break;
                 }
 
-                if (defKey.freeCAFlag == 1)
-                {
-                    radioButton_free_2.IsChecked = true;
-                }
-                else if (defKey.freeCAFlag == 2)
-                {
-                    radioButton_free_3.IsChecked = true;
-                }
-                else
-                {
-                    radioButton_free_1.IsChecked = true;
-                }
-
-                if (defKey.chkRecEnd == 1)
-                {
-                    checkBox_chkRecEnd.IsChecked = true;
-                }
-                else
-                {
-                    checkBox_chkRecEnd.IsChecked = false;
-                }
+                checkBox_chkRecEnd.IsChecked = (defKey.chkRecEnd == 1);
                 textBox_chkRecDay.Text = defKey.chkRecDay.ToString();
+                radioButton_chkRecNoService1.IsChecked = (defKey.chkRecNoService == 0);
+                radioButton_chkRecNoService2.IsChecked = (defKey.chkRecNoService != 0);
+
+                textBox_chkDurationMin.Text = defKey.chkDurationMin.ToString();
+                textBox_chkDurationMax.Text = defKey.chkDurationMax.ToString();   
             }
             catch (Exception ex)
             {
@@ -364,18 +248,8 @@ namespace EpgTimer
 
         private void button_content_del_Click(object sender, RoutedEventArgs e)
         {
-            if (listBox_content.SelectedItem != null)
-            {
-                List<ContentKindInfo> delList = new List<ContentKindInfo>(listBox_content.SelectedItems.Count);
-                foreach (ContentKindInfo info in listBox_content.SelectedItems)
-                {
-                    delList.Add(info);
-                }
-                foreach (ContentKindInfo info in delList)
-                {
-                    listBox_content.Items.Remove(info);
-                }
-            }
+            var delList = listBox_content.SelectedItems.Cast<Object>().ToList();
+            delList.ForEach(item => listBox_content.Items.Remove(item));
         }
 
         private void button_content_clear_Click(object sender, RoutedEventArgs e)
@@ -385,10 +259,7 @@ namespace EpgTimer
 
         private void button_all_on_Click(object sender, RoutedEventArgs e)
         {
-            foreach (ServiceItem info in listView_service.Items)
-            {
-                info.IsSelected = true;
-            }
+            foreach (ServiceItem item in listView_service.Items) { item.IsSelected = true; }
         }
 
         private void button_video_on_Click(object sender, RoutedEventArgs e)
@@ -491,10 +362,7 @@ namespace EpgTimer
 
         private void button_all_off_Click(object sender, RoutedEventArgs e)
         {
-            foreach (ServiceItem info in listView_service.Items)
-            {
-                info.IsSelected = false;
-            }
+            foreach (ServiceItem item in listView_service.Items) { item.IsSelected = false; }
         }
 
         private void button_timeAdd_Click(object sender, RoutedEventArgs e)
@@ -687,10 +555,13 @@ namespace EpgTimer
 
         private void button_date_del_Click(object sender, RoutedEventArgs e)
         {
-            if (listBox_date.SelectedItem != null)
-            {
-                listBox_date.Items.RemoveAt(listBox_date.SelectedIndex);
-            }
+            var delList = listBox_date.SelectedItems.Cast<Object>().ToList();
+            delList.ForEach(item => listBox_date.Items.Remove(item));
+        }
+
+        private void button_date_clear_Click(object sender, RoutedEventArgs e)
+        {
+            listBox_date.Items.Clear();
         }
 
         private void button_bs_on2_Click(object sender, RoutedEventArgs e)
@@ -754,6 +625,11 @@ namespace EpgTimer
                     info.IsSelected = true;
                 }
             }
+        }
+
+        private void checkBox_regExp_Checked(object sender, RoutedEventArgs e)
+        {
+            checkBox_aimai.IsEnabled = checkBox_regExp.IsChecked != true;
         }
 
     }

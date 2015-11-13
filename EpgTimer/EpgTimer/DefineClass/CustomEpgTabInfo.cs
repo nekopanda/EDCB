@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     public class CustomEpgTabInfo : IEquatable<CustomEpgTabInfo>
@@ -89,19 +86,7 @@ namespace EpgTimer
             dest.SearchMode = SearchMode;
             dest.FilterEnded = FilterEnded;
 
-            dest.SearchKey.aimaiFlag = SearchKey.aimaiFlag;
-            dest.SearchKey.andKey = SearchKey.andKey;
-            dest.SearchKey.audioList = SearchKey.audioList.ToList();
-            dest.SearchKey.contentList = SearchKey.contentList.ToList();
-            dest.SearchKey.dateList = SearchKey.dateList.ToList();
-            dest.SearchKey.freeCAFlag = SearchKey.freeCAFlag;
-            dest.SearchKey.notContetFlag = SearchKey.notContetFlag;
-            dest.SearchKey.notDateFlag = SearchKey.notDateFlag;
-            dest.SearchKey.notKey = SearchKey.notKey;
-            dest.SearchKey.regExpFlag = SearchKey.regExpFlag;
-            dest.SearchKey.serviceList = SearchKey.serviceList.ToList();
-            dest.SearchKey.titleOnlyFlag = SearchKey.titleOnlyFlag;
-            dest.SearchKey.videoList = SearchKey.videoList.ToList();
+            SearchKey.CopyTo(dest.SearchKey);
 
             dest.uniqId = uniqId;
         }

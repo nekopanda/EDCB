@@ -127,12 +127,35 @@ namespace EpgTimer
                 return 0;
             }
         }
+
+        public static string
+          GetPrivateProfileString(string lpAppName,
+          string lpKeyName, string lpDefault, string lpFileName)
+        {
+            StringBuilder buff = new StringBuilder(512);
+            IniFileHandler.GetPrivateProfileString(lpAppName, lpKeyName, lpDefault, buff, 512, lpFileName);
+            return buff.ToString();
+        }
+
+        public static void UpdateSrvProfileIniNW()
+        {
+            //SendIniCopy("EpgTimerSrv.ini");
+            //SendIniCopy("Common.ini");
+            //SendIniCopy("EpgDataCap_Bon.ini");
+            IniSetting.Instance.UpToDate();
+
+            Settings.UpdateDefRecSetting();
+        }
+
         public static bool IsSyncWithServer
         {
             get
             {
                 if (!IniSetting.Instance.IsAvailable)
                 {
+                    // サーバーから Common.ini の内容を問い合わせてみる
+                    // 内容が返ってきたら IsAvailable = true になる
+                    // 未対応のサーバーの場合 IsAvailable = false のままになる
                     object o = IniSetting.Instance["Common.ini"];
                 }
                 return IniSetting.Instance.IsAvailable;
@@ -384,49 +407,61 @@ namespace EpgTimer
 
     class SettingPath
     {
+        //private static string IniPath
+        //{
+        //    get { return (CommonManager.Instance.NWMode == false ? ModulePath : SettingFolderPath); }
+        //}
         public static string CommonIniPath
         {
-            get
-            {
-                string iniPath = ModulePath.TrimEnd('\\');
-                iniPath += "\\Common.ini";
-                return iniPath;
-            }
+            get { return "Common.ini"; }
         }
         public static string TimerSrvIniPath
         {
+            get { return "EpgTimerSrv.ini"; }
+        }
+        public static string EdcbExePath
+        {
             get
             {
-                string iniPath = ModulePath.TrimEnd('\\');
-                iniPath += "\\EpgTimerSrv.ini";
-                return iniPath;
+                string defRecExe = SettingPath.ModulePath.TrimEnd('\\') + "\\EpgDataCap_Bon.exe";
+                return IniFileHandler.GetPrivateProfileString("SET", "RecExePath", defRecExe, SettingPath.CommonIniPath);
+            }
+        }
+        public static string EdcbIniPath
+        {
+            get
+            {
+                //if (CommonManager.Instance.NWMode == false)
+                {
+                    return EdcbExePath.TrimEnd("exe".ToArray()) + "ini";
+                }
+                //else
+                //{
+                //    return "EpgDataCap_Bon.ini";
+                //    return IniPath.TrimEnd('\\') + "\\EpgDataCap_Bon.ini";
+                //}
             }
         }
         public static string DefSettingFolderPath
         {
             get
             {
-//                string defSetPath = System.Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-//                defSetPath += "\\EpgTimerBon";
-                string defSetPath = ModulePath.TrimEnd('\\');
-                defSetPath += "\\Setting";
-
-                return defSetPath;
+                return ModulePath.TrimEnd('\\') + "\\Setting"; // + (CommonManager.Instance.NWMode == false ? "" : "NW");
             }
         }
         public static string SettingFolderPath
         {
             get
             {
-                StringBuilder buff = new StringBuilder(512);
-                IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", DefSettingFolderPath, buff, 512, CommonIniPath);
-                return (Path.IsPathRooted(buff.ToString()) ? "" : ModulePath.TrimEnd('\\') + "\\") + buff.ToString();
-            }
-        }
-        public static void CheckFolderPath(ref string folderPath)
-        {
-            if( folderPath.LastIndexOf("\\") == folderPath.Length-1 ){
-                folderPath = folderPath.Remove(folderPath.Length - 1);
+                if (CommonManager.Instance.NWMode == false)
+                {
+                    string path = IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", SettingPath.DefSettingFolderPath, SettingPath.CommonIniPath);
+                    return (Path.IsPathRooted(path) ? "" : SettingPath.ModulePath.TrimEnd('\\') + "\\") + path;
+                }
+                else
+                {
+                    return SettingPath.DefSettingFolderPath;
+                }
             }
         }
         public static string ModulePath
@@ -464,6 +499,7 @@ namespace EpgTimer
         private string reserveRectColorNo;
         private string reserveRectColorNoTuner;
         private string reserveRectColorWarning;
+        private string reserveRectColorAutoAddMissing;
         private string titleColor1;
         private string titleColor2;
         private UInt32 titleCustColor1;
@@ -475,14 +511,6 @@ namespace EpgTimer
         private bool epgPopup;
         private bool epgGradation;
         private bool epgGradationHeader;
-        private double resColumnWidth0;
-        private double resColumnWidth1;
-        private double resColumnWidth2;
-        private double resColumnWidth3;
-        private double resColumnWidth4;
-        private double resColumnWidth5;
-        private double resColumnWidth6;
-        private double resColumnWidth7;
         private string resColumnHead;
         private ListSortDirection resSortDirection;
         private System.Windows.WindowState lastWindowState;
@@ -503,27 +531,13 @@ namespace EpgTimer
         private string cust2BtnCmdOpt;
         private List<string> andKeyList;
         private List<string> notKeyList;
-        private bool searchKeyRegExp;
-        private bool searchKeyTitleOnly;
-        private bool searchKeyAimaiFlag;
-        private bool searchKeyNotContent;
-        private bool searchKeyNotDate;
-        private List<ContentKindInfo> searchKeyContentList;
-        private List<DateItem> searchKeyDateItemList;
-        private List<Int64> searchKeyServiceList;
-        private byte searchKeyFreeCA;
-        private byte searchKeyChkRecEnd;
-        private UInt16 searchKeyChkRecDay;
+        private EpgSearchKeyInfo defSearchKey;
         private List<RecPresetItem> recPresetList;
-        private double recInfoColumnWidth0;
-        private double recInfoColumnWidth1;
-        private double recInfoColumnWidth2;
-        private double recInfoColumnWidth3;
-        private double recInfoColumnWidth4;
-        private double recInfoColumnWidth5;
-        private double recInfoColumnWidth6;
         private string recInfoColumnHead;
         private ListSortDirection recInfoSortDirection;
+        private long recInfoDropErrIgnore;
+        private long recInfoDropWrnIgnore;
+        private long recInfoScrambleIgnore;
         private string tvTestExe;
         private string tvTestCmd;
         private bool nwTvMode;
@@ -531,7 +545,9 @@ namespace EpgTimer
         private bool nwTvModeTCP;
         private string filePlayExe;
         private string filePlayCmd;
+        private bool openFolderWithFileDialog;
         private List<IEPGStationInfo> iEpgStationList;
+        private MenuSettingData menuSet;
         private bool nwMode;
         private string nwServerIP;
         private UInt32 nwServerPort;
@@ -540,39 +556,28 @@ namespace EpgTimer
         private bool wakeReconnectNW;
         private bool suspendCloseNW;
         private bool ngAutoEpgLoadNW;
+        private bool chkSrvRegistTCP;
+        private double chkSrvRegistInterval;
         private Int32 tvTestOpenWait;
         private Int32 tvTestChgBonWait;
-        private byte resDefColorR;
-        private byte resDefColorG;
-        private byte resDefColorB;
-        private byte resErrColorR;
-        private byte resErrColorG;
-        private byte resErrColorB;
-        private byte resWarColorR;
-        private byte resWarColorG;
-        private byte resWarColorB;
-        private byte resNoColorR;
-        private byte resNoColorG;
-        private byte resNoColorB;
-        private byte recEndDefColorR;
-        private byte recEndDefColorG;
-        private byte recEndDefColorB;
-        private byte recEndErrColorR;
-        private byte recEndErrColorG;
-        private byte recEndErrColorB;
-        private byte recEndWarColorR;
-        private byte recEndWarColorG;
-        private byte recEndWarColorB;
-        private byte epgTipsBackColorR;
-        private byte epgTipsBackColorG;
-        private byte epgTipsBackColorB;
-        private byte epgTipsForeColorR;
-        private byte epgTipsForeColorG;
-        private byte epgTipsForeColorB;
+        private string listDefFontColor;            //各画面のリストのデフォルト文字色
+        private List<string> recModeFontColorList;  //予約リストなどの録画モードごとの文字色
+        private string resDefBackColor;             //予約リストなどのデフォルト背景色
+        private string resErrBackColor;             //予約リストなどのチューナ不足の背景色
+        private string resWarBackColor;             //予約リストなどのチューナ不足で一部実行の背景色
+        private string resNoBackColor;              //予約リストなどの無効予約の背景色
+        private string resAutoAddMissingBackColor;  //予約リストなどの自動登録が見つからない予約の背景色
+        private string recEndDefBackColor;          //録画済リストのデフォルト背景色
+        private string recEndErrBackColor;          //録画済リストのエラー表示の背景色
+        private string recEndWarBackColor;          //録画済リストの警告表示の背景色
+        private string statResForeColor;            //予約リストなどの「状態」列の予約色
+        private string statRecForeColor;            //予約リストなどの「状態」の録画色
+        private string statOnAirForeColor;          //予約リストなどの「状態」の放送色
         private bool epgInfoSingleClick;
         private byte epgInfoOpenMode;
         private UInt32 execBat;
         private UInt32 suspendChk;
+        private UInt32 suspendChkTime;
         private List<ListColumnInfo> reserveListColumn;
         private List<ListColumnInfo> recInfoListColumn;
         private List<ListColumnInfo> autoAddEpgColumn;
@@ -589,6 +594,14 @@ namespace EpgTimer
         private double reserveMinHeight;
         private bool reservePopup;
         private bool alwaysSaveEpgSetting;
+        private bool cautionManyChange;
+        private int cautionManyNum;
+        private bool cautionOnRecChange;
+        private int cautionOnRecMarginMin;
+        private int keyDeleteDisplayItemNum;
+        private bool displayNotifyEpgChange;
+        private int displayNotifyJumpTime;
+        private bool displayReserveAutoAddMissing;
 
         public bool UseCustomEpgView
         {
@@ -710,6 +723,11 @@ namespace EpgTimer
             get { return reserveRectColorWarning; }
             set { reserveRectColorWarning = value; }
         }
+        public string ReserveRectColorAutoAddMissing
+        {
+            get { return reserveRectColorAutoAddMissing; }
+            set { reserveRectColorAutoAddMissing = value; }
+        }
         public bool ReserveRectBackground
         {
             get { return reserveRectBackground; }
@@ -764,46 +782,6 @@ namespace EpgTimer
         {
             get { return epgGradationHeader; }
             set { epgGradationHeader = value; }
-        }
-        public double ResColumnWidth0
-        {
-            get { return resColumnWidth0; }
-            set { resColumnWidth0 = value; }
-        }
-        public double ResColumnWidth1
-        {
-            get { return resColumnWidth1; }
-            set { resColumnWidth1 = value; }
-        }
-        public double ResColumnWidth2
-        {
-            get { return resColumnWidth2; }
-            set { resColumnWidth2 = value; }
-        }
-        public double ResColumnWidth3
-        {
-            get { return resColumnWidth3; }
-            set { resColumnWidth3 = value; }
-        }
-        public double ResColumnWidth4
-        {
-            get { return resColumnWidth4; }
-            set { resColumnWidth4 = value; }
-        }
-        public double ResColumnWidth5
-        {
-            get { return resColumnWidth5; }
-            set { resColumnWidth5 = value; }
-        }
-        public double ResColumnWidth6
-        {
-            get { return resColumnWidth6; }
-            set { resColumnWidth6 = value; }
-        }
-        public double ResColumnWidth7
-        {
-            get { return resColumnWidth7; }
-            set { resColumnWidth7 = value; }
         }
         public string ResColumnHead
         {
@@ -905,100 +883,15 @@ namespace EpgTimer
             get { return notKeyList; }
             set { notKeyList = value; }
         }
-        public bool SearchKeyRegExp
+        public EpgSearchKeyInfo DefSearchKey
         {
-            get { return searchKeyRegExp; }
-            set { searchKeyRegExp = value; }
-        }
-        public bool SearchKeyTitleOnly
-        {
-            get { return searchKeyTitleOnly; }
-            set { searchKeyTitleOnly = value; }
-        }
-        public bool SearchKeyAimaiFlag
-        {
-            get { return searchKeyAimaiFlag; }
-            set { searchKeyAimaiFlag = value; }
-        }
-        public bool SearchKeyNotContent
-        {
-            get { return searchKeyNotContent; }
-            set { searchKeyNotContent = value; }
-        }
-        public bool SearchKeyNotDate
-        {
-            get { return searchKeyNotDate; }
-            set { searchKeyNotDate = value; }
-        }
-        public List<ContentKindInfo> SearchKeyContentList
-        {
-            get { return searchKeyContentList; }
-            set { searchKeyContentList = value; }
-        }
-        public List<DateItem> SearchKeyDateItemList
-        {
-            get { return searchKeyDateItemList; }
-            set { searchKeyDateItemList = value; }
-        }
-        public List<Int64> SearchKeyServiceList
-        {
-            get { return searchKeyServiceList; }
-            set { searchKeyServiceList = value; }
-        }
-        public byte SearchKeyFreeCA
-        {
-            get { return searchKeyFreeCA; }
-            set { searchKeyFreeCA = value; }
-        }
-        public byte SearchKeyChkRecEnd
-        {
-            get { return searchKeyChkRecEnd; }
-            set { searchKeyChkRecEnd = value; }
-        }
-        public UInt16 SearchKeyChkRecDay
-        {
-            get { return searchKeyChkRecDay; }
-            set { searchKeyChkRecDay = value; }
+            get { return defSearchKey; }
+            set { defSearchKey = value; }
         }
         public List<RecPresetItem> RecPresetList
         {
             get { return recPresetList; }
             set { recPresetList = value; }
-        }
-        public double RecInfoColumnWidth0
-        {
-            get { return recInfoColumnWidth0; }
-            set { recInfoColumnWidth0 = value; }
-        }
-        public double RecInfoColumnWidth1
-        {
-            get { return recInfoColumnWidth1; }
-            set { recInfoColumnWidth1 = value; }
-        }
-        public double RecInfoColumnWidth2
-        {
-            get { return recInfoColumnWidth2; }
-            set { recInfoColumnWidth2 = value; }
-        }
-        public double RecInfoColumnWidth3
-        {
-            get { return recInfoColumnWidth3; }
-            set { recInfoColumnWidth3 = value; }
-        }
-        public double RecInfoColumnWidth4
-        {
-            get { return recInfoColumnWidth4; }
-            set { recInfoColumnWidth4 = value; }
-        }
-        public double RecInfoColumnWidth5
-        {
-            get { return recInfoColumnWidth5; }
-            set { recInfoColumnWidth5 = value; }
-        }
-        public double RecInfoColumnWidth6
-        {
-            get { return recInfoColumnWidth6; }
-            set { recInfoColumnWidth6 = value; }
         }
         public string RecInfoColumnHead
         {
@@ -1009,6 +902,21 @@ namespace EpgTimer
         {
             get { return recInfoSortDirection; }
             set { recInfoSortDirection = value; }
+        }
+        public long RecInfoDropErrIgnore
+        {
+            get { return recInfoDropErrIgnore; }
+            set { recInfoDropErrIgnore = value; }
+        }
+        public long RecInfoDropWrnIgnore
+        {
+            get { return recInfoDropWrnIgnore; }
+            set { recInfoDropWrnIgnore = value; }
+        }
+        public long RecInfoScrambleIgnore
+        {
+            get { return recInfoScrambleIgnore; }
+            set { recInfoScrambleIgnore = value; }
         }
         public string TvTestExe
         {
@@ -1045,10 +953,20 @@ namespace EpgTimer
             get { return filePlayCmd; }
             set { filePlayCmd = value; }
         }
+        public bool OpenFolderWithFileDialog
+        {
+            get { return openFolderWithFileDialog; }
+            set { openFolderWithFileDialog = value; }
+        }
         public List<IEPGStationInfo> IEpgStationList
         {
             get { return iEpgStationList; }
             set { iEpgStationList = value; }
+        }
+        public MenuSettingData MenuSet
+        {
+            get { return menuSet; }
+            set { menuSet = value; }
         }
         public bool NWMode
         {
@@ -1090,6 +1008,16 @@ namespace EpgTimer
             get { return ngAutoEpgLoadNW; }
             set { ngAutoEpgLoadNW = value; }
         }
+        public bool ChkSrvRegistTCP
+        {
+            get { return chkSrvRegistTCP; }
+            set { chkSrvRegistTCP = value; }
+        }
+        public double ChkSrvRegistInterval
+        {
+            get { return chkSrvRegistInterval; }
+            set { chkSrvRegistInterval = value; }
+        }
         public Int32 TvTestOpenWait
         {
             get { return tvTestOpenWait; }
@@ -1100,140 +1028,70 @@ namespace EpgTimer
             get { return tvTestChgBonWait; }
             set { tvTestChgBonWait = value; }
         }
-        public byte ResDefColorR
+        public string ListDefFontColor
         {
-            get { return resDefColorR; }
-            set { resDefColorR = value; }
+            get { return listDefFontColor; }
+            set { listDefFontColor = value; }
         }
-        public byte ResDefColorG
+        public List<string> RecModeFontColorList
         {
-            get { return resDefColorG; }
-            set { resDefColorG = value; }
+            get { return recModeFontColorList; }
+            set { recModeFontColorList = value; }
         }
-        public byte ResDefColorB
+        public string ResDefBackColor
         {
-            get { return resDefColorB; }
-            set { resDefColorB = value; }
+            get { return resDefBackColor; }
+            set { resDefBackColor = value; }
         }
-        public byte ResErrColorR
+        public string ResErrBackColor
         {
-            get { return resErrColorR; }
-            set { resErrColorR = value; }
+            get { return resErrBackColor; }
+            set { resErrBackColor = value; }
         }
-        public byte ResErrColorG
+        public string ResWarBackColor
         {
-            get { return resErrColorG; }
-            set { resErrColorG = value; }
+            get { return resWarBackColor; }
+            set { resWarBackColor = value; }
         }
-        public byte ResErrColorB
+        public string ResNoBackColor
         {
-            get { return resErrColorB; }
-            set { resErrColorB = value; }
+            get { return resNoBackColor; }
+            set { resNoBackColor = value; }
         }
-        public byte ResWarColorR
+        public string ResAutoAddMissingBackColor
         {
-            get { return resWarColorR; }
-            set { resWarColorR = value; }
+            get { return resAutoAddMissingBackColor; }
+            set { resAutoAddMissingBackColor = value; }
         }
-        public byte ResWarColorG
+        public string RecEndDefBackColor
         {
-            get { return resWarColorG; }
-            set { resWarColorG = value; }
+            get { return recEndDefBackColor; }
+            set { recEndDefBackColor = value; }
         }
-        public byte ResWarColorB
+        public string RecEndErrBackColor
         {
-            get { return resWarColorB; }
-            set { resWarColorB = value; }
+            get { return recEndErrBackColor; }
+            set { recEndErrBackColor = value; }
         }
-        public byte ResNoColorR
+        public string RecEndWarBackColor
         {
-            get { return resNoColorR; }
-            set { resNoColorR = value; }
+            get { return recEndWarBackColor; }
+            set { recEndWarBackColor = value; }
         }
-        public byte ResNoColorG
+        public string StatResForeColor
         {
-            get { return resNoColorG; }
-            set { resNoColorG = value; }
+            get { return statResForeColor; }
+            set { statResForeColor = value; }
         }
-        public byte ResNoColorB
+        public string StatRecForeColor
         {
-            get { return resNoColorB; }
-            set { resNoColorB = value; }
+            get { return statRecForeColor; }
+            set { statRecForeColor = value; }
         }
-        public byte RecEndDefColorR
+        public string StatOnAirForeColor
         {
-            get { return recEndDefColorR; }
-            set { recEndDefColorR = value; }
-        }
-        public byte RecEndDefColorG
-        {
-            get { return recEndDefColorG; }
-            set { recEndDefColorG = value; }
-        }
-        public byte RecEndDefColorB
-        {
-            get { return recEndDefColorB; }
-            set { recEndDefColorB = value; }
-        }
-        public byte RecEndErrColorR
-        {
-            get { return recEndErrColorR; }
-            set { recEndErrColorR = value; }
-        }
-        public byte RecEndErrColorG
-        {
-            get { return recEndErrColorG; }
-            set { recEndErrColorG = value; }
-        }
-        public byte RecEndErrColorB
-        {
-            get { return recEndErrColorB; }
-            set { recEndErrColorB = value; }
-        }
-        public byte RecEndWarColorR
-        {
-            get { return recEndWarColorR; }
-            set { recEndWarColorR = value; }
-        }
-        public byte RecEndWarColorG
-        {
-            get { return recEndWarColorG; }
-            set { recEndWarColorG = value; }
-        }
-        public byte RecEndWarColorB
-        {
-            get { return recEndWarColorB; }
-            set { recEndWarColorB = value; }
-        }
-        public byte EpgTipsBackColorR
-        {
-            get { return epgTipsBackColorR; }
-            set { epgTipsBackColorR = value; }
-        }
-        public byte EpgTipsBackColorG
-        {
-            get { return epgTipsBackColorG; }
-            set { epgTipsBackColorG = value; }
-        }
-        public byte EpgTipsBackColorB
-        {
-            get { return epgTipsBackColorB; }
-            set { epgTipsBackColorB = value; }
-        }
-        public byte EpgTipsForeColorR
-        {
-            get { return epgTipsForeColorR; }
-            set { epgTipsForeColorR = value; }
-        }
-        public byte EpgTipsForeColorG
-        {
-            get { return epgTipsForeColorG; }
-            set { epgTipsForeColorG = value; }
-        }
-        public byte EpgTipsForeColorB
-        {
-            get { return epgTipsForeColorB; }
-            set { epgTipsForeColorB = value; }
+            get { return statOnAirForeColor; }
+            set { statOnAirForeColor = value; }
         }
         public bool EpgInfoSingleClick
         {
@@ -1254,6 +1112,11 @@ namespace EpgTimer
         {
             get { return suspendChk; }
             set { suspendChk = value; }
+        }
+        public UInt32 SuspendChkTime
+        {
+            get { return suspendChkTime; }
+            set { suspendChkTime = value; }
         }
         public List<ListColumnInfo> ReserveListColumn
         {
@@ -1335,7 +1198,46 @@ namespace EpgTimer
             get { return alwaysSaveEpgSetting; }
             set { alwaysSaveEpgSetting = value; }
         }
-        
+        public bool CautionManyChange
+        {
+            get { return cautionManyChange; }
+            set { cautionManyChange = value; }
+        }
+        public int CautionManyNum
+        {
+            get { return cautionManyNum; }
+            set { cautionManyNum = value; }
+        }
+        public bool CautionOnRecChange
+        {
+            get { return cautionOnRecChange; }
+            set { cautionOnRecChange = value; }
+        }
+        public int CautionOnRecMarginMin
+        {
+            get { return cautionOnRecMarginMin; }
+            set { cautionOnRecMarginMin = value; }
+        }
+        public int KeyDeleteDisplayItemNum
+        {
+            get { return keyDeleteDisplayItemNum; }
+            set { keyDeleteDisplayItemNum = value; }
+        }        
+        public bool DisplayNotifyEpgChange
+        {
+            get { return displayNotifyEpgChange; }
+            set { displayNotifyEpgChange = value; }
+        }
+        public int DisplayNotifyJumpTime
+        {
+            get { return displayNotifyJumpTime; }
+            set { displayNotifyJumpTime = value; }
+        }
+        public bool DisplayReserveAutoAddMissing
+        {
+            get { return displayReserveAutoAddMissing; }
+            set { displayReserveAutoAddMissing = value; }
+        }
         
         public Settings()
         {
@@ -1361,6 +1263,7 @@ namespace EpgTimer
             reserveRectColorNo = "Black";
             reserveRectColorNoTuner = "Red";
             reserveRectColorWarning = "Yellow";
+            reserveRectColorAutoAddMissing = "Blue";
             titleColor1 = "Black";
             titleColor2 = "Black";
             titleCustColor1 = 0xFFFFFFFF;
@@ -1392,20 +1295,13 @@ namespace EpgTimer
             cust2BtnCmdOpt = "";
             andKeyList = new List<string>();
             notKeyList = new List<string>();
-            searchKeyRegExp = false;
-            searchKeyTitleOnly = false;
-            searchKeyAimaiFlag = false;
-            searchKeyNotContent = false;
-            searchKeyNotDate = false;
-            searchKeyFreeCA = 0;
-            searchKeyChkRecEnd = 0;
-            searchKeyChkRecDay = 6;
-            searchKeyContentList = new List<ContentKindInfo>();
-            searchKeyDateItemList = new List<DateItem>();
-            searchKeyServiceList = new List<Int64>();
+            defSearchKey = new EpgSearchKeyInfo();
             recPresetList = new List<RecPresetItem>();
             recInfoColumnHead = "";
             recInfoSortDirection = ListSortDirection.Ascending;
+            recInfoDropErrIgnore = 0;
+            recInfoDropWrnIgnore = 0;
+            recInfoScrambleIgnore = 0;
             tvTestExe = "";
             tvTestCmd = "";
             nwTvMode = false;
@@ -1413,7 +1309,9 @@ namespace EpgTimer
             nwTvModeTCP = false;
             filePlayExe = "";
             filePlayCmd = "\"$FilePath$\"";
+            openFolderWithFileDialog = false;
             iEpgStationList = new List<IEPGStationInfo>();
+            menuSet = new MenuSettingData();
             nwServerIP = "";
             nwServerPort = 4510;
             nwWaitPort = 4520;
@@ -1421,39 +1319,28 @@ namespace EpgTimer
             wakeReconnectNW = false;
             suspendCloseNW = false;
             ngAutoEpgLoadNW = false;
+            chkSrvRegistTCP = false;
+            chkSrvRegistInterval = 5;
             tvTestOpenWait = 2000;
             tvTestChgBonWait = 2000;
-            resDefColorR = 0xFF;
-            resDefColorG = 0xFF;
-            resDefColorB = 0xFF;
-            resErrColorR = 0xFF;
-            resErrColorG = 0;
-            resErrColorB = 0;
-            resWarColorR = 0xFF;
-            resWarColorG = 0xFF;
-            resWarColorB = 0;
-            resNoColorR = 0xA9;
-            resNoColorG = 0xA9;
-            resNoColorB = 0xA9;
-            recEndDefColorR = 0xFF;
-            recEndDefColorG = 0xFF;
-            recEndDefColorB = 0xFF;
-            recEndErrColorR = 0xFF;
-            recEndErrColorG = 0;
-            recEndErrColorB = 0;
-            recEndWarColorR = 0xFF;
-            recEndWarColorG = 0xFF;
-            recEndWarColorB = 0;
-            epgTipsBackColorR = 0xD3;
-            epgTipsBackColorG = 0xD3;
-            epgTipsBackColorB = 0xD3;
-            epgTipsForeColorR = 0;
-            epgTipsForeColorG = 0;
-            epgTipsForeColorB = 0;
+            listDefFontColor = "#FF042271";
+            recModeFontColorList = new List<String>();
+            resDefBackColor = "White";
+            resErrBackColor = "#FFFFAAAA";
+            resWarBackColor = "#FFFFFFAA";
+            resNoBackColor = "#FFAAAAAA";
+            resAutoAddMissingBackColor = "Powderblue";
+            recEndDefBackColor = "White";
+            recEndErrBackColor = "#FFFFAAAA";
+            recEndWarBackColor = "#FFFFFFAA";
+            statResForeColor = "RoyalBlue";
+            statRecForeColor = "OrangeRed";
+            statOnAirForeColor = "LimeGreen";
             epgInfoSingleClick = false;
             epgInfoOpenMode = 0;
             execBat = 0;
             suspendChk = 0;
+            suspendChkTime = 15;
             reserveListColumn = new List<ListColumnInfo>();
             recInfoListColumn = new List<ListColumnInfo>();
             autoAddEpgColumn = new List<ListColumnInfo>();
@@ -1470,6 +1357,14 @@ namespace EpgTimer
             reserveMinHeight = 2;
             reservePopup = false;
             alwaysSaveEpgSetting = false;
+            cautionManyChange = true;
+            cautionManyNum = 10;
+            cautionOnRecChange = true;
+            cautionOnRecMarginMin = 5;
+            keyDeleteDisplayItemNum = 10;
+            displayNotifyEpgChange = false;
+            displayNotifyJumpTime = 3;
+            displayReserveAutoAddMissing = false;
         }
 
         [NonSerialized()]
@@ -1486,56 +1381,23 @@ namespace EpgTimer
             set { _instance = value; }
         }
 
-        //番組表のデフォルトの背景色
-        private static void DefaultcontentColorList()
-        {
-            Instance.contentColorList.Add("LightYellow");
-            Instance.contentColorList.Add("Lavender");
-            Instance.contentColorList.Add("LavenderBlush");
-            Instance.contentColorList.Add("MistyRose");
-            Instance.contentColorList.Add("Honeydew");
-            Instance.contentColorList.Add("LightCyan");
-            Instance.contentColorList.Add("PapayaWhip");
-            Instance.contentColorList.Add("Pink");
-            Instance.contentColorList.Add("LightYellow");
-            Instance.contentColorList.Add("PapayaWhip");
-            Instance.contentColorList.Add("AliceBlue");
-            Instance.contentColorList.Add("AliceBlue");
-            Instance.contentColorList.Add("White");
-            Instance.contentColorList.Add("White");
-            Instance.contentColorList.Add("White");
-            Instance.contentColorList.Add("WhiteSmoke");
-            Instance.contentColorList.Add("White");
-        }
-
-        //番組表の時間軸のデフォルトの背景色
-        private static void DefaulttimeColorList()
-        {
-            Instance.timeColorList.Add("MediumPurple");
-            Instance.timeColorList.Add("LightSeaGreen");
-            Instance.timeColorList.Add("LightSalmon");
-            Instance.timeColorList.Add("CornflowerBlue");
-        }
-
         /// <summary>
-        /// EpgTimer用設定ファイルロード関数
+        /// 設定ファイルロード関数
         /// </summary>
         public static void LoadFromXmlFile()
         {
-            string path = GetSettingPath();
+            _LoadFromXmlFile(GetSettingPath());
+        }
+        private static void _LoadFromXmlFile(string path)
+        {
             try
             {
-                FileStream fs = new FileStream(path,
-                    FileMode.Open,
-                    FileAccess.Read);
-                System.Xml.Serialization.XmlSerializer xs =
-                    new System.Xml.Serialization.XmlSerializer(
-                        typeof(Settings));
-                //読み込んで逆シリアル化する
-                object obj = xs.Deserialize(fs);
-                fs.Close();
-                Instance = (Settings)obj;
-
+                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+                {
+                    //読み込んで逆シリアル化する
+                    var xs = new System.Xml.Serialization.XmlSerializer(typeof(Settings));
+                    Instance = (Settings)(xs.Deserialize(fs));
+                }
             }
             catch (Exception ex)
             {
@@ -1546,54 +1408,76 @@ namespace EpgTimer
                     {
                         if (MessageBox.Show("設定ファイルが異常な可能性があります。\r\nバックアップファイルから読み込みますか？", "", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                         {
-                            try
-                            {
-                                FileStream fs = new FileStream(backPath,
-                                    FileMode.Open,
-                                    FileAccess.Read, FileShare.None);
-                                System.Xml.Serialization.XmlSerializer xs =
-                                    new System.Xml.Serialization.XmlSerializer(
-                                        typeof(Settings));
-                                //読み込んで逆シリアル化する
-                                object obj = xs.Deserialize(fs);
-                                fs.Close();
-                                Instance = (Settings)obj;
-                            }
-                            catch (Exception ex2)
-                            {
-                                MessageBox.Show(ex2.Message + "\r\n" + ex2.StackTrace);
-                            }
+                            _LoadFromXmlFile(backPath);
+                            return;
                         }
                     }
-                    else
-                    {
-                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                    }
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 }
             }
-            finally
+
+            try
             {
-                if (Instance.contentColorList.Count == 0)
+                // タイミング合わせにくいので、メニュー系のデータチェックは
+                // MenuManager側のワークデータ作成時に実行する。
+
+                if (Instance.recModeFontColorList.Count != 6)
                 {
-                    DefaultcontentColorList();
+                    //予約アイテムのデフォルトの文字色
+                    Instance.recModeFontColorList.Clear();
+                    Instance.recModeFontColorList.Add("#FF042271"); //0 全サービス
+                    Instance.recModeFontColorList.Add("#FF042271"); //1 指定サービス
+                    Instance.recModeFontColorList.Add("#FF042271"); //2 全サービス(デコード処理なし)
+                    Instance.recModeFontColorList.Add("#FF042271"); //3 指定サービス(デコード処理なし)
+                    Instance.recModeFontColorList.Add("#FF042271"); //4 視聴
+                    Instance.recModeFontColorList.Add("#FF042271"); //5 無効
                 }
-                else if (Instance.contentColorList.Count == 0x10)
+                if (Instance.contentColorList.Count < 0x11)
                 {
-                    Instance.contentColorList.Add("White");
+                    //番組表のデフォルトの背景色
+                    var defColors = new List<string>{
+                        "LightYellow"
+                        ,"Lavender"
+                        ,"LavenderBlush"
+                        ,"MistyRose"
+                        ,"Honeydew"
+                        ,"LightCyan"
+                        ,"PapayaWhip"
+                        ,"Pink"
+                        ,"LightYellow"
+                        ,"PapayaWhip"
+                        ,"AliceBlue"
+                        ,"AliceBlue"
+                        ,"White"
+                        ,"White"
+                        ,"White"
+                        ,"WhiteSmoke"
+                        ,"White"
+                    };
+                    for (int i = Instance.contentColorList.Count; i < 0x11; i++)
+                    {
+                        Instance.contentColorList.Add(defColors[i]);
+                    }
                 }
-                if (Instance.ContentCustColorList.Count == 0)
+                if (Instance.ContentCustColorList.Count < 0x11 + 5)
                 {
-                    for (int i = 0; i < 0x11+4; i++)
+                    for (int i = Instance.ContentCustColorList.Count; i < 0x11 + 5; i++)
                     {
                         Instance.ContentCustColorList.Add(0xFFFFFFFF);
                     }
                 }
-                if (Instance.timeColorList.Count == 0)
+                if (Instance.timeColorList.Count != 4)
                 {
-                    DefaulttimeColorList();
+                    //番組表の時間軸のデフォルトの背景色
+                    Instance.timeColorList.Clear();
+                    Instance.timeColorList.Add("MediumPurple");
+                    Instance.timeColorList.Add("LightSeaGreen");
+                    Instance.timeColorList.Add("LightSalmon");
+                    Instance.timeColorList.Add("CornflowerBlue");
                 }
-                if (Instance.TimeCustColorList.Count == 0)
+                if (Instance.TimeCustColorList.Count != 4)
                 {
+                    Instance.TimeCustColorList.Clear();
                     for (int i = 0; i < 4; i++)
                     {
                         Instance.TimeCustColorList.Add(0xFFFFFFFF);
@@ -1670,8 +1554,12 @@ namespace EpgTimer
                     Instance.autoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
                 }
             }
-        } 
-
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+ 
         public static void SaveToXmlFile()
         {
             try
@@ -1708,9 +1596,22 @@ namespace EpgTimer
             return path;
         }
 
+        public void SetSettings(string propertyName, object value)
+        {
+            if (propertyName == null) return;
+            var info = typeof(Settings).GetProperty(propertyName);
+            if (info != null) info.SetValue(this, value, null);
+        }
+
+        public object GetSettings(string propertyName)
+        {
+            if (propertyName == null) return null;
+            var info = typeof(Settings).GetProperty(propertyName);
+            return (info == null ? null : info.GetValue(this, null));
+        }
+
         public static void GetDefRecSetting(UInt32 presetID, ref RecSettingData defKey)
         {
-            StringBuilder buff = new StringBuilder(512);
             String defName = "REC_DEF";
             String defFolderName = "REC_DEF_FOLDER";
             String defFolder1SegName = "REC_DEF_FOLDER_1SEG";
@@ -1728,40 +1629,28 @@ namespace EpgTimer
             defKey.ServiceMode = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "ServiceMode", 0, SettingPath.TimerSrvIniPath);
             defKey.PittariFlag = (Byte)IniFileHandler.GetPrivateProfileInt(defName, "PittariFlag", 0, SettingPath.TimerSrvIniPath);
 
-            buff.Clear();
-            IniFileHandler.GetPrivateProfileString(defName, "BatFilePath", "", buff, 512, SettingPath.TimerSrvIniPath);
-            defKey.BatFilePath = buff.ToString();
+            defKey.BatFilePath = IniFileHandler.GetPrivateProfileString(defName, "BatFilePath", "", SettingPath.TimerSrvIniPath);
 
+            defKey.RecFolderList.Clear();
             int count = IniFileHandler.GetPrivateProfileInt(defFolderName, "Count", 0, SettingPath.TimerSrvIniPath);
             for (int i = 0; i < count; i++)
             {
                 RecFileSetInfo folderInfo = new RecFileSetInfo();
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString(defFolderName, i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                folderInfo.RecFolder = buff.ToString();
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString(defFolderName, "WritePlugIn" + i.ToString(), "Write_Default.dll", buff, 512, SettingPath.TimerSrvIniPath);
-                folderInfo.WritePlugIn = buff.ToString();
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString(defFolderName, "RecNamePlugIn" + i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                folderInfo.RecNamePlugIn = buff.ToString();
+                folderInfo.RecFolder = IniFileHandler.GetPrivateProfileString(defFolderName, i.ToString(), "", SettingPath.TimerSrvIniPath);
+                folderInfo.WritePlugIn = IniFileHandler.GetPrivateProfileString(defFolderName, "WritePlugIn" + i.ToString(), "Write_Default.dll", SettingPath.TimerSrvIniPath);
+                folderInfo.RecNamePlugIn = IniFileHandler.GetPrivateProfileString(defFolderName, "RecNamePlugIn" + i.ToString(), "", SettingPath.TimerSrvIniPath);
 
                 defKey.RecFolderList.Add(folderInfo);
             }
 
+            defKey.PartialRecFolder.Clear();
             count = IniFileHandler.GetPrivateProfileInt(defFolder1SegName, "Count", 0, SettingPath.TimerSrvIniPath);
             for (int i = 0; i < count; i++)
             {
                 RecFileSetInfo folderInfo = new RecFileSetInfo();
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString(defFolder1SegName, i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                folderInfo.RecFolder = buff.ToString();
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString(defFolder1SegName, "WritePlugIn" + i.ToString(), "Write_Default.dll", buff, 512, SettingPath.TimerSrvIniPath);
-                folderInfo.WritePlugIn = buff.ToString();
-                buff.Clear();
-                IniFileHandler.GetPrivateProfileString(defFolder1SegName, "RecNamePlugIn" + i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                folderInfo.RecNamePlugIn = buff.ToString();
+                folderInfo.RecFolder = IniFileHandler.GetPrivateProfileString(defFolder1SegName, i.ToString(), "", SettingPath.TimerSrvIniPath);
+                folderInfo.WritePlugIn = IniFileHandler.GetPrivateProfileString(defFolder1SegName, "WritePlugIn" + i.ToString(), "Write_Default.dll", SettingPath.TimerSrvIniPath);
+                folderInfo.RecNamePlugIn = IniFileHandler.GetPrivateProfileString(defFolder1SegName, "RecNamePlugIn" + i.ToString(), "", SettingPath.TimerSrvIniPath);
 
                 defKey.PartialRecFolder.Add(folderInfo);
             }
@@ -1777,46 +1666,41 @@ namespace EpgTimer
 
         }
 
-        public static void GetDefSearchSetting(ref EpgSearchKeyInfo defKey)
+        //プリセットの更新
+        public static void UpdateDefRecSetting()
         {
-            if (Settings.Instance.SearchKeyRegExp == true)
+            Settings.Instance.RecPresetList.Clear();
+            string pIDs = "0," + IniFileHandler.GetPrivateProfileString("SET", "PresetID", "", SettingPath.TimerSrvIniPath);
+            foreach (string pID in pIDs.Split(','))
             {
-                defKey.regExpFlag = 1;
+                uint id;
+                if (uint.TryParse(pID, out id) == false) continue;
+                string name = IniFileHandler.GetPrivateProfileString("REC_DEF" + (id == 0 ? "" : id.ToString()), "SetName", "", SettingPath.TimerSrvIniPath);
+                Settings.Instance.RecPresetList.Add(new RecPresetItem(name, id));
             }
-            if (Settings.Instance.SearchKeyAimaiFlag == true)
+        }
+
+        public static List<string> GetDefRecFolders()
+        {
+            var folders = new List<string>();
+            int num = IniFileHandler.GetPrivateProfileInt("SET", "RecFolderNum", 0, SettingPath.CommonIniPath);
+            if (num == 0)
             {
-                defKey.aimaiFlag = 1;
+                folders.Add(SettingPath.SettingFolderPath);
             }
-            if (Settings.Instance.SearchKeyTitleOnly == true)
+            else
             {
-                defKey.titleOnlyFlag = 1;
+                for (uint i = 0; i < num; i++)
+                {
+                    string key = "RecFolderPath" + i.ToString();
+                    string folder = IniFileHandler.GetPrivateProfileString("SET", key, "", SettingPath.CommonIniPath);
+                    if (folder.Length > 0)
+                    {
+                        folders.Add(folder);
+                    }
+                }
             }
-            if (Settings.Instance.SearchKeyNotContent == true)
-            {
-                defKey.notContetFlag = 1;
-            }
-            if (Settings.Instance.SearchKeyNotDate == true)
-            {
-                defKey.notDateFlag = 1;
-            }
-            foreach (ContentKindInfo info in Settings.Instance.SearchKeyContentList)
-            {
-                EpgContentData item = new EpgContentData();
-                item.content_nibble_level_1 = info.Nibble1;
-                item.content_nibble_level_2 = info.Nibble2;
-                defKey.contentList.Add(item);
-            }
-            foreach (DateItem info in Settings.Instance.SearchKeyDateItemList)
-            {
-                defKey.dateList.Add(info.DateInfo);
-            }
-            foreach (Int64 info in Settings.Instance.SearchKeyServiceList)
-            {
-                defKey.serviceList.Add(info);
-            }
-            defKey.freeCAFlag = Settings.Instance.SearchKeyFreeCA;
-            defKey.chkRecEnd = Settings.Instance.SearchKeyChkRecEnd;
-            defKey.chkRecDay = Settings.Instance.SearchKeyChkRecDay;
+            return folders;
         }
     }
 }

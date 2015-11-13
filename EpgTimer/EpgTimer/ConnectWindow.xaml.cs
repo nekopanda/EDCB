@@ -10,8 +10,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using EpgTimer;
-using CtrlCmdCLI;
 
 namespace EpgTimer
 {
@@ -24,20 +22,6 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            if (Settings.Instance.NoStyle == 0)
-            {
-                ResourceDictionary rd = new ResourceDictionary();
-                rd.MergedDictionaries.Add(
-                    Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
-                    );
-                this.Resources = rd;
-            }
-            else
-            {
-                button_connect.Style = null;
-                button_wake.Style = null;
-            }
             try
             {
                 if (ServiceCtrlClass.ServiceIsInstalled("EpgTimer Service") == false &&
@@ -106,5 +90,25 @@ namespace EpgTimer
             grid_tcp.IsEnabled = true;
 
         }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        this.Close();
+                        break;
+                }
+            }
+            base.OnKeyDown(e);
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            button_connect.Focus();
+        }
+
     }
 }

@@ -24,10 +24,16 @@ namespace EpgTimer
             InitializeComponent();
         }
 
-        public void SaveSize()
+        public void RefreshMenu()
         {
-            epgAutoAddView.SaveSize();
-            manualAutoAddView.SaveSize();
+            epgAutoAddView.RefreshMenu();
+            manualAutoAddView.RefreshMenu();
+        }
+
+        public void SaveViewData()
+        {
+            epgAutoAddView.SaveViewData();
+            manualAutoAddView.SaveViewData();
         }
 
         public void UpdateAutoAddInfo()

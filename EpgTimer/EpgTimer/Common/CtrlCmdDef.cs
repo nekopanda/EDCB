@@ -1034,6 +1034,20 @@ namespace EpgTimer
         public byte chkRecEnd;
         /// <summary>(自動予約登録の条件専用)録画済かのチェック対象期間</summary>
         public ushort chkRecDay;
+        /// <summary>(自動予約登録の条件専用)録画済かのチェックの際、同一サービスのチェックを省略する</summary>
+        public byte chkRecNoService;
+        /// <summary>最低番組長(分/0は無制限)</summary>
+        public ushort chkDurationMin;
+        /// <summary>最大番組長(分/0は無制限)</summary>
+        public ushort chkDurationMax;
+
+        //以下は、EpgTimerSrv側ではandKeyへの装飾で処理しているので、ここで吸収する。
+        //ほかのフラグに合わせ、byte型にしておく。
+        /// <summary>大文字小文字を区別する</summary>
+        public byte caseFlag;
+        /// <summary>自動登録を無効にする</summary>
+        public byte keyDisabledFlag;
+
         public EpgSearchKeyInfo()
         {
             andKey = "";
@@ -1051,12 +1065,21 @@ namespace EpgTimer
             freeCAFlag = 0;
             chkRecEnd = 0;
             chkRecDay = 6;
+            chkRecNoService = 0;
+            chkDurationMin = 0;
+            chkDurationMax = 0;
+            caseFlag = 0;
+            keyDisabledFlag = 0;
         }
         public void Write(MemoryStream s, ushort version)
         {
+            //andKey装飾のフラグをここで処理
+            string andKey_Send = (caseFlag == 1 ? "C!{999}" : "") + andKey;
+            andKey_Send = (keyDisabledFlag == 1 ? "^!{999}" : "") + andKey_Send;
+
             var w = new CtrlCmdWriter(s, version);
             w.Begin();
-            w.Write(andKey);
+            w.Write(andKey_Send);
             w.Write(notKey);
             w.Write(regExpFlag);
             w.Write(titleOnlyFlag);
@@ -1073,6 +1096,12 @@ namespace EpgTimer
             {
                 w.Write(chkRecEnd);
                 w.Write(chkRecDay);
+            }
+            if (version >= 5)
+            {
+                w.Write(chkRecNoService);
+                w.Write(chkDurationMin);
+                w.Write(chkDurationMax);
             }
             w.End();
         }
@@ -1098,7 +1127,25 @@ namespace EpgTimer
                 r.Read(ref chkRecEnd);
                 r.Read(ref chkRecDay);
             }
+            if (version >= 5)
+            {
+                r.Read(ref chkRecNoService);
+                r.Read(ref chkDurationMin);
+                r.Read(ref chkDurationMax);
+            }
             r.End();
+
+            //andKey装飾のフラグをここで処理
+            if (andKey.StartsWith("^!{999}") == true)//"^!{999}"が前
+            {
+                keyDisabledFlag = 1;
+                andKey = andKey.Substring(7);
+            }
+            if (andKey.StartsWith("C!{999}") == true)
+            {
+                caseFlag = 1;
+                andKey = andKey.Substring(7);
+            }
         }
     }
 

@@ -2,61 +2,63 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
 
 namespace EpgTimer
 {
-    public class ReserveViewItem
+    public class ReserveViewItem : ViewPanelItem<ReserveData>
     {
-        public ReserveViewItem()
-        {
-            TitleDrawErr = false;
-        }
-        public ReserveViewItem(ReserveData info)
-        {
-            TitleDrawErr = false;
-            ReserveInfo = info;
-        }
-
+        public ReserveViewItem(ReserveData info) : base(info) { }
         public ReserveData ReserveInfo
         {
-            get;
-            set;
+            get { return _Data; }
+            set { _Data = value; }
         }
-        public double Width
+        public SolidColorBrush BackColor
         {
-            get;
-            set;
+            get
+            {
+                return new ReserveItem(ReserveInfo).BackColor;
+            }
         }
+        public Brush BorderBrush
+        {
+            get
+            {
+                if (ReserveInfo != null)
+                {
+                    if (ReserveInfo.RecSetting.RecMode == 5)
+                    {
+                        return CommonManager.Instance.CustContentColorList[0x12];
+                    }
+                    if (ReserveInfo.OverlapMode == 2)
+                    {
+                        return CommonManager.Instance.CustContentColorList[0x13];
+                    }
+                    if (ReserveInfo.OverlapMode == 1)
+                    {
+                        return CommonManager.Instance.CustContentColorList[0x14];
+                    }
+                    if (ReserveInfo.IsAutoAddMissing() == true)
+                    {
+                        return CommonManager.Instance.CustContentColorList[0x15];
+                    }
+                }
+                return CommonManager.Instance.CustContentColorList[0x11];
+            }
+        }
+    }
 
-        public double Height
+    public static class ReserveViewItemEx
+    {
+        public static List<ReserveData> GetHitDataList(this List<ReserveViewItem> list, Point cursorPos)
         {
-            get;
-            set;
+            return ReserveViewItem.GetHitDataList(list, cursorPos);
         }
-
-        public double LeftPos
+        public static List<ReserveData> GetDataList(this ICollection<ReserveViewItem> list)
         {
-            get;
-            set;
-        }
-
-        public double TopPos
-        {
-            get;
-            set;
-        }
-
-        public bool TitleDrawErr
-        {
-            get;
-            set;
+            return ReserveViewItem.GetDataList(list);
         }
     }
 }

@@ -22,127 +22,33 @@ namespace EpgTimer
     /// </summary>
     public partial class NotifyLogWindow : Window
     {
-        string _lastHeaderClicked = null;
-        ListSortDirection _lastDirection = ListSortDirection.Ascending;
-        string _lastHeaderClicked2 = null;
-        ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
-
-        List<NotifySrvInfoItem> logList = new List<NotifySrvInfoItem>();
+        private ListViewController<NotifySrvInfoItem> lstCtrl;
         public NotifyLogWindow()
         {
             InitializeComponent();
 
-            if (Settings.Instance.NoStyle == 0)
-            {
-                ResourceDictionary rd = new ResourceDictionary();
-                rd.MergedDictionaries.Add(
-                    Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
-                    );
-                this.Resources = rd;
-            }
+            //リストビュー関連の設定
+            lstCtrl = new ListViewController<NotifySrvInfoItem>(this);
+            lstCtrl.SetInitialSortKey("Time", ListSortDirection.Descending);
+            lstCtrl.SetViewSetting(listView_log, gridView_log, true);
         }
 
-        private void ReloadList()
+        private bool ReloadList()
         {
-            ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_log.DataContext);
-            if (dataView != null)
+            return lstCtrl.ReloadInfoData(dataList =>
             {
-                dataView.SortDescriptions.Clear();
-                dataView.Refresh();
-            }
-
-            listView_log.DataContext = null;
-            logList.Clear();
-            foreach (NotifySrvInfo info in CommonManager.Instance.NotifyLogList)
-            {
-                NotifySrvInfoItem item = new NotifySrvInfoItem();
-                item.NotifyInfo = info;
-                logList.Add(item);
-            }
-            listView_log.DataContext = logList;
-
-            if (_lastHeaderClicked != null)
-            {
-                Sort(_lastHeaderClicked, _lastDirection);
-            }
-            else
-            {
-                string header = ((Binding)gridView_log.Columns[0].DisplayMemberBinding).Path.Path;
-                Sort(header, _lastDirection);
-                _lastHeaderClicked = header;
-            }
-        }
-
-        private void Sort(string sortBy, ListSortDirection direction)
-        {
-            try
-            {
-                ICollectionView dataView = CollectionViewSource.GetDefaultView(listView_log.DataContext);
-
-                dataView.SortDescriptions.Clear();
-
-                SortDescription sd = new SortDescription(sortBy, direction);
-                dataView.SortDescriptions.Add(sd);
-                if (_lastHeaderClicked2 != null)
+                foreach (NotifySrvInfo info in CommonManager.Instance.NotifyLogList)
                 {
-                    if (String.Compare(sortBy, _lastHeaderClicked2) != 0)
-                    {
-                        SortDescription sd2 = new SortDescription(_lastHeaderClicked2, _lastDirection2);
-                        dataView.SortDescriptions.Add(sd2);
-                    }
+                    NotifySrvInfoItem item = new NotifySrvInfoItem();
+                    item.NotifyInfo = info;
+                    dataList.Add(item);
                 }
-                dataView.Refresh();
-
-                Settings.Instance.ResColumnHead = sortBy;
-                Settings.Instance.ResSortDirection = direction;
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
-        {
-            GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
-            ListSortDirection direction;
-
-            if (headerClicked != null)
-            {
-                if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
-                {
-                    string header = ((Binding)headerClicked.Column.DisplayMemberBinding).Path.Path;
-                    if (String.Compare(header, _lastHeaderClicked) != 0)
-                    {
-                        direction = ListSortDirection.Ascending;
-                        _lastHeaderClicked2 = _lastHeaderClicked;
-                        _lastDirection2 = _lastDirection;
-                    }
-                    else
-                    {
-                        if (_lastDirection == ListSortDirection.Ascending)
-                        {
-                            direction = ListSortDirection.Descending;
-                        }
-                        else
-                        {
-                            direction = ListSortDirection.Ascending;
-                        }
-                    }
-
-                    Sort(header, direction);
-
-                    _lastHeaderClicked = header;
-                    _lastDirection = direction;
-                }
-            }
+                return true;
+            });
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-
             ReloadList();
         }
 
@@ -162,12 +68,24 @@ namespace EpgTimer
             if (result == true)
             {
                 StreamWriter file = new StreamWriter(dlg.FileName, false, System.Text.Encoding.GetEncoding("shift_jis") );
-                foreach (NotifySrvInfoItem info in logList)
-                {
-                    file.Write(info.FileLogText);
-                }
+                lstCtrl.dataList.ForEach(info => file.Write(info.FileLogText));
                 file.Close();
             }
         }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        this.Close();
+                        break;
+                }
+            }
+            base.OnKeyDown(e);
+        }
+
     }
 }

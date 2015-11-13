@@ -29,20 +29,22 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            if (Settings.Instance.NoStyle == 0)
+            if (CommonManager.Instance.NWMode == true)
             {
-                ResourceDictionary rd = new ResourceDictionary();
-                rd.MergedDictionaries.Add(
-                    Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
-                    );
-                this.Resources = rd;
-            }
-            else
-            {
-                button_process_del.Style = null;
-                button_process_add.Style = null;
-
+                button_process_del.IsEnabled = false;
+                label2.IsEnabled = false;
+                textBox_process.IsEnabled = false;
+                button_process_add.IsEnabled = false;
+                button_process_open.IsEnabled = false;
+                label3.IsEnabled = false;
+                textBox_ng_min.IsEnabled = false;
+                label4.IsEnabled = false;
+                checkBox_ng_fileStreaming.IsEnabled = false;
+                checkBox_ng_shareFile.IsEnabled = false;
+                textBox_ng_usePC_min.IsEnabled = false;
+                label7.IsEnabled = false;
+                checkBox_ng_usePC.IsEnabled = false;
+                button_OK.IsEnabled = false;
             }
         }
 
@@ -51,6 +53,15 @@ namespace EpgTimer
             if (listBox_process.SelectedItem != null)
             {
                 listBox_process.Items.RemoveAt(listBox_process.SelectedIndex);
+            }
+        }
+
+        private void button_process_open_Click(object sender, RoutedEventArgs e)
+        {
+            string path = CommonManager.Instance.GetFileNameByDialog(textBox_process.Text, "", ".exe");
+            if (path != null)
+            {
+                textBox_process.Text = System.IO.Path.GetFileName(path);
             }
         }
 
@@ -70,8 +81,10 @@ namespace EpgTimer
             }
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void button_OK_Click(object sender, RoutedEventArgs e)
         {
+            DialogResult = true;
+
             processList.Clear();
             foreach (String info in listBox_process.Items)
             {
@@ -119,5 +132,25 @@ namespace EpgTimer
             checkBox_ng_shareFile.IsChecked = ngShareFile;
 
         }
+
+        private void button_cancel_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        this.button_cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                }
+            }
+            base.OnKeyDown(e);
+        }
+
     }
 }

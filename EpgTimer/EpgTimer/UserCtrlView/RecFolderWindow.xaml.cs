@@ -4,17 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using System.IO;
 using System.Windows.Interop;
-
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
 
 namespace EpgTimer
 {
@@ -29,33 +21,11 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            if (Settings.Instance.NoStyle == 0)
-            {
-                ResourceDictionary rd = new ResourceDictionary();
-                rd.MergedDictionaries.Add(
-                    Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
-                    );
-                this.Resources = rd;
-            }
-
-
             String plugInFile = "Write_Default.dll";
             String recNamePlugInFile = "";
 
             ErrCode err = CommonManager.Instance.DB.ReloadPlugInFile();
-            if (err == ErrCode.CMD_ERR_CONNECT)
-            {
-                MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-            }
-            if (err == ErrCode.CMD_ERR_TIMEOUT)
-            {
-                MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-            }
-            if (err != ErrCode.CMD_SUCCESS)
-            {
-                MessageBox.Show("PlugIn一覧の取得でエラーが発生しました。");
-            }
+            CommonManager.CmdErrMsgTypical(err, "PlugIn一覧の取得");
 
             int select = 0;
             foreach (string info in CommonManager.Instance.DB.WritePlugInList.Values)
@@ -96,6 +66,7 @@ namespace EpgTimer
 
         public void SetDefSetting(RecFileSetInfo info)
         {
+            button_ok.Content = "変更";
             textBox_recFolder.Text = info.RecFolder;
             foreach (string text in comboBox_writePlugIn.Items)
             {
@@ -125,11 +96,10 @@ namespace EpgTimer
 
         private void button_folder_Click(object sender, RoutedEventArgs e)
         {
-            System.Windows.Forms.FolderBrowserDialog dlg = new System.Windows.Forms.FolderBrowserDialog();
-            dlg.Description = "フォルダ選択";
-            if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            string path = CommonManager.Instance.GetFolderNameByDialog(textBox_recFolder.Text, "録画フォルダの選択");
+            if (path != null)
             {
-                textBox_recFolder.Text = dlg.SelectedPath;
+                textBox_recFolder.Text = path;
             }
         }
 
@@ -189,5 +159,20 @@ namespace EpgTimer
         {
             DialogResult = false;
         }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        this.button_cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                }
+            }
+            base.OnKeyDown(e);
+        }
+
     }
 }

@@ -25,16 +25,6 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            if (Settings.Instance.NoStyle == 0)
-            {
-                ResourceDictionary rd = new ResourceDictionary();
-                rd.MergedDictionaries.Add(
-                    Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
-                    );
-                this.Resources = rd;
-            }
-
             countTimer = new DispatcherTimer(DispatcherPriority.Normal);
             countTimer.Tick += new EventHandler(CountTimer);
             countTimer.Interval = TimeSpan.FromSeconds(1);
@@ -42,23 +32,26 @@ namespace EpgTimer
 
         public void SetMode(Byte reboot, Byte suspendMode)
         {
+            string preWord = (CommonManager.Instance.NWMode == false ? "" : "録画サーバを");
+            string postWord = (CommonManager.Instance.NWMode == false ? "します。" : "させます。");
+
             if (reboot == 1)
             {
-                label1.Content = "再起動します。";
+                label1.Content = preWord + "再起動" + postWord;
             }
             else
             {
                 if (suspendMode == 1)
                 {
-                    label1.Content = "スタンバイに移行します。";
+                    label1.Content = preWord + "スタンバイに移行" + postWord;
                 }
                 else if (suspendMode == 2)
                 {
-                    label1.Content = "休止に移行します。";
+                    label1.Content = preWord + "休止に移行" + postWord;
                 }
                 else if (suspendMode == 3)
                 {
-                    label1.Content = "シャットダウンします。";
+                    label1.Content = preWord + "シャットダウン" + postWord;
                 }
             }
         }
@@ -74,6 +67,13 @@ namespace EpgTimer
                 countTimer.Stop();
                 DialogResult = false;
             }
+            labelTimer.Content = progressBar.Value;
+        }
+
+        private void button_work_now_Click(object sender, RoutedEventArgs e)
+        {
+            countTimer.Stop();
+            DialogResult = false;
         }
 
         private void button_cancel_Click(object sender, RoutedEventArgs e)
@@ -84,7 +84,10 @@ namespace EpgTimer
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            progressBar.Value = 20;
+            button_cancel.Focus();
+            progressBar.Maximum = Settings.Instance.SuspendChkTime;
+            progressBar.Value = progressBar.Maximum;
+            labelTimer.Content = progressBar.Value;
             countTimer.Start();
         }
 
@@ -93,8 +96,23 @@ namespace EpgTimer
             countTimer.Stop();
             if (DialogResult == null)
             {
-                DialogResult = false;
+                DialogResult = true;
             }
         }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        this.button_cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                }
+            }
+            base.OnKeyDown(e);
+        }
+
     }
 }

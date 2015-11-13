@@ -15,12 +15,25 @@ namespace EpgTimer {
         /// <summary>
         /// 番組表への受け渡し
         /// </summary>
-        public static ReserveItem selectedReserveItem = null;
+        public static ReserveItem SelectedReserveItem = null;
+        public static SearchItem SelectedSearchItem = null;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public static SearchItem selectedSearchItem = null;
+        //番組表へジャンプ中
+        public static bool NowJumpTable = false;
+
+        public static void Clear()
+        {
+            SelectedReserveItem = null;
+            SelectedSearchItem = null;
+            NowJumpTable = false;
+        }
+
+        public static ulong Create64Key()
+        {
+            if (SelectedReserveItem != null) return SelectedReserveItem.ReserveInfo.Create64Key();
+            if (SelectedSearchItem != null) return SelectedSearchItem.EventInfo.Create64Key();
+            return 0;
+        }
 
         /// <summary>
         /// 番組表へジャンプした際に非表示にしたSearchWindow

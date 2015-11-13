@@ -1,337 +1,303 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Controls;
 using System.Windows;
-
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
 
 namespace EpgTimer
 {
     public class SearchItem
     {
-        private EpgEventInfo eventInfo = null;
-        private ReserveData reserveData = null;
+        protected MenuUtil mutil = CommonManager.Instance.MUtil;
+        protected ViewUtil vutil = CommonManager.Instance.VUtil;
 
-        public EpgEventInfo EventInfo
-        {
-            get { return eventInfo; }
-            set { eventInfo = value; }
-        }
-        public ReserveData ReserveInfo
-        {
-            get { return reserveData; }
-            set { reserveData = value; }
-        }
-        public String EventName
-        {
-            get
-            {
-                String view = "";
-                if (eventInfo != null)
-                {
-                    if (eventInfo.ShortInfo != null)
-                    {
-                        view = eventInfo.ShortInfo.event_name;
-                    }
-                }
-                return view;
-            }
-        }
-        public String ServiceName
-        {
-            get;
-            set;
-        }
-        public String NetworkName
-        {
-            get
-            {
-                String view = "";
-                if (eventInfo != null)
-                {
-                    if (0x7880 <= eventInfo.original_network_id && eventInfo.original_network_id <= 0x7FE8)
-                    {
-                        view = "地デジ";
-                    }
-                    else if (eventInfo.original_network_id == 0x0004)
-                    {
-                        view = "BS";
-                    }
-                    else if (eventInfo.original_network_id == 0x0006)
-                    {
-                        view = "CS1";
-                    }
-                    else if (eventInfo.original_network_id == 0x0007)
-                    {
-                        view = "CS2";
-                    }
-                    else
-                    {
-                        view = "その他";
-                    }
+        public virtual EpgEventInfo EventInfo { get; set; }
+        public ReserveData ReserveInfo { get; set; }
 
-                }
-                return view;
-            }
-        }
-        public String StartTime
+        public SearchItem() { }
+        public SearchItem(EpgEventInfo item)
         {
-            get
-            {
-                String view = "未定";
-                if (eventInfo != null)
-                {
-                    view = eventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss");
-                }
-                return view;
-            }
+            EventInfo = item;
         }
+
         public bool IsReserved
         {
             get
             {
-                if (reserveData == null)
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
+                return (ReserveInfo != null);
             }
         }
-        public String Reserved
+        public virtual String EventName
         {
             get
             {
-                String view = "";
-                if (IsReserved == true)
+                if (EventInfo == null) return "";
+                //
+                return EventInfo.Title();
+            }
+        }
+        public virtual String ServiceName
+        {
+            get
+            {
+                if (EventInfo != null)
                 {
-                    view = "予";
+                    UInt64 serviceKey = EventInfo.Create64Key();
+                    if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
+                    {
+                        return ChSet5.Instance.ChList[serviceKey].ServiceName;
+                    }
                 }
-                return view;
+                return "";
+            }
+        }
+        public virtual String NetworkName
+        {
+            get
+            {
+                if (EventInfo == null) return "";
+                //
+                return CommonManager.Instance.ConvertNetworkNameText(EventInfo.original_network_id);
+            }
+        }
+        public virtual String StartTime
+        {
+            get
+            {
+                if (EventInfo == null) return "";
+                if (EventInfo.StartTimeFlag == 0) return "未定";
+                //
+                return EventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss");
+            }
+        }
+        /// <summary>
+        /// 番組放送時間（長さ）
+        /// </summary>
+        public virtual TimeSpan ProgramDuration
+        {
+            get
+            {
+                if (EventInfo == null || EventInfo.DurationFlag == 0) return new TimeSpan();
+                //
+                return TimeSpan.FromSeconds(EventInfo.durationSec);
+            }
+        }
+        /// <summary>
+        /// 番組内容
+        /// </summary>
+        public virtual String ProgramContent
+        {
+            get
+            {
+                if (EventInfo == null || EventInfo.ShortInfo == null) return "";
+                //
+                return EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
+            }
+        }
+        public String JyanruKey
+        {
+            get
+            {
+                if (EventInfo == null) return "";
+                //
+                return CommonManager.Instance.ConvertJyanruText(EventInfo);
+            }
+        }
+        public virtual TextBlock ToolTipView
+        {
+            get
+            {
+                if (Settings.Instance.NoToolTip == true) return null;
+                if (EventInfo == null) return mutil.GetTooltipBlockStandard("");
+                //
+                return mutil.GetTooltipBlockStandard(CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All));
+            }
+        }
+        public virtual String Status
+        {
+            get
+            {
+                String[] wiewString = { "", "予", "無", "放", "予+", "無+", "録*", "無*" };
+                int index = 0;
+                if (EventInfo != null)
+                {
+                    if (EventInfo.IsOnAir() == true)
+                    {
+                        index = 3;
+                    }
+                    if (IsReserved == true)
+                    {
+                        if (ReserveInfo.IsOnRec() == true)//マージンがあるので、IsOnAir==trueとは限らない
+                        {
+                            index = 5;
+                        }
+                        if (ReserveInfo.RecSetting.RecMode == 5) //無効の判定
+                        {
+                            index += 2;
+                        }
+                        else
+                        {
+                            index += 1;
+                        }
+                    }
+                }
+                return wiewString[index];
+            }
+        }
+        public virtual SolidColorBrush StatusColor
+        {
+            get
+            {
+                if (EventInfo != null)
+                {
+                    if (IsReserved == true)
+                    {
+                        if (ReserveInfo.IsOnRec() == true)
+                        {
+                            return CommonManager.Instance.StatRecForeColor;
+                        }
+                    }
+                    if (EventInfo.IsOnAir() == true)
+                    {
+                        return CommonManager.Instance.StatOnAirForeColor;
+                    }
+                }
+                return CommonManager.Instance.StatResForeColor;
+            }
+        }
+        public int NowJumpingTable { set; get; }
+        public SolidColorBrush ForeColor
+        {
+            get
+            {
+                //番組表へジャンプ時の強調表示
+                switch(NowJumpingTable)
+                {
+                    case 1: return new SolidColorBrush(Colors.Red);
+                    case 2: return CommonManager.Instance.ListDefForeColor;
+                }
+
+                //通常表示
+                if (ReserveInfo == null) return CommonManager.Instance.ListDefForeColor;
+                //
+                return CommonManager.Instance.RecModeForeColor[ReserveInfo.RecSetting.RecMode];
+            }
+        }
+        public string Remarks
+        {
+            get
+            {
+                string view = "";
+                if (ReserveInfo != null)
+                {
+                    if (ReserveInfo.OverlapMode == 2)
+                    {
+                        view += "不可(チューナ不足)/";
+                    }
+                    else if (ReserveInfo.OverlapMode == 1)
+                    {
+                        view += "一部不可(チューナ不足)/";
+                    }
+                    if (ReserveInfo.IsAutoAddMissing() == true)
+                    {
+                        view += "不明な自動登録/";
+                    }
+                    if (ReserveInfo.RecSetting.RecMode == 5)
+                    {
+                        view += "無効予約/";
+                    }
+                }
+                return view.TrimEnd('/');
             }
         }
         public SolidColorBrush BackColor
         {
             get
             {
-                SolidColorBrush color = Brushes.White;
+                //番組表へジャンプ時の強調表示
+                switch (NowJumpingTable)
+                {
+                    case 1: return CommonManager.Instance.ResDefBackColor;
+                    case 2: return new SolidColorBrush(Colors.Red);
+                }
+
+                //通常表示
                 if (ReserveInfo != null)
                 {
                     if (ReserveInfo.RecSetting.RecMode == 5)
                     {
-                        color = Brushes.DarkGray;
+                        return CommonManager.Instance.ResNoBackColor;
                     }
-                    else if (ReserveInfo.OverlapMode == 2)
+                    if (ReserveInfo.OverlapMode == 2)
                     {
-                        color = Brushes.Red;
+                        return CommonManager.Instance.ResErrBackColor;
                     }
-                    else if (ReserveInfo.OverlapMode == 1)
+                    if (ReserveInfo.OverlapMode == 1)
                     {
-                        color = Brushes.Yellow;
+                        return CommonManager.Instance.ResWarBackColor;
                     }
-                }
-                return color;
-            }
-        }
-        public TextBlock ToolTipView
-        {
-            get
-            {
-                if (Settings.Instance.NoToolTip == true)
-                {
-                    return null;
-                }
-                String view = "";
-                if (eventInfo != null)
-                {
-                    view = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
-                }
-
-                TextBlock block = new TextBlock();
-                block.Text = view;
-                block.MaxWidth = 400;
-                block.TextWrapping = TextWrapping.Wrap;
-                return block;
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public String RecMode
-        {
-            get
-            {
-                if (this.ReserveInfo == null) { return null; }
-                // ReserveItemクラスからコピペ
-                String view = "";
-                switch (ReserveInfo.RecSetting.RecMode)
-                {
-                    case 0:
-                        view = "全サービス";
-                        break;
-                    case 1:
-                        view = "指定サービス";
-                        break;
-                    case 2:
-                        view = "全サービス（デコード処理なし）";
-                        break;
-                    case 3:
-                        view = "指定サービス（デコード処理なし）";
-                        break;
-                    case 4:
-                        view = "視聴";
-                        break;
-                    case 5:
-                        view = "無効";
-                        break;
-                    default:
-                        break;
-                }
-                return view;
-            }
-        }
-
-        public String JyanruKey
-        {
-            get
-            {
-                if (this.EventInfo == null) { return null; }
-                //
-                String view = "";
-                if (eventInfo != null && eventInfo.ContentInfo != null)
-                {
-                    Dictionary<int, List<int>> nibbleDict1 = new Dictionary<int, List<int>>();  // 小ジャンルを大ジャンルでまとめる
-                    foreach (EpgContentData ecd1 in eventInfo.ContentInfo.nibbleList)
+                    if (ReserveInfo.IsAutoAddMissing() == true)
                     {
-                        if (nibbleDict1.ContainsKey(ecd1.content_nibble_level_1))
-                        {
-                            nibbleDict1[ecd1.content_nibble_level_1].Add(ecd1.content_nibble_level_2);
-                        }
-                        else
-                        {
-                            nibbleDict1.Add(ecd1.content_nibble_level_1, new List<int>() { ecd1.content_nibble_level_2 });
-                        }
-                    }
-                    foreach (KeyValuePair<int, List<int>> kvp1 in nibbleDict1)
-                    {
-                        int nibble1 = kvp1.Key;
-                        UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
-                        //
-                        string smallCategory1 = "";
-                        foreach (int nibble2 in kvp1.Value)
-                        {
-                            UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
-                            if (nibble2 != 0xFF)
-                            {
-                                if (smallCategory1 != "") { smallCategory1 += ", "; }
-                                if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey2))
-                                {
-                                    smallCategory1 += CommonManager.Instance.ContentKindDictionary[contentKey2].ToString().Trim();
-                                }
-                            }
-                        }
-                        //
-                        if (view != "") { view += ", "; }
-                        if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey1))
-                        {
-                            view += "[" + CommonManager.Instance.ContentKindDictionary[contentKey1].ToString().Trim();
-                            if (smallCategory1 != "") { view += " - " + smallCategory1; }
-                            view += "]";
-                        }
+                        return CommonManager.Instance.ResAutoAddMissingBackColor;
                     }
                 }
-                return view;
-            }
-        }
-
-        /// <summary>
-        /// 番組放送時間（長さ）
-        /// </summary>
-        public TimeSpan ProgramDuration
-        {
-            get
-            {
-                if (this.EventInfo == null || this.EventInfo.DurationFlag == 0) { return new TimeSpan(); }
-                //
-                return TimeSpan.FromSeconds(this.EventInfo.durationSec);
-            }
-        }
-
-        /// <summary>
-        /// 番組内容
-        /// </summary>
-        public String ProgramContent
-        {
-            get
-            {
-                if (this.EventInfo == null) { return null; }
-                if (this.EventInfo.ShortInfo == null) { return null; }
-                //
-                return this.EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
-            }
-        }
-
-        /// <summary>
-        /// 番組詳細
-        /// </summary>
-        public string ProgramDetail
-        {
-            get
-            {
-                if (this.EventInfo == null) { return null; }
-                //
-                return CommonManager.Instance.ConvertProgramText(this.EventInfo, EventInfoTextMode.All);
+                return CommonManager.Instance.ResDefBackColor;
             }
         }
         public Brush BorderBrush
         {
             get
             {
-                Brush color1 = Brushes.White;
-                if (this.EventInfo != null)
-                {
-                    if (this.EventInfo.ContentInfo != null)
-                    {
-                        if (this.EventInfo.ContentInfo.nibbleList.Count > 0)
-                        {
-                            try
-                            {
-                                foreach (EpgContentData info1 in this.EventInfo.ContentInfo.nibbleList)
-                                {
-                                    if (info1.content_nibble_level_1 <= 0x0B || info1.content_nibble_level_1 == 0x0F && Settings.Instance.ContentColorList.Count > info1.content_nibble_level_1)
-                                    {
-                                        color1 = CommonManager.Instance.CustContentColorList[info1.content_nibble_level_1];
-                                        break;
-                                    }
-                                }
-                            }
-                            catch
-                            {
-                            }
-                        }
-                        else
-                        {
-                            color1 = CommonManager.Instance.CustContentColorList[0x10];
-                        }
-                    }
-                    else
-                    {
-                        color1 = CommonManager.Instance.CustContentColorList[0x10];
-                    }
-                }
-
-                return color1;
+                return vutil.EventDataBorderBrush(EventInfo);
             }
         }
+    }
+
+    public static class SearchItemEx
+    {
+        public static List<EpgEventInfo> GetEventList(this ICollection<SearchItem> itemlist)
+        {
+            return itemlist.Where(item => item != null).Select(item => item.EventInfo).ToList();
+        }
+        public static List<EpgEventInfo> GetNoReserveList(this ICollection<SearchItem> itemlist)
+        {
+            return itemlist.Where(item => item == null ? false : item.IsReserved == false).Select(item => item.EventInfo).ToList();
+        }
+        public static List<ReserveData> GetReserveList(this ICollection<SearchItem> itemlist)
+        {
+            return itemlist.Where(item => item == null ? false : item.IsReserved == true).Select(item => item.ReserveInfo).ToList();
+        }
+        //public static bool HasReserved(this List<SearchItem> list)
+        //{
+        //    return list.Any(info => info == null ? false : info.IsReserved);
+        //}
+        //public static bool HasNoReserved(this List<SearchItem> list)
+        //{
+        //    return list.Any(info => info == null ? false : !info.IsReserved);
+        //}
+        public static void AddFromEventList(this ICollection<SearchItem> itemlist, ICollection<EpgEventInfo> eventList, bool isExceptUnknownStartTime, bool isExceptEnded)
+        {
+            if (itemlist == null) return;
+            //
+            DateTime now = DateTime.Now;
+            foreach (EpgEventInfo info in eventList.OfType<EpgEventInfo>())
+            {
+                //開始未定を除外
+                if (isExceptUnknownStartTime == true)
+                {
+                    if (info.StartTimeFlag == 0) continue;
+                }
+                //時間の過ぎているものを除外
+                if (isExceptEnded == true)
+                {
+                    if (info.start_time.AddSeconds(info.DurationFlag == 0 ? 0 : info.durationSec) < now) continue;
+                }
+
+                itemlist.Add(new SearchItem(info));
+            }
+            CommonManager.Instance.MUtil.SetSearchItemReserved(itemlist);
+        }
+
     }
 }

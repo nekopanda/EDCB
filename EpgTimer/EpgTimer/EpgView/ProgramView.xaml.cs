@@ -11,10 +11,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-using EpgTimer.EpgView;
 using System.Windows.Threading;
 using System.Windows.Controls.Primitives;
 
@@ -44,9 +40,7 @@ namespace EpgTimer.EpgView
         public ProgramView()
         {
             InitializeComponent();
-
         }
-
 
         protected void PopupItem()
         {
@@ -212,24 +206,7 @@ namespace EpgTimer.EpgView
                 foreach (ReserveViewItem info in reserveList)
                 {
                     Rectangle rect = new Rectangle();
-
-                    Brush color;
-                    if (info.ReserveInfo.RecSetting.RecMode == 5)
-                    {
-                        color = CommonManager.Instance.CustContentColorList[0x12];
-                    }
-                    else if (info.ReserveInfo.OverlapMode == 2)
-                    {
-                        color = CommonManager.Instance.CustContentColorList[0x13];
-                    }
-                    else if (info.ReserveInfo.OverlapMode == 1)
-                    {
-                        color = CommonManager.Instance.CustContentColorList[0x14];
-                    }
-                    else
-                    {
-                        color = CommonManager.Instance.CustContentColorList[0x11];
-                    }
+                    Brush color = info.BorderBrush;
 
                     if (Settings.Instance.ReserveRectBackground == false)
                     {
@@ -282,6 +259,63 @@ namespace EpgTimer.EpgView
             }
         }
 
+        public void SetFindItem<T>(ViewPanelItem<T> info)
+        {
+            try
+            {
+                if (info == null) return;
+
+                Rectangle rect = new Rectangle();
+
+                rect.Stroke = new SolidColorBrush(Colors.Red);
+                rect.StrokeThickness = 5;
+                rect.Opacity = 1;
+                rect.Fill = System.Windows.Media.Brushes.Transparent;
+                rect.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
+
+                rect.Width = info.Width + 20;
+                rect.Height = info.Height + 20;
+                rect.IsHitTestVisible = false;
+
+                Canvas.SetLeft(rect, info.LeftPos - 10);
+                Canvas.SetTop(rect, info.TopPos - 10);
+                Canvas.SetZIndex(rect, 20);
+
+                // 一定時間枠を表示する
+                var notifyTimer = new System.Windows.Threading.DispatcherTimer();
+                notifyTimer.Interval = TimeSpan.FromSeconds(0.1);
+                TimeSpan RemainTime = TimeSpan.FromSeconds(Settings.Instance.DisplayNotifyJumpTime);
+                int Brinks = 3;
+                bool IsDisplay = false;
+                notifyTimer.Tick += (sender, e) =>
+                {
+                    RemainTime -= notifyTimer.Interval;
+                    if (RemainTime <= TimeSpan.FromSeconds(0))
+                    {
+                        canvas.Children.Remove(rect);
+                        notifyTimer.Stop();
+                    }
+                    else if (IsDisplay == false)
+                    {
+                        canvas.Children.Add(rect);
+                        IsDisplay = true;
+                    }
+                    else if (Brinks > 0)
+                    {
+                        canvas.Children.Remove(rect);
+                        IsDisplay = false;
+                        Brinks--;
+                    }
+                };
+
+                notifyTimer.Start();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+        
         private void epgViewPanel_MouseMove(object sender, MouseEventArgs e)
         {
             try

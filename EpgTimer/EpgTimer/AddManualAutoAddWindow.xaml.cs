@@ -11,9 +11,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     /// <summary>
@@ -21,9 +18,12 @@ namespace EpgTimer
     /// </summary>
     public partial class AddManualAutoAddWindow : Window
     {
-        private bool changeModeFlag = false;
         private ManualAutoAddData defKey = null;
         private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+        private MenuUtil mutil = CommonManager.Instance.MUtil;
+        private MenuBinds mBinds = new MenuBinds();
+
+        private bool chgMode = false;
 
         public AddManualAutoAddWindow()
         {
@@ -31,21 +31,20 @@ namespace EpgTimer
 
             try
             {
-                if (Settings.Instance.NoStyle == 0)
-                {
-                    ResourceDictionary rd = new ResourceDictionary();
-                    rd.MergedDictionaries.Add(
-                        Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                        //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
-                        );
-                    this.Resources = rd;
-                }
-                else
-                {
-                    button_add.Style = null;
-                    button_cancel.Style = null;
-                }
+                //コマンドの登録
+                this.CommandBindings.Add(new CommandBinding(EpgCmds.Cancel, (sender, e) => DialogResult = false));
+                this.CommandBindings.Add(new CommandBinding(EpgCmds.AddInDialog, button_add_click));
+                this.CommandBindings.Add(new CommandBinding(EpgCmds.ChangeInDialog, button_chg_click, (sender, e) => e.CanExecute = chgMode));
+                this.CommandBindings.Add(new CommandBinding(EpgCmds.DeleteInDialog, button_del_click, (sender, e) => e.CanExecute = chgMode));
 
+                //ボタンの設定
+                mBinds.SetCommandToButton(button_cancel, EpgCmds.Cancel);
+                mBinds.SetCommandToButton(button_chg, EpgCmds.ChangeInDialog);
+                mBinds.SetCommandToButton(button_add, EpgCmds.AddInDialog);
+                mBinds.SetCommandToButton(button_del, EpgCmds.DeleteInDialog);
+                mBinds.ResetInputBindings(this);
+
+                //その他設定
                 comboBox_startHH.DataContext = CommonManager.Instance.HourDictionary.Values;
                 comboBox_startHH.SelectedIndex = 0;
                 comboBox_startMM.DataContext = CommonManager.Instance.MinDictionary.Values;
@@ -63,6 +62,7 @@ namespace EpgTimer
                 comboBox_service.SelectedIndex = 0;
 
                 recSettingView.SetViewMode(false);
+                SetChangeMode(false);
             }
             catch (Exception ex)
             {
@@ -72,99 +72,139 @@ namespace EpgTimer
 
         public void SetChangeMode(bool chgFlag)
         {
-            if (chgFlag == true)
-            {
-                this.changeModeFlag = true;
-                button_add.Content = "変更";
-            }
-            else
-            {
-                this.changeModeFlag = false;
-                button_add.Content = "追加";
-            }
+            chgMode = chgFlag;
+            button_chg.Visibility = (chgFlag == true ? System.Windows.Visibility.Visible : System.Windows.Visibility.Hidden);
+            button_del.Visibility = button_chg.Visibility;
         }
 
         public void SetDefaultSetting(ManualAutoAddData item)
         {
-            defKey = item;
+            defKey = item.Clone();
         }
 
-        private void button_add_Click(object sender, RoutedEventArgs e)
+        private bool CheckExistAutoAddItem()
         {
-            if (defKey == null)
+            bool retval = CommonManager.Instance.DB.ManualAutoAddList.ContainsKey(this.defKey.dataID);
+            if (retval == false)
             {
-                defKey = new ManualAutoAddData();
-            }
-            defKey.dayOfWeekFlag = 0;
-            if (checkBox_week0.IsChecked == true)
-            {
-                defKey.dayOfWeekFlag |= 0x01;
-            }
-            if (checkBox_week1.IsChecked == true)
-            {
-                defKey.dayOfWeekFlag |= 0x02;
-            }
-            if (checkBox_week2.IsChecked == true)
-            {
-                defKey.dayOfWeekFlag |= 0x04;
-            }
-            if (checkBox_week3.IsChecked == true)
-            {
-                defKey.dayOfWeekFlag |= 0x08;
-            }
-            if (checkBox_week4.IsChecked == true)
-            {
-                defKey.dayOfWeekFlag |= 0x10;
-            }
-            if (checkBox_week5.IsChecked == true)
-            {
-                defKey.dayOfWeekFlag |= 0x20;
-            }
-            if (checkBox_week6.IsChecked == true)
-            {
-                defKey.dayOfWeekFlag |= 0x40;
-            }
+                MessageBox.Show("項目がありません。\r\n" +
+                    "既に削除されています。\r\n" +
+                    "(別のEpgtimerによる操作など)");
 
-            defKey.startTime = ((UInt32)comboBox_startHH.SelectedIndex * 60 * 60) + ((UInt32)comboBox_startMM.SelectedIndex * 60) + (UInt32)comboBox_startSS.SelectedIndex;
-            UInt32 endTime = ((UInt32)comboBox_endHH.SelectedIndex * 60 * 60) + ((UInt32)comboBox_endMM.SelectedIndex * 60) + (UInt32)comboBox_endSS.SelectedIndex;
-            if (endTime < defKey.startTime)
-            {
-                defKey.durationSecond = (24 * 60 * 60 + endTime) - defKey.startTime;
+                //追加モードに変更
+                SetChangeMode(false);
+                defKey = null;
             }
-            else
+            return retval;
+        }
+
+        private void button_add_click(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (CmdExeUtil.IsDisplayKgMessage(e) == true)
             {
-                defKey.durationSecond = endTime - defKey.startTime;
+                if (MessageBox.Show("プログラム予約登録を追加します。\r\nよろしいですか？", "予約の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
+                { return; }
             }
-
-            defKey.title = textBox_title.Text;
-
-            ChSet5Item chItem = comboBox_service.SelectedItem as ChSet5Item;
-            defKey.stationName = chItem.ServiceName;
-            defKey.originalNetworkID = chItem.ONID;
-            defKey.transportStreamID = chItem.TSID;
-            defKey.serviceID = chItem.SID;
-
-            RecSettingData recSet = new RecSettingData();
-            recSettingView.GetRecSetting(ref recSet);
-            defKey.recSetting = recSet;
-
-            List<ManualAutoAddData> val = new List<ManualAutoAddData>();
-            val.Add(defKey);
-
-            if (changeModeFlag == true)
+            button_add_chg(sender, e, false);
+        }
+        private void button_chg_click(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (CmdExeUtil.IsDisplayKgMessage(e) == true)
             {
-                cmd.SendChgManualAdd(val);
+                if (MessageBox.Show("プログラム予約登録を変更します。\r\nよろしいですか？", "変更の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
+                { return; }
             }
-            else
+            if (CheckExistAutoAddItem() == false) return;
+            button_add_chg(sender, e, true);
+        }
+        private void button_add_chg(object sender, ExecutedRoutedEventArgs e, bool chgFlag)
+        {
+            try
             {
-                cmd.SendAddManualAdd(val);
+                if (defKey == null)
+                {
+                    defKey = new ManualAutoAddData();
+                }
+                defKey.dayOfWeekFlag = 0;
+                if (checkBox_week0.IsChecked == true)
+                {
+                    defKey.dayOfWeekFlag |= 0x01;
+                }
+                if (checkBox_week1.IsChecked == true)
+                {
+                    defKey.dayOfWeekFlag |= 0x02;
+                }
+                if (checkBox_week2.IsChecked == true)
+                {
+                    defKey.dayOfWeekFlag |= 0x04;
+                }
+                if (checkBox_week3.IsChecked == true)
+                {
+                    defKey.dayOfWeekFlag |= 0x08;
+                }
+                if (checkBox_week4.IsChecked == true)
+                {
+                    defKey.dayOfWeekFlag |= 0x10;
+                }
+                if (checkBox_week5.IsChecked == true)
+                {
+                    defKey.dayOfWeekFlag |= 0x20;
+                }
+                if (checkBox_week6.IsChecked == true)
+                {
+                    defKey.dayOfWeekFlag |= 0x40;
+                }
+
+                defKey.startTime = ((UInt32)comboBox_startHH.SelectedIndex * 60 * 60) + ((UInt32)comboBox_startMM.SelectedIndex * 60) + (UInt32)comboBox_startSS.SelectedIndex;
+                UInt32 endTime = ((UInt32)comboBox_endHH.SelectedIndex * 60 * 60) + ((UInt32)comboBox_endMM.SelectedIndex * 60) + (UInt32)comboBox_endSS.SelectedIndex;
+                if (endTime < defKey.startTime)
+                {
+                    defKey.durationSecond = (24 * 60 * 60 + endTime) - defKey.startTime;
+                }
+                else
+                {
+                    defKey.durationSecond = endTime - defKey.startTime;
+                }
+
+                defKey.title = textBox_title.Text;
+
+                ChSet5Item chItem = comboBox_service.SelectedItem as ChSet5Item;
+                defKey.stationName = chItem.ServiceName;
+                defKey.originalNetworkID = chItem.ONID;
+                defKey.transportStreamID = chItem.TSID;
+                defKey.serviceID = chItem.SID;
+
+                RecSettingData recSet = new RecSettingData();
+                recSettingView.GetRecSetting(ref recSet);
+                defKey.recSetting = recSet;
+
+                if (chgFlag == true)
+                {
+                    mutil.ManualAutoAddChange(mutil.ToList(defKey));
+                }
+                else
+                {
+                    mutil.ManualAutoAddAdd(mutil.ToList(defKey));
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
             DialogResult = true;
         }
 
-        private void button_cancel_Click(object sender, RoutedEventArgs e)
+        private void button_del_click(object sender, ExecutedRoutedEventArgs e)
         {
-            DialogResult = false;
+            if (CmdExeUtil.IsDisplayKgMessage(e) == true)
+            {
+                if (MessageBox.Show("プログラム予約登録を削除します。\r\nよろしいですか？", "削除の確認", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
+                { return; }
+            }
+            if (CheckExistAutoAddItem() == false) return;
+            
+            mutil.ManualAutoAddDelete(mutil.ToList(defKey));
+            DialogResult = true;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -223,18 +263,20 @@ namespace EpgTimer
 
                 textBox_title.Text = defKey.title;
 
-                UInt64 key = ((UInt64)defKey.originalNetworkID) << 32 |
-                    ((UInt64)defKey.transportStreamID) << 16 |
-                    ((UInt64)defKey.serviceID);
+                UInt64 key = defKey.Create64Key();
 
                 if (ChSet5.Instance.ChList.ContainsKey(key) == true)
                 {
                     comboBox_service.SelectedItem = ChSet5.Instance.ChList[key];
                 }
-                defKey.recSetting.PittariFlag = 0;
-                defKey.recSetting.TuijyuuFlag = 0;
-                recSettingView.SetDefSetting(defKey.recSetting);
+                recSettingView.SetDefSetting(defKey.recSetting, true);
             }
+        }
+
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
+            mainWindow.ListFoucsOnVisibleChanged();
         }
     }
 }

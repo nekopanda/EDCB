@@ -23,23 +23,18 @@ namespace EpgTimer
         public SetApp2DelWindow()
         {
             InitializeComponent();
-            if (Settings.Instance.NoStyle == 0)
-            {
-                ResourceDictionary rd = new ResourceDictionary();
-                rd.MergedDictionaries.Add(
-                    Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
-                    );
-                this.Resources = rd;
-            }
-            else
-            {
-                button_del.Style = null;
-                button_add.Style = null;
-                button_chk_del.Style = null;
-                button_chk_add.Style = null;
-                button_chk_open.Style = null;
 
+            if (CommonManager.Instance.NWMode == true)
+            {
+                button_add.IsEnabled = false;
+                textBox_ext.IsEnabled = false;
+                label2.IsEnabled = false;
+                button_del.IsEnabled = false;
+                button_chk_del.IsEnabled = false;
+                button_chk_add.IsEnabled = false;
+                button_chk_open.IsEnabled = false;
+                textBox_chk_folder.IsEnabled = false;
+                button_OK.IsEnabled = false;
             }
         }
 
@@ -67,8 +62,10 @@ namespace EpgTimer
             }
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void button_OK_Click(object sender, RoutedEventArgs e)
         {
+            DialogResult = true;
+
             extList.Clear();
             foreach (string info in listBox_ext.Items)
             {
@@ -104,11 +101,10 @@ namespace EpgTimer
 
         private void button_chk_open_Click(object sender, RoutedEventArgs e)
         {
-            System.Windows.Forms.FolderBrowserDialog dlg = new System.Windows.Forms.FolderBrowserDialog();
-            dlg.Description = "自動削除対象フォルダ";
-            if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            string path = CommonManager.Instance.GetFolderNameByDialog(textBox_chk_folder.Text, "自動削除対象フォルダの選択");
+            if (path != null)
             {
-                textBox_chk_folder.Text = dlg.SelectedPath;
+                textBox_chk_folder.Text = path;
             }
         }
 
@@ -127,5 +123,25 @@ namespace EpgTimer
                 listBox_chk_folder.Items.Add(textBox_chk_folder.Text);
             }
         }
+
+        private void button_cancel_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        this.button_cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                }
+            }
+            base.OnKeyDown(e);
+        }
+
     }
 }

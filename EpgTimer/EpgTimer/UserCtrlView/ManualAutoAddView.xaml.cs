@@ -1,275 +1,123 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
+using EpgTimer.UserCtrlView;
 
 namespace EpgTimer
 {
     /// <summary>
     /// ManualAutoAddView.xaml の相互作用ロジック
     /// </summary>
-    public partial class ManualAutoAddView : UserControl
+    public partial class ManualAutoAddView : DataViewBase
     {
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-        private List<ManualAutoAddDataItem> resultList = new List<ManualAutoAddDataItem>();
-        private bool ReloadInfo = true;
+        private ListViewController<ManualAutoAddDataItem> lstCtrl;
+        private CmdExeManualAutoAdd mc;
 
-        private Dictionary<String, GridViewColumn> columnList = new Dictionary<String, GridViewColumn>();
+        //ドラッグ移動ビュー用の設定
+        private MouseButtonEventHandler listViewItem_PreviewMouseLeftButtonDown;
+        private MouseEventHandler listViewItem_MouseEnter;
+        class lvDragData : ListBoxDragMoverView.LVDMHelper
+        {
+            private ManualAutoAddView View;
+            public lvDragData(ManualAutoAddView view) { View = view; }
+            public override uint GetID(object data) { return (data as ManualAutoAddDataItem).ManualAutoAddInfo.dataID; }
+            public override void SetID(object data, uint ID) { (data as ManualAutoAddDataItem).ManualAutoAddInfo.dataID = ID; }
+            public override bool SaveChange() { return View.mutil.ManualAutoAddChange(View.lstCtrl.dataList.ManualAutoAddInfoList(), false); }
+            public override bool RestoreOrder() { return View.ReloadInfoData(); }
+            public override void ItemMoved() { View.lstCtrl.gvSorter.ResetSortParams(); }
+        }
 
         public ManualAutoAddView()
         {
             InitializeComponent();
+
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_add.Style = null;
-                    button_del.Style = null;
-                    button_change.Style = null;
-                }
+                //リストビュー関連の設定
+                lstCtrl = new ListViewController<ManualAutoAddDataItem>(this);
+                lstCtrl.SetSavePath(mutil.GetMemberName(() => Settings.Instance.AutoAddManualColumn));
+                lstCtrl.SetViewSetting(listView_key, gridView_key, false, null
+                    , (sender, e) => dragMover.NotSaved |= lstCtrl.GridViewHeaderClickSort(e));
 
-                foreach (GridViewColumn info in gridView_key.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-                    columnList.Add((string)header.Tag, info);
-                }
-                gridView_key.Columns.Clear();
+                //ドラッグ移動関係
+                this.dragMover.SetData(this, listView_key, lstCtrl.dataList, new lvDragData(this));
+                listView_key.PreviewMouseLeftButtonUp += new MouseButtonEventHandler(dragMover.listBox_PreviewMouseLeftButtonUp);
+                listViewItem_PreviewMouseLeftButtonDown += new MouseButtonEventHandler(dragMover.listBoxItem_PreviewMouseLeftButtonDown);
+                listViewItem_MouseEnter += new MouseEventHandler(dragMover.listBoxItem_MouseEnter);
 
-                foreach (ListColumnInfo info in Settings.Instance.AutoAddManualColumn)
+                //最初にコマンド集の初期化
+                mc = new CmdExeManualAutoAdd(this);
+                mc.SetFuncGetDataList(isAll => (isAll == true ? lstCtrl.dataList : lstCtrl.GetSelectedItemsList()).ManualAutoAddInfoList());
+                mc.SetFuncSelectSingleData((noChange) =>
                 {
-                    columnList[info.Tag].Width = info.Width;
-                    gridView_key.Columns.Add(columnList[info.Tag]);
-                }
+                    var item = lstCtrl.SelectSingleItem(noChange);
+                    return item == null ? null : item.ManualAutoAddInfo;
+                });
+                mc.SetFuncReleaseSelectedData(() => listView_key.UnselectAll());
+
+                //コマンドをコマンド集から登録
+                mc.ResetCommandBindings(this, listView_key.ContextMenu);
+
+                //コンテキストメニューを開く時の設定
+                lstCtrl.SetCtxmTargetSave(listView_key.ContextMenu);//こっちが先
+                listView_key.ContextMenu.Opened += new RoutedEventHandler(mc.SupportContextMenuLoading);
+
+                //ボタンの設定
+                mBinds.View = CtxmCode.ManualAutoAddView;
+                mBinds.SetCommandToButton(button_add, EpgCmds.ShowAddDialog);
+                mBinds.SetCommandToButton(button_change, EpgCmds.ShowDialog);
+                mBinds.SetCommandToButton(button_del, EpgCmds.Delete);
+                mBinds.SetCommandToButton(button_del2, EpgCmds.Delete2);
+
+                //メニューの作成、ショートカットの登録
+                RefreshMenu();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
-
-        public void SaveSize()
+        public void RefreshMenu()
         {
-            try
-            {
-                Settings.Instance.AutoAddManualColumn.Clear();
-                foreach (GridViewColumn info in gridView_key.Columns)
-                {
-                    GridViewColumnHeader header = info.Header as GridViewColumnHeader;
-
-                    Settings.Instance.AutoAddManualColumn.Add(new ListColumnInfo((String)header.Tag, info.Width));
-                }
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            mBinds.ResetInputBindings(this, listView_key);
+            mm.CtxmGenerateContextMenu(listView_key.ContextMenu, CtxmCode.ManualAutoAddView, true);
         }
-
-        /// <summary>
-        /// リストの更新通知
-        /// </summary>
-        public void UpdateInfo()
+        public void SaveViewData()
         {
-            if (this.IsVisible == true)
-            {
-                ReloadInfoData();
-                ReloadInfo = false;
-            }
-            else
-            {
-                ReloadInfo = true;
-            }
+            lstCtrl.SaveViewDataToSettings();
         }
-        
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        protected override bool ReloadInfoData()
         {
-            if (ReloadInfo == true && this.IsVisible == true)
+            EpgCmds.DragCancel.Execute(null, this);
+
+            return lstCtrl.ReloadInfoData(dataList =>
             {
-                ReloadInfoData();
-                ReloadInfo = false;
-            }
-        }
-
-        private bool ReloadInfoData()
-        {
-            try
-            {
-                listView_key.DataContext = null;
-                resultList.Clear();
-
-                if (CommonManager.Instance.NWMode == true && CommonManager.Instance.NW.IsConnected == false)
-                {
-                    return true;
-                }
-
                 ErrCode err = CommonManager.Instance.DB.ReloadManualAutoAddInfo();
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }), null);
-                    return false;
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }), null);
-                    return false;
-                }
-                if (err != ErrCode.CMD_SUCCESS)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("情報の取得でエラーが発生しました。");
-                    }), null);
-                    return false;
-                }
+                if (CommonManager.CmdErrMsgTypical(err, "情報の取得", this) == false) return false;
 
                 foreach (ManualAutoAddData info in CommonManager.Instance.DB.ManualAutoAddList.Values)
                 {
-                    ManualAutoAddDataItem item = new ManualAutoAddDataItem(info);
-                    resultList.Add(item);
+                    dataList.Add(new ManualAutoAddDataItem(info));
                 }
-
-                listView_key.DataContext = resultList;
-            }
-            catch (Exception ex)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
-                return false;
-            }
-            return true;
+                dragMover.NotSaved = false;
+                return true;
+            });
         }
-
-        private void button_add_Click(object sender, RoutedEventArgs e)
-        {
-            AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            dlg.ShowDialog();
-        }
-
-        private void button_del_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_key.SelectedItems.Count > 0)
-            {
-                List<UInt32> dataIDList = new List<uint>();
-                foreach (ManualAutoAddDataItem info in listView_key.SelectedItems)
-                {
-                    dataIDList.Add(info.ManualAutoAddInfo.dataID);
-                }
-                cmd.SendDelManualAdd(dataIDList);
-            }
-        }
-
-        private void button_change_Click(object sender, RoutedEventArgs e)
-        {
-            if (listView_key.SelectedItem != null)
-            {
-                ManualAutoAddDataItem info = listView_key.SelectedItem as ManualAutoAddDataItem;
-                AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetChangeMode(true);
-                dlg.SetDefaultSetting(info.ManualAutoAddInfo);
-                dlg.ShowDialog();
-            }
-        }
-
+        //listView内部のMouseUpイベントによるアイテム選択処理より後でダイアログを出すようにする。
+        private bool doubleClicked = false;
         private void listView_key_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (listView_key.SelectedItem != null)
-            {
-                ManualAutoAddDataItem info = listView_key.SelectedItem as ManualAutoAddDataItem;
-                AddManualAutoAddWindow dlg = new AddManualAutoAddWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetChangeMode(true);
-                dlg.SetDefaultSetting(info.ManualAutoAddInfo);
-                dlg.ShowDialog();
-            }
+            doubleClicked = true;
         }
-
-        private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        private void listView_key_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (ReloadInfo == true && this.IsVisible == true)
+            if (doubleClicked == true   )
             {
-                if (ReloadInfoData() == true)
-                {
-                    ReloadInfo = false;
-                }
-            }
-        }
-
-        private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
-        {
-            try
-            {
-                foreach (MenuItem item in listView_key.ContextMenu.Items)
-                {
-                    item.IsChecked = false;
-                    foreach (ListColumnInfo info in Settings.Instance.AutoAddManualColumn)
-                    {
-                        if (info.Tag.CompareTo(item.Name) == 0)
-                        {
-                            item.IsChecked = true;
-                            break;
-                        }
-                    }
-                }
-
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void headerSelect_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                MenuItem menuItem = sender as MenuItem;
-                if (menuItem.IsChecked == true)
-                {
-
-                    Settings.Instance.AutoAddManualColumn.Add(new ListColumnInfo(menuItem.Name, Double.NaN));
-                    gridView_key.Columns.Add(columnList[menuItem.Name]);
-                }
-                else
-                {
-                    foreach (ListColumnInfo info in Settings.Instance.AutoAddManualColumn)
-                    {
-                        if (info.Tag.CompareTo(menuItem.Name) == 0)
-                        {
-                            Settings.Instance.AutoAddManualColumn.Remove(info);
-                            gridView_key.Columns.Remove(columnList[menuItem.Name]);
-                            break;
-                        }
-                    }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                doubleClicked = false;
+                EpgCmds.ShowDialog.Execute(sender, this);
             }
         }
     }

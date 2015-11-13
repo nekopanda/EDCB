@@ -23,43 +23,34 @@ namespace EpgTimer
         public SettingWindow()
         {
             InitializeComponent();
-
-            if (Settings.Instance.NoStyle == 0)
-            {
-                ResourceDictionary rd = new ResourceDictionary();
-                rd.MergedDictionaries.Add(
-                    Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
-                    );
-                this.Resources = rd;
-            }
-            else
-            {
-                button_OK.Style = null;
-                button_cancel.Style = null;
-            }
-
-
         }
 
         private void button_OK_Click(object sender, RoutedEventArgs e)
         {
-            if (setAppView.ServiceStop == true)
+            try
             {
-                ServiceStop = true;
+                if (setAppView.ServiceStop == true)
+                {
+                    ServiceStop = true;
+                }
+                setBasicView.SaveSetting();
+                setAppView.SaveSetting();
+                setEpgView.SaveSetting();
+                setOtherAppView.SaveSetting();
+
+                // Common.ini や EpgTimerSrv.ini の更新分をサーバー側へ通知する
+                IniSetting.Instance.UpToDate();
+
+                Settings.SaveToXmlFile();
+                // EpgTimer 側から更新することはないはず
+                //ChSet5.SaveFile();
+                CommonManager.Instance.ReloadCustContentColorList();
             }
-            setBasicView.SaveSetting();
-            setAppView.SaveSetting();
-            setEpgView.SaveSetting();
-            setOtherAppView.SaveSetting();
-
-            // Common.ini や EpgTimerSrv.ini の更新分をサーバー側へ通知する
-            IniSetting.Instance.UpToDate();
-
-            Settings.SaveToXmlFile();
-            // EpgTimer 側から更新することはないはず
-            //ChSet5.SaveFile();
-            CommonManager.Instance.ReloadCustContentColorList();
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                MessageBox.Show("不正な入力値によるエラーのため、一部設定のみ更新されました。");
+            }
 
             this.DialogResult = true;
         }
@@ -69,5 +60,20 @@ namespace EpgTimer
             IniSetting.Instance.Clear();
             this.DialogResult = false;
         }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        this.button_cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        break;
+                }
+            }
+            base.OnKeyDown(e);
+        }
+
     }
 }

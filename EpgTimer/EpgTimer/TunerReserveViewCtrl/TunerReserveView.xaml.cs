@@ -11,8 +11,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Threading;
@@ -26,6 +24,8 @@ namespace EpgTimer.TunerReserveViewCtrl
     /// </summary>
     public partial class TunerReserveView : UserControl
     {
+        private MenuUtil mutil = CommonManager.Instance.MUtil;
+
         public delegate void ProgramViewClickHandler(object sender, Point cursorPos);
         public event ScrollChangedEventHandler ScrollChanged = null;
         public event ProgramViewClickHandler LeftDoubleClick = null;
@@ -178,10 +178,8 @@ namespace EpgTimer.TunerReserveViewCtrl
                                     Border border = new Border();
                                     border.Background = Brushes.DarkGray;
 
-                                    TextBlock block = new TextBlock();
-                                    block.Text = view;
-                                    block.MaxWidth = 400;
-                                    block.TextWrapping = TextWrapping.Wrap;
+                                    TextBlock block = mutil.GetTooltipBlockStandard(view);
+
                                     block.Margin = new Thickness(2);
 
                                     block.Background = Brushes.LightGray;

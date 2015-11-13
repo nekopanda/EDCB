@@ -1,442 +1,281 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
+using System.Windows.Controls;
+using System.Windows;
 
 namespace EpgTimer
 {
-    public class ReserveItem
+    public class ReserveItem : SearchItem
     {
+        //EventInfo、ReserveInfo、JyanruKey、ForeColor、BackColor、BorderBrush -> SearchItem.cs
+
+        public ReserveItem() { }
         public ReserveItem(ReserveData item)
         {
-            this.ReserveInfo = item;
+            base.ReserveInfo = item;
         }
-        public ReserveData ReserveInfo
-        {
-            get;
-            set;
-        }
-        public String EventName
-        {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.Title;
-                }
-                return view;
-            }
-        }
-        public String ServiceName
-        {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.StationName;
-                }
-                return view;
-            }
-        }
-        public String NetworkName
-        {
-            get
-            {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    if (0x7880 <= ReserveInfo.OriginalNetworkID && ReserveInfo.OriginalNetworkID <= 0x7FE8)
-                    {
-                        view = "地デジ";
-                    }
-                    else if (ReserveInfo.OriginalNetworkID == 0x0004)
-                    {
-                        view = "BS";
-                    }
-                    else if (ReserveInfo.OriginalNetworkID == 0x0006)
-                    {
-                        view = "CS1";
-                    }
-                    else if (ReserveInfo.OriginalNetworkID == 0x0007)
-                    {
-                        view = "CS2";
-                    }
-                    else
-                    {
-                        view = "その他";
-                    }
 
-                }
-                return view;
-            }
-        }
-        public String StartTime
+        private EpgEventInfo eventInfo = null;
+        public override EpgEventInfo EventInfo
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
+                if (eventInfo == null)
                 {
-                    view = ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                    DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
-                    view += endTime.ToString("HH:mm:ss");
+                    if (ReserveInfo != null)
+                    {
+                        eventInfo = CommonManager.Instance.GetEpgEventInfoFromReserveData(ReserveInfo, false);
+                    }
                 }
-                return view;
+                return eventInfo;
+            }
+
+            set { eventInfo = value; }
+        }
+
+        public override String EventName
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                return ReserveInfo.Title;
+            }
+        }
+        public override String ServiceName
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                return ReserveInfo.StationName;
+            }
+        }
+        public override String NetworkName
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                return CommonManager.Instance.ConvertNetworkNameText(ReserveInfo.OriginalNetworkID);
+            }
+        }
+        public override String StartTime
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
+                return ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ") + endTime.ToString("HH:mm:ss");
+            }
+        }
+        public String StartTimeShort
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
+                return ReserveInfo.StartTime.ToString("MM/dd(ddd)HH:mm～") + endTime.ToString("HH:mm");
+            }
+        }
+        public override TimeSpan ProgramDuration
+        {
+            get
+            {
+                if (ReserveInfo == null) { return new TimeSpan(); }
+                //
+                return TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
+            }
+        }
+        public String MarginStart
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                return mutil.MarginText(ReserveInfo.RecSetting,true);
+            }
+        }
+        public String MarginEnd
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                return mutil.MarginText(ReserveInfo.RecSetting, false);
+            }
+        }
+        //public String ProgramContent -> SearchItem.cs
+        //public String JyanruKey -> SearchItem.cs
+        public String Preset
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                return ReserveInfo.RecSetting.LookUpPreset(ReserveInfo.EventID == 0xFFFF).DisplayName;
+            }
+        }
+        public bool IsEnabled
+        {
+            set
+            {
+                //選択されている場合、複数選択時に1回の通信で処理するため、ウインドウ側に処理を渡す。
+                MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
+                mainWindow.reserveView.ChgOnOffFromCheckbox(this);
+            }
+            get
+            {
+                if (ReserveInfo == null) return false;
+                //
+                return ReserveInfo.RecSetting.RecMode != 5;
             }
         }
         public String RecMode
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    switch (ReserveInfo.RecSetting.RecMode)
-                    {
-                        case 0:
-                            view = "全サービス";
-                            break;
-                        case 1:
-                            view = "指定サービス";
-                            break;
-                        case 2:
-                            view = "全サービス（デコード処理なし）";
-                            break;
-                        case 3:
-                            view = "指定サービス（デコード処理なし）";
-                            break;
-                        case 4:
-                            view = "視聴";
-                            break;
-                        case 5:
-                            view = "無効";
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                return view;
+                if (ReserveInfo == null) return "";
+                //
+                return CommonManager.Instance.ConvertRecModeText(ReserveInfo.RecSetting.RecMode);
             }
         }
         public String Priority
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    view = ReserveInfo.RecSetting.Priority.ToString();
-                }
-                return view;
+                if (ReserveInfo == null) return "";
+                //
+                return ReserveInfo.RecSetting.Priority.ToString();
             }
         }
         public String Tuijyu
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    if (ReserveInfo.RecSetting.TuijyuuFlag == 0)
-                    {
-                        view = "しない";
-                    }
-                    else if (ReserveInfo.RecSetting.TuijyuuFlag == 1)
-                    {
-                        view = "する";
-                    }
-                }
-                return view;
+                if (ReserveInfo == null) return "";
+                //
+                return ReserveInfo.RecSetting.TuijyuuFlag == 0 ? "しない" : "する";
             }
         }
         public String Pittari
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
-                {
-                    if (ReserveInfo.RecSetting.PittariFlag == 0)
-                    {
-                        view = "しない";
-                    }
-                    else if (ReserveInfo.RecSetting.PittariFlag == 1)
-                    {
-                        view = "する";
-                    }
-                }
-                return view;
+                if (ReserveInfo == null) return "";
+                //
+                return ReserveInfo.RecSetting.PittariFlag == 0 ? "しない" : "する";
+            }
+        }
+        public String Tuner
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                return CommonManager.Instance.ConvertTunerText(ReserveInfo.RecSetting.TunerID);
             }
         }
         public String Comment
         {
             get
             {
-                String view = "";
-                if (ReserveInfo != null)
+                if (ReserveInfo == null) return "";
+                //
+                String view = ReserveInfo.Comment.ToString();
+                if (view == "")
                 {
-                    view = ReserveInfo.Comment.ToString();
+                    view = "個別予約(" + (ReserveInfo.EventID == 0xFFFF ? "プログラム" : "EPG") + ")";
                 }
                 return view;
             }
         }
-        public List<String> RecFileName
+        public List<String> RecFolder
         {
             get
             {
                 List<String> list = new List<string>();
                 if (ReserveInfo != null)
                 {
-                    list = ReserveInfo.RecFileNameList;
+                    ReserveInfo.RecSetting.RecFolderList.ForEach(info => list.Add(info.RecFolder));
+                    ReserveInfo.RecSetting.PartialRecFolder.ForEach(info => list.Add("(ワンセグ) " + info.RecFolder));
                 }
                 return list;
             }
         }
-        public SolidColorBrush BackColor
+        public List<String> RecFileName
         {
             get
             {
-                SolidColorBrush color = CommonManager.Instance.ResDefBackColor;
+                if (ReserveInfo == null) return new List<string>();
+                //
+                return ReserveInfo.RecFileNameList;
+            }
+        }
+        public override TextBlock ToolTipView
+        {
+            get
+            {
+                if (Settings.Instance.NoToolTip == true) return null;
+                if (ReserveInfo == null) return mutil.GetTooltipBlockStandard("");
+                //
+                return mutil.GetTooltipBlockStandard(CommonManager.Instance.ConvertReserveText(ReserveInfo));
+            }
+        }
+        public override String Status
+        {
+            get
+            {
+                String[] wiewString = { "", "無", "予+", "無+", "録*", "無*" };
+                int index = 0;
                 if (ReserveInfo != null)
                 {
-                    if (ReserveInfo.RecSetting.RecMode == 5)
+                    if (ReserveInfo.IsOnAir() == true)
                     {
-                        color = CommonManager.Instance.ResNoBackColor;
+                        index = 2;
                     }
-                    else if (ReserveInfo.OverlapMode == 2)
+                    if (ReserveInfo.IsOnRec() == true)//マージンがあるので、IsOnAir==trueとは限らない
                     {
-                        color = CommonManager.Instance.ResErrBackColor;
+                        index = 4;
                     }
-                    else if (ReserveInfo.OverlapMode == 1)
+                    if (ReserveInfo.RecSetting.RecMode == 5) //無効の判定
                     {
-                        color = CommonManager.Instance.ResWarBackColor;
+                        index += 1;
                     }
                 }
-                return color;
+                return wiewString[index];
             }
         }
-        public TextBlock ToolTipView
+        public override SolidColorBrush StatusColor
         {
             get
             {
-                if (Settings.Instance.NoToolTip == true)
-                {
-                    return null;
-                }
-                String view = "";
                 if (ReserveInfo != null)
                 {
-                    view = CommonManager.Instance.ConvertReserveText(ReserveInfo);
-                    /*                    view = ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                                        DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
-                                        view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
-
-                                        view += ServiceName;
-                                        if (0x7880 <= ReserveInfo.OriginalNetworkID && ReserveInfo.OriginalNetworkID <= 0x7FE8)
-                                        {
-                                            view += " (地デジ)";
-                                        }
-                                        else if (ReserveInfo.OriginalNetworkID == 0x0004)
-                                        {
-                                            view += " (BS)";
-                                        }
-                                        else if (ReserveInfo.OriginalNetworkID == 0x0006)
-                                        {
-                                            view += " (CS1)";
-                                        }
-                                        else if (ReserveInfo.OriginalNetworkID == 0x0007)
-                                        {
-                                            view += " (CS2)";
-                                        }
-                                        else
-                                        {
-                                            view += " (その他)";
-                                        }
-                                        view += "\r\n";
-
-                                        view += EventName + "\r\n\r\n";
-                                        view += "録画モード : " + RecMode + "\r\n";
-                                        view += "優先度 : " + Priority + "\r\n";
-                                        view += "追従 : " + Tuijyu + "\r\n";
-                                        view += "ぴったり（？） : " + Pittari + "\r\n";
-                                        if ((ReserveInfo.RecSetting.ServiceMode & 0x01) == 0)
-                                        {
-                                            view += "指定サービス対象データ : デフォルト\r\n";
-                                        }
-                                        else
-                                        {
-                                            view += "指定サービス対象データ : ";
-                                            if ((ReserveInfo.RecSetting.ServiceMode & 0x10) > 0)
-                                            {
-                                                view += "字幕含む ";
-                                            }
-                                            if ((ReserveInfo.RecSetting.ServiceMode & 0x20) > 0)
-                                            {
-                                                view += "データカルーセル含む";
-                                            }
-                                            view += "\r\n";
-                                        }
-
-                                        view += "録画実行bat : " + ReserveInfo.RecSetting.BatFilePath + "\r\n";
-
-                                        if (ReserveInfo.RecSetting.RecFolderList.Count == 0)
-                                        {
-                                            view += "録画フォルダ : デフォルト\r\n";
-                                        }
-                                        else
-                                        {
-                                            view += "録画フォルダ : \r\n";
-                                            foreach (RecFileSetInfo info in ReserveInfo.RecSetting.RecFolderList)
-                                            {
-                                                view += info.RecFolder + " (WritePlugIn:" + info.WritePlugIn + ")\r\n";
-                                            }
-                                        }
-
-                                        if (ReserveInfo.RecSetting.UseMargineFlag == 0)
-                                        {
-                                            view += "録画マージン : デフォルト\r\n";
-                                        }
-                                        else
-                                        {
-                                            view += "録画マージン : 開始 " + ReserveInfo.RecSetting.StartMargine.ToString() +
-                                                " 終了 " + ReserveInfo.RecSetting.EndMargine.ToString() + "\r\n";
-                                        }
-
-                                        if (ReserveInfo.RecSetting.SuspendMode == 0)
-                                        {
-                                            view += "録画後動作 : デフォルト\r\n";
-                                        }
-                                        else
-                                        {
-                                            view += "録画後動作 : ";
-                                            switch (ReserveInfo.RecSetting.SuspendMode)
-                                            {
-                                                case 1:
-                                                    view += "スタンバイ";
-                                                    break;
-                                                case 2:
-                                                    view += "休止";
-                                                    break;
-                                                case 3:
-                                                    view += "シャットダウン";
-                                                    break;
-                                                case 4:
-                                                    view += "何もしない";
-                                                    break;
-                                            }
-                                            if (ReserveInfo.RecSetting.RebootFlag == 1)
-                                            {
-                                                view += " 復帰後再起動する";
-                                            }
-                                            view += "\r\n";
-                                        }
-                                        view += "予約状況 : " + ReserveInfo.Comment;
-                                        view += "\r\n\r\n";
-                                        view += "OriginalNetworkID : " + ReserveInfo.OriginalNetworkID.ToString() + " (0x" + ReserveInfo.OriginalNetworkID.ToString("X4") + ")\r\n";
-                                        view += "TransportStreamID : " + ReserveInfo.TransportStreamID.ToString() + " (0x" + ReserveInfo.TransportStreamID.ToString("X4") + ")\r\n";
-                                        view += "ServiceID : " + ReserveInfo.ServiceID.ToString() + " (0x" + ReserveInfo.ServiceID.ToString("X4") + ")\r\n";
-                                        view += "EventID : " + ReserveInfo.EventID.ToString() + " (0x" + ReserveInfo.EventID.ToString("X4") + ")\r\n";*/
+                    if (ReserveInfo.IsOnRec() == true)
+                    {
+                        return CommonManager.Instance.StatRecForeColor;
+                    }
+                    if (ReserveInfo.IsOnAir() == true)
+                    {
+                        return CommonManager.Instance.StatOnAirForeColor;
+                    }
                 }
-
-
-                TextBlock block = new TextBlock();
-                block.Text = view;
-                block.MaxWidth = 400;
-                block.TextWrapping = TextWrapping.Wrap;
-                return block;
+                return CommonManager.Instance.StatResForeColor;
             }
         }
 
-        public EpgEventInfo EventInfo
-        {
-            get
-            {
-                EpgEventInfo eventInfo1 = null;
-                UInt64 key1 = CommonManager.Create64Key(ReserveInfo.OriginalNetworkID, ReserveInfo.TransportStreamID, ReserveInfo.ServiceID);
-                if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key1) == true)
-                {
-                    foreach (EpgEventInfo eventChkInfo1 in CommonManager.Instance.DB.ServiceEventList[key1].eventList)
-                    {
-                        if (eventChkInfo1.event_id == ReserveInfo.EventID)
-                        {
-                            eventInfo1 = eventChkInfo1;
-                            break;
-                        }
-                    }
-                }
-                return eventInfo1;
-            }
-        }
+    }
 
-        public Brush BorderBrush
+    public static class ReserveItemEx
+    {
+        public static List<ReserveData> ReserveInfoList(this ICollection<ReserveItem> itemlist)
         {
-            get
-            {
-                Brush color1 = Brushes.White;
-                if (this.EventInfo != null)
-                {
-                    if (this.EventInfo.ContentInfo != null)
-                    {
-                        if (this.EventInfo.ContentInfo.nibbleList.Count > 0)
-                        {
-                            try
-                            {
-                                foreach (EpgContentData info1 in this.EventInfo.ContentInfo.nibbleList)
-                                {
-                                    if (info1.content_nibble_level_1 <= 0x0B || info1.content_nibble_level_1 == 0x0F && Settings.Instance.ContentColorList.Count > info1.content_nibble_level_1)
-                                    {
-                                        color1 = CommonManager.Instance.CustContentColorList[info1.content_nibble_level_1];
-                                        break;
-                                    }
-                                }
-                            }
-                            catch
-                            {
-                            }
-                        }
-                        else
-                        {
-                            color1 = CommonManager.Instance.CustContentColorList[0x10];
-                        }
-                    }
-                    else
-                    {
-                        color1 = CommonManager.Instance.CustContentColorList[0x10];
-                    }
-                }
-
-                return color1;
-            }
-        }
-
-        /// <summary>
-        /// 番組詳細
-        /// </summary>
-        public string ProgramDetail
-        {
-            get
-            {
-                string text1 = "Unavailable (;_;)";
-                if (this.EventInfo != null)
-                {
-                    text1 = CommonManager.Instance.ConvertProgramText(this.EventInfo, EventInfoTextMode.All);
-                }
-                return text1;
-            }
+            return itemlist.Where(item => item != null).Select(item => item.ReserveInfo).ToList();
         }
     }
 }

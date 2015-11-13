@@ -59,7 +59,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="PresentationFramework.Aero" />
-    <Reference Include="PresentationFramework.Classic" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -91,30 +90,59 @@
     <Compile Include="BlackoutWindow.xaml.cs">
       <DependentUpon>BlackoutWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Common\BoxExchangeEditor.cs" />
+    <Compile Include="UserCtrlView\DataViewBase.cs" />
+    <Compile Include="UserCtrlView\ListViewController.cs" />
+    <Compile Include="Menu\MenuSettingData.cs" />
+    <Compile Include="Menu\EpgCmdsDef.cs" />
+    <Compile Include="Menu\CmdExeReserve.cs" />
+    <Compile Include="Common\GridViewSelector.cs" />
+    <Compile Include="Menu\MenuManager.cs" />
+    <Compile Include="Menu\CtxmData.cs" />
+    <Compile Include="DefineClass\EpgAutoAddDataAppend.cs" />
     <Compile Include="Common\CtrlCmd.cs" />
     <Compile Include="Common\CtrlCmdDef.cs" />
     <Compile Include="Common\GridViewSorter.cs" />
+    <Compile Include="Common\ListViewSelectedKeeper.cs" />
     <Compile Include="ConnectWindow.xaml.cs">
       <DependentUpon>ConnectWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="DefineClass\ListColumnInfo.cs" />
+    <Compile Include="EpgView\EpgMainViewBase.cs" />
+    <Compile Include="EpgView\EpgViewBase.cs" />
+    <Compile Include="Menu\CmdExe.cs" />
+    <Compile Include="Menu\CmdExeRecinfo.cs" />
+    <Compile Include="Menu\CmdExeEpgAutoAdd.cs" />
+    <Compile Include="Menu\CmdExeManualAutoAdd.cs" />
+    <Compile Include="Menu\MenuCmds.cs" />
+    <Compile Include="Menu\MenuBinds.cs" />
     <Compile Include="Setting\ColorSetWindow.xaml.cs">
       <DependentUpon>ColorSetWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Common\CopyObj.cs" />
     <Compile Include="Common\EAAFileClass.cs" />
     <Compile Include="Common\IEPGFileClass.cs" />
+    <Compile Include="Menu\MenuUtil.cs" />
+    <Compile Include="Common\ViewUtil.cs" />
     <Compile Include="Common\NWConnectClass.cs" />
     <Compile Include="Common\ServiceCtrlClass.cs" />
+    <Compile Include="Common\CtrlCmdDefEx.cs" />
     <Compile Include="NotifyLogWindow.xaml.cs">
       <DependentUpon>NotifyLogWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="DefineClass\NotifySrvInfoItem.cs" />
+    <Compile Include="Menu\SetContextMenuWindow.xaml.cs">
+      <DependentUpon>SetContextMenuWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UserCtrlView\EpgAutoAddView.xaml.cs">
       <DependentUpon>EpgAutoAddView.xaml</DependentUpon>
     </Compile>
     <Compile Include="DefineClass\ManualAutoAddDataItem.cs" />
     <Compile Include="DefineClass\EpgAutoDataItem.cs" />
     <Compile Include="DefineClass\EpgCaptime.cs" />
+    <Compile Include="UserCtrlView\ListBoxDragMoverView.xaml.cs">
+      <DependentUpon>ListBoxDragMoverView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UserCtrlView\ManualAutoAddView.xaml.cs">
       <DependentUpon>ManualAutoAddView.xaml</DependentUpon>
     </Compile>
@@ -125,7 +153,7 @@
     <Compile Include="RecInfoView.xaml.cs">
       <DependentUpon>RecInfoView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="DefineClass\ServiceItem2.cs" />
+    <Compile Include="DefineClass\SelectableItem.cs" />
     <Compile Include="DefineClass\ServiceViewItem.cs" />
     <Compile Include="Setting\SetApp2DelWindow.xaml.cs">
       <DependentUpon>SetApp2DelWindow.xaml</DependentUpon>
@@ -265,7 +293,15 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Menu\SetContextMenuWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="UserCtrlView\EpgAutoAddView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserCtrlView\ListBoxDragMoverView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -519,6 +555,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\key_no.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\drag.cur" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

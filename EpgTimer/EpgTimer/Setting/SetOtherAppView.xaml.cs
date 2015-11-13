@@ -26,7 +26,7 @@ namespace EpgTimer.Setting
 
             if (CommonManager.Instance.NWMode == true)
             {
-                tabItem_play.IsEnabled = false;
+                CommonManager.Instance.VUtil.DisableControlChildren(tabItem_play);
                 label3.IsEnabled = false;
                 listBox_bon.IsEnabled = false;
                 button_del.IsEnabled = false;
@@ -36,14 +36,6 @@ namespace EpgTimer.Setting
 
             try
             {
-                if (Settings.Instance.NoStyle == 1)
-                {
-                    button_exe.Style = null;
-                    button_del.Style = null;
-                    button_add.Style = null;
-                    button_playExe.Style = null;
-                }
-
                 textBox_exe.Text = Settings.Instance.TvTestExe;
                 textBox_cmd.Text = Settings.Instance.TvTestCmd;
                 checkBox_nwTvMode.IsChecked = Settings.Instance.NwTvMode;
@@ -82,11 +74,10 @@ namespace EpgTimer.Setting
                     int num = IniFileHandler.GetPrivateProfileInt("TVTEST", "Num", 0, SettingPath.TimerSrvIniPath);
                     for (uint i = 0; i < num; i++)
                     {
-                        buff.Clear();
-                        IniFileHandler.GetPrivateProfileString("TVTEST", i.ToString(), "", buff, 512, SettingPath.TimerSrvIniPath);
-                        if (buff.Length > 0)
+                        string item = IniFileHandler.GetPrivateProfileString("TVTEST", i.ToString(), "", SettingPath.TimerSrvIniPath);
+                        if (item.Length > 0)
                         {
-                            listBox_bon.Items.Add(buff.ToString());
+                            listBox_bon.Items.Add(item);
                         }
                     }
                 }
@@ -171,14 +162,10 @@ namespace EpgTimer.Setting
 
         private void button_exe_Click(object sender, RoutedEventArgs e)
         {
-            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
-            dlg.DefaultExt = ".exe";
-            dlg.Filter = "exe Files (.exe)|*.exe;|all Files(*.*)|*.*";
-
-            Nullable<bool> result = dlg.ShowDialog();
-            if (result == true)
+            string path = CommonManager.Instance.GetFileNameByDialog(textBox_exe.Text, "", ".exe");
+            if (path != null)
             {
-                textBox_exe.Text = dlg.FileName;
+                textBox_exe.Text = path;
             }
         }
 
@@ -208,14 +195,10 @@ namespace EpgTimer.Setting
 
         private void button_playExe_Click(object sender, RoutedEventArgs e)
         {
-            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
-            dlg.DefaultExt = ".exe";
-            dlg.Filter = "exe Files (.exe)|*.exe;|all Files(*.*)|*.*";
-
-            Nullable<bool> result = dlg.ShowDialog();
-            if (result == true)
+            string path = CommonManager.Instance.GetFileNameByDialog(textBox_playExe.Text, "", ".exe");
+            if (path != null)
             {
-                textBox_playExe.Text = dlg.FileName;
+                textBox_playExe.Text = path;
             }
         }
     }

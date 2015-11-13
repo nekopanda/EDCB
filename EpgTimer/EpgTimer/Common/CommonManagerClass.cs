@@ -2,118 +2,87 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Documents;
+using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Collections;
 using System.IO;
-
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
 
 namespace EpgTimer
 {
     class CommonManager
     {
         public CtrlCmdUtil CtrlCmd
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public DBManager DB
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public TVTestCtrlClass TVTestCtrl
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<UInt16, ContentKindInfo> ContentKindDictionary
-        {
-            get;
-            set;
-        }
+        { get; set; }
+        public List<ContentKindInfo> ContentKindList
+        { get; set; }
         public Dictionary<UInt16, ContentKindInfo> ContentKindDictionary2
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<UInt16, ComponentKindInfo> ComponentKindDictionary
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<byte, DayOfWeekInfo> DayOfWeekDictionary
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<UInt16, UInt16> HourDictionary
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<UInt16, UInt16> MinDictionary
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<byte, RecModeInfo> RecModeDictionary
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<byte, YesNoInfo> YesNoDictionary
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<byte, PriorityInfo> PriorityDictionary
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public bool NWMode
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public List<NotifySrvInfo> NotifyLogList
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public NWConnect NW
+        { get; set; }
+        public MenuUtil MUtil
+        { get; set; }
+        public ViewUtil VUtil
+        { get; set; }
+
+        MenuManager _mm;
+        public MenuManager MM
         {
-            get;
-            set;
+            get
+            {
+                //初期化に他のオブジェクトを使うので遅延させる
+                if (_mm == null) _mm = new MenuManager();
+                //
+                return _mm;
+            }
+            set { _mm = value; }
         }
-        public List<Brush> CustContentColorList
-        {
-            get;
-            set;
-        }
-        public SolidColorBrush CustTitle1Color
-        {
-            get;
-            set;
-        }
-        public SolidColorBrush CustTitle2Color
-        {
-            get;
-            set;
-        }
-        public List<Brush> CustTimeColorList
-        {
-            get;
-            set;
-        }
-        public Brush CustServiceColor
-        {
-            get;
-            set;
-        }
+
+        public List<Brush> CustContentColorList { get; private set; }
+        public SolidColorBrush CustTitle1Color { get; private set; }
+        public SolidColorBrush CustTitle2Color { get; private set; }
+        public List<Brush> CustTimeColorList { get; private set; }
+        public Brush CustServiceColor { get; private set; }
+        public SolidColorBrush ResDefBackColor { get; private set; }
+        public SolidColorBrush ResErrBackColor { get; private set; }
+        public SolidColorBrush ResWarBackColor { get; private set; }
+        public SolidColorBrush ResNoBackColor { get; private set; }
+        public SolidColorBrush ResAutoAddMissingBackColor { get; private set; }
+        public SolidColorBrush ListDefForeColor { get; private set; }
+        public List<SolidColorBrush> RecModeForeColor { get; private set; }
+        public SolidColorBrush RecEndDefBackColor { get; private set; }
+        public SolidColorBrush RecEndErrBackColor { get; private set; }
+        public SolidColorBrush RecEndWarBackColor { get; private set; }
+        public SolidColorBrush StatResForeColor { get; private set; }
+        public SolidColorBrush StatRecForeColor { get; private set; }
+        public SolidColorBrush StatOnAirForeColor { get; private set; }
 
         private static CommonManager _instance;
         public static CommonManager Instance
@@ -144,6 +113,14 @@ namespace EpgTimer
             if (NW == null)
             {
                 NW = new NWConnect(CtrlCmd);
+            }
+            if (MUtil == null)
+            {
+                MUtil = new MenuUtil(CtrlCmd);
+            }
+            if (VUtil == null)
+            {
+                VUtil = new ViewUtil(CtrlCmd, MUtil);
             }
             if (ContentKindDictionary == null)
             {
@@ -276,6 +253,8 @@ namespace EpgTimer
                 ContentKindDictionary.Add(0x0B0F, new ContentKindInfo("福祉", "その他", 0x0B, 0x0F));
 
                 ContentKindDictionary.Add(0x0FFF, new ContentKindInfo("その他", "", 0x0F, 0xFF));
+                ContentKindDictionary.Add(0x0F0F, new ContentKindInfo("その他", "その他", 0x0F, 0x0F));
+
                 ContentKindDictionary.Add(0xFFFF, new ContentKindInfo("なし", "", 0xFF, 0xFF));
             }
             if (ContentKindDictionary2 == null)
@@ -321,6 +300,22 @@ namespace EpgTimer
                 ContentKindDictionary2.Add(0x020B, new ContentKindInfo("邦画(CS)", "ミュージカル／音楽映画", 0x02, 0x0B));
                 ContentKindDictionary2.Add(0x020C, new ContentKindInfo("邦画(CS)", "ホームドラマ", 0x02, 0x0C));
                 ContentKindDictionary2.Add(0x020F, new ContentKindInfo("邦画(CS)", "その他", 0x02, 0x0F));
+
+                if (ContentKindDictionary != null)
+                {
+                    //CSもまとめて検索出来るようにする仮対応。
+                    foreach (ContentKindInfo info in ContentKindDictionary2.Values)
+                    {
+                        ContentKindDictionary.Add((UInt16)(info.ID | 0x7000), new ContentKindInfo(info.ContentName, info.SubName, (Byte)(info.Nibble1 | 0x70), info.Nibble2));
+                    }
+
+                    //表示順が追加順にならないことの対策。OrderedDictionary使えるならその方が簡単かとは思うが
+                    if (ContentKindList == null)
+                    {
+                        ContentKindList = new List<ContentKindInfo>(ContentKindDictionary.Values);
+                        ContentKindList.Sort((i1, i2) => (int)i1.SortKey - (int)i2.SortKey);
+                    }
+                }
             }
             if (ComponentKindDictionary == null)
             {
@@ -466,6 +461,10 @@ namespace EpgTimer
             {
                 CustTimeColorList = new List<Brush>();
             }
+            if (RecModeForeColor == null)
+            {
+                RecModeForeColor = new List<SolidColorBrush>();
+            }
         }
 
         public static UInt64 Create64Key(UInt16 ONID, UInt16 TSID, UInt16 SID)
@@ -480,10 +479,59 @@ namespace EpgTimer
             return key;
         }
 
-        public static UInt32 CreateARGBKey(byte a, byte r, byte g, byte b)
+        public static bool EqualsPg(ReserveData i1, ReserveData i2, bool IdMode = true, bool TimeMode = false)
         {
-            UInt32 key = ((UInt32)a) << 24 | ((UInt32)r) << 16 | ((UInt32)g) << 8 | (UInt32)b;
-            return key;
+            if (i1 == null && i2 == null) return true;
+            if (i1 == null || i2 == null) return false;
+            return (IdMode == false || i1.EventID == i2.EventID)
+                    && (TimeMode == false || i1.StartTime == i2.StartTime && i1.DurationSecond == i2.DurationSecond)
+                    && i1.Create64Key() == i2.Create64Key();
+        }
+
+        //以降の三つは数の多いEpgEventInfo相手に実行されるので、Convert使わずバラしちゃった方がいいのかも
+        public static bool EqualsPg(EpgEventInfo i1, EpgEventInfo i2, bool IdMode = true, bool TimeMode = false)
+        {
+            return EqualsPg(ConvertEpgToReserveData(i1), ConvertEpgToReserveData(i2), IdMode, TimeMode);
+        }
+
+        public static bool EqualsPg(EpgEventInfo i1, ReserveData i2, bool IdMode = true, bool TimeMode = false)
+        {
+            return EqualsPg(ConvertEpgToReserveData(i1), i2, IdMode, TimeMode);
+        }
+
+        public static bool EqualsPg(ReserveData i1, EpgEventInfo i2, bool IdMode = true, bool TimeMode = false)
+        {
+            return EqualsPg(i1, ConvertEpgToReserveData(i2), IdMode, TimeMode);
+        }
+
+        public static ReserveData ConvertEpgToReserveData(EpgEventInfo epgInfo)
+        {
+            if (epgInfo == null) return null;
+            ReserveData resInfo = new ReserveData();
+            ConvertEpgToReserveData(epgInfo, ref resInfo);
+            return resInfo;
+        }
+
+        public static bool ConvertEpgToReserveData(EpgEventInfo epgInfo, ref ReserveData resInfo)
+        {
+            if (epgInfo == null || resInfo == null) return false;
+
+            resInfo.Title = epgInfo.Title();
+            resInfo.StartTime = epgInfo.start_time;
+            resInfo.StartTimeEpg = epgInfo.start_time;
+            resInfo.DurationSecond = (epgInfo.DurationFlag == 0 ? 10 * 60 : epgInfo.durationSec);
+
+            UInt64 key = epgInfo.Create64Key();
+            if (ChSet5.Instance.ChList.ContainsKey(key) == true)
+            {
+                resInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
+            }
+            resInfo.OriginalNetworkID = epgInfo.original_network_id;
+            resInfo.TransportStreamID = epgInfo.transport_stream_id;
+            resInfo.ServiceID = epgInfo.service_id;
+            resInfo.EventID = epgInfo.event_id;
+
+            return true;
         }
 
         public static EpgServiceInfo ConvertChSet5To(ChSet5Item item)
@@ -606,6 +654,84 @@ namespace EpgTimer
             return retText;
         }
 
+        /// <summary>
+        /// 良くある通信エラー(CMD_ERR_CONNECT,CMD_ERR_TIMEOUT)をMessageBoxで表示する。
+        /// Owner(this)を指定するとDispatcher.BeginInvokeで実行する。
+        /// </summary>
+        public static bool CmdErrMsgTypical(ErrCode err, string caption = "通信エラー", Control Owner = null)
+        {
+            if (err == ErrCode.CMD_SUCCESS) return true;
+
+            string msg;
+            switch (err)
+            {
+                case ErrCode.CMD_ERR_CONNECT:
+                    msg="サーバー または EpgTimerSrv に接続できませんでした。";
+                    break;
+                //case ErrCode.CMD_ERR_BUSY:  //もう表示しないことにしているようだ。
+                //    msg = "データの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）";
+                //    break;
+                case ErrCode.CMD_ERR_TIMEOUT:
+                    msg = "EpgTimerSrvとの接続にタイムアウトしました。";
+                    break;
+                default:
+                    msg = "通信エラーが発生しました。";
+                    break;
+            }
+
+            if (Owner != null)
+            {
+                Owner.Dispatcher.BeginInvoke(new Action(() => MessageBox.Show(msg, caption)), null);
+            }
+            else
+            {
+                MessageBox.Show(msg, caption);
+            }
+
+            return false;
+        }
+
+        public EpgEventInfo GetEpgEventInfoFromReserveData(ReserveData info, bool getSrv = false)
+        {
+            CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+            EpgEventInfo eventInfo = null;
+
+            if (info != null)
+            {
+                try
+                {
+                    if (info.EventID != 0xFFFF)
+                    {
+                        UInt64 key = info.Create64Key();
+                        if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
+                        {
+                            foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
+                            {
+                                if (eventChkInfo.event_id == info.EventID)
+                                {
+                                    eventInfo = eventChkInfo;
+                                    break;
+                                }
+                            }
+                        }
+                        if (eventInfo == null && getSrv == true)
+                        {
+                            UInt64 pgId = info.Create64PgKey();
+                            eventInfo = new EpgEventInfo();
+                            cmd.SendGetPgInfo(pgId, ref eventInfo);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                }
+
+            }
+
+            return eventInfo;
+        }
+
         public String ConvertReserveText(ReserveData reserveInfo)
         {
             String view = "";
@@ -613,30 +739,7 @@ namespace EpgTimer
             DateTime endTime = reserveInfo.StartTime + TimeSpan.FromSeconds(reserveInfo.DurationSecond);
             view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
 
-            String recMode = "";
-            switch (reserveInfo.RecSetting.RecMode)
-            {
-                case 0:
-                    recMode = "全サービス";
-                    break;
-                case 1:
-                    recMode = "指定サービス";
-                    break;
-                case 2:
-                    recMode = "全サービス（デコード処理なし）";
-                    break;
-                case 3:
-                    recMode = "指定サービス（デコード処理なし）";
-                    break;
-                case 4:
-                    recMode = "視聴";
-                    break;
-                case 5:
-                    recMode = "無効";
-                    break;
-                default:
-                    break;
-            } 
+            String recMode = ConvertRecModeText(reserveInfo.RecSetting.RecMode);
             String tuijyu = "";
             if (reserveInfo.RecSetting.TuijyuuFlag == 0)
             {
@@ -803,9 +906,7 @@ namespace EpgTimer
             string extInfo = "";
             if (eventInfo != null)
             {
-                UInt64 key = ((UInt64)eventInfo.original_network_id) << 32 |
-                    ((UInt64)eventInfo.transport_stream_id) << 16 |
-                    ((UInt64)eventInfo.service_id);
+                UInt64 key = eventInfo.Create64Key();
                 if (ChSet5.Instance.ChList.ContainsKey(key) == true)
                 {
                     basicInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + "\r\n";
@@ -846,47 +947,33 @@ namespace EpgTimer
                 {
                     foreach (EpgContentData info in eventInfo.ContentInfo.nibbleList)
                     {
-                        String content = "";
-                        int nibble1 = info.content_nibble_level_1;
-                        int nibble2 = info.content_nibble_level_2;
-                        if (nibble1 == 0x0E && nibble2 == 0x01)
+                        UInt16 ID1 = (UInt16)(((UInt16)info.content_nibble_level_1) << 8 | 0xFF);
+                        UInt16 ID2 = (UInt16)(((UInt16)info.content_nibble_level_1) << 8 | info.content_nibble_level_2);
+                        if (ID2 == 0x0e01)//CS、仮対応データをそのまま使用。
                         {
-                            nibble1 = info.user_nibble_1;
-                            nibble2 = info.user_nibble_2;
-                            UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
-                            UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
-                            if (ContentKindDictionary2.ContainsKey(contentKey1) == true)
-                            {
-                                content += ContentKindDictionary2[contentKey1];
-                            }
-                            if (ContentKindDictionary2.ContainsKey(contentKey2) == true)
-                            {
-                                content += " - " + ContentKindDictionary2[contentKey2];
-                            }
-                            if (content.Length == 0 || nibble1 == 0x0F)
-                            {
-                                content += "(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")" + "(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")";
-                            }
-                            extInfo += content + "\r\n";
+                            ID1 = (UInt16)(((UInt16)info.user_nibble_1) << 8 | 0x70FF);
+                            ID2 = (UInt16)(((UInt16)info.user_nibble_1) << 8 | 0x7000 | info.user_nibble_2);
+                        }
+
+                        String content = "";
+                        ContentKindInfo kindInfo;
+                        if (ContentKindDictionary.TryGetValue(ID1, out kindInfo) == true)
+                        {
+                            content += kindInfo.ContentName;
                         }
                         else
                         {
-                            UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
-                            UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
-                            if (ContentKindDictionary.ContainsKey(contentKey1) == true)
-                            {
-                                content += ContentKindDictionary[contentKey1];
-                            }
-                            if (ContentKindDictionary.ContainsKey(contentKey2) == true)
-                            {
-                                content += " - " + ContentKindDictionary[contentKey2];
-                            }
-                            if (content.Length == 0 || nibble1 == 0x0F)
-                            {
-                                content += "(0x" + nibble1.ToString("X2") + nibble2.ToString("X2") + ")" + "(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")";
-                            }
-                            extInfo += content + "\r\n";
+                            content += "不明" + "(0x" + info.content_nibble_level_1.ToString("X2") + info.content_nibble_level_2.ToString("X2") + ")";
                         }
+                        if (ContentKindDictionary.TryGetValue(ID2, out kindInfo) == true)
+                        {
+                            content += " - " + kindInfo.SubName;
+                        }
+                        else
+                        {
+                            content += " - " + "不明" + "(0x" + info.user_nibble_1.ToString("X2") + info.user_nibble_2.ToString("X2") + ")";
+                        }
+                        extInfo += content + "\r\n";
                     }
                 }
                 extInfo += "\r\n";
@@ -980,9 +1067,7 @@ namespace EpgTimer
                         extInfo += "イベントリレーあり：\r\n";
                         foreach (EpgEventData info in eventInfo.EventRelayInfo.eventDataList)
                         {
-                            key = ((UInt64)info.original_network_id) << 32 |
-                                ((UInt64)info.transport_stream_id) << 16 |
-                                ((UInt64)info.service_id);
+                            key = info.Create64Key();
                             if (ChSet5.Instance.ChList.ContainsKey(key) == true)
                             {
                                 extInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + " ";
@@ -1018,28 +1103,210 @@ namespace EpgTimer
             return retText;
         }
 
-        public void FilePlay(String filePath)
+        public String ConvertNetworkNameText(ushort originalNetworkID)
         {
-            try
+            String retText = "";
+            if (0x7880 <= originalNetworkID && originalNetworkID <= 0x7FE8)
             {
-                if (NWMode == false)
+                retText = "地デジ";
+            }
+            else if (originalNetworkID == 0x0004)
+            {
+                retText = "BS";
+            }
+            else if (originalNetworkID == 0x0006)
+            {
+                retText = "CS1";
+            }
+            else if (originalNetworkID == 0x0007)
+            {
+                retText = "CS2";
+            }
+            else
+            {
+                retText = "その他";
+            }
+            return retText;
+        }
+
+        public String ConvertJyanruText(EpgEventInfo eventInfo)
+        {
+            if (eventInfo == null || eventInfo.ContentInfo == null)
+            {
+                return "";
+            }
+            else
+            {
+                return ConvertJyanruText(eventInfo.ContentInfo.nibbleList);
+            }
+        }
+        public String ConvertJyanruText(EpgSearchKeyInfo searchKeyInfo)
+        {
+            if (searchKeyInfo == null)
+            {
+                return "";
+            }
+            else
+            {
+                return ConvertJyanruText(searchKeyInfo.contentList);
+            }
+        }
+        public String ConvertJyanruText(List<EpgContentData> nibbleList)
+        {
+            String retText = "";
+            if (nibbleList != null)
+            {
+                Dictionary<int, List<int>> nibbleDict1 = new Dictionary<int, List<int>>();  // 小ジャンルを大ジャンルでまとめる
+                foreach (EpgContentData ecd1 in nibbleList)
                 {
-                    System.Diagnostics.Process process;
-                    if (Settings.Instance.FilePlayExe.Length == 0)
+                    int nibble1 = ecd1.content_nibble_level_1;
+                    int nibble2 = ecd1.content_nibble_level_2;
+                    if (nibble1 == 0x0E && nibble2 == 0x01)//CS、仮対応データをそのまま使用
                     {
-                        process = System.Diagnostics.Process.Start(filePath);
+                        nibble1 = ecd1.user_nibble_1 | 0x70;
+                        nibble2 = ecd1.user_nibble_2;
+                    }
+
+                    if (nibbleDict1.ContainsKey(nibble1))
+                    {
+                        nibbleDict1[nibble1].Add(nibble2);
                     }
                     else
                     {
-                        String cmdLine = Settings.Instance.FilePlayCmd;
-                        cmdLine = cmdLine.Replace("$FilePath$", filePath);
-                        process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
-
+                        nibbleDict1.Add(nibble1, new List<int>() { nibble2 });
                     }
                 }
-                else
+                foreach (KeyValuePair<int, List<int>> kvp1 in nibbleDict1)
                 {
-                    TVTestCtrl.StartStreamingPlay(filePath, NW.ConnectedIP, NW.ConnectedPort);
+                    int nibble1 = kvp1.Key;
+                    UInt16 contentKey1 = (UInt16)(nibble1 << 8 | 0xFF);
+                    //
+                    string smallCategory1 = "";
+                    foreach (int nibble2 in kvp1.Value.Distinct())
+                    {
+                        UInt16 contentKey2 = (UInt16)(nibble1 << 8 | nibble2);
+                        if (nibble2 != 0xFF)
+                        {
+                            if (smallCategory1 != "") { smallCategory1 += ", "; }
+                            if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey2))
+                            {
+                                smallCategory1 += CommonManager.Instance.ContentKindDictionary[contentKey2].ToString().Trim();
+                            }
+                        }
+                    }
+                    //
+                    if (retText != "") { retText += ", "; }
+                    if (CommonManager.Instance.ContentKindDictionary.ContainsKey(contentKey1))
+                    {
+                        retText += "[" + CommonManager.Instance.ContentKindDictionary[contentKey1].ToString().Trim();
+                        if (smallCategory1 != "") { retText += " - " + smallCategory1; }
+                        retText += "]";
+                    }
+                }
+            }
+            return retText;
+        }
+
+        public String ConvertRecModeText(byte recMode)
+        {
+            RecModeInfo info;
+            return RecModeDictionary.TryGetValue(recMode, out info) == true ? info.DisplayName : "";
+        }
+
+        public String ConvertTunerText(uint tunerID)
+        {
+            TunerReserveInfo info;
+            string retv = "";
+            if (tunerID == 0)
+            {
+                retv = "自動";
+            }
+            else if (DB.TunerReserveList.TryGetValue(tunerID, out info))
+            {
+                retv = new TunerSelectInfo(info.tunerName, tunerID).ToString();
+            }
+            return retv;
+        }
+
+        public String ConvertViewModeText(int viewMode)
+        {
+            String retText = "";
+            switch (viewMode)
+            {
+                case 0:
+                    retText = "標準モード";
+                    break;
+                case 1:
+                    retText = "1週間モード";
+                    break;
+                case 2:
+                    retText = "リスト表示モード";
+                    break;
+                default:
+                    break;
+            }
+            return retText;
+        }
+
+        public FlowDocument ConvertDisplayText(EpgEventInfo eventInfo)
+        {
+            String epgText = CommonManager.Instance.ConvertProgramText(eventInfo, EventInfoTextMode.All);
+            if (epgText == "") epgText = "番組情報がありません。\r\n" + "またはEPGデータが読み込まれていません。";
+            String text = epgText;
+            FlowDocument flowDoc = new FlowDocument();
+            Regex regex = new Regex("((http://|https://|ｈｔｔｐ：／／|ｈｔｔｐｓ：／／).*\r\n)");
+
+            if (regex.IsMatch(text) == true)
+            {
+                try
+                {
+                    //Regexのsplitでやるとhttp://だけのも取れたりするので、１つずつ行う
+                    Paragraph para = new Paragraph();
+
+                    do
+                    {
+                        Match matchVal = regex.Match(text);
+                        int index = text.IndexOf(matchVal.Value);
+
+                        para.Inlines.Add(text.Substring(0, index));
+                        text = text.Remove(0, index);
+
+                        Hyperlink h = new Hyperlink(new Run(matchVal.Value.Replace("\r\n", "")));
+                        h.MouseLeftButtonDown += new MouseButtonEventHandler(h_MouseLeftButtonDown);
+                        h.Foreground = Brushes.Blue;
+                        h.Cursor = Cursors.Hand;
+                        String url = CommonManager.ReplaceUrl(matchVal.Value.Replace("\r\n", ""));
+                        h.NavigateUri = new Uri(url);
+                        para.Inlines.Add(h);
+                        para.Inlines.Add("\r\n");
+
+                        text = text.Remove(0, matchVal.Value.Length);
+                    } while (regex.IsMatch(text) == true);
+                    para.Inlines.Add(text);
+
+                    flowDoc.Blocks.Add(para);
+                }
+                catch
+                {
+                    flowDoc = new FlowDocument(new Paragraph(new Run(epgText)));
+                }
+            }
+            else
+            {
+                flowDoc.Blocks.Add(new Paragraph(new Run(epgText)));
+            }
+
+            return flowDoc;
+        }
+
+        void h_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            try
+            {
+                if (sender.GetType() == typeof(Hyperlink))
+                {
+                    Hyperlink h = sender as Hyperlink;
+                    System.Diagnostics.Process.Start(h.NavigateUri.ToString());
                 }
             }
             catch (Exception ex)
@@ -1048,6 +1315,141 @@ namespace EpgTimer
             }
         }
 
+        public string GetFolderNameByDialog(string InitialPath = "", string Description = "")
+        {
+            try
+            {
+                if (Settings.Instance.OpenFolderWithFileDialog == true)
+                {
+                    System.Windows.Forms.OpenFileDialog dlg = new System.Windows.Forms.OpenFileDialog();
+                    dlg.Title = Description;
+                    dlg.CheckFileExists = false;
+                    dlg.FileName = "(任意ファイル名)";
+                    dlg.InitialDirectory = GetDirectoryName2(InitialPath);
+                    if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    {
+                        return GetDirectoryName2(dlg.FileName);
+                    }
+                }
+                else
+                {
+                    System.Windows.Forms.FolderBrowserDialog dlg = new System.Windows.Forms.FolderBrowserDialog();
+                    dlg.Description = Description;
+                    dlg.SelectedPath = GetDirectoryName2(InitialPath);
+                    if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    {
+                        return dlg.SelectedPath;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+
+            return null;
+        }
+
+        public string GetFileNameByDialog(string InitialPath = "", string Title = "", string DefaultExt = "")
+        {
+            try
+            {
+                System.Windows.Forms.OpenFileDialog dlg = new System.Windows.Forms.OpenFileDialog();
+                dlg.Title = Title;
+                dlg.FileName = System.IO.Path.GetFileName(InitialPath);
+                dlg.InitialDirectory = GetDirectoryName2(InitialPath);
+                switch (DefaultExt)
+                {
+                    case ".exe":
+                        dlg.DefaultExt = ".exe";
+                        dlg.Filter = "exe Files (.exe)|*.exe;|all Files(*.*)|*.*";
+                        break;
+                    case ".bat":
+                        dlg.DefaultExt = ".bat";
+                        dlg.Filter = "bat Files (.bat)|*.bat;|all Files(*.*)|*.*";
+                        break;
+                    default:
+                        dlg.Filter = "all Files(*.*)|*.*";
+                        break;
+                }
+
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    return dlg.FileName;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+
+            return null;
+        }
+
+        private string GetDirectoryName2(string folder_path)
+        {
+            string path = folder_path.Trim();
+            while (path != "")
+            {
+                if (System.IO.Directory.Exists(path)) break;
+                path = System.IO.Path.GetDirectoryName(path);
+                path = (path != null ? path : "");
+            }
+            return path;
+        }
+
+        public void OpenFolder(string folder_path, string msg = "存在しません")
+        {
+            try
+            {
+                if (folder_path == null || folder_path.Length == 0)
+                {
+                    MessageBox.Show(msg);
+                }
+                else if (System.IO.File.Exists(folder_path) != true)
+                {
+                    String folderPath = GetDirectoryName2(folder_path);
+                    System.Diagnostics.Process.Start("EXPLORER.EXE", folderPath);
+                }
+                else
+                {
+                    String cmd = "/select,";
+                    cmd += "\"" + folder_path + "\"";
+
+                    System.Diagnostics.Process.Start("EXPLORER.EXE", cmd);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        //ReloadCustContentColorList()用のコンバートメソッド
+        private Brush _GetColorBrush(string colorName, uint colorValue = 0
+            , bool gradation = false, double luminance = -1, double saturation = -1)
+        {
+            Color c = (colorName == "カスタム" ? ColorDef.FromUInt(colorValue) : ColorDef.FromName(colorName));
+            if (gradation == false)
+            {
+                return ColorDef.SolidBrush(c);
+            }
+            else
+            {
+                if (luminance == -1)
+                {
+                    return ColorDef.GradientBrush(c);
+                }
+                else
+                {
+                    return ColorDef.GradientBrush(c, luminance, saturation);
+                }
+            }
+        }
+        private SolidColorBrush _GetSolidBrush(string s)
+        {
+            return ColorDef.SolidBrush((Color)ColorConverter.ConvertFromString(s));
+        }
         public void ReloadCustContentColorList()
         {
             try
@@ -1055,344 +1457,46 @@ namespace EpgTimer
                 CustContentColorList.Clear();
                 for (int i = 0; i < Settings.Instance.ContentColorList.Count; i++)
                 {
-                    String name = Settings.Instance.ContentColorList[i];
-                    Color color;
-                    if (String.Compare(name, "カスタム") == 0)
-                    {
-                        UInt32 argb = Settings.Instance.ContentCustColorList[i];
-
-                        byte r = (byte)((argb & 0x00FF0000) >> 16);
-                        byte g = (byte)((argb & 0x0000FF00) >> 8);
-                        byte b = (byte)(argb & 0x000000FF);
-
-                        color = Color.FromArgb(0xFF, r, g, b);
-                    }
-                    else
-                    {
-                        color = ColorDef.ColorFromName(name);
-                    }
-                    if (Settings.Instance.EpgGradation == false)
-                    {
-                        CustContentColorList.Add(new SolidColorBrush(color));
-                        CustContentColorList[CustContentColorList.Count - 1].Freeze();
-                    }
-                    else
-                    {
-                        CustContentColorList.Add(ColorDef.GradientBrush(color));
-                    }
+                    CustContentColorList.Add(_GetColorBrush(Settings.Instance.ContentColorList[i], Settings.Instance.ContentCustColorList[i], Settings.Instance.EpgGradation));
                 }
-                if (String.Compare(Settings.Instance.ReserveRectColorNormal, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.ContentCustColorList[0x11];
+                CustContentColorList.Add(_GetColorBrush(Settings.Instance.ReserveRectColorNormal, Settings.Instance.ContentCustColorList[0x11]));
+                CustContentColorList.Add(_GetColorBrush(Settings.Instance.ReserveRectColorNo, Settings.Instance.ContentCustColorList[0x12]));
+                CustContentColorList.Add(_GetColorBrush(Settings.Instance.ReserveRectColorNoTuner, Settings.Instance.ContentCustColorList[0x13]));
+                CustContentColorList.Add(_GetColorBrush(Settings.Instance.ReserveRectColorWarning, Settings.Instance.ContentCustColorList[0x14]));
+                CustContentColorList.Add(_GetColorBrush(Settings.Instance.ReserveRectColorAutoAddMissing, Settings.Instance.ContentCustColorList[0x15]));
 
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
+                CustTitle1Color = (SolidColorBrush)_GetColorBrush(Settings.Instance.TitleColor1, Settings.Instance.TitleCustColor1);
+                CustTitle2Color = (SolidColorBrush)_GetColorBrush(Settings.Instance.TitleColor2, Settings.Instance.TitleCustColor2);
 
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustContentColorList.Add(backColor);
-                }
-                else
-                {
-                    CustContentColorList.Add(ColorDef.Instance.ColorTable[Settings.Instance.ReserveRectColorNormal]);
-                }
-                if (String.Compare(Settings.Instance.ReserveRectColorNo, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.ContentCustColorList[0x12];
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustContentColorList.Add(backColor);
-                }
-                else
-                {
-                    CustContentColorList.Add(ColorDef.Instance.ColorTable[Settings.Instance.ReserveRectColorNo]);
-                }
-                if (String.Compare(Settings.Instance.ReserveRectColorNoTuner, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.ContentCustColorList[0x13];
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustContentColorList.Add(backColor);
-                }
-                else
-                {
-                    CustContentColorList.Add(ColorDef.Instance.ColorTable[Settings.Instance.ReserveRectColorNoTuner]);
-                }
-                if (String.Compare(Settings.Instance.ReserveRectColorWarning, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.ContentCustColorList[0x14];
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustContentColorList.Add(backColor);
-                }
-                else
-                {
-                    CustContentColorList.Add(ColorDef.Instance.ColorTable[Settings.Instance.ReserveRectColorWarning]);
-                }
-
-                if (String.Compare(Settings.Instance.TitleColor1, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.TitleCustColor1;
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustTitle1Color = backColor;
-                }
-                else
-                {
-                    CustTitle1Color = ColorDef.Instance.ColorTable[Settings.Instance.TitleColor1];
-                }
-                if (String.Compare(Settings.Instance.TitleColor2, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.TitleCustColor2;
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustTitle2Color = backColor;
-                }
-                else
-                {
-                    CustTitle2Color = ColorDef.Instance.ColorTable[Settings.Instance.TitleColor2];
-                }
                 CustTimeColorList.Clear();
                 for (int i = 0; i < Settings.Instance.TimeColorList.Count; i++)
                 {
-                    String name = Settings.Instance.TimeColorList[i];
-                    Color color;
-                    if (String.Compare(name, "カスタム") == 0)
-                    {
-                        UInt32 argb = Settings.Instance.TimeCustColorList[i];
+                    CustTimeColorList.Add(_GetColorBrush(Settings.Instance.TimeColorList[i], Settings.Instance.TimeCustColorList[i], Settings.Instance.EpgGradationHeader));
+                }
 
-                        byte r = (byte)((argb & 0x00FF0000) >> 16);
-                        byte g = (byte)((argb & 0x0000FF00) >> 8);
-                        byte b = (byte)(argb & 0x000000FF);
+                CustServiceColor = _GetColorBrush(Settings.Instance.ServiceColor, Settings.Instance.ServiceCustColor, Settings.Instance.EpgGradationHeader, 1.0, 2.0);
 
-                        color = Color.FromArgb(0xFF, r, g, b);
-                    }
-                    else
-                    {
-                        color = ColorDef.ColorFromName(name);
-                    }
-                    if (Settings.Instance.EpgGradationHeader == false)
-                    {
-                        CustTimeColorList.Add(new SolidColorBrush(color));
-                        CustTimeColorList[CustTimeColorList.Count - 1].Freeze();
-                    }
-                    else
-                    {
-                        CustTimeColorList.Add(ColorDef.GradientBrush(color, 0.9, 1.1));
-                    }
-                }
-                Color serviceColor;
-                if (String.Compare(Settings.Instance.ServiceColor, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.ServiceCustColor;
+                ResDefBackColor = _GetSolidBrush(Settings.Instance.ResDefBackColor);
+                ResErrBackColor = _GetSolidBrush(Settings.Instance.ResErrBackColor);
+                ResWarBackColor = _GetSolidBrush(Settings.Instance.ResWarBackColor);
+                ResNoBackColor = _GetSolidBrush(Settings.Instance.ResNoBackColor);
+                ResAutoAddMissingBackColor = _GetSolidBrush(Settings.Instance.ResAutoAddMissingBackColor);
 
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
+                ListDefForeColor = _GetSolidBrush(Settings.Instance.ListDefFontColor);
 
-                    serviceColor = Color.FromArgb(0xFF, r, g, b);
-                }
-                else
-                {
-                    serviceColor = ColorDef.ColorFromName(Settings.Instance.ServiceColor);
-                }
-                if (Settings.Instance.EpgGradationHeader == false)
-                {
-                    CustServiceColor = new SolidColorBrush(serviceColor);
-                    CustServiceColor.Freeze();
-                }
-                else
-                {
-                    CustServiceColor = ColorDef.GradientBrush(serviceColor, 1.0, 2.0);
-                }
+                RecModeForeColor = Settings.Instance.RecModeFontColorList.Select(c => (_GetSolidBrush(c))).ToList();
+
+                RecEndDefBackColor = _GetSolidBrush(Settings.Instance.RecEndDefBackColor);
+                RecEndErrBackColor = _GetSolidBrush(Settings.Instance.RecEndErrBackColor);
+                RecEndWarBackColor = _GetSolidBrush(Settings.Instance.RecEndWarBackColor);
+
+                StatResForeColor = _GetSolidBrush(Settings.Instance.StatResForeColor);
+                StatRecForeColor = _GetSolidBrush(Settings.Instance.StatRecForeColor);
+                StatOnAirForeColor = _GetSolidBrush(Settings.Instance.StatOnAirForeColor);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-
-        private SolidColorBrush resDefBackColor = null;
-        public SolidColorBrush ResDefBackColor
-        {
-            get
-            {
-                if (resDefBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResDefColorR, Settings.Instance.ResDefColorG, Settings.Instance.ResDefColorB);
-                    resDefBackColor = new SolidColorBrush();
-                    resDefBackColor.Color = item;
-                    resDefBackColor.Freeze();
-                }
-                return resDefBackColor;
-            }
-        }
-        private SolidColorBrush resErrBackColor = null;
-        public SolidColorBrush ResErrBackColor
-        {
-            get
-            {
-                if (resErrBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResErrColorR, Settings.Instance.ResErrColorG, Settings.Instance.ResErrColorB);
-                    resErrBackColor = new SolidColorBrush();
-                    resErrBackColor.Color = item;
-                    resErrBackColor.Freeze();
-                }
-                return resErrBackColor;
-            }
-        }
-        private SolidColorBrush resWarBackColor = null;
-        public SolidColorBrush ResWarBackColor
-        {
-            get
-            {
-                if (resWarBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResWarColorR, Settings.Instance.ResWarColorG, Settings.Instance.ResWarColorB);
-                    resWarBackColor = new SolidColorBrush();
-                    resWarBackColor.Color = item;
-                    resWarBackColor.Freeze();
-                }
-                return resWarBackColor;
-            }
-        }
-        private SolidColorBrush resNoBackColor = null;
-        public SolidColorBrush ResNoBackColor
-        {
-            get
-            {
-                if (resNoBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResNoColorR, Settings.Instance.ResNoColorG, Settings.Instance.ResNoColorB);
-                    resNoBackColor = new SolidColorBrush();
-                    resNoBackColor.Color = item;
-                    resNoBackColor.Freeze();
-                }
-                return resNoBackColor;
-            }
-        }
-
-        private SolidColorBrush recEndDefBackColor = null;
-        public SolidColorBrush RecEndDefBackColor
-        {
-            get
-            {
-                if (recEndDefBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndDefColorR, Settings.Instance.RecEndDefColorG, Settings.Instance.RecEndDefColorB);
-                    recEndDefBackColor = new SolidColorBrush();
-                    recEndDefBackColor.Color = item;
-                    recEndDefBackColor.Freeze();
-                }
-                return recEndDefBackColor;
-            }
-        }
-        
-        private SolidColorBrush recEndErrBackColor = null;
-        public SolidColorBrush RecEndErrBackColor
-        {
-            get
-            {
-                if( recEndErrBackColor == null ){
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndErrColorR, Settings.Instance.RecEndErrColorG, Settings.Instance.RecEndErrColorB);
-                    recEndErrBackColor = new SolidColorBrush();
-                    recEndErrBackColor.Color = item;
-                    recEndErrBackColor.Freeze();
-                }
-                return recEndErrBackColor;
-            }
-        }
-
-        private SolidColorBrush recEndWarBackColor = null;
-        public SolidColorBrush RecEndWarBackColor
-        {
-            get
-            {
-                if (recEndWarBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndWarColorR, Settings.Instance.RecEndWarColorG, Settings.Instance.RecEndWarColorB);
-                    recEndWarBackColor = new SolidColorBrush();
-                    recEndWarBackColor.Color = item;
-                    recEndWarBackColor.Freeze();
-                }
-                return recEndWarBackColor;
-            }
-        }
-
-        private SolidColorBrush epgTipsBackColor = null;
-        public SolidColorBrush EpgTipsBackColor
-        {
-            get
-            {
-                if (epgTipsBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.EpgTipsBackColorR, Settings.Instance.EpgTipsBackColorG, Settings.Instance.EpgTipsBackColorB);
-                    epgTipsBackColor = new SolidColorBrush();
-                    epgTipsBackColor.Color = item;
-                    epgTipsBackColor.Freeze();
-                }
-                return epgTipsBackColor;
-            }
-        }
-        private SolidColorBrush epgTipsForeColor = null;
-        public SolidColorBrush EpgTipsForeColor
-        {
-            get
-            {
-                if (epgTipsForeColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.EpgTipsForeColorR, Settings.Instance.EpgTipsForeColorG, Settings.Instance.EpgTipsForeColorB);
-                    epgTipsForeColor = new SolidColorBrush();
-                    epgTipsForeColor.Color = item;
-                    epgTipsForeColor.Freeze();
-                }
-                return epgTipsForeColor;
             }
         }
 

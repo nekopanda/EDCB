@@ -11,190 +11,156 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-using CtrlCmdCLI;
-using CtrlCmdCLI.Def;
-
 namespace EpgTimer
 {
     public class RecInfoItem
     {
+        private MenuUtil mutil = CommonManager.Instance.MUtil;
+
+        public RecFileInfo RecInfo { get; set; }
         public RecInfoItem(RecFileInfo item)
         {
             this.RecInfo = item;
         }
-        public RecFileInfo RecInfo
-        {
-            get;
-            set;
-        }
+
         public bool IsProtect
         {
             set
             {
-                if (RecInfo != null)
-                {
-                    RecInfo.ProtectFlag = Convert.ToByte(value);
-                    List<RecFileInfo> list = new List<RecFileInfo>();
-                    list.Add(RecInfo);
-                    CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-                    cmd.SendChgProtectRecInfo(list);
-                }
+                //選択されている場合、複数選択時に1回の通信で処理するため、ウインドウ側に処理を渡す。
+                MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
+                mainWindow.recInfoView.ChgProtectRecInfoFromCheckbox(this);
             }
             get
             {
-                bool chk = false;
-                if (RecInfo != null)
-                {
-                    chk = RecInfo.ProtectFlag != 0;
-                }
-                return chk;
+                if (RecInfo == null) return false;
+                //
+                return  RecInfo.ProtectFlag != 0;
             }
         }
         public String EventName
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.Title;
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                return RecInfo.Title;
             }
         }
         public String ServiceName
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.ServiceName;
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                return RecInfo.ServiceName;
+            }
+        }
+        public TimeSpan ProgramDuration
+        {
+            get
+            {
+                if (RecInfo == null) return new TimeSpan();
+                //
+                return TimeSpan.FromSeconds(RecInfo.DurationSecond);
             }
         }
         public String StartTime
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                    DateTime endTime = RecInfo.StartTime + TimeSpan.FromSeconds(RecInfo.DurationSecond);
-                    view += endTime.ToString("HH:mm:ss");
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                DateTime endTime = RecInfo.StartTime + TimeSpan.FromSeconds(RecInfo.DurationSecond);
+                return RecInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ") + endTime.ToString("HH:mm:ss");
             }
         }
         public String Drops
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.Drops.ToString();
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                return RecInfo.Drops.ToString();
             }
         }
         public String Scrambles
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.Scrambles.ToString();
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                return RecInfo.Scrambles.ToString();
             }
         }
         public String Result
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.Comment;
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                return RecInfo.Comment;
             }
         }
         public String NetworkName
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    if (0x7880 <= RecInfo.OriginalNetworkID && RecInfo.OriginalNetworkID <= 0x7FE8)
-                    {
-                        view = "地デジ";
-                    }
-                    else if (RecInfo.OriginalNetworkID == 0x0004)
-                    {
-                        view = "BS";
-                    }
-                    else if (RecInfo.OriginalNetworkID == 0x0006)
-                    {
-                        view = "CS1";
-                    }
-                    else if (RecInfo.OriginalNetworkID == 0x0007)
-                    {
-                        view = "CS2";
-                    }
-                    else
-                    {
-                        view = "その他";
-                    }
-
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                return CommonManager.Instance.ConvertNetworkNameText(RecInfo.OriginalNetworkID);
             }
         }
         public String RecFilePath
         {
             get
             {
-                String view = "";
-                if (RecInfo != null)
-                {
-                    view = RecInfo.RecFilePath;
-                }
-                return view;
+                if (RecInfo == null) return "";
+                //
+                return RecInfo.RecFilePath;
+            }
+        }
+        public SolidColorBrush ForeColor
+        {
+            get
+            {
+                return CommonManager.Instance.ListDefForeColor;
             }
         }
         public SolidColorBrush BackColor
         {
             get
             {
-                SolidColorBrush color = CommonManager.Instance.RecEndDefBackColor;
                 if (RecInfo != null)
                 {
-                    if (RecInfo.Scrambles > 0)
+                    if (Settings.Instance.RecInfoDropErrIgnore >= 0 && RecInfo.Drops > Settings.Instance.RecInfoDropErrIgnore
+                        || RecInfo.RecStatusBasic() == RecEndStatusBasic.ERR)
                     {
-                        color = CommonManager.Instance.RecEndWarBackColor;
+                        return CommonManager.Instance.RecEndErrBackColor;
                     }
-                    if (RecInfo.Drops > 0)
+                    if (Settings.Instance.RecInfoDropWrnIgnore >= 0 && RecInfo.Drops > Settings.Instance.RecInfoDropWrnIgnore
+                        || Settings.Instance.RecInfoScrambleIgnore >= 0 && RecInfo.Scrambles > Settings.Instance.RecInfoScrambleIgnore
+                        || RecInfo.RecStatusBasic() == RecEndStatusBasic.WARN)
                     {
-                        color = CommonManager.Instance.RecEndErrBackColor;
+                        return CommonManager.Instance.RecEndWarBackColor;
                     }
                 }
-                return color;
+                return CommonManager.Instance.RecEndDefBackColor;
             }
         }
         public TextBlock ToolTipView
         {
             get
             {
-                if (Settings.Instance.NoToolTip == true)
-                {
-                    return null;
-                }
+                if (Settings.Instance.NoToolTip == true) return null;
+                //
+                return mutil.GetTooltipBlockStandard(RecInfoText);
+            }
+        }
+        public string RecInfoText
+        {
+            get
+            {
                 String view = "";
                 if (RecInfo != null)
                 {
@@ -238,14 +204,16 @@ namespace EpgTimer
                     view += "Drops : " + RecInfo.Drops.ToString() + "\r\n";
                     view += "Scrambles : " + RecInfo.Scrambles.ToString() + "\r\n";
                 }
-
-
-                TextBlock block = new TextBlock();
-                block.Text = view;
-                block.MaxWidth = 400;
-                block.TextWrapping = TextWrapping.Wrap;
-                return block;
+                return view;
             }
+        }
+    }
+
+    public static class RecInfoItemEx
+    {
+        public static List<RecFileInfo> RecInfoList(this ICollection<RecInfoItem> itemlist)
+        {
+            return itemlist.Where(item => item != null).Select(item => item.RecInfo).ToList();
         }
     }
 }
