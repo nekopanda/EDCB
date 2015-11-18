@@ -34,6 +34,7 @@ namespace EpgTimer
         public static RoutedUICommand DeleteAll { get; private set; }
         public static RoutedUICommand AdjustReserve { get; private set; }
         public static RoutedUICommand ShowDialog { get; private set; }
+        public static RoutedUICommand ShowAutoAddDialog { get; private set; }
         public static RoutedUICommand JumpTable { get; private set; }
         public static RoutedUICommand ToAutoadd { get; private set; }
         public static RoutedUICommand ReSearch { get; private set; }
@@ -69,6 +70,7 @@ namespace EpgTimer
         //でも定数じゃないのでswitch caseは使えない。
         public static RoutedUICommand AddMenu { get; private set; }
         public static RoutedUICommand ChgMenu { get; private set; }
+        public static RoutedUICommand ShowAutoAddDialogMenu { get; private set; }
         public static RoutedUICommand ChgRecmodeMenu { get; private set; }
         public static RoutedUICommand ChgPriorityMenu { get; private set; }
         public static RoutedUICommand ChgRelayMenu { get; private set; }

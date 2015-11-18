@@ -64,6 +64,7 @@ namespace EpgTimer
             EpgCmds.DeleteAll.Text = "全て削除";
             EpgCmds.AdjustReserve.Text = "予約を自動登録に合わせる";
             EpgCmds.ShowDialog.Text = "変更/ダイアログ表示";
+            EpgCmds.ShowAutoAddDialog.Text = "自動予約変更";
             EpgCmds.JumpTable.Text = "番組表へジャンプ";
             EpgCmds.ToAutoadd.Text = "自動予約登録";
             EpgCmds.ReSearch.Text = "番組名で再検索";
@@ -104,6 +105,7 @@ namespace EpgTimer
             AddCommand(EpgCmds.DeleteAll, Key.D, ModifierKeys.Control | ModifierKeys.Alt, spc: GestureTrg.ToView);
             AddCommand(EpgCmds.AdjustReserve, isEnable: false);
             AddCommand(EpgCmds.ShowDialog, Key.Enter, gesNeedMenu: false);//doubleclickは上手く入らないので省略
+            AddCommand(EpgCmds.ShowAutoAddDialog);
             AddCommand(EpgCmds.JumpTable, Key.F3);
             AddCommand(EpgCmds.ToAutoadd);
             AddCommand(EpgCmds.ReSearch);
@@ -135,6 +137,7 @@ namespace EpgTimer
             //ダミーコマンドは、キーとして使用しているが、メニュー自体には割り付けされない。
             AddCommand(EpgCmdsEx.AddMenu);
             AddCommand(EpgCmdsEx.ChgMenu);
+            AddCommand(EpgCmdsEx.ShowAutoAddDialogMenu);
             AddCommand(EpgCmdsEx.ChgMarginStartMenu, isEnable: false, isSave: false);
             AddCommand(EpgCmdsEx.ChgMarginEndMenu, isEnable: false, isSave: false);
             AddCommand(EpgCmdsEx.OpenFolderMenu, isEnable: false);

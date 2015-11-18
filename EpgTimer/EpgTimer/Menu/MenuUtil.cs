@@ -262,7 +262,7 @@ namespace EpgTimer
         {
             TextBlock block = new TextBlock();
             block.Text = text;
-            block.MaxWidth = 400;
+            block.MaxWidth = 600;
             block.TextWrapping = TextWrapping.Wrap;
             return block;
         }
@@ -930,6 +930,7 @@ namespace EpgTimer
                     dlg.SetChgAutoAddID(Data.dataID);
                     dlg.SetSearchDefKey(Data.searchInfo);
                     dlg.SetRecInfoDef(Data.recSetting);
+                    dlg.SetRecFileList(Data.recFileList);
                 }
                 return dlg.ShowDialog();
             }

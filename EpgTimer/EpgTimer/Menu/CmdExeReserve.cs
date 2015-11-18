@@ -239,7 +239,7 @@ namespace EpgTimer
             var view = (menu.CommandParameter as EpgCmdParam).Code;
 
             //有効無効制御の追加分。予約データが無ければ無効
-            new List<ICommand> { EpgCmdsEx.ChgMenu, EpgCmds.Delete, EpgCmds.DeleteAll, EpgCmds.Play }.ForEach(icmd =>
+            new List<ICommand> { EpgCmdsEx.ChgMenu, EpgCmdsEx.ShowAutoAddDialogMenu, EpgCmds.Delete, EpgCmds.DeleteAll, EpgCmds.Play }.ForEach(icmd =>
             {
                 if (menu.Tag == icmd) menu.IsEnabled = dataList.Count != 0;
             });
@@ -275,6 +275,10 @@ namespace EpgTimer
             {
                 List<int> mList = dataList.Select(info => info.EventID == 0xFFFF ? 1 : 0).ToList();
                 mcs_chgMenuOpening(menu, dataList.RecSettingList(), mList.Sum() == dataList.Count, mList);
+            }
+            else if (menu.Tag == EpgCmdsEx.ShowAutoAddDialogMenu)
+            {
+                mcs_chgAutoAddMenuOpening(menu, headData as ReserveData == null ? null : dataList[0].AutoAddInfo);
             }
             else if (menu.Tag == EpgCmds.JumpTable)
             {

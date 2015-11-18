@@ -185,6 +185,8 @@ namespace EpgTimer
             cmd = ctrlCmd;
         }
 
+        public event EventHandler EpgAutoAddUpdated;
+
         public void ClearAllDB()
         {
             serviceEventList = new Dictionary<ulong, EpgServiceEventInfo>();
@@ -407,6 +409,9 @@ namespace EpgTimer
                         updateAutoAddEpgInfo = false;
                         epgAutoAddAppendList = null;
                         reserveAutoAddMissing = null;
+
+                        if (EpgAutoAddUpdated != null)
+                            EpgAutoAddUpdated(this, new EventArgs());
                     }
                 }
             }

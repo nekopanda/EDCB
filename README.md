@@ -1,4 +1,4 @@
-EpgDataCap_Bon
+﻿EpgDataCap_Bon
 ==============
 **BonDriver based multifunctional EPG software**
 
@@ -10,7 +10,7 @@ Configuration files are stored in the 'ini' directory.
 [0ac7692](https://github.com/xtne6f/EDCB/commit/0ac7692afe7cbe615534577facda15f57b5e5af9)の履歴確認のため、[コミットをバラしたタグ](https://github.com/xtne6f/EDCB/tree/log-mod4k7)を作りました。おもに自分用ですが参考にどうぞ。  
 [01aff08](https://github.com/xtne6f/EDCB/commit/01aff08a5df4c7e63c86ea7136c20b259c08229e)にかけて改行コードの混乱があったようで、履歴確認しにくくなっています。[改行のみ調整したタグ](https://github.com/xtne6f/EDCB/tree/log-to-crlf)も作りました(※改行以外の調整は一切無し)。
 
-人柱版10.69からの改変部分は[Document/Readme_Mod.txt](https://github.com/xtne6f/EDCB/blob/work-plus-s/Document/Readme_Mod.txt)を参照。  
+人柱版10.69からの改変部分は[Document/Readme_Mod.txt](https://github.com/xtne6f/EDCB/blob/work-plus-s/Document/Readme_Mod.txt)および[Document/Readme_Mod_S.txt](https://github.com/xtne6f/EDCB/blob/work-plus-s/Document/Readme_Mod_S.txt)を参照。  
 ビルド方法は[Document/HowToBuild.txt](https://github.com/xtne6f/EDCB/blob/work-plus-s/Document/HowToBuild.txt)を参照。  
 自ビルド派の追加メモ[build_memo.txt](https://gist.github.com/xtne6f/f9b6f19c10cd146fe580)  
 CtrlCmdCLI.dllは不要になりましたが[branch:for-ctrlcmdcli](https://github.com/xtne6f/EDCB/tree/for-ctrlcmdcli)でビルドできます。  
@@ -37,5 +37,8 @@ CtrlCmdCLI.dllは不要になりましたが[branch:for-ctrlcmdcli](https://gith
 [branch:cherry-picks-niisaka-epg](https://github.com/xtne6f/EDCB/tree/cherry-picks-niisaka-epg)
 * [niisaka/EDCB](https://github.com/niisaka/EDCB)のEPG番組表を取り込むブランチ。番組表がかっこよくなる
 
-[branch:fix-recname-macro](https://github.com/xtne6f/EDCB/tree/fix-recname-macro)
-* RecName_Macroの修正と機能追加のブランチ
+**ライセンス**
+
+EpgTimerSrvのLightTsUtils.h/cppは[TvTest](https://github.com/DBCTRADO/TVTest)由来のコードを含むため [GPL v2](https://github.com/DBCTRADO/TVTest/blob/develop/doc/License.txt) とします。上記2つのコードを取り除けば[オリジナルのライセンス](https://github.com/nekopanda/EDCB/blob/release/Document/Readme_EDCB.txt#L39)と同じです。
+
+※上記2つのコードを取り除く場合はRecEventDB.hのENABLE_GPL_CODEを0にするとコンパイルできます。

@@ -90,7 +90,14 @@
     <Compile Include="BlackoutWindow.xaml.cs">
       <DependentUpon>BlackoutWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Common\CallerInfo.cs" />
     <Compile Include="Common\BoxExchangeEditor.cs" />
+    <Compile Include="DefineClass\InfoWindowViewModel.cs" />
+    <Compile Include="DefineClass\SerializableDictionary.cs" />
+    <Compile Include="InfoWindow.xaml.cs">
+      <DependentUpon>InfoWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="RestorableWindow.cs" />
     <Compile Include="UserCtrlView\DataViewBase.cs" />
     <Compile Include="UserCtrlView\ListViewController.cs" />
     <Compile Include="Menu\MenuSettingData.cs" />
@@ -108,6 +115,7 @@
       <DependentUpon>ConnectWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="DefineClass\ListColumnInfo.cs" />
+    <Compile Include="DefineClass\RecFileBasicItem.cs" />
     <Compile Include="EpgView\EpgMainViewBase.cs" />
     <Compile Include="EpgView\EpgViewBase.cs" />
     <Compile Include="Menu\CmdExe.cs" />
@@ -131,6 +139,9 @@
       <DependentUpon>NotifyLogWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="DefineClass\NotifySrvInfoItem.cs" />
+    <Compile Include="UserCtrlView\AutoAddRecInfoView.xaml.cs">
+      <DependentUpon>AutoAddRecInfoView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Menu\SetContextMenuWindow.xaml.cs">
       <DependentUpon>SetContextMenuWindow.xaml</DependentUpon>
     </Compile>
@@ -285,11 +296,19 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="InfoWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Setting\ColorSetWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="NotifyLogWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserCtrlView\AutoAddRecInfoView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -558,6 +577,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\drag.cur" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\TaskIconInfo.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -371,7 +371,7 @@ namespace EpgTimer
             {
                 if (Settings.Instance.NoToolTip == true) return null;
                 //
-                return mutil.GetTooltipBlockStandard(SearchInfoText);
+                return mutil.GetTooltipBlockStandard("録画予約\r\n" + ReserveProgramText + "\r\n録画済み\r\n" + RecFileText);
             }
         }
         public String SearchInfoText
@@ -494,6 +494,83 @@ namespace EpgTimer
                     }
                 }
                 return color1;
+            }
+        }
+
+        public String ReserveProgramText
+        {
+            get
+            {
+                String text = "";
+                if (EpgAutoAddInfo != null)
+                {
+                    int printCount = Math.Min(10, EpgAutoAddInfo.reserveList.Count);
+                    for (int i = 0; i < printCount; ++i)
+                    {
+                        ReserveBasicData reserve = EpgAutoAddInfo.reserveList[i];
+
+                        text += reserve.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ");
+                        text += reserve.Title;
+                        text += "\r\n";
+                    }
+                    int remain = EpgAutoAddInfo.reserveList.Count - printCount;
+                    if (remain > 0)
+                    {
+                        text += "（他" + remain + "件）";
+                    }
+                    if (EpgAutoAddInfo.reserveList.Count == 0)
+                    {
+                        text = "ありません";
+                    }
+                }
+                return text;
+            }
+        }
+
+        public String RecFileText
+        {
+            get
+            {
+                String text = "";
+                if (EpgAutoAddInfo != null)
+                {
+                    int printCount = Math.Min(10, EpgAutoAddInfo.recFileList.Count);
+                    for (int i = 0; i < printCount; ++i)
+                    {
+                        RecFileBasicInfo file = EpgAutoAddInfo.recFileList[EpgAutoAddInfo.recFileList.Count - i - 1];
+
+                        text += file.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ");
+                        text += file.Title;
+                        text += "\r\n";
+                    }
+                    int remain = EpgAutoAddInfo.recFileList.Count - printCount;
+                    if(remain > 0)
+                    {
+                        text += "（他" + remain + "件）\r\n";
+                    }
+                    if(EpgAutoAddInfo.recFileList.Count == 0)
+                    {
+                        text = "ありません\r\n";
+                    }
+                }
+                return text;
+            }
+        }
+
+        public String LastRecFile
+        {
+            get
+            {
+                String view = "";
+                if (EpgAutoAddInfo != null)
+                {
+                    if(EpgAutoAddInfo.recFileList.Count > 0)
+                    {
+                        view = EpgAutoAddInfo.recFileList[EpgAutoAddInfo.recFileList.Count - 1]
+                            .StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss");
+                    }
+                }
+                return view;
             }
         }
 

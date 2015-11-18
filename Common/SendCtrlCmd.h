@@ -620,7 +620,7 @@ public:
 	// val				[OUT]番組情報一覧
 	DWORD SendSearchPg2(
 		vector<EPGDB_SEARCH_KEY_INFO>* key,
-		vector<EPGDB_EVENT_INFO*>* val
+		vector<EPGDB_EVENT_INFO>* val
 		){
 		return SendAndReceiveCmdData2(CMD2_EPG_SRV_SEARCH_PG2, key, val);
 	}
@@ -633,7 +633,7 @@ public:
 	// val				[OUT]番組情報一覧（キーごとの全ての検索結果が返る）
 	DWORD SendSearchPgByKey2(
 		vector<EPGDB_SEARCH_KEY_INFO>* key,
-		vector<EPGDB_EVENT_INFO*>* val
+		vector<EPGDB_EVENT_INFO>* val
 		){
 		return SendAndReceiveCmdData2(CMD2_EPG_SRV_SEARCH_PG_BYKEY2, key, val);
 	}

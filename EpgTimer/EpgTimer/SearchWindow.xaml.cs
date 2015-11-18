@@ -122,6 +122,8 @@ namespace EpgTimer
                 }
 
                 searchKeyView.SetSearchKey(Settings.Instance.DefSearchKey);
+
+                CommonManager.Instance.DB.EpgAutoAddUpdated += DB_EpgAutoAddUpdated;
             }
             catch (Exception ex)
             {
@@ -135,6 +137,18 @@ namespace EpgTimer
 
             mBinds.ResetInputBindings(this, listView_result);
             mm.CtxmGenerateContextMenu(listView_result.ContextMenu, CtxmCode.SearchWindow, true);
+        }
+
+        private void DB_EpgAutoAddUpdated(object sender, EventArgs e)
+        {
+            if(autoAddID != 0)
+            {
+                var list = CommonManager.Instance.DB.EpgAutoAddList;
+                if(list.ContainsKey(autoAddID))
+                {
+                    SetRecFileList(list[autoAddID].recFileList);
+                }
+            }
         }
 
         public void GetSearchKey(ref EpgSearchKeyInfo key)
@@ -152,6 +166,11 @@ namespace EpgTimer
             recSettingView.SetDefSetting(set);
         }
 
+        public void SetRecFileList(List<RecFileBasicInfo> recFileList)
+        {
+            recFileView.DataContext = recFileList.Select(x => new RecFileBasicItem(x)).Reverse();
+        }
+
         public void SetViewMode(SearchMode md)
         {
             winMode = md;
@@ -162,6 +181,7 @@ namespace EpgTimer
                 button_del_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
                 button_up_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
                 button_down_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
+                recFileTabItem.Visibility = System.Windows.Visibility.Collapsed;
             }
             else if (winMode == SearchMode.NewAdd)
             {
@@ -170,6 +190,7 @@ namespace EpgTimer
                 button_del_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
                 button_up_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
                 button_down_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
+                recFileTabItem.Visibility = System.Windows.Visibility.Collapsed;
             }
             else if (winMode == SearchMode.Change)
             {
@@ -178,6 +199,7 @@ namespace EpgTimer
                 button_del_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
                 button_up_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
                 button_down_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
+                recFileTabItem.Visibility = System.Windows.Visibility.Visible;
             }
             SetSubWindowTitle();
         }
@@ -290,6 +312,7 @@ namespace EpgTimer
                         //情報の再読み込みは不要なはずだが、安全のため実行しておく
                         this.SetSearchDefKey(newinfo.searchInfo);
                         this.SetRecInfoDef(newinfo.recSetting);
+                        this.SetRecFileList(newinfo.recFileList);
 
                         mainWindow.autoAddView.epgAutoAddView.UpdateInfo();
                         UpdateEpgAutoAddViewSelection();
@@ -396,6 +419,7 @@ namespace EpgTimer
             this.SetChgAutoAddID(newinfo.dataID);
             this.SetSearchDefKey(newinfo.searchInfo);
             this.SetRecInfoDef(newinfo.recSetting);
+            this.SetRecFileList(newinfo.recFileList);
 
             SearchPg();
         }
@@ -535,6 +559,8 @@ namespace EpgTimer
 
         private void Window_Closed(object sender, System.EventArgs e)
         {
+            CommonManager.Instance.DB.EpgAutoAddUpdated -= DB_EpgAutoAddUpdated;
+
             Settings.SaveToXmlFile();//検索ワードリストの保存
             if (this.Owner as SearchWindow != null)
             {
@@ -556,6 +582,5 @@ namespace EpgTimer
         {
             mainWindow.autoAddView.epgAutoAddView.UpdateListViewSelection(this.autoAddID);
         }
-
     }
 }

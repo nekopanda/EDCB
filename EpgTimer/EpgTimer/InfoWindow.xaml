@@ -1,0 +1,30 @@
+﻿<local:RestorableWindow x:Class="EpgTimer.InfoWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:EpgTimer"
+        mc:Ignorable="d"
+        Title="EpgTimer" Height="100" Width="370"
+        Topmost="{Binding Path=IsTopMost}" ShowInTaskbar="False" Closing="Window_Closing" SourceInitialized="Window_SourceInitialized">
+    <Grid>
+        <Grid.ContextMenu>
+            <ContextMenu>
+                <MenuItem Header="最前面に表示" IsCheckable="True" IsChecked="{Binding Path=IsTopMost, Mode=TwoWay}"/>
+                <MenuItem Header="消す" Click="MenuItem_Click"/>
+            </ContextMenu>
+        </Grid.ContextMenu>
+        <ListBox Name="listBox" ItemsSource="{Binding Path=ReserveList}" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Path=Status}" Foreground="{Binding StatusColor}" Width="20"/>
+                        <TextBlock Text="{Binding Path=ShortTime}" Margin="0,0,4,0"/>
+                        <TextBlock Text="{Binding Path=ServiceName}" Width="80" Margin="0,0,4,0"/>
+                        <TextBlock Text="{Binding Path=EventName}"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</local:RestorableWindow>

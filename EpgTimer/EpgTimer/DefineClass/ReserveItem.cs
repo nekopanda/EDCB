@@ -79,9 +79,11 @@ namespace EpgTimer
                 if (ReserveInfo == null) return "";
                 //
                 DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
-                return ReserveInfo.StartTime.ToString("MM/dd(ddd)HH:mm～") + endTime.ToString("HH:mm");
+                return ReserveInfo.StartTime.ToString("MM/dd(ddd) HH:mm～") + endTime.ToString("HH:mm");
             }
         }
+        public String ShortTime { get { return StartTimeShort; } }
+
         public override TimeSpan ProgramDuration
         {
             get
@@ -192,6 +194,22 @@ namespace EpgTimer
                     view = "個別予約(" + (ReserveInfo.EventID == 0xFFFF ? "プログラム" : "EPG") + ")";
                 }
                 return view;
+            }
+        }
+        public String AutoAddInfo
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                String info = "";
+                var reserveList = ReserveInfo.AutoAddInfo;
+                foreach (var data in reserveList)
+                {
+                    if (info.Length > 0) info += ",";
+                    info += data.andKey + "(" + data.dataID + ")";
+                }
+                return info;
             }
         }
         public List<String> RecFolder

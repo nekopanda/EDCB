@@ -12,8 +12,11 @@
 #define RESERVE_TEXT_NAME L"Reserve.txt"
 #define REC_INFO_TEXT_NAME L"RecInfo.txt"
 #define REC_INFO2_TEXT_NAME L"RecInfo2.txt"
+#define REC_EPG_DATA_NAME L"RecEpg.dat"
 #define EPG_AUTO_ADD_TEXT_NAME L"EpgAutoAdd.txt"
 #define MANUAL_AUTO_ADD_TEXT_NAME L"ManualAutoAdd.txt"
+
+#define EPG_AUTO_ADD_TEXT L"EPGŽ©“®—\–ñ"
 
 #define EPG_TIMER_SERVICE_EXE L"EpgTimerSrv.exe"
 

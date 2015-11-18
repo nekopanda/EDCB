@@ -602,6 +602,9 @@ namespace EpgTimer
         private bool displayNotifyEpgChange;
         private int displayNotifyJumpTime;
         private bool displayReserveAutoAddMissing;
+        private SerializableDictionary<string, WINDOWPLACEMENT> placement;
+        private bool infoWindowTopMost;
+        private bool infoWindowEnabled;
 
         public bool UseCustomEpgView
         {
@@ -1238,7 +1241,22 @@ namespace EpgTimer
             get { return displayReserveAutoAddMissing; }
             set { displayReserveAutoAddMissing = value; }
         }
-        
+        public SerializableDictionary<string, WINDOWPLACEMENT> Placement
+        {
+            get { return placement; }
+            set { placement = value; }
+        }
+        public bool InfoWindowTopMost
+        {
+            get { return infoWindowTopMost; }
+            set { infoWindowTopMost = value; }
+        }
+        public bool InfoWindowEnabled
+        {
+            get { return infoWindowEnabled; }
+            set { infoWindowEnabled = value; }
+        }
+
         public Settings()
         {
             useCustomEpgView = false;
@@ -1365,6 +1383,9 @@ namespace EpgTimer
             displayNotifyEpgChange = false;
             displayNotifyJumpTime = 3;
             displayReserveAutoAddMissing = false;
+            placement = new SerializableDictionary<string, WINDOWPLACEMENT>();
+            infoWindowTopMost = true;
+            infoWindowEnabled = false;
         }
 
         [NonSerialized()]

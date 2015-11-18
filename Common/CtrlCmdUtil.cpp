@@ -126,6 +126,9 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const RESERVE_DATA& va
 		pos += WriteVALUE(ver, buff, pos, val.recFileNameList);
 		pos += WriteVALUE(ver, buff, pos, (DWORD)0);
 	}
+	if (ver >= 6) {
+		pos += WriteVALUE(ver, buff, pos, val.autoAddInfo);
+	}
 	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
 	return pos - buffOffset;
 }
@@ -165,6 +168,50 @@ BOOL ReadVALUE( WORD ver, RESERVE_DATA* val, const BYTE* buff, DWORD buffSize, D
 			DWORD dwPadding;
 			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &dwPadding );
 		}
+		if (ver >= 6) {
+			READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->autoAddInfo);
+		}
+	}
+
+	*readSize = valSize;
+	return TRUE;
+}
+
+DWORD WriteVALUE(WORD ver, BYTE* buff, DWORD buffOffset, const RESERVE_BASIC_DATA& val)
+{
+	DWORD pos = buffOffset + sizeof(DWORD);
+	pos += WriteVALUE(ver, buff, pos, val.title);
+	pos += WriteVALUE(ver, buff, pos, val.startTime);
+	pos += WriteVALUE(ver, buff, pos, val.durationSecond);
+	pos += WriteVALUE(ver, buff, pos, val.originalNetworkID);
+	pos += WriteVALUE(ver, buff, pos, val.transportStreamID);
+	pos += WriteVALUE(ver, buff, pos, val.serviceID);
+	pos += WriteVALUE(ver, buff, pos, val.eventID);
+	pos += WriteVALUE(ver, buff, pos, val.reserveID);
+	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
+	return pos - buffOffset;
+}
+
+BOOL ReadVALUE(WORD ver, RESERVE_BASIC_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize)
+{
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	READ_VALUE_OR_FAIL(0, buff, buffSize, pos, size, &valSize);
+	if (valSize < pos || buffSize < valSize) {
+		return FALSE;
+	}
+	buffSize = valSize;
+
+	{
+		READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->title);
+		READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->startTime);
+		READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->durationSecond);
+		READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->originalNetworkID);
+		READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->transportStreamID);
+		READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->serviceID);
+		READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->eventID);
+		READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->reserveID);
 	}
 
 	*readSize = valSize;
@@ -951,6 +998,41 @@ BOOL ReadVALUE( WORD ver, SET_CTRL_REC_STOP_RES_PARAM* val, const BYTE* buff, DW
 	return TRUE;
 }
 
+DWORD WriteVALUE(WORD ver, BYTE* buff, DWORD buffOffset, const REC_FILE_BASIC_INFO& val)
+{
+	DWORD pos = buffOffset + sizeof(DWORD);
+	pos += WriteVALUE(ver, buff, pos, val.id);
+	pos += WriteVALUE(ver, buff, pos, val.recFilePath);
+	pos += WriteVALUE(ver, buff, pos, val.title);
+	pos += WriteVALUE(ver, buff, pos, val.startTime);
+	pos += WriteVALUE(ver, buff, pos, val.durationSecond);
+	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
+	return pos - buffOffset;
+}
+
+BOOL ReadVALUE(WORD ver, REC_FILE_BASIC_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize)
+{
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	READ_VALUE_OR_FAIL(0, buff, buffSize, pos, size, &valSize);
+	if (valSize < pos || buffSize < valSize) {
+		return FALSE;
+	}
+	buffSize = valSize;
+
+	{
+		READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->id);
+		READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->recFilePath);
+		READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->title);
+		READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->startTime);
+		READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->durationSecond);
+	}
+
+	*readSize = valSize;
+	return TRUE;
+}
+
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const REC_FILE_INFO& val )
 {
 	DWORD pos = buffOffset + sizeof(DWORD);
@@ -973,6 +1055,11 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const REC_FILE_INFO& v
 	pos += WriteVALUE(ver, buff, pos, val.errInfo);
 	if( ver >= 4 ){
 		pos += WriteVALUE(ver, buff, pos, val.protectFlag);
+	}
+	if (ver >= 6) {
+		pos += WriteVALUE(ver, buff, pos, val.fileExist);
+		pos += WriteVALUE(ver, buff, pos, val.autoAddInfoFlag);
+		pos += WriteVALUE(ver, buff, pos, val.autoAddInfo);
 	}
 	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
 	return pos - buffOffset;
@@ -1010,6 +1097,40 @@ BOOL ReadVALUE( WORD ver, REC_FILE_INFO* val, const BYTE* buff, DWORD buffSize, 
 		if( ver >= 4 ){
 			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->protectFlag );
 		}
+		if (ver >= 6) {
+			READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->fileExist);
+			READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->autoAddInfoFlag);
+			READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->autoAddInfo);
+		}
+	}
+
+	*readSize = valSize;
+	return TRUE;
+}
+
+DWORD WriteVALUE(WORD ver, BYTE* buff, DWORD buffOffset, const EPG_AUTO_ADD_BASIC_INFO& val)
+{
+	DWORD pos = buffOffset + sizeof(DWORD);
+	pos += WriteVALUE(ver, buff, pos, val.dataID);
+	pos += WriteVALUE(ver, buff, pos, val.andKey);
+	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
+	return pos - buffOffset;
+}
+
+BOOL ReadVALUE(WORD ver, EPG_AUTO_ADD_BASIC_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize)
+{
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	READ_VALUE_OR_FAIL(0, buff, buffSize, pos, size, &valSize);
+	if (valSize < pos || buffSize < valSize) {
+		return FALSE;
+	}
+	buffSize = valSize;
+
+	{
+		READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->dataID);
+		READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->andKey);
 	}
 
 	*readSize = valSize;
@@ -1024,6 +1145,10 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPG_AUTO_ADD_DAT
 	pos += WriteVALUE(ver, buff, pos, val.recSetting);
 	if( ver >= 5 ){
 		pos += WriteVALUE(ver, buff, pos, val.addCount);
+	}
+	if (ver >= 6) {
+		pos += WriteVALUE(ver, buff, pos, val.reserveList);
+		pos += WriteVALUE(ver, buff, pos, val.recFileList);
 	}
 	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
 	return pos - buffOffset;
@@ -1046,6 +1171,10 @@ BOOL ReadVALUE( WORD ver, EPG_AUTO_ADD_DATA* val, const BYTE* buff, DWORD buffSi
 		READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->recSetting );
 		if( ver >= 5 ){
 			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->addCount );
+		}
+		if (ver >= 6) {
+			READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->reserveList);
+			READ_VALUE_OR_FAIL(ver, buff, buffSize, pos, size, &val->recFileList);
 		}
 	}
 

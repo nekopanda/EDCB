@@ -191,4 +191,10 @@ int WINAPI GetTimeDelayEP(
 	DWORD id
 	);
 
+//ARIBï∂éöóÒÇï°çá
+__declspec(dllexport)
+int WINAPI DecodeARIBCharacters(
+	const BYTE *pSrcData, const DWORD dwSrcLen, void(*pfn)(const WCHAR*, void*), void* ctx
+	);
+
 #endif

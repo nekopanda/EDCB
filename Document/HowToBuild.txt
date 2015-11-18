@@ -5,6 +5,7 @@ Visual Studio Express 2015 for Desktop をインストールする
 
 
 [ビルド環境(VisualStudio2010)]
+※VisualStudio2010はサポートしなくなりました。ここの説明は更新が必要です。VisualStudio2012以降を使って下さい。
 
 （以下を順番に入れる）
 
@@ -58,6 +59,7 @@ WindowsXPで実行可能なファイルを作りたいときは、EpgTimerを除く全プロジェクトの
 
 
 [ビルド(VisualStudio2010)]
+※VisualStudio2010はサポートしなくなりました。ここの説明は更新が必要です。VisualStudio2012以降を使って下さい。
 
 1."Document\EDCB_VCALL.sln"を開き、ツールバーを[Release][Win32]にしてビルド→ソリューションのビルド
 

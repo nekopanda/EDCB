@@ -197,14 +197,23 @@ void CNotifyManager::AddNotifyMsg(DWORD notifyID, wstring msg)
 void CNotifyManager::_SendNotify()
 {
 	if( this->notifyThread == NULL ){
-		this->notifyThread = (HANDLE)_beginthreadex(NULL, 0, SendNotifyThread, this, 0, NULL);
+		this->notifyThread = (HANDLE)_beginthreadex(NULL, 0, SendNotifyThread_, this, 0, NULL);
 	}
 	SetEvent(this->notifyEvent);
 }
 
-UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
+UINT WINAPI CNotifyManager::SendNotifyThread_(LPVOID param)
 {
-	CNotifyManager* sys = (CNotifyManager*)param;
+	__try {
+		CNotifyManager* sys = (CNotifyManager*)param;
+		return sys->SendNotifyThread();
+	}
+	__except (FilterException(GetExceptionInformation())) { }
+	return 0;
+}
+
+UINT CNotifyManager::SendNotifyThread()
+{
 	CSendCtrlCmd sendCtrl;
 	map<DWORD,DWORD>::iterator itr;
 	BOOL wait1Sec = FALSE;
@@ -219,60 +228,60 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 			wait1Sec = FALSE;
 			Sleep(1000);
 		}
-		if( ::WaitForSingleObject(sys->notifyEvent, INFINITE) != WAIT_OBJECT_0 || sys->notifyStopFlag != FALSE ){
+		if( ::WaitForSingleObject(this->notifyEvent, INFINITE) != WAIT_OBJECT_0 || this->notifyStopFlag != FALSE ){
 			//キャンセルされた
 			break;
 		}
 		//現在の情報取得
 		{
-			CBlockLock lock(&sys->managerLock);
-			if( sys->notifyList.empty() ){
+			CBlockLock lock(&this->managerLock);
+			if( this->notifyList.empty() ){
 				continue;
 			}
-			registGUI = sys->registGUIMap;
-			registTCP = sys->registTCPMap;
+			registGUI = this->registGUIMap;
+			registTCP = this->registTCPMap;
 			if( waitNotify != FALSE && GetTickCount() - waitNotifyTick < 5000 ){
 				vector<NOTIFY_SRV_INFO>::const_iterator itrNotify;
-				for( itrNotify = sys->notifyList.begin(); itrNotify != sys->notifyList.end(); itrNotify++ ){
+				for( itrNotify = this->notifyList.begin(); itrNotify != this->notifyList.end(); itrNotify++ ){
 					if( itrNotify->notifyID <= 100 ){
 						break;
 					}
 				}
-				if( itrNotify == sys->notifyList.end() ){
-					SetEvent(sys->notifyEvent);
+				if( itrNotify == this->notifyList.end() ){
+					SetEvent(this->notifyEvent);
 					wait1Sec = TRUE;
 					continue;
 				}
 				//NotifyID<=100の通知は遅延させず先に送る
 				notifyInfo = *itrNotify;
-				sys->notifyList.erase(itrNotify);
+				this->notifyList.erase(itrNotify);
 			}else{
 				waitNotify = FALSE;
-				notifyInfo = sys->notifyList[0];
-				sys->notifyList.erase(sys->notifyList.begin());
+				notifyInfo = this->notifyList[0];
+				this->notifyList.erase(this->notifyList.begin());
 				//NotifyID>100の通知は遅延させる
 				if( notifyInfo.notifyID > 100 ){
 					waitNotify = TRUE;
 					waitNotifyTick = GetTickCount();
 				}
 			}
-			if( sys->notifyList.empty() == false ){
+			if( this->notifyList.empty() == false ){
 				//次の通知がある
-				SetEvent(sys->notifyEvent);
+				SetEvent(this->notifyEvent);
 			}
 			//送信済みリストに追加してウィンドウメッセージで知らせる
-			sys->notifySentList.push_back(notifyInfo);
-			if( sys->notifySentList.size() > 100 ){
-				sys->notifySentList.erase(sys->notifySentList.begin());
+			this->notifySentList.push_back(notifyInfo);
+			if( this->notifySentList.size() > 100 ){
+				this->notifySentList.erase(this->notifySentList.begin());
 			}
-			if( sys->hwndNotify != NULL ){
-				PostMessage(sys->hwndNotify, sys->msgIDNotify, 0, 0);
+			if( this->hwndNotify != NULL ){
+				PostMessage(this->hwndNotify, this->msgIDNotify, 0, 0);
 			}
 		}
 
 		vector<DWORD> errID;
 		for( itr = registGUI.begin(); itr != registGUI.end(); itr++){
-			if( sys->notifyStopFlag != FALSE ){
+			if( this->notifyStopFlag != FALSE ){
 				//キャンセルされた
 				break;
 			}
@@ -308,7 +317,7 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 		map<wstring, REGIST_TCP_INFO>::iterator itrTCP;
 		vector<wstring> errIP;
 		for( itrTCP = registTCP.begin(); itrTCP != registTCP.end(); itrTCP++){
-			if( sys->notifyStopFlag != FALSE ){
+			if( this->notifyStopFlag != FALSE ){
 				//キャンセルされた
 				break;
 			}
@@ -342,19 +351,19 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 		}
 
 		//送信できなかったもの削除
-		CBlockLock lock(&sys->managerLock);
+		CBlockLock lock(&this->managerLock);
 
 		for( size_t i=0; i<errID.size(); i++ ){
-			itr = sys->registGUIMap.find(errID[i]);
-			if( itr != sys->registGUIMap.end() ){
-				sys->registGUIMap.erase(itr);
+			itr = this->registGUIMap.find(errID[i]);
+			if( itr != this->registGUIMap.end() ){
+				this->registGUIMap.erase(itr);
 			}
 		}
 		for( size_t i=0; i<errIP.size(); i++ ){
-			itrTCP = sys->registTCPMap.find(errIP[i]);
-			if( itrTCP != sys->registTCPMap.end() ){
+			itrTCP = this->registTCPMap.find(errIP[i]);
+			if( itrTCP != this->registTCPMap.end() ){
 				_OutputDebugString(L"notifyErr %s:%d", itrTCP->second.ip.c_str(), itrTCP->second.port);
-				sys->registTCPMap.erase(itrTCP);
+				this->registTCPMap.erase(itrTCP);
 			}
 		}
 	}
