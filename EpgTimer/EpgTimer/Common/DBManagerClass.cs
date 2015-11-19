@@ -142,7 +142,11 @@ namespace EpgTimer
                 var EpgAutoResList = new List<ReserveData>();
                 foreach (var data in EpgAutoAddList.Values)
                 {
-                    EpgAutoResList.AddRange(data.GetReserveList());
+                    var reserveList = data.GetReserveList();
+                    if (reserveList != null)
+                    {
+                        EpgAutoResList.AddRange(reserveList);
+                    }
                 }
                 var EpgAutoResDict = EpgAutoResList.Distinct().ToDictionary(data => data.ReserveID, data => data);
 

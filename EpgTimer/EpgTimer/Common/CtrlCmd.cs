@@ -114,6 +114,10 @@ namespace EpgTimer
         /// <summary>オブジェクトの型に従ってストリームから読み込む</summary>
         public void Read<T>(ref T v)
         {
+            if (Stream.Position >= tailPos)
+            {
+                throw new EndOfStreamException("サイズフィールドの値を超えて読み込もうとしました");
+            }
             // このメソッドがジェネリックなのは単にこのBoxingのため
             object o = v;
             if (v is byte) o = ReadBytes(1)[0];
