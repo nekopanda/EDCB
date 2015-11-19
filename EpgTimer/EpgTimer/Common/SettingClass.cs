@@ -404,17 +404,20 @@ namespace EpgTimer
 
     class SettingPath
     {
-        //private static string IniPath
-        //{
-        //    get { return (CommonManager.Instance.NWMode == false ? ModulePath : SettingFolderPath); }
-        //}
+        private static string IniPath
+        {
+            // サーバー側のINIファイルの直接参照をしなくなったので、IniPath が必要になるのは
+            // INIファイル更新の非対応サーバーに対してローカル接続(PIPE接続)した場合のみ。
+            // ローカル接続する EpgTimer.exe と EpgTimerSrv.exe のバージョンは揃えるべきだとは思う。
+            get { return ModulePath; }
+        }
         public static string CommonIniPath
         {
-            get { return "Common.ini"; }
+            get { return IniPath.TrimEnd('\\') + "\\Common.ini"; }
         }
         public static string TimerSrvIniPath
         {
-            get { return "EpgTimerSrv.ini"; }
+            get { return IniPath.TrimEnd('\\') + "\\EpgTimerSrv.ini"; }
         }
         public static string EdcbExePath
         {
@@ -426,18 +429,7 @@ namespace EpgTimer
         }
         public static string EdcbIniPath
         {
-            get
-            {
-                //if (CommonManager.Instance.NWMode == false)
-                {
-                    return EdcbExePath.TrimEnd("exe".ToArray()) + "ini";
-                }
-                //else
-                //{
-                //    return "EpgDataCap_Bon.ini";
-                //    return IniPath.TrimEnd('\\') + "\\EpgDataCap_Bon.ini";
-                //}
-            }
+            get { return EdcbExePath.TrimEnd("exe".ToArray()) + "ini"; }
         }
         public static string DefSettingFolderPath
         {
