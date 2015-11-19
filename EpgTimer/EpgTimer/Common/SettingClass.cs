@@ -25,17 +25,11 @@ namespace EpgTimer
 
         public static uint GetPrivateProfileString(string lpAppName, string lpKeyName, string lpDefault, StringBuilder lpReturnedString, uint nSize, string lpFileName)
         {
-            try
+            if (IniSetting.Instance[lpFileName].IsAvailable)
             {
                 string s = IniSetting.Instance[lpFileName][lpAppName][lpKeyName];
                 lpReturnedString.Append(s == null ? lpDefault : s);
                 return (uint)lpReturnedString.Length;
-            }
-            catch
-            {
-                // EpgTimerSrv の FILE_COPY にパッチが当たってないと IniSetting が組み立てられないので
-                // こちらの例外で補足する。
-                // catch 内で GetPrivateProfileString をしたくないので、何もせずに外に出る。
             }
 
             if (CommonManager.Instance.NWMode == false)
@@ -68,21 +62,18 @@ namespace EpgTimer
 
         public static int GetPrivateProfileInt(string lpAppName, string lpKeyName, int nDefault, string lpFileName)
         {
-            try
+            if (IniSetting.Instance[lpFileName].IsAvailable)
             {
-                string s = IniSetting.Instance[lpFileName][lpAppName][lpKeyName];
-                return s == null ? nDefault : Convert.ToInt32(s);
-            }
-            catch(FormatException)
-            {
-                // Convert.ToInt32("") などするとここに来る
-                return nDefault;
-            }
-            catch
-            {
-                // EpgTimerSrv の FILE_COPY にパッチが当たってないと IniSetting が組み立てられないので
-                // こちらの例外で補足する。
-                // catch 内で GetPrivateProfileInt をしたくないので、何もせずに外に出る。
+                try
+                {
+                    string s = IniSetting.Instance[lpFileName][lpAppName][lpKeyName];
+                    return s == null ? nDefault : Convert.ToInt32(s);
+                }
+                catch (FormatException)
+                {
+                    // Convert.ToInt32("") などするとここに来る
+                    return nDefault;
+                }
             }
 
             if (CommonManager.Instance.NWMode == false)
@@ -106,16 +97,10 @@ namespace EpgTimer
 
         public static uint WritePrivateProfileString(string lpAppName, string lpKeyName, string lpString, string lpFileName)
         {
-            try
+            if (IniSetting.Instance[lpFileName].IsAvailable)
             {
                 IniSetting.Instance[lpFileName][lpAppName][lpKeyName] = lpString;
                 return lpString == null ? 0 : (uint)lpString.Length;
-            }
-            catch
-            {
-                // EpgTimerSrv の FILE_COPY にパッチが当たってないと IniSetting が組み立てられないので
-                // こちらの例外で補足する。
-                // catch 内で WritePrivateProfileStringW をしたくないので、何もせずに外に出る。
             }
             if (CommonManager.Instance.NWMode == false)
             {
@@ -191,7 +176,7 @@ namespace EpgTimer
                     _items = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                     _updates = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 }
-                public void AddPair(string key, string value)
+                internal void addPair(string key, string value)
                 {
                     _items.Add(key, value);
                 }
@@ -214,6 +199,11 @@ namespace EpgTimer
             {
                 get
                 {
+                    if (_sections == null)
+                    {
+                        // EpgTimerSrv の FILE_COPY にパッチが当たってないと _sections が null のままなので例外を投げて下層に捕捉させる
+                        throw new NotImplementedException("EpgTimerSrvのバージョンが古いです");
+                    }
                     if (_sections.ContainsKey(section) == false)
                     {
                         _sections.Add(section, new PairList());
@@ -221,8 +211,15 @@ namespace EpgTimer
                     return _sections[section];
                 }
             }
+            public bool IsAvailable
+            {
+                get
+                {
+                    return _sections != null;
+                }
+            }
 
-            public void LoadFile(ref bool supportSendFileCopy)
+            internal void loadFile(ref bool supportSendFileCopy)
             {
                 try
                 {
@@ -271,7 +268,7 @@ namespace EpgTimer
                             else if (section.Length > 0)
                             {
                                 string[] list = buff.Split('=');
-                                this[section].AddPair(list[0], list[1]);
+                                this[section].addPair(list[0], list[1]);
                             }
                         }
                         reader.Close();
@@ -284,7 +281,7 @@ namespace EpgTimer
                 }
             }
 
-            public string GetIniData()
+            internal string getIniData()
             {
                 string ini = "";
                 if (_sections != null)
@@ -370,7 +367,7 @@ namespace EpgTimer
                     _files.Add(file, new SectionList(file));
                 }
 
-                _files[file].LoadFile(ref _available);
+                _files[file].loadFile(ref _available);
                 return _files[file];
             }
         }
@@ -382,7 +379,7 @@ namespace EpgTimer
                 string output = "";
                 foreach (string f in _files.Keys)
                 {
-                    output += _files[f].GetIniData();
+                    output += _files[f].getIniData();
                 }
                 if (output.Length > 0)
                 {
