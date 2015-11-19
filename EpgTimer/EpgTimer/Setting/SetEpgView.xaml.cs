@@ -185,21 +185,24 @@ namespace EpgTimer.Setting
                 Settings.Instance.FontSizeTitle = Convert.ToDouble(textBox_fontSizeTitle.Text);
                 Settings.Instance.FontBoldTitle = (checkBox_fontBoldTitle.IsChecked == true);
 
+                Settings.Instance.UseCustomEpgView = (radioButton_1_cust.IsChecked == true);
+                Settings.Instance.CustomEpgTabList.Clear();
+                foreach (CustomEpgTabInfo info in listBox_tab.Items)
+                {
+                    Settings.Instance.CustomEpgTabList.Add(info);
+                }
+
                 if (CommonManager.Instance.NWMode == false)
                 {
                     string iniValue = "";
                     iniValue = (radioButton_1_cust.IsChecked == true ? "1" : "0");
                     IniFileHandler.WritePrivateProfileString("HTTP", "HttpCustEpg", iniValue, SettingPath.TimerSrvIniPath);
-                    Settings.Instance.UseCustomEpgView = (radioButton_1_cust.IsChecked == true);
 
-                    Settings.Instance.CustomEpgTabList.Clear();
                     int custCount = listBox_tab.Items.Count;
                     IniFileHandler.WritePrivateProfileString("HTTP", "HttpCustCount", custCount.ToString(), SettingPath.TimerSrvIniPath);
                     custCount = 0;
                     foreach (CustomEpgTabInfo info in listBox_tab.Items)
                     {
-                        Settings.Instance.CustomEpgTabList.Add(info);
-
                         IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "Name", info.TabName, SettingPath.TimerSrvIniPath);
                         IniFileHandler.WritePrivateProfileString("HTTP_CUST" + custCount.ToString(), "ViewServiceCount", info.ViewServiceList.Count.ToString(), SettingPath.TimerSrvIniPath);
                         int serviceCount = 0;
