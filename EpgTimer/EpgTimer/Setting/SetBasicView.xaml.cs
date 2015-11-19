@@ -33,7 +33,7 @@ namespace EpgTimer.Setting
             if (CommonManager.Instance.NWMode == true)
             {
                 CommonManager.Instance.VUtil.DisableControlChildren(tabItem2);
-                if (IniFileHandler.IsSyncWithServer)
+                if (IniFileHandler.IsSyncWithServer == false)
                 {
                     CommonManager.Instance.VUtil.DisableControlChildren(tabItem3);
                 }
@@ -253,6 +253,7 @@ namespace EpgTimer.Setting
         {
             try
             {
+                // tabItem1
                 if (textBox_setPath.IsEnabled)
                 {
                     System.IO.Directory.CreateDirectory(textBox_setPath.Text);
@@ -278,24 +279,29 @@ namespace EpgTimer.Setting
                     }
                 }
 
-                for (int i = 0; i < listBox_bon.Items.Count; i++)
+                // tabItem2
+                if (listBox_bon.IsEnabled)
                 {
-                    TunerInfo info = listBox_bon.Items[i] as TunerInfo;
+                    for (int i = 0; i < listBox_bon.Items.Count; i++)
+                    {
+                        TunerInfo info = listBox_bon.Items[i] as TunerInfo;
 
-                    IniFileHandler.WritePrivateProfileString(info.BonDriver, "Count", info.TunerNum, SettingPath.TimerSrvIniPath);
-                    if (info.IsEpgCap == true)
-                    {
-                        IniFileHandler.WritePrivateProfileString(info.BonDriver, "GetEpg", "1", SettingPath.TimerSrvIniPath);
+                        IniFileHandler.WritePrivateProfileString(info.BonDriver, "Count", info.TunerNum, SettingPath.TimerSrvIniPath);
+                        if (info.IsEpgCap == true)
+                        {
+                            IniFileHandler.WritePrivateProfileString(info.BonDriver, "GetEpg", "1", SettingPath.TimerSrvIniPath);
+                        }
+                        else
+                        {
+                            IniFileHandler.WritePrivateProfileString(info.BonDriver, "GetEpg", "0", SettingPath.TimerSrvIniPath);
+                        }
+                        IniFileHandler.WritePrivateProfileString(info.BonDriver, "EPGCount", info.EPGNum, SettingPath.TimerSrvIniPath);
+                        IniFileHandler.WritePrivateProfileString(info.BonDriver, "Priority", i.ToString(), SettingPath.TimerSrvIniPath);
                     }
-                    else
-                    {
-                        IniFileHandler.WritePrivateProfileString(info.BonDriver, "GetEpg", "0", SettingPath.TimerSrvIniPath);
-                    }
-                    IniFileHandler.WritePrivateProfileString(info.BonDriver, "EPGCount", info.EPGNum, SettingPath.TimerSrvIniPath);
-                    IniFileHandler.WritePrivateProfileString(info.BonDriver, "Priority", i.ToString(), SettingPath.TimerSrvIniPath);
                 }
 
-                if (tabItem3.IsEnabled)
+                // tabItem3
+                if (checkBox_bs.IsEnabled)
                 {
                     if (checkBox_bs.IsChecked == true)
                     {
@@ -305,6 +311,9 @@ namespace EpgTimer.Setting
                     {
                         IniFileHandler.WritePrivateProfileString("SET", "BSBasicOnly", "0", SettingPath.CommonIniPath);
                     }
+                }
+                if (checkBox_cs1.IsEnabled)
+                {
                     if (checkBox_cs1.IsChecked == true)
                     {
                         IniFileHandler.WritePrivateProfileString("SET", "CS1BasicOnly", "1", SettingPath.CommonIniPath);
@@ -313,6 +322,9 @@ namespace EpgTimer.Setting
                     {
                         IniFileHandler.WritePrivateProfileString("SET", "CS1BasicOnly", "0", SettingPath.CommonIniPath);
                     }
+                }
+                if (checkBox_cs2.IsEnabled)
+                {
                     if (checkBox_cs2.IsChecked == true)
                     {
                         IniFileHandler.WritePrivateProfileString("SET", "CS2BasicOnly", "1", SettingPath.CommonIniPath);
@@ -321,26 +333,29 @@ namespace EpgTimer.Setting
                     {
                         IniFileHandler.WritePrivateProfileString("SET", "CS2BasicOnly", "0", SettingPath.CommonIniPath);
                     }
+                }
 
-                    foreach (ServiceViewItem info in serviceList)
+                foreach (ServiceViewItem info in serviceList)
+                {
+                    UInt64 key = info.ServiceInfo.Key;
+                    try
                     {
-                        UInt64 key = info.ServiceInfo.Key;
-                        try
+                        if (info.IsSelected == true)
                         {
-                            if (info.IsSelected == true)
-                            {
-                                ChSet5.Instance.ChList[key].EpgCapFlag = 1;
-                            }
-                            else
-                            {
-                                ChSet5.Instance.ChList[key].EpgCapFlag = 0;
-                            }
+                            ChSet5.Instance.ChList[key].EpgCapFlag = 1;
                         }
-                        catch
+                        else
                         {
+                            ChSet5.Instance.ChList[key].EpgCapFlag = 0;
                         }
                     }
+                    catch
+                    {
+                    }
+                }
 
+                if (ListView_time.IsEnabled)
+                {
                     IniFileHandler.WritePrivateProfileString("EPG_CAP", "Count", timeList.Count.ToString(), SettingPath.TimerSrvIniPath);
                     for (int i = 0; i < timeList.Count; i++)
                     {
@@ -359,8 +374,14 @@ namespace EpgTimer.Setting
                     }
                 }
 
-                IniFileHandler.WritePrivateProfileString("SET", "NGEpgCapTime", textBox_ngCapMin.Text, SettingPath.TimerSrvIniPath);
-                IniFileHandler.WritePrivateProfileString("SET", "NGEpgCapTunerTime", textBox_ngTunerMin.Text, SettingPath.TimerSrvIniPath);
+                if (textBox_ngCapMin.IsEnabled)
+                {
+                    IniFileHandler.WritePrivateProfileString("SET", "NGEpgCapTime", textBox_ngCapMin.Text, SettingPath.TimerSrvIniPath);
+                }
+                if (textBox_ngTunerMin.IsEnabled)
+                {
+                    IniFileHandler.WritePrivateProfileString("SET", "NGEpgCapTunerTime", textBox_ngTunerMin.Text, SettingPath.TimerSrvIniPath);
+                }
             }
             catch (Exception ex)
             {
