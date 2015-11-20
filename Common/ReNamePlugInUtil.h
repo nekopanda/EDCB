@@ -72,7 +72,26 @@ typedef BOOL (WINAPI* ConvertRecName3RNP)(
 
 class CReNamePlugInUtil
 {
+private:
+	static volatile unsigned int _refCount;
+	static CReNamePlugInUtil* _instance;
+
+	struct PLUGIN_INFO
+	{
+		HMODULE hModule;
+		ConvertRecNameRNP  pfnConvertRecName;
+		ConvertRecName2RNP pfnConvertRecName2;
+		ConvertRecName3RNP pfnConvertRecName3;
+	};
+	map<const wstring, const PLUGIN_INFO*> pluginMap;
+	const PLUGIN_INFO* FindPlugin(const WCHAR* dllPattern, const WCHAR* dllFolder);
+
 public:
+	CReNamePlugInUtil();
+	~CReNamePlugInUtil();
+	static CReNamePlugInUtil* GetInstance();
+	void ReleaseInstance();
+
 	//入力された予約情報と変換パターンを元に、録画時のファイル名を作成する（拡張子含む）
 	//recNameがNULL時は必要なサイズをrecNamesizeで返す
 	//通常recNamesize=256で呼び出し

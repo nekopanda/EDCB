@@ -177,6 +177,10 @@ vector<RESERVE_DATA> CReserveManager::GetReserveDataAll(bool getRecFileName) con
 {
 	CBlockLock lock(&this->managerLock);
 
+	// GetReserveData の中で LoadLibrary/FreeLibrary を繰り返すのを抑止するため参照カウンタを増やしておく。
+	// GetInstance() & ReleaseInstance() でくくっても同じ。
+	CReNamePlugInUtil avoidLotsOfLoadLibrary;
+
 	vector<RESERVE_DATA> list;
 	list.reserve(this->reserveText.GetMap().size());
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
