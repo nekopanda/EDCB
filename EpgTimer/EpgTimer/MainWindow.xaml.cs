@@ -38,7 +38,6 @@ namespace EpgTimer
         private bool closeFlag = false;
         private bool initExe = false;
 
-        private System.Windows.Threading.DispatcherTimer chkRegistTCPTimer = null;
         private bool needUnRegist = true;
 
         private bool idleShowBalloon = false;
@@ -52,35 +51,9 @@ namespace EpgTimer
         {
             Settings.LoadFromXmlFile();
             CommonManager.Instance.NWMode = Settings.Instance.NWMode;
-            if (CommonManager.Instance.NWMode == true)
-            {
-                CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
-                //cmd.SetSendMode(true);
-                //cmd.SetNWSetting("", Settings.Instance.NWServerPort);
 
-                if (Settings.Instance.ChkSrvRegistTCP == true)
-                {
-                    chkRegistTCPTimer = new System.Windows.Threading.DispatcherTimer();
-                    chkRegistTCPTimer.Interval = TimeSpan.FromMinutes(Math.Max(Settings.Instance.ChkSrvRegistInterval, 1));
-                    chkRegistTCPTimer.Tick += (sender, e) =>
-                    {
-                        if (CommonManager.Instance.NW.IsConnected == true)
-                        {
-                            bool registered = true;
-                            if ((ErrCode)cmd.SendIsRegistTCP(Settings.Instance.NWWaitPort, ref registered) == ErrCode.CMD_SUCCESS)
-                            {
-                                if (registered == false)
-                                {
-                                    ConnectCmd(false);
-                                }
-                            }
-                        }
-                    };
-                    chkRegistTCPTimer.Start();
-                }
-            }
+            //EpgTimerSrvへの接続処理は Window_Loaded の ConnectCmd で行うため初期化中のサーバー接続はしない
 
-            ChSet5.LoadFile();
             CommonManager.Instance.MM.ReloadWorkData();
             CommonManager.Instance.ReloadCustContentColorList();
 
@@ -101,7 +74,7 @@ namespace EpgTimer
                     );
             }
 
-            mutex = new System.Threading.Mutex(false, CommonManager.Instance.NWMode ? "Global\\EpgTimer_BonNW" : "Global\\EpgTimer_Bon2");
+            mutex = new System.Threading.Mutex(false, "Global\\EpgTimer_Bon2");
             if (!mutex.WaitOne(0, false))
             {
                 CheckCmdLine();
@@ -195,13 +168,6 @@ namespace EpgTimer
                 ResetTaskMenu();
 
                 CheckCmdLine();
-
-                if (CommonManager.Instance.NWMode == false)
-                {
-                    //予約一覧の表示に使用したりするのであらかじめ読込んでおく(暫定処置)
-                    CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
-                    CommonManager.Instance.DB.ReloadEpgData();
-                }
 
                 // 設定から情報を読み取るので設定をロードした後作る
                 infoWindowViewModel = new InfoWindowViewModel();
@@ -438,7 +404,7 @@ namespace EpgTimer
             cmd.SetSendMode(CommonManager.Instance.NWMode);
             cmd.SetNWSetting("", Settings.Instance.NWServerPort);
 
-            bool connected = false;
+            CommonManager.Instance.IsConnected = false;
             if (CommonManager.Instance.NWMode == false)
             {
                 bool startExe = false;
@@ -529,7 +495,7 @@ namespace EpgTimer
                         Thread.Sleep(100);
                     }
                 }
-                connected = true;
+                CommonManager.Instance.IsConnected = true;
             }
             else
             {
@@ -550,7 +516,7 @@ namespace EpgTimer
                         srvIP = address.ToString();
                         if (CommonManager.Instance.NW.ConnectServer(srvIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, OutsideCmdCallback, this) == true)
                         {
-                            connected = true;
+                            CommonManager.Instance.IsConnected = CommonManager.Instance.NW.IsConnected;
                             if (Settings.Instance.NWServerIP == "")
                             {
                                 Settings.Instance.NWServerIP = srvIP;
@@ -562,7 +528,7 @@ namespace EpgTimer
                 catch
                 {
                 }
-                if (connected == false)
+                if (CommonManager.Instance.IsConnected == false)
                 {
                     if (showDialog == true)
                     {
@@ -589,7 +555,7 @@ namespace EpgTimer
             recInfoView.UpdateInfo();
             epgView.UpdateEpgData();
 
-            if (connected)
+            if (CommonManager.Instance.IsConnected)
             {
                 ChSet5.LoadFile();
 
@@ -606,7 +572,7 @@ namespace EpgTimer
             {
                 Title = appName + " - 未接続";
             }
-            return connected;
+            return CommonManager.Instance.IsConnected;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)

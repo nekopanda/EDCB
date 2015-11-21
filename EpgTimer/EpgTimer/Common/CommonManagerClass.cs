@@ -51,6 +51,8 @@ namespace EpgTimer
         { get; set; }
         public ViewUtil VUtil
         { get; set; }
+        public bool IsConnected
+        { get; set; }
 
         MenuManager _mm;
         public MenuManager MM

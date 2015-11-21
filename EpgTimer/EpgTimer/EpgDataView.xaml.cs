@@ -86,7 +86,7 @@ namespace EpgTimer
             {
                 if (Settings.Instance.UseCustomEpgView == false)
                 {
-                    if (CommonManager.Instance.VUtil.EpgTimerNWNotConnect() == true) return false;
+                    if (CommonManager.Instance.IsConnected == false) return false;
 
                     ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
                     if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false)
