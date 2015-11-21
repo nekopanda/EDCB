@@ -73,7 +73,6 @@ public:
 	void ReadSupplementFileAll();
 	//プロテクト情報を変更する
 	bool ChgProtectRecInfo(DWORD id, BYTE flag);
-	void GetProtectFiles(map<wstring, wstring>* fileMap) const;
 	//
 	void RemoveReserveAutoAddId(DWORD id, const vector<REC_FILE_BASIC_INFO>& list);
 	void AddReserveAutoAddId(const EPG_AUTO_ADD_DATA& data, const vector<REC_FILE_BASIC_INFO>& list);
