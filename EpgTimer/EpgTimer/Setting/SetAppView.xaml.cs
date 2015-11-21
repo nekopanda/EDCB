@@ -50,8 +50,8 @@ namespace EpgTimer.Setting
             {
                 if (IniFileHandler.IsSyncWithServer == false)
                 {
-                    tabItem1.Foreground = new SolidColorBrush(Colors.Gray);
-                    groupBox1.Foreground = new SolidColorBrush(Colors.Gray);
+                    tabItem1.Foreground = Brushes.Gray;
+                    groupBox1.Foreground = Brushes.Gray;
                     radioButton_none.IsEnabled = false;
                     radioButton_standby.IsEnabled = false;
                     radioButton_suspend.IsEnabled = false;
@@ -73,7 +73,7 @@ namespace EpgTimer.Setting
                 button_recname.IsEnabled = false;
                 
                 CommonManager.Instance.VUtil.DisableControlChildren(tabItem7);
-                tabControl1.SelectedItem = IniFileHandler.IsSyncWithServer ? tabItem1 : tabItem3;
+                tabControl1.SelectedItem = IniFileHandler.IsSyncWithServer ? tabItem1 : tabItem2;
                 checkBox_tcpServer.IsEnabled = false;
                 label41.IsEnabled = false;
                 textBox_tcpPort.IsEnabled = false;

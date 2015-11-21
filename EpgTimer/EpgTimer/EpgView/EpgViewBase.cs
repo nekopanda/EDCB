@@ -55,18 +55,14 @@ namespace EpgTimer.EpgView
             try
             {
                 var param = e.Parameter as EpgCmdParam;
-                if (param == null) return;
-
-                var setInfo = new CustomEpgTabInfo();
-                setViewInfo.CopyTo(ref setInfo);
-                setInfo.ViewMode = param.ID;
-
-                if (setViewInfo.ViewMode == setInfo.ViewMode) return;
+                if (param == null || param.ID == setViewInfo.ViewMode) return;
 
                 //BlackWindowに状態を登録。
                 //コマンド集の機能による各ビューの共用メソッド。
                 mc.ViewChangeModeSupport();
-                
+
+                CustomEpgTabInfo setInfo = setViewInfo.Clone();
+                setInfo.ViewMode = param.ID;
                 ViewSetting(this, setInfo);
             }
             catch (Exception ex)
@@ -83,9 +79,14 @@ namespace EpgTimer.EpgView
 
         public virtual void RefreshMenu() { }
 
+        public virtual CustomEpgTabInfo GetViewMode()
+        {
+            return setViewInfo == null ? null : setViewInfo.Clone();
+        }
+
         public virtual void SetViewMode(CustomEpgTabInfo setInfo)
         {
-            setViewInfo = setInfo;
+            setViewInfo = setInfo.Clone();
 
             this.viewCustServiceList = setInfo.ViewServiceList;
             this.viewCustContentKindList.Clear();
@@ -219,20 +220,22 @@ namespace EpgTimer.EpgView
                 updateReserveData = !ReloadReserveData();
             }
 
+            //「番組表へジャンプ」の場合、またはオプションで指定のある場合に強調表示する。
+            bool isMarking = BlackoutWindow.NowJumpTable || Settings.Instance.DisplayNotifyEpgChange;
             if (BlackoutWindow.SelectedReserveItem != null)
             {
-                MoveToReserveItem(BlackoutWindow.SelectedReserveItem, BlackoutWindow.NowJumpTable);
+                MoveToReserveItem(BlackoutWindow.SelectedReserveItem, isMarking);
             }
             else if (BlackoutWindow.SelectedSearchItem != null)
             {
-                MoveToProgramItem(BlackoutWindow.SelectedSearchItem, BlackoutWindow.NowJumpTable);
+                MoveToProgramItem(BlackoutWindow.SelectedSearchItem, isMarking);
             }
 
             BlackoutWindow.Clear();
         }
 
-        protected virtual void MoveToReserveItem(ReserveItem target, bool JumpingTable) { }
-        protected virtual void MoveToProgramItem(SearchItem target, bool JumpingTable) { }
+        protected virtual void MoveToReserveItem(ReserveItem target, bool IsMarking) { }
+        protected virtual void MoveToProgramItem(SearchItem target, bool IsMarking) { }
 
     }
 }

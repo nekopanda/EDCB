@@ -68,9 +68,6 @@ namespace EpgTimer.Setting
                         comboBox_bon.SelectedIndex = 0;
                     }
 
-                    StringBuilder buff = new StringBuilder(512);
-                    buff.Clear();
-
                     int num = IniFileHandler.GetPrivateProfileInt("TVTEST", "Num", 0, SettingPath.TimerSrvIniPath);
                     for (uint i = 0; i < num; i++)
                     {

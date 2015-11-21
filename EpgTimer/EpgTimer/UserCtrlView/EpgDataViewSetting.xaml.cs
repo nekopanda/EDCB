@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -14,6 +13,7 @@ namespace EpgTimer
     {
         private BoxExchangeEditor bx = new BoxExchangeEditor();
         private EpgSearchKeyInfo searchKey = new EpgSearchKeyInfo();
+        private int tabInfoID = -1;
 
         public EpgDataViewSetting()
         {
@@ -26,17 +26,17 @@ namespace EpgTimer
 
                 foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
                 {
-                    if (info.ONID == 0x0004)
+                    if (info.IsTere == true)
+                    {
+                        listBox_serviceTere.Items.Add(info);
+                    }
+                    else if (info.IsBS == true)
                     {
                         listBox_serviceBS.Items.Add(info);
                     }
-                    else if (info.ONID == 0x0006 || info.ONID == 0x0007)
+                    else if (info.IsCS == true)
                     {
                         listBox_serviceCS.Items.Add(info);
-                    }
-                    else if (0x7880 <= info.ONID && info.ONID <= 0x7FE8)
-                    {
-                        listBox_serviceTere.Items.Add(info);
                     }
                     else
                     {
@@ -63,7 +63,8 @@ namespace EpgTimer
         /// <param name="setInfo"></param>
         public void SetSetting(CustomEpgTabInfo setInfo)
         {
-            setInfo.SearchKey.CopyTo(searchKey);
+            tabInfoID = setInfo.ID;
+            searchKey = setInfo.SearchKey.Clone();
 
             textBox_tabName.Text = setInfo.TabName;
             radioButton_rate.IsChecked = false;
@@ -126,8 +127,8 @@ namespace EpgTimer
             info.StartTimeWeek = comboBox_timeH_week.SelectedIndex;
             info.SearchMode = (checkBox_searchMode.IsChecked == true);
             info.FilterEnded = (checkBox_filterEnded.IsChecked == true);
-
-            searchKey.CopyTo(info.SearchKey);
+            info.SearchKey = searchKey.Clone();
+            info.ID = tabInfoID;
  
             info.ViewServiceList.Clear();
             foreach (ChSet5Item item in listBox_serviceView.Items)
@@ -169,8 +170,10 @@ namespace EpgTimer
                 listBox.UnselectAll();
                 foreach (ChSet5Item info in listBox.Items)
                 {
-                    if (info.ServiceType != 0x01 && info.ServiceType != 0xA5) continue;
-                    listBox.SelectedItems.Add(info);//重い。
+                    if (info.IsVideo == true)
+                    {
+                        listBox.SelectedItems.Add(info);
+                    }
                 }
                 bx.addItems(listBox, listBox_serviceView);
             }

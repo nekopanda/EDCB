@@ -75,7 +75,9 @@ namespace EpgTimer
                 mc.AddReplaceCommand(EpgCmds.Cancel, (sender, e) => this.Close());
 
                 //コマンド集を振り替えるもの
-                mc.AddReplaceCommand(EpgCmds.JumpTable, mc_JumpTable);
+                mc.AddReplaceCommand(EpgCmds.JumpReserve, (sender, e) => mc_JumpTab(CtxmCode.ReserveView, true));
+                mc.AddReplaceCommand(EpgCmds.JumpTuner, (sender, e) => mc_JumpTab(CtxmCode.TunerReserveView, true, true));
+                mc.AddReplaceCommand(EpgCmds.JumpTable, (sender, e) => mc_JumpTab(CtxmCode.EpgView));
 
                 //コマンド集からコマンドを登録。
                 mc.ResetCommandBindings(this, listView_result.ContextMenu);
@@ -177,29 +179,29 @@ namespace EpgTimer
             if (winMode == SearchMode.Find)
             {
                 Title = "検索";
-                button_chg_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
-                button_del_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
-                button_up_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
-                button_down_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
-                recFileTabItem.Visibility = System.Windows.Visibility.Collapsed;
+                button_chg_epgAutoAdd.Visibility = Visibility.Hidden;
+                button_del_epgAutoAdd.Visibility = Visibility.Hidden;
+                button_up_epgAutoAdd.Visibility = Visibility.Hidden;
+                button_down_epgAutoAdd.Visibility = Visibility.Hidden;
+                recFileTabItem.Visibility = Visibility.Collapsed;
             }
             else if (winMode == SearchMode.NewAdd)
             {
                 Title = "EPG予約条件";
-                button_chg_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
-                button_del_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
-                button_up_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
-                button_down_epgAutoAdd.Visibility = System.Windows.Visibility.Hidden;
-                recFileTabItem.Visibility = System.Windows.Visibility.Collapsed;
+                button_chg_epgAutoAdd.Visibility = Visibility.Hidden;
+                button_del_epgAutoAdd.Visibility = Visibility.Hidden;
+                button_up_epgAutoAdd.Visibility = Visibility.Hidden;
+                button_down_epgAutoAdd.Visibility = Visibility.Hidden;
+                recFileTabItem.Visibility = Visibility.Collapsed;
             }
             else if (winMode == SearchMode.Change)
             {
                 Title = "EPG予約条件";
-                button_chg_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
-                button_del_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
-                button_up_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
-                button_down_epgAutoAdd.Visibility = System.Windows.Visibility.Visible;
-                recFileTabItem.Visibility = System.Windows.Visibility.Visible;
+                button_chg_epgAutoAdd.Visibility = Visibility.Visible;
+                button_del_epgAutoAdd.Visibility = Visibility.Visible;
+                button_up_epgAutoAdd.Visibility = Visibility.Visible;
+                button_down_epgAutoAdd.Visibility = Visibility.Visible;
+                recFileTabItem.Visibility = Visibility.Visible;
             }
             SetSubWindowTitle();
         }
@@ -433,7 +435,7 @@ namespace EpgTimer
         {
             if (this.WindowState == WindowState.Normal)
             {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Width > 0 && this.Height > 0)
+                if (this.Visibility == Visibility.Visible && this.Width > 0 && this.Height > 0)
                 {
                     Settings.Instance.SearchWndWidth = this.Width;
                     Settings.Instance.SearchWndHeight = this.Height;
@@ -445,7 +447,7 @@ namespace EpgTimer
         {
             if (this.WindowState == WindowState.Normal)
             {
-                if (this.Visibility == System.Windows.Visibility.Visible && this.Top > 0 && this.Left > 0)
+                if (this.Visibility == Visibility.Visible && this.Top > 0 && this.Left > 0)
                 {
                     Settings.Instance.SearchWndTop = this.Top;
                     Settings.Instance.SearchWndLeft = this.Left;
@@ -466,11 +468,23 @@ namespace EpgTimer
             }
         }
 
-        private void mc_JumpTable(object sender, ExecutedRoutedEventArgs e)
+        private void mc_JumpTab(CtxmCode code, bool reserveOnly = false, bool onReserveOnly = false)
         {
             if (listView_result.SelectedItem != null)
             {
-                BlackoutWindow.SelectedSearchItem = lstCtrl.SelectSingleItem();
+                SearchItem item = lstCtrl.SelectSingleItem();
+
+                if (reserveOnly && item.IsReserved == false) return;
+                if (onReserveOnly && item.ReserveInfo.RecSetting.RecMode == 5) return;
+
+                if (item.IsReserved == true)
+                {
+                    BlackoutWindow.SelectedReserveItem = new ReserveItem(item.ReserveInfo);
+                }
+                else
+                {
+                    BlackoutWindow.SelectedSearchItem = item;
+                }
                 var mainWindow1 = this.Owner as MainWindow;
                 if (mainWindow1 != null)
                 {
@@ -485,8 +499,8 @@ namespace EpgTimer
                         mainWindow1.EmphasizeSearchButton(true);
                         BlackoutWindow.unvisibleSearchWindow = this;
                     }
-                    mainWindow1.moveTo_tabItem_epg();
-                    mainWindow1.Hide(); // EpgDataView.UserControl_IsVisibleChangedイベントを発生させる
+                    mainWindow1.moveTo_tabItem(code);
+                    mainWindow1.Hide(); // UserControl_IsVisibleChangedイベントを発生させる
                     mainWindow1.Show();
                 }
             }

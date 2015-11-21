@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace EpgTimer
 {
-    public class CustomEpgTabInfo : IEquatable<CustomEpgTabInfo>
+    public class CustomEpgTabInfo
     {
-        private static int count = 0;
-        private int uniqId;
-
         public CustomEpgTabInfo()
         {
             ViewServiceList = new List<UInt64>();
@@ -21,82 +17,45 @@ namespace EpgTimer
             SearchMode = false;
             SearchKey = new EpgSearchKeyInfo();
             FilterEnded = false;
-            uniqId = ++count;
+            ID = -1;
         }
-        public String TabName
+        public String TabName { get; set; }
+        public int ViewMode { get; set; }
+        public bool NeedTimeOnlyBasic { get; set; }
+        public bool NeedTimeOnlyWeek { get; set; }
+        public int StartTimeWeek { get; set; }
+        public List<UInt64> ViewServiceList { get; set; }
+        public List<UInt16> ViewContentKindList { get; set; }
+        public bool SearchMode { get; set; }
+        public EpgSearchKeyInfo SearchKey { get; set; }
+        public bool FilterEnded { get; set; }
+        public int ID { get; set; }
+
+        public CustomEpgTabInfo Clone() { return CopyObj.Clone(this, CopyData); }
+        protected static void CopyData(CustomEpgTabInfo src, CustomEpgTabInfo dest)
         {
-            get;
-            set;
-        }
-        public int ViewMode
-        {
-            get;
-            set;
-        }
-        public bool NeedTimeOnlyBasic
-        {
-            get;
-            set;
-        }
-        public bool NeedTimeOnlyWeek
-        {
-            get;
-            set;
-        }
-        public int StartTimeWeek
-        {
-            get;
-            set;
-        }
-        public List<UInt64> ViewServiceList
-        {
-            get;
-            set;
-        }
-        public List<UInt16> ViewContentKindList
-        {
-            get;
-            set;
-        }
-        public bool SearchMode
-        {
-            get;
-            set;
-        }
-        public EpgSearchKeyInfo SearchKey
-        {
-            get;
-            set;
-        }
-        public bool FilterEnded
-        {
-            get;
-            set;
+            dest.TabName = src.TabName;
+            dest.ViewMode = src.ViewMode;
+            dest.NeedTimeOnlyBasic = src.NeedTimeOnlyBasic;
+            dest.NeedTimeOnlyWeek = src.NeedTimeOnlyWeek;
+            dest.StartTimeWeek = src.StartTimeWeek;
+            dest.ViewServiceList = src.ViewServiceList.ToList();
+            dest.ViewContentKindList = src.ViewContentKindList.ToList();
+            dest.SearchMode = src.SearchMode;
+            dest.FilterEnded = src.FilterEnded;
+            dest.SearchKey = src.SearchKey.Clone();
+            dest.ID = src.ID;
         }
 
-        public void CopyTo(ref CustomEpgTabInfo dest)
-        {
-            dest.TabName = TabName;
-            dest.ViewMode = ViewMode;
-            dest.NeedTimeOnlyBasic = NeedTimeOnlyBasic;
-            dest.NeedTimeOnlyWeek = NeedTimeOnlyWeek;
-            dest.StartTimeWeek = StartTimeWeek;
-            dest.ViewServiceList = ViewServiceList.ToList();
-            dest.ViewContentKindList = ViewContentKindList.ToList();
-            dest.SearchMode = SearchMode;
-            dest.FilterEnded = FilterEnded;
-
-            SearchKey.CopyTo(dest.SearchKey);
-
-            dest.uniqId = uniqId;
-        }
         public override string ToString()
         {
             return TabName;
         }
-        public bool Equals(CustomEpgTabInfo other)
-        {
-            return (uniqId == other.uniqId);
-        }
+    }
+
+    public static class CustomEpgTabInfoEx
+    {
+        static public List<CustomEpgTabInfo> Clone(this List<CustomEpgTabInfo> src)
+        { return src == null ? null : src.Select(item => item.Clone()).ToList(); }
     }
 }

@@ -10,6 +10,7 @@ namespace EpgTimer
     public class EpgAutoDataItem
     {
         private MenuUtil mutil = CommonManager.Instance.MUtil;
+        private ViewUtil vutil = CommonManager.Instance.VUtil;
 
         public EpgAutoDataItem() { }
         public EpgAutoDataItem(EpgAutoAddData item)
@@ -98,7 +99,7 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo == null) return "";
                 //
-                return EpgAutoAddInfo.recSetting.TuijyuuFlag == 0 ? "しない" : "する";
+                return CommonManager.Instance.YesNoDictionary[EpgAutoAddInfo.recSetting.TuijyuuFlag].DisplayName;
             }
         }
         public String Pittari
@@ -107,7 +108,7 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo == null) return "";
                 //
-                return EpgAutoAddInfo.recSetting.PittariFlag == 0 ? "しない" : "する";
+                return CommonManager.Instance.YesNoDictionary[EpgAutoAddInfo.recSetting.PittariFlag].DisplayName;
             }
         }
         public String AddCount
@@ -222,55 +223,28 @@ namespace EpgTimer
             {
                 if (EpgAutoAddInfo == null) return "";
                 //
+                String view1 = "";
                 List<string> networkKeyList1 = new List<string>();
                 foreach (ulong service1 in this.EpgAutoAddInfo.searchInfo.serviceList)
                 {
-                    string network1 = "";
-                    try
+                    string network1 = "(x_x)";
+                    ChSet5Item chSet5Item1;
+                    if (ChSet5.Instance.ChList.TryGetValue(service1, out chSet5Item1) == true)
                     {
-                        ChSet5Item chSet5Item1 = ChSet5.Instance.ChList[service1];
-                        // SearchKeyDescViewよりコピペ
-                        if ((0x7880 <= chSet5Item1.ONID && chSet5Item1.ONID <= 0x7FE8) &&
-                            (chSet5Item1.ServiceType == 0x01 || chSet5Item1.ServiceType == 0xA5))
-                        {
-                            network1 = "地デジ";
-                        }
-                        else if (chSet5Item1.ONID == 0x04 &&
-                            (chSet5Item1.ServiceType == 0x01 || chSet5Item1.ServiceType == 0xA5))
-                        {
-                            network1 = "BS";
-                        }
-                        else if ((chSet5Item1.ONID == 0x06 || chSet5Item1.ONID == 0x07) &&
-                            (chSet5Item1.ServiceType == 0x01 || chSet5Item1.ServiceType == 0xA5))
-                        {
-                            network1 = "CS";
-                        }
-                        else
-                        {
-                            network1 = "(?_?)";
-                        }
-                        //network1 = ChSet5.Instance.ChList[service1].NetworkName;
+                        network1 = CommonManager.ConvertNetworkNameText(chSet5Item1.ONID, true);
                     }
-                    catch
-                    {
-                        network1 = "(x_x)";
-                    }
-                    if (!networkKeyList1.Contains(network1))
+
+                    if (networkKeyList1.Contains(network1) == false)
                     {
                         networkKeyList1.Add(network1);
+                        view1 += network1 + ",";
                     }
-                }
-                String view1 = "";
-                foreach (string network1 in networkKeyList1)
-                {
-                    if (view1 != "") { view1 += ", "; }
-                    view1 += network1;
                 }
                 if (view1 == "")
                 {
                     view1 = "なし";
                 }
-                return view1;
+                return view1.TrimEnd(',');;
             }
         }
         public String Tuner
@@ -480,20 +454,13 @@ namespace EpgTimer
         {
             get
             {
-                Brush color1 = Brushes.Gainsboro;
-                if (this.EpgAutoAddInfo.searchInfo.contentList.Count > 0 && this.EpgAutoAddInfo.searchInfo.notContetFlag == 0)
+                if (EpgAutoAddInfo == null) return Brushes.White;
+                //
+                if (EpgAutoAddInfo.searchInfo.contentList.Count == 0 || EpgAutoAddInfo.searchInfo.notContetFlag != 0)
                 {
-                    byte content_nibble_level_1 = this.EpgAutoAddInfo.searchInfo.contentList[0].content_nibble_level_1;
-                    if (content_nibble_level_1 <= 0x0B || content_nibble_level_1 == 0x0F && Settings.Instance.ContentColorList.Count > content_nibble_level_1)
-                    {
-                        try
-                        {
-                            color1 = CommonManager.Instance.CustContentColorList[content_nibble_level_1];
-                        }
-                        catch { }
-                    }
+                    return Brushes.Gainsboro;
                 }
-                return color1;
+                return vutil.EpgDataContentBrush(EpgAutoAddInfo.searchInfo.contentList);
             }
         }
 
