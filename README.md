@@ -7,38 +7,21 @@ Configuration files are stored in the 'ini' directory.
 
 **このForkについて**
 
-[0ac7692](https://github.com/xtne6f/EDCB/commit/0ac7692afe7cbe615534577facda15f57b5e5af9)の履歴確認のため、[コミットをバラしたタグ](https://github.com/xtne6f/EDCB/tree/log-mod4k7)を作りました。おもに自分用ですが参考にどうぞ。  
-[01aff08](https://github.com/xtne6f/EDCB/commit/01aff08a5df4c7e63c86ea7136c20b259c08229e)にかけて改行コードの混乱があったようで、履歴確認しにくくなっています。[改行のみ調整したタグ](https://github.com/xtne6f/EDCB/tree/log-to-crlf)も作りました(※改行以外の調整は一切無し)。
+master ブランチは
+* xtne6f氏 (https://github.com/xtne6f/EDCB) の work-plus-s ブランチ
+* tkntrec氏 (https://github.com/tkntrec/EDCB) の my-build-s ブランチ
+* nekopanda氏 (https://github.com/nekopanda/EDCB) の develop ブランチ
+を merge しまくりつつ、各氏のサブブランチも先取りしつつ、
+自分の好みも混ぜ合わせてみるキメラのようなブランチです。
 
-人柱版10.69からの改変部分は[Document/Readme_Mod.txt](https://github.com/xtne6f/EDCB/blob/work-plus-s/Document/Readme_Mod.txt)および[Document/Readme_Mod_S.txt](https://github.com/xtne6f/EDCB/blob/work-plus-s/Document/Readme_Mod_S.txt)を参照。  
-ビルド方法は[Document/HowToBuild.txt](https://github.com/xtne6f/EDCB/blob/work-plus-s/Document/HowToBuild.txt)を参照。  
-自ビルド派の追加メモ[build_memo.txt](https://gist.github.com/xtne6f/f9b6f19c10cd146fe580)  
-CtrlCmdCLI.dllは不要になりましたが[branch:for-ctrlcmdcli](https://github.com/xtne6f/EDCB/tree/for-ctrlcmdcli)でビルドできます。  
-各々のコミットを大まかに理解したうえで自由にマージやcherry-pickしてください。大体[こんな方針](https://github.com/xtne6f/EDCB/pull/1)で改造しています。  
-[branch:work](https://github.com/xtne6f/EDCB/tree/work)をベースに、以下をマージしたものが[branch:work-plus-s](https://github.com/xtne6f/EDCB/tree/work-plus-s)です。
+なるべく機能削除はしないマージをしていきたいところですが、
+機能削除による削除なのか
+修正による削除なのか
+コンフリクトによる削除なのか
+一つ一つ確認するのが難しい状況です。
 
-[branch:misc](https://github.com/xtne6f/EDCB/tree/misc)
-* 細かな重箱つつきのブランチ。機能追加やバグ修正はほとんどない
-* [a37f398](https://github.com/xtne6f/EDCB/commit/a37f398199f76222e7c354d39a0cef67fa2028b2) "Reserve.txt"はID順にソートするようになったが、連携ツール等が予約日時順でないとダメな場合は、このファイルの「;;NextID=」という行を消すと予約日時順に戻る
-
-[branch:fix-etc](https://github.com/xtne6f/EDCB/tree/fix-etc)
-* 個々のバグ修正ブランチ
-
-[branch:fix-rsvman](https://github.com/xtne6f/EDCB/tree/fix-rsvman)
-* EpgTimerSrvの予約管理まわりを修正するブランチ
-
-[branch:cherry-picks](https://github.com/xtne6f/EDCB/tree/cherry-picks)
-* 他Forkから安定していて特に良さそうなコミットを集めてくるブランチ
-* バグ修正系のコミットが中心
-
-[branch:misc-ui](https://github.com/xtne6f/EDCB/tree/misc-ui)
-* おもにEpgTimer(NW)のUI周辺を弄るブランチ
-
-[branch:cherry-picks-niisaka-epg](https://github.com/xtne6f/EDCB/tree/cherry-picks-niisaka-epg)
-* [niisaka/EDCB](https://github.com/niisaka/EDCB)のEPG番組表を取り込むブランチ。番組表がかっこよくなる
-
-**ライセンス**
-
-EpgTimerSrvのLightTsUtils.h/cppは[TvTest](https://github.com/DBCTRADO/TVTest)由来のコードを含むため [GPL v2](https://github.com/DBCTRADO/TVTest/blob/develop/doc/License.txt) とします。上記2つのコードを取り除けば[オリジナルのライセンス](https://github.com/nekopanda/EDCB/blob/release/Document/Readme_EDCB.txt#L39)と同じです。
-
-※上記2つのコードを取り除く場合はRecEventDB.hのENABLE_GPL_CODEを0にするとコンパイルできます。
+README関連のファイルはコンフリクトしやすいので、あまり修正していません。
+各氏のREADMEを参照してください。
+* https://github.com/xtne6f/EDCB/tree/work-plus-s/Document
+* https://github.com/tkntrec/EDCB/tree/my-build-s/Document
+* https://github.com/nekopanda/EDCB/tree/develop/Document
