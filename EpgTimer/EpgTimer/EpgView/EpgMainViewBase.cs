@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using System.Windows.Media;
 
 namespace EpgTimer.EpgView
 {
@@ -21,7 +22,7 @@ namespace EpgTimer.EpgView
         protected Line nowLine = null;
 
         protected virtual void ReDrawNowLine() { }
-        
+
         private ProgramView programView = null;
         private TimeView timeView = null;
         private ScrollViewer horizontalViewScroll = null;
@@ -65,8 +66,8 @@ namespace EpgTimer.EpgView
 
             programView.PreviewMouseWheel += new MouseWheelEventHandler(epgProgramView_PreviewMouseWheel);
             programView.ScrollChanged += new ScrollChangedEventHandler(epgProgramView_ScrollChanged);
-            programView.LeftDoubleClick += new ProgramView.ProgramViewClickHandler(epgProgramView_LeftDoubleClick);
-            programView.RightClick += new ProgramView.ProgramViewClickHandler(epgProgramView_RightClick);
+            programView.LeftDoubleClick += new ProgramView.PanelViewClickHandler(epgProgramView_LeftDoubleClick);
+            programView.RightClick += new ProgramView.PanelViewClickHandler(epgProgramView_RightClick);
             
             nowViewTimer = new DispatcherTimer(DispatcherPriority.Normal);
             nowViewTimer.Tick += new EventHandler(WaitReDrawNowLine);
@@ -156,7 +157,7 @@ namespace EpgTimer.EpgView
         /// <summary>マウスホイールイベント呼び出し</summary>
         protected void epgProgramView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            vutil.view_PreviewMouseWheel<ProgramView>(sender, e, programView.scrollViewer);
+            vutil.view_PreviewMouseWheel<ProgramView>(sender, e, programView.scrollViewer, Settings.Instance.MouseScrollAuto, Settings.Instance.ScrollSize);
         }
 
         /// <summary>左ボタンダブルクリックイベント呼び出し/summary>
@@ -186,32 +187,84 @@ namespace EpgTimer.EpgView
             }
         }
 
-        protected override void MoveToReserveItem(ReserveItem target, bool JumpingTable)
+        protected override void MoveToReserveItem(ReserveItem target, bool IsMarking)
         {
             uint ID = target.ReserveInfo.ReserveID;
             ReserveViewItem target_item = this.reserveList.Find(item => item.ReserveInfo.ReserveID == ID);
-            ScrollToFindItem(target_item, JumpingTable);
+            this.programView.ScrollToFindItem(target_item, IsMarking);
         }
 
-        protected override void MoveToProgramItem(SearchItem target, bool JumpingTable)
+        protected override void MoveToProgramItem(SearchItem target, bool IsMarking)
         {
             ulong PgKey = target.EventInfo.Create64PgKey();
             ProgramViewItem target_item = this.programList.Find(item => item.EventInfo.Create64PgKey() == PgKey);
-            ScrollToFindItem(target_item, JumpingTable);
+            this.programView.ScrollToFindItem(target_item, IsMarking);
         }
 
-        private void ScrollToFindItem<T>(ViewPanelItem<T> target_item, bool JumpingTable)
+        protected virtual void ReDrawNowLineBase(DateTime nowTime, DateTime chkNowTime)
         {
-            //可能性低いが0では無さそう
-            if (target_item == null) return;
-
-            this.programView.scrollViewer.ScrollToHorizontalOffset(target_item.LeftPos - 100);
-            this.programView.scrollViewer.ScrollToVerticalOffset(target_item.TopPos - 100);
-            if (JumpingTable || Settings.Instance.DisplayNotifyEpgChange)
+            try
             {
-                //「番組表へジャンプ」の場合、またはオプションで指定のある場合に強調表示する。
-                this.programView.SetFindItem<T>(target_item);
+                nowViewTimer.Stop();
+
+                double posY = 0;
+                for (int i = 0; i < timeList.Count; i++)
+                {
+                    if (chkNowTime == timeList.Keys[i])
+                    {
+                        posY = Math.Ceiling((i * 60 + (nowTime - chkNowTime).TotalMinutes) * Settings.Instance.MinHeight);
+                        break;
+                    }
+                    else if (chkNowTime < timeList.Keys[i])
+                    {
+                        //時間省かれてる
+                        posY = Math.Ceiling(i * 60 * Settings.Instance.MinHeight);
+                        break;
+                    }
+                }
+                if (posY > programView.canvas.Height)
+                {
+                    NowLineDelete();
+                    return;
+                }
+
+                if (nowLine == null)
+                {
+                    NowLineGenerate();
+                }
+
+                nowLine.X1 = 0;
+                nowLine.Y1 = posY;
+                nowLine.X2 = programView.canvas.Width;
+                nowLine.Y2 = posY;
+
+                nowViewTimer.Interval = TimeSpan.FromSeconds(60 - nowTime.Second);
+                nowViewTimer.Start();
             }
+            catch { }
+        }
+
+        protected virtual void NowLineGenerate()
+        {
+            nowLine = new Line();
+            Canvas.SetZIndex(nowLine, 20);
+            nowLine.Stroke = Brushes.Red;
+            nowLine.StrokeThickness = 3;
+            nowLine.Opacity = 0.7;
+            nowLine.Effect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
+            nowLine.IsHitTestVisible = false;
+            this.programView.canvas.Children.Add(nowLine);
+        }
+
+        protected virtual void NowLineDelete()
+        {
+            if (nowLine != null)
+            {
+                this.programView.canvas.Children.Remove(nowLine);
+            }
+            nowLine = null;
+            nowViewTimer.Stop();
+            return;
         }
 
     }

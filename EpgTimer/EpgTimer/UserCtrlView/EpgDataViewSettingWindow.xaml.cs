@@ -1,15 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace EpgTimer
 {
@@ -21,25 +15,29 @@ namespace EpgTimer
         public EpgDataViewSettingWindow()
         {
             InitializeComponent();
+            checkBox_tryEpgSetting.Visibility = Visibility.Hidden;
+        }
+
+        public void SetTrySetModeEnable()
+        {
+            checkBox_tryEpgSetting.Visibility = Visibility.Visible;
+            checkBox_tryEpgSetting.IsChecked = (Settings.Instance.TryEpgSetting == true);
+        }
+
+        public void SetTrySetModeOnly()
+        {
+            checkBox_tryEpgSetting.IsEnabled  = false;
+            checkBox_tryEpgSetting.IsChecked = true;
+            checkBox_tryEpgSetting.ToolTip = "デフォルト表示では一時的な変更のみ可能で設定は保存されません。";
         }
 
         /// <summary>
         /// デフォルト表示の設定値
         /// </summary>
         /// <param name="setInfo"></param>
-        public void SetDefSetting(CustomEpgTabInfo setInfo, bool show)
+        public void SetDefSetting(CustomEpgTabInfo setInfo)
         {
             epgDataViewSetting.SetSetting(setInfo);
-
-            if (show)
-            {
-                checkBox_save_settings.Visibility = Visibility.Visible;
-                checkBox_save_settings.IsChecked = (Settings.Instance.AlwaysSaveEpgSetting == true);
-            }
-            else
-            {
-                checkBox_save_settings.Visibility = Visibility.Hidden;
-            }
         }
 
         /// <summary>
@@ -49,25 +47,13 @@ namespace EpgTimer
         public void GetSetting(ref CustomEpgTabInfo info)
         {
             epgDataViewSetting.GetSetting(ref info);
-
-            if (checkBox_save_settings.Visibility == Visibility.Visible)
-            {
-                if (checkBox_save_settings.IsChecked == true)
-                {
-                    int index = Settings.Instance.CustomEpgTabList.IndexOf(info);
-                    if (index >= 0)
-                    {
-                        Settings.Instance.CustomEpgTabList[index] = info;
-                    }
-                    Settings.Instance.AlwaysSaveEpgSetting = true;
-                }
-                else
-                {
-                    Settings.Instance.AlwaysSaveEpgSetting = false;
-                }
-            }
         }
 
+        private void checkBox_tryEpgSetting_Click(object sender, RoutedEventArgs e)
+        {
+            //これはダイアログの設定なので即座に反映
+            Settings.Instance.TryEpgSetting = (checkBox_tryEpgSetting.IsChecked == true);
+        }
 
         private void button_OK_Click(object sender, RoutedEventArgs e)
         {

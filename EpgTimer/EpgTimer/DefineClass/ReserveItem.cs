@@ -59,7 +59,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return CommonManager.Instance.ConvertNetworkNameText(ReserveInfo.OriginalNetworkID);
+                return CommonManager.ConvertNetworkNameText(ReserveInfo.OriginalNetworkID);
             }
         }
         public override String StartTime
@@ -161,7 +161,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return ReserveInfo.RecSetting.TuijyuuFlag == 0 ? "しない" : "する";
+                return CommonManager.Instance.YesNoDictionary[ReserveInfo.RecSetting.TuijyuuFlag].DisplayName;
             }
         }
         public String Pittari
@@ -170,7 +170,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return ReserveInfo.RecSetting.PittariFlag == 0 ? "しない" : "する";
+                return CommonManager.Instance.YesNoDictionary[ReserveInfo.RecSetting.PittariFlag].DisplayName;
             }
         }
         public String Tuner
@@ -188,7 +188,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                String view = ReserveInfo.Comment.ToString();
+                String view = (ReserveInfo.IsAutoAddMissing() == true ? "不明な" : "") + ReserveInfo.Comment.ToString();
                 if (view == "")
                 {
                     view = "個別予約(" + (ReserveInfo.EventID == 0xFFFF ? "プログラム" : "EPG") + ")";

@@ -70,6 +70,9 @@ namespace EpgTimer
         public List<Brush> CustContentColorList { get; private set; }
         public SolidColorBrush CustTitle1Color { get; private set; }
         public SolidColorBrush CustTitle2Color { get; private set; }
+        public SolidColorBrush CustTunerServiceColor { get; private set; }
+        public SolidColorBrush CustTunerTextColor { get; private set; }
+        public List<SolidColorBrush> CustTunerServiceColorPri { get; private set; }
         public List<Brush> CustTimeColorList { get; private set; }
         public Brush CustServiceColor { get; private set; }
         public SolidColorBrush ResDefBackColor { get; private set; }
@@ -459,6 +462,10 @@ namespace EpgTimer
             {
                 CustContentColorList = new List<Brush>();
             }
+            if (CustTunerServiceColorPri == null)
+            {
+                CustTunerServiceColorPri = new List<SolidColorBrush>();
+            }
             if (CustTimeColorList == null)
             {
                 CustTimeColorList = new List<Brush>();
@@ -742,53 +749,15 @@ namespace EpgTimer
             view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
 
             String recMode = ConvertRecModeText(reserveInfo.RecSetting.RecMode);
-            String tuijyu = "";
-            if (reserveInfo.RecSetting.TuijyuuFlag == 0)
-            {
-                tuijyu = "しない";
-            }
-            else if (reserveInfo.RecSetting.TuijyuuFlag == 1)
-            {
-                tuijyu = "する";
-            }
-            String pittari = "";
-            if (reserveInfo.RecSetting.PittariFlag == 0)
-            {
-                pittari = "しない";
-            }
-            else if (reserveInfo.RecSetting.PittariFlag == 1)
-            {
-                pittari = "する";
-            }
 
             view += reserveInfo.StationName;
-            if (0x7880 <= reserveInfo.OriginalNetworkID && reserveInfo.OriginalNetworkID <= 0x7FE8)
-            {
-                view += " (地デジ)";
-            }
-            else if (reserveInfo.OriginalNetworkID == 0x0004)
-            {
-                view += " (BS)";
-            }
-            else if (reserveInfo.OriginalNetworkID == 0x0006)
-            {
-                view += " (CS1)";
-            }
-            else if (reserveInfo.OriginalNetworkID == 0x0007)
-            {
-                view += " (CS2)";
-            }
-            else
-            {
-                view += " (その他)";
-            }
-            view += "\r\n";
+            view += "(" + ConvertNetworkNameText(reserveInfo.OriginalNetworkID) + ")" + "\r\n";
 
             view += reserveInfo.Title + "\r\n\r\n";
             view += "録画モード : " + recMode + "\r\n";
             view += "優先度 : " + reserveInfo.RecSetting.Priority.ToString() + "\r\n";
-            view += "追従 : " + tuijyu + "\r\n";
-            view += "ぴったり（？） : " + pittari + "\r\n";
+            view += "追従 : " + YesNoDictionary[reserveInfo.RecSetting.TuijyuuFlag] + "\r\n";
+            view += "ぴったり（？） : " + YesNoDictionary[reserveInfo.RecSetting.PittariFlag] + "\r\n";
             if ((reserveInfo.RecSetting.ServiceMode & 0x01) == 0)
             {
                 view += "指定サービス対象データ : デフォルト\r\n";
@@ -1048,7 +1017,7 @@ namespace EpgTimer
                 extInfo += "\r\n";
 
                 //スクランブル
-                if (!(0x7880 <= eventInfo.original_network_id && eventInfo.original_network_id <= 0x7FE8))
+                if (!ChSet5.IsDttv(eventInfo.original_network_id))
                 {
                     if (eventInfo.FreeCAFlag == 0)
                     {
@@ -1105,24 +1074,24 @@ namespace EpgTimer
             return retText;
         }
 
-        public String ConvertNetworkNameText(ushort originalNetworkID)
+        public static String ConvertNetworkNameText(ushort originalNetworkID, bool IsSimple = false)
         {
             String retText = "";
-            if (0x7880 <= originalNetworkID && originalNetworkID <= 0x7FE8)
+            if (ChSet5.IsDttv(originalNetworkID) == true)
             {
                 retText = "地デジ";
             }
-            else if (originalNetworkID == 0x0004)
+            else if (ChSet5.IsBS(originalNetworkID) == true)
             {
                 retText = "BS";
             }
-            else if (originalNetworkID == 0x0006)
+            else if (ChSet5.IsCS1(originalNetworkID) == true)
             {
-                retText = "CS1";
+                retText = IsSimple == true ? "CS" : "CS1";
             }
-            else if (originalNetworkID == 0x0007)
+            else if (ChSet5.IsCS2(originalNetworkID) == true)
             {
-                retText = "CS2";
+                retText = IsSimple == true ? "CS" : "CS2";
             }
             else
             {
@@ -1301,6 +1270,38 @@ namespace EpgTimer
             return flowDoc;
         }
 
+        //デフォルト番組表の情報作成
+        public List<CustomEpgTabInfo> CreateDefaultTabInfo()
+        {
+            List<CustomEpgTabInfo> setInfo = Enumerable.Range(0, 4).Select(i => new CustomEpgTabInfo()).ToList();
+
+            setInfo[0].TabName = "地デジ";
+            setInfo[1].TabName = "BS";
+            setInfo[2].TabName = "CS";
+            setInfo[3].TabName = "その他";
+
+            foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+            {
+                int i = 3;//その他
+                if (info.IsDttv == true)//地デジ
+                {
+                    i = 0;
+                }
+                else if (info.IsBS == true)//BS
+                {
+                    i = 1;
+                }
+                else if (info.IsCS == true)//CS
+                {
+                    i = 2;
+                }
+
+                setInfo[i].ViewServiceList.Add(info.Key);
+            }
+
+            return setInfo.Where(info => info.ViewServiceList.Count != 0).ToList();
+        }
+        
         void h_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             try
@@ -1469,6 +1470,14 @@ namespace EpgTimer
 
                 CustTitle1Color = (SolidColorBrush)_GetColorBrush(Settings.Instance.TitleColor1, Settings.Instance.TitleCustColor1);
                 CustTitle2Color = (SolidColorBrush)_GetColorBrush(Settings.Instance.TitleColor2, Settings.Instance.TitleCustColor2);
+                CustTunerServiceColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.TunerServiceColors[0], Settings.Instance.TunerServiceCustColors[0]);
+                CustTunerTextColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.TunerServiceColors[1], Settings.Instance.TunerServiceCustColors[1]);
+
+                CustTunerServiceColorPri.Clear();
+                for (int i = 2; i < 2 + 5; i++)
+                {
+                    CustTunerServiceColorPri.Add((SolidColorBrush)_GetColorBrush(Settings.Instance.TunerServiceColors[i], Settings.Instance.TunerServiceCustColors[i]));
+                }
 
                 CustTimeColorList.Clear();
                 for (int i = 0; i < Settings.Instance.TimeColorList.Count; i++)

@@ -45,9 +45,9 @@ namespace EpgTimer
     public enum EpgViewMode : uint
     {
         Unknown = 0, //無効
-        BS = 1, //BS
-        CS = 2, //CS
-        Tere = 3, //地デジ
+        BS = 1, //BS (Broadcasting Satellite)
+        CS = 2, //CS (Communication Satellite)
+        DTTV = 3, //地デジ(Digital Terrestrial Television)
         Other = 4, //その他
         Custom = 5, //カスタム
     };

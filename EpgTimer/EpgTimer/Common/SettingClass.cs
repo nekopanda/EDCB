@@ -130,6 +130,7 @@ namespace EpgTimer
             IniSetting.Instance.UpToDate();
 
             Settings.UpdateDefRecSetting();
+            ChSet5.LoadFile();
         }
 
         public static bool IsSyncWithServer
@@ -496,8 +497,28 @@ namespace EpgTimer
         private string serviceColor;
         private UInt32 serviceCustColor;
         private bool reserveRectBackground;
+        private string tunerFontNameService;
+        private double tunerFontSizeService;
+        private bool tunerFontBoldService;
+        private string tunerFontName;
+        private double tunerFontSize;
+        private List<string> tunerServiceColors;
+        private List<UInt32> tunerServiceCustColors;
+        private double tunerMinHeight;
+        private double tunerMinimumLine;
+        private double tunerDragScroll;
+        private double tunerScrollSize;
+        private bool tunerMouseScrollAuto;
+        private double tunerWidth;
+        private bool tunerServiceNoWrap;
+        private bool tunerTitleIndent;
+        private bool tunerPopup;
+        private bool tunerPopupRecinfo;
+        private bool tunerInfoSingleClick;
+        private bool tunerColorModeUse;
         private bool epgTitleIndent;
         private bool epgPopup;
+        private bool epgPopupResOnly;
         private bool epgGradation;
         private bool epgGradationHeader;
         private string resColumnHead;
@@ -594,6 +615,7 @@ namespace EpgTimer
         private SerializableDictionary<string, WINDOWPLACEMENT> placement;
         private bool infoWindowTopMost;
         private bool infoWindowEnabled;
+        private bool tryEpgSetting;
 
         public bool UseCustomEpgView
         {
@@ -755,6 +777,101 @@ namespace EpgTimer
             get { return serviceCustColor; }
             set { serviceCustColor = value; }
         }
+        public string TunerFontNameService
+        {
+            get { return tunerFontNameService; }
+            set { tunerFontNameService = value; }
+        }
+        public double TunerFontSizeService
+        {
+            get { return tunerFontSizeService; }
+            set { tunerFontSizeService = value; }
+        }
+        public bool TunerFontBoldService
+        {
+            get { return tunerFontBoldService; }
+            set { tunerFontBoldService = value; }
+        }
+        public string TunerFontName
+        {
+            get { return tunerFontName; }
+            set { tunerFontName = value; }
+        }
+        public double TunerFontSize
+        {
+            get { return tunerFontSize; }
+            set { tunerFontSize = value; }
+        }
+        public List<string> TunerServiceColors
+        {
+            get { return tunerServiceColors; }
+            set { tunerServiceColors = value; }
+        }
+        public List<UInt32> TunerServiceCustColors
+        {
+            get { return tunerServiceCustColors; }
+            set { tunerServiceCustColors = value; }
+        }
+        public double TunerMinHeight
+        {
+            get { return tunerMinHeight; }
+            set { tunerMinHeight = value; }
+        }
+        public double TunerMinimumLine
+        {
+            get { return tunerMinimumLine; }
+            set { tunerMinimumLine = value; }
+        }
+        public double TunerDragScroll
+        {
+            get { return tunerDragScroll; }
+            set { tunerDragScroll = value; }
+        }
+        public double TunerScrollSize
+        {
+            get { return tunerScrollSize; }
+            set { tunerScrollSize = value; }
+        }
+        public bool TunerMouseScrollAuto
+        {
+            get { return tunerMouseScrollAuto; }
+            set { tunerMouseScrollAuto = value; }
+        }
+        public double TunerWidth
+        {
+            get { return tunerWidth; }
+            set { tunerWidth = value; }
+        }
+        public bool TunerServiceNoWrap
+        {
+            get { return tunerServiceNoWrap; }
+            set { tunerServiceNoWrap = value; }
+        }
+        public bool TunerTitleIndent
+        {
+            get { return tunerTitleIndent; }
+            set { tunerTitleIndent = value; }
+        }
+        public bool TunerPopup
+        {
+            get { return tunerPopup; }
+            set { tunerPopup = value; }
+        }
+        public bool TunerPopupRecinfo
+        {
+            get { return tunerPopupRecinfo; }
+            set { tunerPopupRecinfo = value; }
+        }
+        public bool TunerInfoSingleClick
+        {
+            get { return tunerInfoSingleClick; }
+            set { tunerInfoSingleClick = value; }
+        }
+        public bool TunerColorModeUse
+        {
+            get { return tunerColorModeUse; }
+            set { tunerColorModeUse = value; }
+        }
         public bool EpgTitleIndent
         {
             get { return epgTitleIndent; }
@@ -764,6 +881,11 @@ namespace EpgTimer
         {
             get { return epgPopup; }
             set { epgPopup = value; }
+        }
+        public bool EpgPopupResOnly
+        {
+            get { return epgPopupResOnly; }
+            set { epgPopupResOnly = value; }
         }
         public bool EpgGradation
         {
@@ -1245,7 +1367,12 @@ namespace EpgTimer
             get { return infoWindowEnabled; }
             set { infoWindowEnabled = value; }
         }
-
+        public bool TryEpgSetting
+        {
+            get { return tryEpgSetting; }
+            set { tryEpgSetting = value; }
+        }
+        
         public Settings()
         {
             useCustomEpgView = false;
@@ -1254,9 +1381,9 @@ namespace EpgTimer
             minimumHeight = 0;
             serviceWidth = 150;
             scrollSize = 240;
-            fontName = "メイリオ";
+            fontName = System.Drawing.SystemFonts.DefaultFont.Name;
             fontSize = 12;
-            fontNameTitle = "メイリオ";
+            fontNameTitle = System.Drawing.SystemFonts.DefaultFont.Name;
             fontSizeTitle = 12;
             fontBoldTitle = true;
             noToolTip = false;
@@ -1278,8 +1405,28 @@ namespace EpgTimer
             serviceColor = "LightSlateGray";
             serviceCustColor = 0xFFFFFFFF;
             reserveRectBackground = false;
+            tunerFontNameService = System.Drawing.SystemFonts.DefaultFont.Name;
+            tunerFontSizeService = 12;
+            tunerFontBoldService = true;
+            tunerFontName = System.Drawing.SystemFonts.DefaultFont.Name;
+            tunerFontSize = 12;
+            tunerServiceColors = new List<string>();
+            tunerServiceCustColors = new List<uint>();
+            tunerMinHeight = 2;
+            tunerMinimumLine = 0;
+            tunerDragScroll = 1.5;
+            tunerScrollSize = 240;
+            tunerMouseScrollAuto = false;
+            tunerWidth = 150;
+            tunerServiceNoWrap = true;
+            tunerTitleIndent = true;
+            tunerPopup = false;
+            tunerPopupRecinfo = false;
+            tunerInfoSingleClick = false;
+            tunerColorModeUse = false;
             epgTitleIndent = true;
             epgPopup = true;
+            epgPopupResOnly = false;
             epgGradation = true;
             epgGradationHeader = true;
             resColumnHead = "";
@@ -1375,6 +1522,7 @@ namespace EpgTimer
             placement = new SerializableDictionary<string, WINDOWPLACEMENT>();
             infoWindowTopMost = true;
             infoWindowEnabled = false;
+            tryEpgSetting = true;
         }
 
         [NonSerialized()]
@@ -1431,17 +1579,15 @@ namespace EpgTimer
                 // タイミング合わせにくいので、メニュー系のデータチェックは
                 // MenuManager側のワークデータ作成時に実行する。
 
+                SetCustomEpgTabInfoID();
+
                 if (Instance.recModeFontColorList.Count != 6)
                 {
                     //予約アイテムのデフォルトの文字色
-                    Instance.recModeFontColorList.Clear();
-                    Instance.recModeFontColorList.Add("#FF042271"); //0 全サービス
-                    Instance.recModeFontColorList.Add("#FF042271"); //1 指定サービス
-                    Instance.recModeFontColorList.Add("#FF042271"); //2 全サービス(デコード処理なし)
-                    Instance.recModeFontColorList.Add("#FF042271"); //3 指定サービス(デコード処理なし)
-                    Instance.recModeFontColorList.Add("#FF042271"); //4 視聴
-                    Instance.recModeFontColorList.Add("#FF042271"); //5 無効
+                    Instance.recModeFontColorList = Enumerable.Repeat("#FF042271", 6).ToList();
                 }
+                int num;
+                num = 0x11;//番組表17色。forは色の増加対策の読込。過去に16色時代があった。
                 if (Instance.contentColorList.Count < 0x11)
                 {
                     //番組表のデフォルトの背景色
@@ -1469,12 +1615,22 @@ namespace EpgTimer
                         Instance.contentColorList.Add(defColors[i]);
                     }
                 }
-                if (Instance.ContentCustColorList.Count < 0x11 + 5)
+                num = 0x11 + 5;//番組表17色+予約枠5色
+                if (Instance.contentCustColorList.Count < num)
                 {
-                    for (int i = Instance.ContentCustColorList.Count; i < 0x11 + 5; i++)
-                    {
-                        Instance.ContentCustColorList.Add(0xFFFFFFFF);
-                    }
+                    Instance.contentCustColorList.AddRange(
+                        Enumerable.Repeat(0xFFFFFFFF, num - Instance.contentCustColorList.Count));
+                }
+                num = 2 + 5;//固定色2+優先度色5
+                if (Instance.tunerServiceColors.Count < num)
+                {
+                    Instance.tunerServiceColors.AddRange(
+                        Enumerable.Repeat("Black", num - Instance.tunerServiceColors.Count));
+                }
+                if (Instance.tunerServiceCustColors.Count < num)
+                {
+                    Instance.tunerServiceCustColors.AddRange(
+                        Enumerable.Repeat(0xFFFFFFFF, num - Instance.tunerServiceCustColors.Count));
                 }
                 if (Instance.timeColorList.Count != 4)
                 {
@@ -1485,13 +1641,9 @@ namespace EpgTimer
                     Instance.timeColorList.Add("LightSalmon");
                     Instance.timeColorList.Add("CornflowerBlue");
                 }
-                if (Instance.TimeCustColorList.Count != 4)
+                if (Instance.timeCustColorList.Count != 4)
                 {
-                    Instance.TimeCustColorList.Clear();
-                    for (int i = 0; i < 4; i++)
-                    {
-                        Instance.TimeCustColorList.Add(0xFFFFFFFF);
-                    }
+                    Instance.timeCustColorList = Enumerable.Repeat(0xFFFFFFFF, 4).ToList();
                 }
                 if (Instance.viewButtonList.Count == 0)
                 {
@@ -1711,6 +1863,14 @@ namespace EpgTimer
                 }
             }
             return folders;
+        }
+
+        public static void SetCustomEpgTabInfoID()
+        {
+            for (int i = 0; i < Settings.Instance.CustomEpgTabList.Count; i++)
+            {
+                Settings.Instance.CustomEpgTabList[i].ID = i;
+            }
         }
     }
 }

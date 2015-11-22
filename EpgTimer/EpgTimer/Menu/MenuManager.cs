@@ -49,6 +49,8 @@ namespace EpgTimer
             var cm_Delete2 = new CtxmItemData("予約ごと削除", EpgCmds.Delete2);
             var cm_Delete3 = new CtxmItemData("予約のみ削除", EpgCmds.Delete3);
             var cm_AdjustReserve = new CtxmItemData("予約を自動登録に合わせる", EpgCmds.AdjustReserve);
+            var cm_JumpReserve = new CtxmItemData("予約一覧へジャンプ", EpgCmds.JumpReserve);
+            var cm_JumpTuner = new CtxmItemData("チューナ画面へジャンプ", EpgCmds.JumpTuner);
             var cm_JumpTable = new CtxmItemData("番組表へジャンプ", EpgCmds.JumpTable);
             var cm_ToAutoadd = new CtxmItemData("自動予約登録", EpgCmds.ToAutoadd);
             var cm_Play = new CtxmItemData("追っかけ再生", EpgCmds.Play);
@@ -176,6 +178,7 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("削除", cm_Delete));
             ctmd.Items.Add(new CtxmItemData("プログラム予約追加", cm_ShowAddDialog));
             ctmd.Items.Add(new CtxmItemData("自動予約変更", cm_ChangeAutoAddMenu));
+            ctmd.Items.Add(new CtxmItemData("チューナ画面へジャンプ", cm_JumpTuner));
             ctmd.Items.Add(new CtxmItemData("番組表へジャンプ", cm_JumpTable));
             ctmd.Items.Add(new CtxmItemData("自動予約登録", cm_ToAutoadd));
             ctmd.Items.Add(new CtxmItemData("追っかけ再生", cm_Play));
@@ -189,6 +192,7 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("削除", cm_Delete));
             ctmd.Items.Add(new CtxmItemData("プログラム予約追加", cm_ShowAddDialog));
             ctmd.Items.Add(new CtxmItemData("自動予約変更", cm_ChangeAutoAddMenu));
+            ctmd.Items.Add(new CtxmItemData("予約一覧へジャンプ", cm_JumpReserve));
             ctmd.Items.Add(new CtxmItemData("番組表へジャンプ", cm_JumpTable));
             ctmd.Items.Add(new CtxmItemData("自動予約登録", cm_ToAutoadd));
             ctmd.Items.Add(new CtxmItemData("追っかけ再生", cm_Play));
@@ -245,6 +249,8 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("変更", cm_ChangeMenu));
             ctmd.Items.Add(new CtxmItemData("削除", cm_Delete));
             ctmd.Items.Add(new CtxmItemData("自動予約変更", cm_ChangeAutoAddMenu));
+            ctmd.Items.Add(new CtxmItemData("予約一覧へジャンプ", cm_JumpReserve));
+            ctmd.Items.Add(new CtxmItemData("チューナ画面へジャンプ", cm_JumpTuner));
             ctmd.Items.Add(new CtxmItemData("番組表(標準モード)へジャンプ", cm_JumpTable));
             ctmd.Items.Add(new CtxmItemData("自動予約登録", cm_ToAutoadd));
             ctmd.Items.Add(new CtxmItemData("追っかけ再生", cm_Play));
@@ -261,6 +267,8 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("変更", cm_ChangeMenu));
             ctmd.Items.Add(new CtxmItemData("削除", cm_Delete));
             ctmd.Items.Add(new CtxmItemData("自動予約変更", cm_ChangeAutoAddMenu));
+            ctmd.Items.Add(new CtxmItemData("予約一覧へジャンプ", cm_JumpReserve));
+            ctmd.Items.Add(new CtxmItemData("チューナ画面へジャンプ", cm_JumpTuner));
             ctmd.Items.Add(new CtxmItemData("番組表へジャンプ", cm_JumpTable));
             ctmd.Items.Add(new CtxmItemData("番組名で再検索", EpgCmds.ReSearch));
             ctmd.Items.Add(new CtxmItemData("番組名で再検索(サブウィンドウ)", EpgCmds.ReSearch2));
