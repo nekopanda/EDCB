@@ -347,6 +347,10 @@ EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
   (Vista以降？の)バルーンチップはマウス操作等がなければ表示されつづけますが、
   EpgTimer.exe.xmlの<ForceHideBalloonTipSec>で表示タイムアウトを指定できます。
 
+◇EpgTimerSrvのタスクトレイ左クリック動作を変更する【追加】
+  デフォルトではEpgTimerSrv.exeと同じ場所のEpgTimer.exeを実行しますが、EpgTimer
+  という名前のショートカットファイルがあればこちらを実行します。
+
 ■Civetwebの組み込みについて■
 HTTPサーバ機能の簡単化とディレクトリトラバーサル等々のバグ修正を目的に、EpgTimerSrv.exeにCivetwebを組み込みました。
 HTTPサーバ機能は従来通りEpgTimerSrv.iniのEnableHttpSrvキーを1にすると有効になります(2にするとEpgTimerSrv.exeと同じ場所にログファイルも出力)。
