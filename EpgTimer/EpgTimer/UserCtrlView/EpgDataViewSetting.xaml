@@ -45,7 +45,7 @@
                                     <RowDefinition Height="105"/>
                                 </Grid.RowDefinitions>
                                 <Label Content="表示サービス (同一TSでSIDを逆順にすると結合)" Margin="6" Name="label31" VerticalAlignment="Top" Grid.ColumnSpan="2" />
-                                <ListBox Margin="3,35,3,3" Name="listBox_serviceView" SelectionChanged="listBox_serviceView_SelectionChanged" IsManipulationEnabled="False" SelectionMode="Extended" />
+                                <ListBox Margin="3,35,3,3" Name="listBox_serviceView" SelectionChanged="listBox_serviceView_SelectionChanged" IsManipulationEnabled="False" SelectionMode="Extended" MouseDoubleClick="listBox_MouseDoubleClick" />
                                 <Grid Margin="3" Grid.Column="1">
                                     <Button Content="全追加" Height="23" Margin="0,36,0,0" Name="button_service_addAll" VerticalAlignment="Top" Width="58" Click="button_service_addAll_Click" HorizontalAlignment="Left" />
                                     <Button Content="映像のみ全追加" Height="23" Margin="0,65,0,0" Name="button_service_addVideo" VerticalAlignment="Top" Width="111" Click="button_service_addVideo_Click" HorizontalAlignment="Left" />
@@ -60,19 +60,19 @@
                                 <Label Content="サービス一覧" Margin="6" Name="label32" VerticalAlignment="Top" Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2"/>
                                 <TabControl Margin="3,35,3,3" Name="tabControl2" Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2">
                                     <TabItem Header="地デジ" Name="tabItem_dttv">
-                                        <ListBox Name="listBox_serviceDttv" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" Margin="0,0,0,3" />
+                                        <ListBox Name="listBox_serviceDttv" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" MouseDoubleClick="listBox_MouseDoubleClick" />
                                     </TabItem>
                                     <TabItem Header="BS" Name="tabItem_bs">
-                                        <ListBox Name="listBox_serviceBS" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
+                                        <ListBox Name="listBox_serviceBS" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" MouseDoubleClick="listBox_MouseDoubleClick" />
                                     </TabItem>
                                     <TabItem Header="CS" Name="tabItem_cs">
-                                        <ListBox Name="listBox_serviceCS" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
+                                        <ListBox Name="listBox_serviceCS" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" MouseDoubleClick="listBox_MouseDoubleClick" />
                                     </TabItem>
                                     <TabItem Header="その他" Name="tabItem_other">
-                                        <ListBox Name="listBox_serviceOther" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
+                                        <ListBox Name="listBox_serviceOther" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" MouseDoubleClick="listBox_MouseDoubleClick" />
                                     </TabItem>
                                     <TabItem Header="全て" Name="tabItem_all">
-                                        <ListBox Name="listBox_serviceAll" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
+                                        <ListBox Name="listBox_serviceAll" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" MouseDoubleClick="listBox_MouseDoubleClick" />
                                     </TabItem>
                                 </TabControl>
                                 <TextBox IsReadOnly="True" Margin="3" Name="textBox_serviceView1" TextWrapping="Wrap" VerticalScrollBarVisibility="Visible" Grid.Row="1" Grid.ColumnSpan="2" />
@@ -87,9 +87,9 @@
                                     <ColumnDefinition />
                                 </Grid.ColumnDefinitions>
                                 <Label Content="表示ジャンル(項目なしで全ジャンル)" Margin="10,10,0,0" Name="label30" VerticalAlignment="Top" />
-                                <ListBox Margin="10,44,10,6" Name="listBox_jyanruView"  DisplayMemberPath="ListBoxView" SelectionMode="Extended" />
+                                <ListBox Margin="10,44,10,6" Name="listBox_jyanruView"  DisplayMemberPath="ListBoxView" SelectionMode="Extended" MouseDoubleClick="listBox_MouseDoubleClick" />
                                 <Label Content="ジャンル一覧" Margin="10,10,0,0" Name="label33" Grid.Column="2" VerticalAlignment="Top" />
-                                <ListBox Margin="10,44,10,6" Name="listBox_jyanru" SelectionMode="Extended" ItemsSource="{Binding}" Grid.Column="2" />
+                                <ListBox Margin="10,44,10,6" Name="listBox_jyanru" SelectionMode="Extended" ItemsSource="{Binding}" Grid.Column="2" MouseDoubleClick="listBox_MouseDoubleClick" />
                                 <Grid Grid.Column="1" VerticalAlignment="Center" Margin="0,44,0,0">
                                     <Button Content="全追加" HorizontalAlignment="Center" Margin="0,0,0,0" Name="button_jyanru_addAll" VerticalAlignment="Top" Width="58" Click="button_jyanru_addAll_Click" Height="23" />
                                     <Button Content="追加" HorizontalAlignment="Center" Margin="0,29,0,0" Name="button_jyanru_add" VerticalAlignment="Top" Width="58" Click="button_jyanru_add_Click" Height="23" />

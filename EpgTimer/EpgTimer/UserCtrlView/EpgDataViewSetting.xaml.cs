@@ -262,6 +262,31 @@ namespace EpgTimer
             Display_ServiceView(listBox, textBox_serviceView2);
         }
 
+        /// <summary>ダブルクリック動作</summary>
+        private void listBox_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            ListBox clicked = sender as ListBox;
+            if (clicked != null && clicked.IsMouseCaptured)
+            {
+                if (clicked.Equals(SelectedServiceListBox()))
+                {
+                    button_service_add_Click(sender, e);
+                }
+                else if (clicked.Equals(listBox_serviceView))
+                {
+                    button_service_del_Click(sender, e);
+                }
+                else if (clicked.Equals(listBox_jyanru))
+                {
+                    button_jyanru_add_Click(sender, e);
+                }
+                else if (clicked.Equals(listBox_jyanruView))
+                {
+                    button_jyanru_del_Click(sender, e);
+                }
+            }
+        }
+
         private void Display_ServiceView(ListBox srclistBox, TextBox targetBox)
         {
             try
@@ -297,6 +322,5 @@ namespace EpgTimer
                 dlg.GetSetting(ref searchKey);
             }
         }
-
     }
 }
