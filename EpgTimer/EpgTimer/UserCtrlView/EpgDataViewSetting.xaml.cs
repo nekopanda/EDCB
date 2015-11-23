@@ -11,7 +11,8 @@ namespace EpgTimer
     /// </summary>
     public partial class EpgDataViewSetting : UserControl
     {
-        private BoxExchangeEditor bx = new BoxExchangeEditor();
+        private BoxExchangeEditor bx_service = new BoxExchangeEditor();
+        private BoxExchangeEditor bx_genre = new BoxExchangeEditor();
         private EpgSearchKeyInfo searchKey = new EpgSearchKeyInfo();
         private int tabInfoID = -1;
 
@@ -49,6 +50,37 @@ namespace EpgTimer
                 radioButton_rate.IsChecked = true;
                 radioButton_week.IsChecked = false;
                 radioButton_list.IsChecked = false;
+
+                bx_service.SourceBox = listBox_serviceDttv;
+                bx_service.TargetBox = listBox_serviceView;
+                button_service_addAll.Click += new RoutedEventHandler(bx_service.button_addAll_Click);
+                button_service_add.Click += new RoutedEventHandler(bx_service.button_add_Click);
+                button_service_del.Click += new RoutedEventHandler(bx_service.button_del_Click);
+                button_service_delAll.Click += new RoutedEventHandler(bx_service.button_delAll_Click);
+                button_service_up.Click += new RoutedEventHandler(bx_service.button_up_Click);
+                button_service_down.Click += new RoutedEventHandler(bx_service.button_down_Click);
+                button_service_top.Click += new RoutedEventHandler(bx_service.button_top_Click);
+                button_service_bottom.Click += new RoutedEventHandler(bx_service.button_bottom_Click);
+                tabControl2.SelectionChanged += (sender, e) => 
+                {
+                    try { bx_service.SourceBox = ((sender as TabControl).SelectedItem as TabItem).Content as ListBox; }
+                    catch { }
+                };
+                listBox_serviceDttv.MouseDoubleClick += new System.Windows.Input.MouseButtonEventHandler(bx_service.mouse_DoubleClick);
+                listBox_serviceBS.MouseDoubleClick += new System.Windows.Input.MouseButtonEventHandler(bx_service.mouse_DoubleClick);
+                listBox_serviceCS.MouseDoubleClick += new System.Windows.Input.MouseButtonEventHandler(bx_service.mouse_DoubleClick);
+                listBox_serviceOther.MouseDoubleClick += new System.Windows.Input.MouseButtonEventHandler(bx_service.mouse_DoubleClick);
+                listBox_serviceAll.MouseDoubleClick += new System.Windows.Input.MouseButtonEventHandler(bx_service.mouse_DoubleClick);
+                listBox_serviceView.MouseDoubleClick += new System.Windows.Input.MouseButtonEventHandler(bx_service.mouse_DoubleClick);
+
+                bx_genre.SourceBox = listBox_jyanru;
+                bx_genre.TargetBox = listBox_jyanruView;
+                button_jyanru_addAll.Click += new RoutedEventHandler(bx_genre.button_addAll_Click);
+                button_jyanru_add.Click += new RoutedEventHandler(bx_genre.button_add_Click);
+                button_jyanru_del.Click += new RoutedEventHandler(bx_genre.button_del_Click);
+                button_jyanru_delAll.Click += new RoutedEventHandler(bx_genre.button_delAll_Click);
+                listBox_jyanru.MouseDoubleClick += new System.Windows.Input.MouseButtonEventHandler(bx_genre.mouse_DoubleClick);
+                listBox_jyanruView.MouseDoubleClick += new System.Windows.Input.MouseButtonEventHandler(bx_genre.mouse_DoubleClick);
             }
             catch (Exception ex)
             {
@@ -143,28 +175,12 @@ namespace EpgTimer
             }
         }
 
-        private ListBox SelectedServiceListBox()
-        {
-            if (tabItem_bs.IsSelected == true) return listBox_serviceBS;
-            if (tabItem_cs.IsSelected == true) return listBox_serviceCS;
-            if (tabItem_dttv.IsSelected == true) return listBox_serviceDttv;
-            if (tabItem_other.IsSelected == true) return listBox_serviceOther;
-            if (tabItem_all.IsSelected == true) return listBox_serviceAll;
-            return null;
-        }
-
-        /// <summary>サービス全追加</summary>
-        private void button_service_addAll_Click(object sender, RoutedEventArgs e)
-        {
-            bx.addAllItems(SelectedServiceListBox(), listBox_serviceView);
-        }
-
         /// <summary>映像のみ全追加</summary>
         private void button_service_addVideo_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                ListBox listBox = SelectedServiceListBox();
+                ListBox listBox = bx_service.SourceBox;
                 if (listBox == null) return;
 
                 listBox.UnselectAll();
@@ -175,78 +191,12 @@ namespace EpgTimer
                         listBox.SelectedItems.Add(info);
                     }
                 }
-                bx.addItems(listBox, listBox_serviceView);
+                bx_service.addItems(listBox, listBox_serviceView);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
-        }
-
-        /// <summary>選択サービス追加</summary>
-        private void button_service_add_Click(object sender, RoutedEventArgs e)
-        {
-            bx.addItems(SelectedServiceListBox(), listBox_serviceView);
-        }
-
-        /// <summary>選択サービス削除</summary>
-        private void button_service_del_Click(object sender, RoutedEventArgs e)
-        {
-            bx.deleteItems(listBox_serviceView);
-        }
-
-        /// <summary>サービス全削除</summary>
-        private void button_service_delAll_Click(object sender, RoutedEventArgs e)
-        {
-            listBox_serviceView.Items.Clear();
-        }
-
-        /// <summary>1つ上に移動</summary>
-        private void button_service_up_Click(object sender, RoutedEventArgs e)
-        {
-            bx.move_item(listBox_serviceView, -1);
-        }
-
-        /// <summary>1つ下に移動</summary>
-        private void button_service_down_Click(object sender, RoutedEventArgs e)
-        {
-            bx.move_item(listBox_serviceView, 1);
-        }
-
-        /// <summary>一番上に移動</summary>
-        private void button_service_top_Click(object sender, RoutedEventArgs e)
-        {
-            bx.move_item(listBox_serviceView, -1 * listBox_serviceView.SelectedIndex);
-        }
-
-        /// <summary>一番下に移動</summary>
-        private void button_service_bottom_Click(object sender, RoutedEventArgs e)
-        {
-            bx.move_item(listBox_serviceView, listBox_serviceView.Items.Count - 1 - listBox_serviceView.SelectedIndex);
-        }
-        
-        /// <summary>ジャンル全追加</summary>
-        private void button_jyanru_addAll_Click(object sender, RoutedEventArgs e)
-        {
-            bx.addAllItems(listBox_jyanru, listBox_jyanruView);
-        }
-
-        /// <summary>選択ジャンル追加</summary>
-        private void button_jyanru_add_Click(object sender, RoutedEventArgs e)
-        {
-            bx.addItems(listBox_jyanru, listBox_jyanruView);
-        }
-
-        /// <summary>選択ジャンル削除</summary>
-        private void button_jyanru_del_Click(object sender, RoutedEventArgs e)
-        {
-            bx.deleteItems(listBox_jyanruView);
-        }
-
-        /// <summary>ジャンル全削除</summary>
-        private void button_jyanru_delAll_Click(object sender, RoutedEventArgs e)
-        {
-            listBox_jyanruView.Items.Clear();
         }
 
         private void listBox_serviceView_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -256,35 +206,10 @@ namespace EpgTimer
 
         private void listBox_service_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            ListBox listBox = SelectedServiceListBox();
+            ListBox listBox = bx_service.SourceBox;
             if (listBox == null) return;
 
             Display_ServiceView(listBox, textBox_serviceView2);
-        }
-
-        /// <summary>ダブルクリック動作</summary>
-        private void listBox_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            ListBox clicked = sender as ListBox;
-            if (clicked != null && clicked.IsMouseCaptured)
-            {
-                if (clicked.Equals(SelectedServiceListBox()))
-                {
-                    button_service_add_Click(sender, e);
-                }
-                else if (clicked.Equals(listBox_serviceView))
-                {
-                    button_service_del_Click(sender, e);
-                }
-                else if (clicked.Equals(listBox_jyanru))
-                {
-                    button_jyanru_add_Click(sender, e);
-                }
-                else if (clicked.Equals(listBox_jyanruView))
-                {
-                    button_jyanru_del_Click(sender, e);
-                }
-            }
         }
 
         private void Display_ServiceView(ListBox srclistBox, TextBox targetBox)

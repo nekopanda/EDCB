@@ -80,6 +80,23 @@ namespace EpgTimer
             move_item(TargetBox, TargetBox.Items.Count - 1 - TargetBox.SelectedIndex);
         }
 
+        /// <summary>ダブルクリックイベント</summary>
+        public void mouse_DoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            ListBox target = sender as ListBox;
+            if (target != null && target.IsMouseCaptured)
+            {
+                if (target.Equals(TargetBox))
+                {
+                    button_del_Click(sender, e);
+                }
+                else if (target.Equals(SourceBox))
+                {
+                    button_add_Click(sender, e);
+                }
+            }
+        }
+
         public void addAllItems(ListBox src, ListBox target, bool IsReset = false)
         {
             try

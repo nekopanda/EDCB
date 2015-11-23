@@ -125,6 +125,8 @@ namespace EpgTimer
                 button_up.Click += new RoutedEventHandler(bx.button_up_Click);
                 button_down.Click += new RoutedEventHandler(bx.button_down_Click);
                 button_bottom.Click += new RoutedEventHandler(bx.button_bottom_Click);
+                listBox_Default.MouseDoubleClick += new MouseButtonEventHandler(bx.mouse_DoubleClick);
+                listBox_Setting.MouseDoubleClick += new MouseButtonEventHandler(bx.mouse_DoubleClick);
             }
             catch (Exception ex)
             {
