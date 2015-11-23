@@ -152,8 +152,11 @@ namespace EpgTimer
             //絞り込み無し
             if (ContentKindList.Count == 0) return true;
 
-            //ジャンルデータなしは該当無し扱い
-            if (info.ContentInfo == null || info.ContentInfo.nibbleList.Count == 0) return false;
+            //ジャンルデータ'なし'扱い
+            if (info.ContentInfo == null || info.ContentInfo.nibbleList.Count == 0)
+            {
+                return ContentKindList.ContainsKey(0xFFFF) == true;
+            }
 
             foreach (EpgContentData contentInfo in info.ContentInfo.nibbleList)
             {
@@ -249,10 +252,10 @@ namespace EpgTimer
                     lastLeft = item.LeftPos;
                     lastBottom = double.MinValue;
                 }
-                item.Height = Math.Max(item.Height, minimum);
+                item.Height = Math.Ceiling(Math.Max(item.Height, minimum));
                 if (item.TopPos < lastBottom)
                 {
-                    item.Height = Math.Max(item.TopPos + item.Height - lastBottom, minimum);
+                    item.Height = Math.Ceiling(Math.Max(item.TopPos + item.Height - lastBottom, minimum));
                     item.TopPos = lastBottom;
                 }
                 lastBottom = item.TopPos + item.Height;

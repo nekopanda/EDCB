@@ -27,13 +27,14 @@ namespace EpgTimer
 
         public enum SearchMode { Find, NewAdd, Change }
         private SearchMode winMode = SearchMode.Find;
-        private bool subWindow = false;
+        public bool IsThisSubWindow { get { return this.Owner is SearchWindow; } }
         private static string subWindowString = "(サブウィンドウ)";
         
         private UInt32 autoAddID = 0;
 
         MainWindow mainWindow = null;
-        private DateTime? lastSettingTime = null;
+        private bool ReloadInfo = false;
+        private bool ReloadReserveInfo = false;
 
         public SearchWindow()
         {
@@ -54,13 +55,6 @@ namespace EpgTimer
                 mc.SetFuncGetSearchList(isAll => (isAll == true ? lstCtrl.dataList.ToList() : lstCtrl.GetSelectedItemsList()));
                 mc.SetFuncSelectSingleSearchData(lstCtrl.SelectSingleItem);
                 mc.SetFuncReleaseSelectedData(() => listView_result.UnselectAll());
-                mc.SetFuncPostProc((sender, e, cmdOpt) =>
-                {
-                    if (mc.IsCommandExecuted == true && cmdOpt.IsChangeDB == true)
-                    {
-                        this.RefreshAndSearch();
-                    }
-                });
                 mc.recSettingView = this.recSettingView;
                 
                 //コマンド集に無いもの
@@ -76,7 +70,7 @@ namespace EpgTimer
 
                 //コマンド集を振り替えるもの
                 mc.AddReplaceCommand(EpgCmds.JumpReserve, (sender, e) => mc_JumpTab(CtxmCode.ReserveView, true));
-                mc.AddReplaceCommand(EpgCmds.JumpTuner, (sender, e) => mc_JumpTab(CtxmCode.TunerReserveView, true, true));
+                mc.AddReplaceCommand(EpgCmds.JumpTuner, (sender, e) => mc_JumpTab(CtxmCode.TunerReserveView, true, Settings.Instance.TunerDisplayOffReserve == false));
                 mc.AddReplaceCommand(EpgCmds.JumpTable, (sender, e) => mc_JumpTab(CtxmCode.EpgView));
 
                 //コマンド集からコマンドを登録。
@@ -84,7 +78,6 @@ namespace EpgTimer
 
                 //コンテキストメニューを開く時の設定
                 lstCtrl.SetCtxmTargetSave(listView_result.ContextMenu);//こっちが先
-                listView_result.ContextMenu.Tag = this; //情報を付与
                 listView_result.ContextMenu.Opened += new RoutedEventHandler(mc.SupportContextMenuLoading);
 
                 //ボタンの設定
@@ -123,8 +116,12 @@ namespace EpgTimer
                     this.Height = Settings.Instance.SearchWndHeight;
                 }
 
-                searchKeyView.SetSearchKey(Settings.Instance.DefSearchKey);
+                SetSearchKey(Settings.Instance.DefSearchKey);
 
+                //notify残ってれば更新。通常残ってないはず。
+                CommonManager.Instance.DB.ReloadReserveInfo();
+
+                //EPG自動予約登録と、登録された予約、および録画済みファイルとの関連付けを実装
                 CommonManager.Instance.DB.EpgAutoAddUpdated += DB_EpgAutoAddUpdated;
             }
             catch (Exception ex)
@@ -132,11 +129,16 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
+        public static void RefreshMenu(Window owner_win)
+        {
+            foreach (SearchWindow win in owner_win.OwnedWindows.OfType<SearchWindow>())
+            {
+                SearchWindow.RefreshMenu(win);
+                win.RefreshMenu();
+            }
+        }
         public void RefreshMenu()
         {
-            if (this.lastSettingTime == mm.LastMenuSettingTime) return;
-            this.lastSettingTime = mm.LastMenuSettingTime;
-
             mBinds.ResetInputBindings(this, listView_result);
             mm.CtxmGenerateContextMenu(listView_result.ContextMenu, CtxmCode.SearchWindow, true);
         }
@@ -158,12 +160,17 @@ namespace EpgTimer
             searchKeyView.GetSearchKey(ref key);
         }
 
-        public void SetSearchDefKey(EpgSearchKeyInfo key)
+        public void SetSearchKey(EpgSearchKeyInfo key)
         {
             searchKeyView.SetSearchKey(key);
         }
 
-        public void SetRecInfoDef(RecSettingData set)
+        public void GetRecSetting(ref RecSettingData set)
+        {
+            recSettingView.GetRecSetting(ref set);
+        }
+
+        public void SetRecSetting(RecSettingData set)
         {
             recSettingView.SetDefSetting(set);
         }
@@ -203,16 +210,7 @@ namespace EpgTimer
                 button_down_epgAutoAdd.Visibility = Visibility.Visible;
                 recFileTabItem.Visibility = Visibility.Visible;
             }
-            SetSubWindowTitle();
-        }
-        public void SetSubWindow()
-        {
-            subWindow = true;
-            SetSubWindowTitle();
-        }
-        public void SetSubWindowTitle()
-        {
-            if (subWindow == true)
+            if (IsThisSubWindow == true)
             {
                 Title += (Title.EndsWith(subWindowString) == true ? "" : subWindowString);
             }
@@ -223,24 +221,12 @@ namespace EpgTimer
             autoAddID = id;
         }
 
-        public void UpdateSearch()
-        {
-            SearchPg();
-        }
-
-        private void RefreshAndSearch()
-        {
-            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
-            CommonManager.Instance.DB.ReloadReserveInfo();
-            SearchPg();
-        }
-
         private void SearchPg()
         {
             lstCtrl.ReloadInfoData(dataList =>
             {
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
-                searchKeyView.GetSearchKey(ref key);
+                GetSearchKey(ref key);
                 key.keyDisabledFlag = 0; //無効解除
                 List<EpgEventInfo> list = new List<EpgEventInfo>();
 
@@ -251,6 +237,12 @@ namespace EpgTimer
                 searchKeyView.AddSearchLog();
                 return true;
             });
+        }
+
+        private void ReloadReserveData()
+        {
+            mutil.SetSearchItemReserved(lstCtrl.dataList);
+            this.listView_result.Items.Refresh();
         }
 
         private bool CheckCautionMany()
@@ -280,16 +272,16 @@ namespace EpgTimer
 
                 var addItem = new EpgAutoAddData();
                 var searchKey = new EpgSearchKeyInfo();
-                searchKeyView.GetSearchKey(ref searchKey);
+                GetSearchKey(ref searchKey);
 
                 var recSetKey = new RecSettingData();
-                recSettingView.GetRecSetting(ref recSetKey);
+                GetRecSetting(ref recSetKey);
 
                 addItem.searchInfo = searchKey;
                 addItem.recSetting = recSetKey;
 
                 //一覧画面非表示の状態から実施する場合のためのコード
-                if (CommonManager.Instance.DB.EpgAutoAddList.Count == 0)
+                if (mainWindow.autoAddView.epgAutoAddView.IsVisible == false && CommonManager.Instance.DB.EpgAutoAddList.Count == 0)
                 {
                     CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
                     CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
@@ -312,15 +304,12 @@ namespace EpgTimer
                         this.SetChgAutoAddID(newinfo.dataID);
                         
                         //情報の再読み込みは不要なはずだが、安全のため実行しておく
-                        this.SetSearchDefKey(newinfo.searchInfo);
-                        this.SetRecInfoDef(newinfo.recSetting);
-                        this.SetRecFileList(newinfo.recFileList);
+                        SetSearchKey(newinfo.searchInfo);
+                        SetRecSetting(newinfo.recSetting);
 
-                        mainWindow.autoAddView.epgAutoAddView.UpdateInfo();
-                        UpdateEpgAutoAddViewSelection();
+                        //EPG自動予約登録と、登録された予約、および録画済みファイルとの関連付けを実装
+                        this.SetRecFileList(newinfo.recFileList);
                     }
-                    
-                    RefreshAndSearch();
                 }
             }
             catch (Exception ex)
@@ -357,18 +346,15 @@ namespace EpgTimer
                 var addItem = new EpgAutoAddData();
                 addItem.dataID = autoAddID;
                 var searchKey = new EpgSearchKeyInfo();
-                searchKeyView.GetSearchKey(ref searchKey);
+                GetSearchKey(ref searchKey);
 
                 var recSetKey = new RecSettingData();
-                recSettingView.GetRecSetting(ref recSetKey);
+                GetRecSetting(ref recSetKey);
 
                 addItem.searchInfo = searchKey;
                 addItem.recSetting = recSetKey;
 
-                if (mutil.EpgAutoAddChange(mutil.ToList(addItem)) == true)
-                {
-                    RefreshAndSearch();
-                }
+                mutil.EpgAutoAddChange(mutil.ToList(addItem));
             }
             catch (Exception ex)
             {
@@ -390,10 +376,6 @@ namespace EpgTimer
             {
                 SetViewMode(SearchMode.NewAdd);
                 this.autoAddID = 0;
-                if (Settings.Instance.DisplayReserveAutoAddMissing == true)
-                {
-                    RefreshAndSearch();
-                }
             }
         }
 
@@ -418,9 +400,11 @@ namespace EpgTimer
             epglist.SelectedIndex = ((epglist.SelectedIndex + direction) % epglist.Items.Count + epglist.Items.Count) % epglist.Items.Count;
             EpgAutoAddData newinfo = (epglist.SelectedItem as EpgAutoDataItem).EpgAutoAddInfo;
 
-            this.SetChgAutoAddID(newinfo.dataID);
-            this.SetSearchDefKey(newinfo.searchInfo);
-            this.SetRecInfoDef(newinfo.recSetting);
+            SetChgAutoAddID(newinfo.dataID);
+            SetSearchKey(newinfo.searchInfo);
+            SetRecSetting(newinfo.recSetting);
+
+            //EPG自動予約登録と、登録された予約、および録画済みファイルとの関連付けを実装
             this.SetRecFileList(newinfo.recFileList);
 
             SearchPg();
@@ -470,7 +454,7 @@ namespace EpgTimer
 
         private void mc_JumpTab(CtxmCode code, bool reserveOnly = false, bool onReserveOnly = false)
         {
-            if (listView_result.SelectedItem != null)
+            if (IsThisSubWindow == false && listView_result.SelectedItem != null)
             {
                 SearchItem item = lstCtrl.SelectSingleItem();
 
@@ -485,37 +469,12 @@ namespace EpgTimer
                 {
                     BlackoutWindow.SelectedSearchItem = item;
                 }
-                var mainWindow1 = this.Owner as MainWindow;
-                if (mainWindow1 != null)
-                {
-                    if (BlackoutWindow.unvisibleSearchWindow != null)
-                    {
-                        // 非表示で保存するSearchWindowを1つに限定するため
-                        this.Close();
-                    }
-                    else
-                    {
-                        this.Hide();
-                        mainWindow1.EmphasizeSearchButton(true);
-                        BlackoutWindow.unvisibleSearchWindow = this;
-                    }
-                    mainWindow1.moveTo_tabItem(code);
-                    mainWindow1.Hide(); // UserControl_IsVisibleChangedイベントを発生させる
-                    mainWindow1.Show();
-                }
-            }
-        }
 
-        private void Window_IsVisibleChanged_1(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            var mainWindow1 = this.Owner as MainWindow;
-            if (this.IsVisible)
-            {
-                if (BlackoutWindow.unvisibleSearchWindow == this)
-                {
-                    mainWindow1.EmphasizeSearchButton(false);
-                    BlackoutWindow.unvisibleSearchWindow = null;
-                }
+                this.Hide();
+                mainWindow.SetHideSearchWindow(this);
+                mainWindow.moveTo_tabItem(code);
+                mainWindow.Hide(); // UserControl_IsVisibleChangedイベントを発生させる
+                mainWindow.Show();
             }
         }
 
@@ -523,12 +482,12 @@ namespace EpgTimer
         {
             try
             {
-                if (listView_result.SelectedItem != null)
+                if (listView_result.SelectedItem != null && !(e.Command == EpgCmds.ReSearch2 && IsThisSubWindow == true))
                 {
                     SearchItem item = lstCtrl.SelectSingleItem();
 
                     EpgSearchKeyInfo defKey = new EpgSearchKeyInfo();
-                    searchKeyView.GetSearchKey(ref defKey);
+                    GetSearchKey(ref defKey);
                     defKey.andKey = mutil.TrimEpgKeyword(item.EventName, CmdExeUtil.IsKeyGesture(e));
                     defKey.regExpFlag = 0;
                     defKey.serviceList.Clear();
@@ -537,7 +496,7 @@ namespace EpgTimer
 
                     if (e.Command == EpgCmds.ReSearch)
                     {
-                        searchKeyView.SetSearchKey(defKey);
+                        SetSearchKey(defKey);
                         SearchPg();
                     }
                     else
@@ -546,19 +505,18 @@ namespace EpgTimer
                         //新番組チェックなんかには向いてるかもしれないが、機能としては微妙なところ。
 
                         var setInfo = new RecSettingData();
-                        recSettingView.GetRecSetting(ref setInfo);
+                        GetRecSetting(ref setInfo);
 
                         var dlg = new SearchWindow();
                         //SearchWindowからの呼び出しを記録する。表示制御などでも使う。
                         dlg.Owner = this;
                         dlg.SetViewMode(winMode == SearchMode.Change ? SearchMode.NewAdd : winMode);
-                        dlg.SetSubWindow();
                         if (Settings.Instance.MenuSet.CancelAutoAddOff == true)
                         {
                             defKey.keyDisabledFlag = 0;
                         }
-                        dlg.SetSearchDefKey(defKey);
-                        dlg.SetRecInfoDef(setInfo);
+                        dlg.SetSearchKey(defKey);
+                        dlg.SetRecSetting(setInfo);
                         //dlg.Left += 50;//なぜか動かせない‥
                         //dlg.Top += 50;
                         dlg.ShowDialog();
@@ -576,23 +534,72 @@ namespace EpgTimer
             CommonManager.Instance.DB.EpgAutoAddUpdated -= DB_EpgAutoAddUpdated;
 
             Settings.SaveToXmlFile();//検索ワードリストの保存
-            if (this.Owner as SearchWindow != null)
-            {
-                (this.Owner as SearchWindow).SearchPg();
-            }
-            else
+            if (IsThisSubWindow == false)
             {
                 mainWindow.ListFoucsOnVisibleChanged();
             }
         }
-        
+
+        public static void UpdateInfo(Window owner_win, bool refreshOnly = false)
+        {
+            foreach (SearchWindow win in owner_win.OwnedWindows.OfType<SearchWindow>())
+            {
+                win.UpdateInfo(refreshOnly);
+            }
+        }
+        public void UpdateInfo(bool refreshOnly = false)
+        {
+            //孫Windowから更新
+            SearchWindow.UpdateInfo(this, refreshOnly);
+
+            if (refreshOnly == false)
+            {
+                ReloadInfo = true;
+            }
+            ReloadReserveInfo = true;
+            ReloadInfoData();
+        }
         private void Window_Activated(object sender, EventArgs e)
         {
             UpdateEpgAutoAddViewSelection();
-            RefreshMenu();
+            ReloadInfoData();
         }
-
-        private void UpdateEpgAutoAddViewSelection()
+        private void ReloadInfoData()
+        {
+            //再検索はCtrlCmdを使うので、アクティブウィンドウでだけ実行させる。
+            if (this.IsActive == true)
+            {
+                if (ReloadInfo == true)
+                {
+                    SearchPg();
+                    ReloadInfo = false;
+                    ReloadReserveInfo = false;
+                }
+            }
+            //表示の更新は見えてれば実行する。
+            if (this.IsVisible == true)
+            {
+                if (ReloadReserveInfo == true)
+                {
+                    ReloadReserveData();
+                    ReloadReserveInfo = false;
+                }
+            }
+        }
+        public static bool UpdateEpgAutoAddViewSelection(Window owner_win)
+        {
+            foreach (SearchWindow win in owner_win.OwnedWindows.OfType<SearchWindow>())
+            {
+                if (SearchWindow.UpdateEpgAutoAddViewSelection(win) == true) return true;
+                if (win.IsActive == true)
+                {
+                    win.UpdateEpgAutoAddViewSelection();
+                    return true;
+                }
+            }
+            return false;
+        }
+        public void UpdateEpgAutoAddViewSelection()
         {
             mainWindow.autoAddView.epgAutoAddView.UpdateListViewSelection(this.autoAddID);
         }

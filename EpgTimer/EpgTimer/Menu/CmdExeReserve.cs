@@ -144,7 +144,7 @@ namespace EpgTimer
         }
         protected override void mc_JumpTuner(object sender, ExecutedRoutedEventArgs e)
         {
-            mcs_JumpTab(CtxmCode.TunerReserveView, true, true);
+            mcs_JumpTab(CtxmCode.TunerReserveView, true, Settings.Instance.TunerDisplayOffReserve == false);
         }
         protected override void mc_JumpTable(object sender, ExecutedRoutedEventArgs e)
         {
@@ -205,7 +205,15 @@ namespace EpgTimer
         {
             if (dataList.Count != 0)
             {
-                CommonManager.Instance.TVTestCtrl.StartTimeShift(dataList[0].ReserveID);
+                if (CommonManager.Instance.NWMode == false && Settings.Instance.FilePlayOnAirWithExe == true
+                    && dataList[0].RecSetting.RecMode != 4)//視聴モードは録画ファイル無いので対象外
+                {
+                    mutil.FilePlay(dataList[0]);
+                }
+                else
+                {
+                    CommonManager.Instance.TVTestCtrl.StartTimeShift(dataList[0].ReserveID);
+                }
                 IsCommandExecuted = true;
             }
         }
@@ -267,9 +275,14 @@ namespace EpgTimer
                 {
                     menu.Header = "簡易予約";
                     //予約データの有無で切り替える。
+
                     if (view == CtxmCode.SearchWindow)
                     {
-                        menu.ToolTip = "このダイアログの録画設定で予約する";
+                        var recInfo = new RecSettingData();
+                        (this.Owner as SearchWindow).GetRecSetting(ref recInfo);
+                        RecPresetItem preset = recInfo.LookUpPreset();
+                        string text = preset.ID == 0xFFFFFFFF ? "カスタム設定" : string.Format("プリセット'{0}'", preset.DisplayName);
+                        menu.ToolTip = string.Format("このダイアログの録画設定({0})で予約する", text);
                     }
                     else
                     {
@@ -280,6 +293,15 @@ namespace EpgTimer
                 {
                     menu.Header = "予約←→無効";
                     menu.ToolTip = null;
+                    menu.Visibility = Visibility.Visible;
+                    if (view == CtxmCode.TunerReserveView && Settings.Instance.MenuSet.IsManualMenu == false)
+                    {
+                        //簡易メニュー時は、無効列非表示のとき表示しない。
+                        if( Settings.Instance.TunerDisplayOffReserve == false)
+                        {
+                            menu.Visibility = Visibility.Collapsed;
+                        }
+                    }
                 }
             }
             else if (menu.Tag == EpgCmdsEx.AddMenu)
@@ -298,18 +320,23 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmds.JumpReserve || menu.Tag == EpgCmds.JumpTuner)
             {
+                //先にサブウィンドウ関係をチェック
+                if (mcs_ctxmLoading_CheckSearchSubWindow(menu) == true) return;
+
                 //メニュー実行時に選択されるアイテムが予約でないときは無効
                 menu.IsEnabled = (headData as ReserveData != null);
-
-                if (menu.IsEnabled == true && menu.Tag == EpgCmds.JumpTuner)
+                menu.ToolTip = null;
+ 
+                if (menu.Tag == EpgCmds.JumpTuner && Settings.Instance.TunerDisplayOffReserve == false && menu.IsEnabled == true)
                 {
                     //無効予約を回避
                     menu.IsEnabled = dataList[0].RecSetting.RecMode != 5;
-                    menu.ToolTip = "無効予約は使用予定チューナー画面に表示されません。";
+                    menu.ToolTip = "無効予約は使用予定チューナー画面に表示されない設定になっています。";
                 }
             }
             else if (menu.Tag == EpgCmds.JumpTable)
             {
+                if (mcs_ctxmLoading_CheckSearchSubWindow(menu) == true) return;
                 if (view != CtxmCode.EpgView) return;
 
                 //標準モードでは非表示。
@@ -318,15 +345,25 @@ namespace EpgTimer
                     menu.Visibility = Visibility.Collapsed;
                 }
             }
-            else if (menu.Tag == EpgCmds.ReSearch2 || menu.Tag == EpgCmds.JumpTable)
+            else if (menu.Tag == EpgCmds.ReSearch2)
             {
-                if (view != CtxmCode.SearchWindow) return;
-
-                if (((SearchWindow)ctxm.Tag).Owner is SearchWindow)
+                mcs_ctxmLoading_CheckSearchSubWindow(menu);
+            }
+            else if (menu.Tag == EpgCmds.Play)
+            {
+                menu.IsEnabled = false;
+                menu.ToolTip = null;
+                var info = headData as ReserveData;
+                if (info != null && info.RecSetting.RecMode != 5)
                 {
-                    menu.IsEnabled = false;
-                    menu.Header += menu.Header.ToString().EndsWith("(無効)") ? "" : "(無効)";
-                    menu.ToolTip = "サブウィンドウでは無効になります。";
+                    if (info.IsOnRec() == true)
+                    {
+                        menu.IsEnabled = true;
+                    }
+                    else
+                    {
+                        menu.ToolTip = "まだ録画が開始されていません。";
+                    }
                 }
             }
             else if (menu.Tag == EpgCmdsEx.OpenFolderMenu)
@@ -340,6 +377,17 @@ namespace EpgTimer
                     item.IsChecked = ((item.CommandParameter as EpgCmdParam).ID == (int)ctxm.Tag);
                 }
             }
+        }
+        protected bool mcs_ctxmLoading_CheckSearchSubWindow(MenuItem menu)
+        {
+            bool isHit = (this.Owner is SearchWindow) == true && ((SearchWindow)this.Owner).IsThisSubWindow == true;
+            if (isHit == true)
+            {
+                menu.IsEnabled = false;
+                menu.Header += menu.Header.ToString().EndsWith("(無効)") ? "" : "(無効)";
+                menu.ToolTip = "サブウィンドウでは無効になります。";
+            }
+            return isHit;
         }
     }
 }

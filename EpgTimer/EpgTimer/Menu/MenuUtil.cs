@@ -928,8 +928,8 @@ namespace EpgTimer
                 if (Data != null)
                 {
                     dlg.SetChgAutoAddID(Data.dataID);
-                    dlg.SetSearchDefKey(Data.searchInfo);
-                    dlg.SetRecInfoDef(Data.recSetting);
+                    dlg.SetSearchKey(Data.searchInfo);
+                    dlg.SetRecSetting(Data.recSetting);
                     dlg.SetRecFileList(Data.recFileList);
                 }
                 return dlg.ShowDialog();
@@ -966,7 +966,7 @@ namespace EpgTimer
                 key.serviceList.Clear();
                 key.serviceList.Add((Int64)sidKey);
 
-                dlg.SetSearchDefKey(key);
+                dlg.SetSearchKey(key);
                 dlg.ShowDialog();
             }
             catch (Exception ex)
@@ -1081,6 +1081,42 @@ namespace EpgTimer
             return Math.Min(Math.Min(ts1.TotalSeconds, ts2.TotalSeconds), Math.Min(d1, d2));
         }
 
+        public void FilePlay(ReserveData info)
+        {
+            if (info == null || info.RecSetting == null || info.RecSetting.RecMode == 5) return;
+            if (info.IsOnRec() == false)
+            {
+                MessageBox.Show("まだ録画が開始されていません。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            string file = "";
+            string folder = "";
+            if(info.RecFileNameList.Count!=0)
+            {
+                file=info.RecFileNameList[0];
+            }
+            if (info.RecSetting.RecFolderList.Count != 0)
+            {
+                folder = info.RecSetting.RecFolderList[0].RecFolder;
+            }
+            else
+            {
+                List<string> defFolders = Settings.GetDefRecFolders();
+                if (defFolders.Count != 0)
+                {
+                    folder = defFolders[0];
+                }
+            }
+
+            if (file=="" || folder == "")
+            {
+                MessageBox.Show("録画ファイルの場所がわかりませんでした。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            FilePlay(folder.TrimEnd('\\') + "\\" + file);
+        }
         public void FilePlay(String filePath)
         {
             try

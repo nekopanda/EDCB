@@ -44,6 +44,7 @@ namespace EpgTimer.Setting
 
                 textBox_playExe.Text = Settings.Instance.FilePlayExe;
                 textBox_playCmd.Text = Settings.Instance.FilePlayCmd;
+                checkBox_playOnAirWithExe.IsChecked = Settings.Instance.FilePlayOnAirWithExe;
 
                 if (comboBox_bon.IsEnabled && Directory.Exists(SettingPath.SettingFolderPath))
                 {
@@ -154,7 +155,7 @@ namespace EpgTimer.Setting
 
             Settings.Instance.FilePlayExe = textBox_playExe.Text;
             Settings.Instance.FilePlayCmd = textBox_playCmd.Text;
-
+            Settings.Instance.FilePlayOnAirWithExe = checkBox_playOnAirWithExe.IsChecked == true;
         }
 
         private void button_exe_Click(object sender, RoutedEventArgs e)

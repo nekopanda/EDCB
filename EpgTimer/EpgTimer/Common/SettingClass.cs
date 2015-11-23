@@ -516,6 +516,7 @@ namespace EpgTimer
         private bool tunerPopupRecinfo;
         private bool tunerInfoSingleClick;
         private bool tunerColorModeUse;
+        private bool tunerDisplayOffReserve;
         private bool epgTitleIndent;
         private bool epgPopup;
         private bool epgPopupResOnly;
@@ -555,6 +556,7 @@ namespace EpgTimer
         private bool nwTvModeTCP;
         private string filePlayExe;
         private string filePlayCmd;
+        private bool filePlayOnAirWithExe;
         private bool openFolderWithFileDialog;
         private List<IEPGStationInfo> iEpgStationList;
         private MenuSettingData menuSet;
@@ -872,6 +874,11 @@ namespace EpgTimer
             get { return tunerColorModeUse; }
             set { tunerColorModeUse = value; }
         }
+        public bool TunerDisplayOffReserve
+        {
+            get { return tunerDisplayOffReserve; }
+            set { tunerDisplayOffReserve = value; }
+        }
         public bool EpgTitleIndent
         {
             get { return epgTitleIndent; }
@@ -1066,6 +1073,11 @@ namespace EpgTimer
         {
             get { return filePlayCmd; }
             set { filePlayCmd = value; }
+        }
+        public bool FilePlayOnAirWithExe
+        {
+            get { return filePlayOnAirWithExe; }
+            set { filePlayOnAirWithExe = value; }
         }
         public bool OpenFolderWithFileDialog
         {
@@ -1424,6 +1436,7 @@ namespace EpgTimer
             tunerPopupRecinfo = false;
             tunerInfoSingleClick = false;
             tunerColorModeUse = false;
+            tunerDisplayOffReserve = false;
             epgTitleIndent = true;
             epgPopup = true;
             epgPopupResOnly = false;
@@ -1463,6 +1476,7 @@ namespace EpgTimer
             nwTvModeTCP = false;
             filePlayExe = "";
             filePlayCmd = "\"$FilePath$\"";
+            filePlayOnAirWithExe = false;
             openFolderWithFileDialog = false;
             iEpgStationList = new List<IEPGStationInfo>();
             menuSet = new MenuSettingData();

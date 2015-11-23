@@ -227,8 +227,8 @@
                                         <TextBox Height="24" HorizontalAlignment="Left" Margin="426,36,0,0" Name="textBox_fontTunerSize" VerticalAlignment="Top" Width="39" />
                                     </Grid>
                                     <Grid x:Name="grid_TunerFontColor">
-                                        <ComboBox Style="{StaticResource colorCombo}" Margin="12,6,0,0" Width="98" Name="comboBox_tunerFontColorService" Tag="0" />
-                                        <ComboBox Style="{StaticResource colorCombo}" Margin="12,36,0,0" Width="98" Tag="1"/>
+                                        <ComboBox Style="{StaticResource colorCombo}" Margin="12,6,0,0" Width="96" Name="comboBox_tunerFontColorService" Tag="0" />
+                                        <ComboBox Style="{StaticResource colorCombo}" Margin="12,36,0,0" Width="96" Tag="1"/>
                                         <Button Style="{StaticResource colorButton}" Margin="116,6,0,0" Name="button_tunerFontCustColorService" Tag="0" />
                                         <Button Style="{StaticResource colorButton}" Margin="116,36,0,0" Tag="1" />
                                     </Grid>
@@ -253,6 +253,7 @@
                                     <CheckBox Content="サービスのフォント色を優先度で変える('色'タブの設定)" Height="16" HorizontalAlignment="Left" Margin="11,136,0,0" Name="checkBox_tunerColorModeUse" VerticalAlignment="Top" ToolTip="チェックされていない場合はこの画面の設定色が使われます。" Click="checkBox_tunerColorModeUse_Click" />
                                     <CheckBox Content="サービス名と番組名の表示位置をあわせる" Height="16" HorizontalAlignment="Left" Margin="11,158,0,0" Name="checkBox_tuner_title_indent" VerticalAlignment="Top" />
                                     <CheckBox Content="サービス名を改行しない" Height="16" HorizontalAlignment="Left" Margin="11,180,0,0" Name="checkBox_tuner_service_nowrap" VerticalAlignment="Top" />
+                                    <CheckBox Content="無効の予約も表示する" Height="16" HorizontalAlignment="Left" Margin="327,70,0,0" Name="checkBox_tuner_display_offres" VerticalAlignment="Top" />
                                 </Grid>
                             </GroupBox>
                         </StackPanel>
