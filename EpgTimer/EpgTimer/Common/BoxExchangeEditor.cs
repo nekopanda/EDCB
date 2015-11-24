@@ -5,6 +5,7 @@ using System.Text;
 using System.Collections;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace EpgTimer
 {
@@ -19,6 +20,23 @@ namespace EpgTimer
 
         public bool DuplicationAllowed { set; get; }//項目の重複を全て許可
         public IList DuplicationSpecific { set; get; }//特定の項目のみ重複を許可
+
+        //ダブルクリックでの移動を行うかどうか
+        public void DoubleClickMoveAllow()
+        {
+            if (SourceBox != null) SourceBox.MouseDoubleClick += new MouseButtonEventHandler(sourceBox_MouseDoubleClick);
+            if (TargetBox != null) TargetBox.MouseDoubleClick += new MouseButtonEventHandler(targetBox_MouseDoubleClick);
+        }
+
+        public void sourceBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            addItems(SourceBox, TargetBox);
+        }
+
+        public void targetBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            deleteItems(TargetBox);
+        }
 
         /// <summary>全アイテム追加</summary>
         public void button_addAll_Click(object sender, RoutedEventArgs e)
@@ -78,23 +96,6 @@ namespace EpgTimer
         public void button_bottom_Click(object sender, RoutedEventArgs e)
         {
             move_item(TargetBox, TargetBox.Items.Count - 1 - TargetBox.SelectedIndex);
-        }
-
-        /// <summary>ダブルクリックイベント</summary>
-        public void mouse_DoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            ListBox target = sender as ListBox;
-            if (target != null && target.IsMouseCaptured)
-            {
-                if (target.Equals(TargetBox))
-                {
-                    button_del_Click(sender, e);
-                }
-                else if (target.Equals(SourceBox))
-                {
-                    button_add_Click(sender, e);
-                }
-            }
         }
 
         public void addAllItems(ListBox src, ListBox target, bool IsReset = false)

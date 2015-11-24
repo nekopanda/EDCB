@@ -52,6 +52,8 @@ namespace EpgTimer.Setting
                 button_rec_add.IsEnabled = IniFileHandler.IsSyncWithServer;
             }
 
+            listBox_Button_Set();
+
             try
             {
                 textBox_setPath.Text = SettingPath.SettingFolderPath;
@@ -407,54 +409,28 @@ namespace EpgTimer.Setting
             }
         }
 
-        private void button_rec_up_Click(object sender, RoutedEventArgs e)
+        //ボタン表示画面の上下ボタンのみ他と同じものを使用する。
+        private BoxExchangeEditor bxr = new BoxExchangeEditor();
+        private BoxExchangeEditor bxb = new BoxExchangeEditor();
+        private void listBox_Button_Set()
         {
-            try
-            {
-                if (listBox_recFolder.SelectedItem != null)
-                {
-                    if (listBox_recFolder.SelectedIndex >= 1)
-                    {
-                        object temp = listBox_recFolder.SelectedItem;
-                        int index = listBox_recFolder.SelectedIndex;
-                        listBox_recFolder.Items.RemoveAt(listBox_recFolder.SelectedIndex);
-                        listBox_recFolder.Items.Insert(index - 1, temp);
-                        listBox_recFolder.SelectedIndex = index - 1;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
+            //録画設定関係
+            bxr.TargetBox = this.listBox_recFolder;
+            button_rec_up.Click += new RoutedEventHandler(bxr.button_up_Click);
+            button_rec_down.Click += new RoutedEventHandler(bxr.button_down_Click);
 
-        private void button_rec_down_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (listBox_recFolder.SelectedItem != null)
-                {
-                    if (listBox_recFolder.SelectedIndex < listBox_recFolder.Items.Count - 1)
-                    {
-                        object temp = listBox_recFolder.SelectedItem;
-                        int index = listBox_recFolder.SelectedIndex;
-                        listBox_recFolder.Items.RemoveAt(listBox_recFolder.SelectedIndex);
-                        listBox_recFolder.Items.Insert(index + 1, temp);
-                        listBox_recFolder.SelectedIndex = index + 1;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            //チューナ関係関係
+            bxb.TargetBox = this.listBox_bon;
+            button_bon_up.Click += new RoutedEventHandler(bxb.button_up_Click);
+            button_bon_down.Click += new RoutedEventHandler(bxb.button_down_Click);
         }
 
         private void button_rec_del_Click(object sender, RoutedEventArgs e)
         {
             try
             {
+                // 誤って削除ボタンを押したときにすぐに追加できるようにするため
+                // 該当アイテムを追加するパスの候補に戻しておく。
                 if (listBox_recFolder.SelectedItem != null)
                 {
                     textBox_recFolder.Text = listBox_recFolder.SelectedItem.ToString();
@@ -540,50 +516,6 @@ namespace EpgTimer.Setting
             shortcutType.InvokeMember("Description", BindingFlags.SetProperty, null, shortCut, new object[] { description });
             // Saveメソッドを実行する
             shortcutType.InvokeMember("Save", BindingFlags.InvokeMethod, null, shortCut, null);
-        }
-
-        private void button_bon_up_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (listBox_bon.SelectedItem != null)
-                {
-                    if (listBox_bon.SelectedIndex >= 1)
-                    {
-                        object temp = listBox_bon.SelectedItem;
-                        int index = listBox_bon.SelectedIndex;
-                        listBox_bon.Items.RemoveAt(listBox_bon.SelectedIndex);
-                        listBox_bon.Items.Insert(index - 1, temp);
-                        listBox_bon.SelectedIndex = index - 1;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void button_bon_down_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (listBox_bon.SelectedItem != null)
-                {
-                    if (listBox_bon.SelectedIndex < listBox_bon.Items.Count - 1)
-                    {
-                        object temp = listBox_bon.SelectedItem;
-                        int index = listBox_bon.SelectedIndex;
-                        listBox_bon.Items.RemoveAt(listBox_bon.SelectedIndex);
-                        listBox_bon.Items.Insert(index + 1, temp);
-                        listBox_bon.SelectedIndex = index + 1;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         private void listBox_bon_SelectionChanged(object sender, SelectionChangedEventArgs e)
