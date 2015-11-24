@@ -1409,17 +1409,33 @@ namespace EpgTimer
                 {
                     MessageBox.Show(msg);
                 }
-                else if (System.IO.File.Exists(folder_path) != true)
-                {
-                    String folderPath = GetDirectoryName2(folder_path);
-                    System.Diagnostics.Process.Start("EXPLORER.EXE", folderPath);
-                }
                 else
                 {
-                    String cmd = "/select,";
-                    cmd += "\"" + folder_path + "\"";
+                    if (CommonManager.Instance.NWMode == false)
+                    {
+                        if (System.IO.File.Exists(folder_path) != true)
+                        {
+                            String folderPath = GetDirectoryName2(folder_path);
+                            System.Diagnostics.Process.Start("EXPLORER.EXE", folderPath);
+                        }
+                        else
+                        {
+                            String cmdline = "/select,";
+                            cmdline += "\"" + folder_path + "\"";
+                            
+                            System.Diagnostics.Process.Start("EXPLORER.EXE", cmdline);
+                        }
+                    }
+                    else
+                    {
+                        String nPath = "";
+                        CommonManager.Instance.CtrlCmd.SendGetRecFileNetworkPath(folder_path, ref nPath); 
 
-                    System.Diagnostics.Process.Start("EXPLORER.EXE", cmd);
+                        String cmdline = "/select,";
+                        cmdline += "\"" + nPath + "\"";
+                        
+                        System.Diagnostics.Process.Start("EXPLORER.EXE", cmdline);
+                    }
                 }
             }
             catch (Exception ex)

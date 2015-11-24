@@ -214,6 +214,7 @@
     <ClInclude Include="luaconf.h" />
     <ClInclude Include="lualib.h" />
     <ClInclude Include="LightTsUtils.h" />
+    <ClInclude Include="NetPathUtil.h" />
     <ClInclude Include="NotifyManager.h" />
     <ClInclude Include="RecEventDB.h" />
     <ClInclude Include="ReserveManager.h" />
@@ -263,6 +264,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile Include="LightTsUtils.cpp" />
+    <ClCompile Include="NetPathUtil.cpp" />
     <ClCompile Include="RecEventDB.cpp" />
     <ClCompile Include="EpgDBManager.cpp" />
     <ClCompile Include="EpgTimerSrv.cpp" />

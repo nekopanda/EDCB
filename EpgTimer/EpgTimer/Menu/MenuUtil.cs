@@ -1123,10 +1123,10 @@ namespace EpgTimer
             {
                 if (filePath == null || filePath.Length == 0) return;
 
+                System.Diagnostics.Process process;
                 CommonManager cmg = CommonManager.Instance;
                 if (cmg.NWMode == false)
                 {
-                    System.Diagnostics.Process process;
                     if (Settings.Instance.FilePlayExe.Length == 0)
                     {
                         process = System.Diagnostics.Process.Start(filePath);
@@ -1140,7 +1140,25 @@ namespace EpgTimer
                 }
                 else
                 {
-                    cmg.TVTestCtrl.StartStreamingPlay(filePath, cmg.NW.ConnectedIP, cmg.NW.ConnectedPort);
+                    if (Settings.Instance.FilePlayExe.Length == 0)
+                    {
+                        cmg.TVTestCtrl.StartStreamingPlay(filePath, cmg.NW.ConnectedIP, cmg.NW.ConnectedPort);
+                    }
+                    else
+                    {
+                        String nPath = "";
+                        ErrCode err = cmg.CtrlCmd.SendGetRecFileNetworkPath(filePath, ref nPath);
+                        if (err == ErrCode.CMD_SUCCESS)
+                        {
+                            String cmdLine = Settings.Instance.FilePlayCmd;
+                            cmdLine = cmdLine.Replace("$FilePath$", nPath);
+                            process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
+                        }
+                        else
+                        {
+                            cmg.TVTestCtrl.StartStreamingPlay(filePath, cmg.NW.ConnectedIP, cmg.NW.ConnectedPort);
+                        }
+                    }
                 }
             }
             catch (Exception ex)
