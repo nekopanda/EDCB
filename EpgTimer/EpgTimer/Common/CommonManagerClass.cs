@@ -667,6 +667,7 @@ namespace EpgTimer
         /// 良くある通信エラー(CMD_ERR_CONNECT,CMD_ERR_TIMEOUT)をMessageBoxで表示する。
         /// Owner(this)を指定するとDispatcher.BeginInvokeで実行する。
         /// </summary>
+        private static bool showing = false;
         public static bool CmdErrMsgTypical(ErrCode err, string caption = "通信エラー", Control Owner = null)
         {
             if (err == ErrCode.CMD_SUCCESS) return true;
@@ -677,9 +678,9 @@ namespace EpgTimer
                 case ErrCode.CMD_ERR_CONNECT:
                     msg="サーバー または EpgTimerSrv に接続できませんでした。";
                     break;
-                //case ErrCode.CMD_ERR_BUSY:  //もう表示しないことにしているようだ。
-                //    msg = "データの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）";
-                //    break;
+                case ErrCode.CMD_ERR_BUSY:
+                    msg = "データの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）";
+                    break;
                 case ErrCode.CMD_ERR_TIMEOUT:
                     msg = "EpgTimerSrvとの接続にタイムアウトしました。";
                     break;
@@ -690,11 +691,28 @@ namespace EpgTimer
 
             if (Owner != null)
             {
-                Owner.Dispatcher.BeginInvoke(new Action(() => MessageBox.Show(msg, caption)), null);
+                Owner.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    // MessageBox 表示中は新たに表示させない。
+                    // Lock とかしてないのでまれに表示するかもだけど、もともと表示する流れだったし気にしない。
+                    if (showing == false)
+                    {
+                        showing = true;
+                        MessageBox.Show(msg, caption);
+                        showing = false;
+                    }
+                }), null);
             }
             else
             {
-                MessageBox.Show(msg, caption);
+                // MessageBox 表示中は新たに表示させない。
+                // Lock とかしてないのでまれに表示するかもだけど、もともと表示する流れだったし気にしない。
+                if (showing == false)
+                {
+                    showing = true;
+                    MessageBox.Show(msg, caption);
+                    showing = false;
+                }
             }
 
             return false;
