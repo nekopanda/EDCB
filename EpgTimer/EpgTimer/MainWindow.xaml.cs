@@ -52,8 +52,6 @@ namespace EpgTimer
             Settings.LoadFromXmlFile();
             CommonManager.Instance.NWMode = Settings.Instance.NWMode;
 
-            //EpgTimerSrvへの接続処理は Window_Loaded の ConnectCmd で行うため初期化中のサーバー接続はしない
-
             CommonManager.Instance.MM.ReloadWorkData();
             CommonManager.Instance.ReloadCustContentColorList();
 
@@ -88,7 +86,10 @@ namespace EpgTimer
 
             InitializeComponent();
 
-            Title = appName;
+            // Icon化起動すると Windows_Loaded イベントが来ないので
+            // InitializeComponent 後に ConnectCmd しておく。
+            ConnectCmd(false);
+
             initExe = true;
 
             try
