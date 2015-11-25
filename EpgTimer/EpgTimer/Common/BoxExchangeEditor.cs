@@ -30,12 +30,18 @@ namespace EpgTimer
 
         public void sourceBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            addItems(SourceBox, TargetBox);
+            if (SourceBox.IsMouseCaptured)
+            {
+                addItems(SourceBox, TargetBox);
+            }
         }
 
         public void targetBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            deleteItems(TargetBox);
+            if (TargetBox.IsMouseCaptured)
+            {
+                deleteItems(TargetBox);
+            }
         }
 
         /// <summary>全アイテム追加</summary>
