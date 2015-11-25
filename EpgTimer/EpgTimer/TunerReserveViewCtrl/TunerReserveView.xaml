@@ -16,6 +16,7 @@
                         <DropShadowEffect BlurRadius="12" Opacity="0.5"/>
                     </Border.Effect>
                     <StackPanel x:Name="popupItemTextArea">
+                        <TextBlock x:Name="timeText" TextWrapping="Wrap"  LineStackingStrategy="BlockLineHeight"/>
                         <TextBlock x:Name="recInfoText" TextWrapping="Wrap"  LineStackingStrategy="BlockLineHeight"/>
                         <Grid>
                             <TextBlock x:Name="minText" LineStackingStrategy="BlockLineHeight" />

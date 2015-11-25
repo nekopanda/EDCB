@@ -78,7 +78,7 @@ namespace EpgTimer.EpgView
             popupItem.Width = viewInfo.Width;
             popupItem.MinHeight = viewInfo.Height;
 
-            double sizeMin = Settings.Instance.FontSizeTitle - 1;
+            double sizeMin = Settings.Instance.FontSizeTitle;
             double sizeTitle = Settings.Instance.FontSizeTitle;
             double sizeNormal = Settings.Instance.FontSize;
             double indentTitle = Math.Floor(sizeMin * 1.7 + 1);
@@ -93,7 +93,7 @@ namespace EpgTimer.EpgView
             minText.FontWeight = titleWeight;
             minText.Foreground = CommonManager.Instance.CustTitle1Color;
             //minText.Margin = new Thickness(0, 0, 0, 0);
-            minText.LineHeight = sizeMin + 2;
+            minText.LineHeight = Settings.Instance.FontHeightTitle;
 
             if (epgInfo.ShortInfo != null)
             {
@@ -103,16 +103,16 @@ namespace EpgTimer.EpgView
                 titleText.FontSize = sizeTitle;
                 titleText.FontWeight = titleWeight;
                 titleText.Foreground = CommonManager.Instance.CustTitle1Color;
-                titleText.Margin = new Thickness(indentTitle, 0, 0, Math.Floor(sizeTitle / 3));
-                titleText.LineHeight = sizeTitle + 2;
+                titleText.Margin = new Thickness(indentTitle, 0, 0, 4);
+                titleText.LineHeight = Math.Max(Settings.Instance.FontHeightTitle, sizeTitle + 2); 
 
                 infoText.Text = System.Text.RegularExpressions.Regex.Replace(epgInfo.ShortInfo.text_char, "\\w", "$0\u200b");
                 infoText.FontFamily = fontNormal;
                 infoText.FontSize = sizeNormal;
                 //infoText.FontWeight = FontWeights.Normal;
                 infoText.Foreground = CommonManager.Instance.CustTitle2Color;
-                infoText.Margin = new Thickness(indentNormal, 0, 0, Math.Floor(sizeNormal / 3));
-                infoText.LineHeight = sizeNormal + 2;
+                infoText.Margin = new Thickness(indentNormal, 0, 0, 3);
+                infoText.LineHeight = Math.Max(Settings.Instance.FontHeight, sizeNormal + 2);
             }
             else
             {

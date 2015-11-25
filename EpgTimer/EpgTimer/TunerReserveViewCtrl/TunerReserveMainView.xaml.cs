@@ -229,8 +229,18 @@ namespace EpgTimer
                     }
                 }
 
-                //最低表示行数を適用。また、最低表示高さを確保して、位置も調整する。
-                vutil.ModifierMinimumLine<ReserveData, ReserveViewItem>(reserveList, Settings.Instance.TunerMinimumLine);
+                //最低表示行数からドット数を計算する。
+                // メイリオみたいに行間のあるフォントはフォントの高さをそのまま使う。
+                double fontHeight = Math.Max(Settings.Instance.TunerFontHeight, Settings.Instance.TunerFontHeightService);
+                // MS P ゴシックみたいな行間のないフォントは 2px あける。
+                double fontSize = Math.Max(Settings.Instance.TunerFontSize, Settings.Instance.TunerFontSizeService) + 2;
+                // 大きい方をフォントの高さとして採用し、最低表示px数を計算する。
+                double lineHeight = Settings.Instance.TunerMinimumLine *  Math.Max(fontHeight, fontSize);
+                if (Settings.Instance.TunerMinimumLine >= 2)
+                {
+                    lineHeight += 2; // 番組名との間隔は 2px にする
+                }
+                vutil.ModifierMinimumHeight<ReserveData, ReserveViewItem>(reserveList, lineHeight + 2); //2ドットは枠の分
 
                 tunerReserveTimeView.SetTime(timeList, true);
                 tunerReserveNameView.SetTunerInfo(tunerList);

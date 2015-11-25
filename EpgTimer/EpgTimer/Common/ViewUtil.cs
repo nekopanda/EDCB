@@ -231,11 +231,83 @@ namespace EpgTimer
             }
         }
 
+        private GlyphTypeface glyphTypefaceNormal;
+        public GlyphTypeface GlyphTypefaceNormal
+        {
+            get
+            {
+                if (glyphTypefaceNormal == null)
+                    glyphTypefaceNormal = GetGlyphTypeface(Settings.Instance.FontName, false);
+                return glyphTypefaceNormal;
+            }
+            set { glyphTypefaceNormal = null; }
+        }
+        private GlyphTypeface glyphTypefaceTitle;
+        public GlyphTypeface GlyphTypefaceTitle
+        {
+            get
+            {
+                if (glyphTypefaceTitle == null)
+                    glyphTypefaceTitle = GetGlyphTypeface(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle);
+                return glyphTypefaceTitle;
+            }
+            set { glyphTypefaceTitle = null; }
+        }
+        private GlyphTypeface glyphTypefaceTunerNormal;
+        public GlyphTypeface GlyphTypefaceTunerNormal
+        {
+            get
+            {
+                if (glyphTypefaceTunerNormal == null)
+                    glyphTypefaceTunerNormal = GetGlyphTypeface(Settings.Instance.TunerFontName, false);
+                return glyphTypefaceTunerNormal;
+            }
+            set { glyphTypefaceTunerNormal = null; }
+        }
+        private GlyphTypeface glyphTypefaceTunerService;
+        public GlyphTypeface GlyphTypefaceTunerService
+        {
+            get
+            {
+                if (glyphTypefaceTunerService == null)
+                    glyphTypefaceTunerService = GetGlyphTypeface(Settings.Instance.TunerFontNameService, Settings.Instance.TunerFontBoldService);
+                return glyphTypefaceTunerService;
+            }
+            set { glyphTypefaceTunerService = null; }
+        }
+
         //最低表示行数を適用。また、最低表示高さ2pxを確保して、位置も調整する。
         public void ModifierMinimumLine<T, S>(List<S> list, double MinimumLine) where S : ViewPanelItem<T>
         {
             list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
             double minimum = Math.Max((Settings.Instance.FontSizeTitle + 2) * MinimumLine, 2);
+            double lastLeft = double.MinValue;
+            double lastBottom = 0;
+            foreach (S item in list)
+            {
+                if (lastLeft != item.LeftPos)
+                {
+                    lastLeft = item.LeftPos;
+                    lastBottom = double.MinValue;
+                }
+                if (item.TopPos < lastBottom)
+                {
+                    item.Height = Math.Max(item.TopPos + item.Height - lastBottom, minimum);
+                    item.TopPos = lastBottom;
+                }
+                else
+                {
+                    item.Height = Math.Max(item.Height, minimum);
+                }
+                lastBottom = item.TopPos + item.Height;
+            }
+        }
+
+        //最低表示px数を適用。
+        public void ModifierMinimumHeight<T, S>(List<S> list, double MinimumHeight) where S : ViewPanelItem<T>
+        {
+            list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
+            double minimum = Math.Max(MinimumHeight, 1);
             double lastLeft = double.MinValue;
             double lastBottom = 0;
             foreach (S item in list)

@@ -61,11 +61,11 @@ namespace EpgTimer.TunerReserveViewCtrl
             Canvas.SetTop(popupItem, Math.Floor(viewInfo.TopPos));
             popupItem.Width = Math.Ceiling(viewInfo.Width);
             popupItem.MinHeight = Math.Ceiling(viewInfo.Height);
-            popupItemTextArea.Margin = new Thickness(1, -1, 1, 1);
+            popupItemTextArea.Margin = new Thickness(2, -1, 0, 0);
 
             double sizeTitle = Settings.Instance.TunerFontSizeService;
             double sizeNormal = Settings.Instance.TunerFontSize;
-            double indentTitle = Math.Floor(Settings.Instance.TunerPopupRecinfo == false ? sizeNormal * 1.7 : 2);
+            double indentTitle = Math.Floor((Settings.Instance.TunerPopupRecinfo == false || Settings.Instance.TunerTitleIndent == true) ? sizeNormal * 1.7 : 2);
             double indentNormal = Math.Floor(Settings.Instance.TunerTitleIndent == true ? indentTitle : 2);
             var fontTitle = new FontFamily(Settings.Instance.TunerFontNameService);
             var fontNormal = new FontFamily(Settings.Instance.TunerFontName);
@@ -76,49 +76,57 @@ namespace EpgTimer.TunerReserveViewCtrl
             //追加情報の表示
             if (Settings.Instance.TunerPopupRecinfo == true)
             {
+                timeText.Visibility = Visibility.Visible;
                 recInfoText.Visibility = Visibility.Visible;
                 minText.Visibility = Visibility.Collapsed;
 
-                String text = resItem.StartTimeShort;
-                text += "\r\n" + "優先度 : " + resItem.Priority;
-                text += "\r\n" + "録画モード : " + resItem.RecMode;
-                recInfoText.Text = text;
+                timeText.Text = resItem.StartTimeShort;
+                timeText.FontFamily = fontNormal;
+                timeText.FontSize = sizeNormal;
+                timeText.Foreground = colorTitle;
+                timeText.Margin = new Thickness(1, 1, 0, 2);
+                timeText.LineHeight = Math.Max(Settings.Instance.TunerFontHeight, sizeNormal + 2);
+                recInfoText.Text = "優先度 : " + resItem.Priority + "\r\n";
+                recInfoText.Text += "録画モード : " + resItem.RecMode;
                 recInfoText.FontFamily = fontNormal;
                 recInfoText.FontSize = sizeNormal;
                 //recInfoText.FontWeight = FontWeights.Normal;
                 recInfoText.Foreground = colorTitle;
-                recInfoText.Margin = new Thickness(0, 0, 0, Math.Floor(sizeTitle / 3));
-                recInfoText.LineHeight = sizeNormal + 2;
+                recInfoText.Margin = new Thickness(indentTitle, 0, 0, Math.Floor(sizeTitle / 3));
+                recInfoText.LineHeight = Math.Max(Settings.Instance.TunerFontHeight, sizeNormal + 2);
             }
             else
             {
+                timeText.Visibility = Visibility.Collapsed;
                 recInfoText.Visibility = Visibility.Collapsed;
                 minText.Visibility = Visibility.Visible;
 
                 minText.Text = viewInfo.ReserveInfo.StartTime.Minute.ToString("d02");
                 minText.FontFamily = fontNormal;
                 minText.FontSize = sizeNormal;
+                minText.VerticalAlignment = VerticalAlignment.Center;
                 //minText.FontWeight = FontWeights.Normal;
                 minText.Foreground = colorTitle;
                 //minText.Margin = new Thickness(0, 0, 0, 0);
-                minText.LineHeight = sizeNormal + 2;
+                minText.LineHeight = Settings.Instance.TunerFontHeight;
             }
 
-            titleText.Text = resItem.ServiceName + " (" + resItem.NetworkName + ")";
+            titleText.Text = resItem.ServiceName + "(" + resItem.NetworkName + ")";
             titleText.FontFamily = fontTitle;
             titleText.FontSize = sizeTitle;
             titleText.FontWeight = weightTitle;
             titleText.Foreground = colorTitle;
-            titleText.Margin = new Thickness(indentTitle, 0, 0, Math.Floor(sizeTitle / 3));
-            titleText.LineHeight = sizeTitle + 2;
+            titleText.VerticalAlignment = VerticalAlignment.Center;
+            titleText.Margin = new Thickness(indentTitle, 0, 0, 2);
+            titleText.LineHeight = Math.Max(Settings.Instance.TunerFontHeightService, sizeTitle + 2);
 
             infoText.Text = resItem.EventName;
             infoText.FontFamily = fontNormal;
             infoText.FontSize = sizeNormal;
             //infoText.FontWeight = FontWeights.Normal;
             infoText.Foreground = colorNormal;
-            infoText.Margin = new Thickness(indentNormal, 0, 0, Math.Floor(sizeNormal / 3));
-            infoText.LineHeight = sizeNormal + 2;
+            infoText.Margin = new Thickness(indentNormal, 1, 0, 2);
+            infoText.LineHeight = Math.Max(Settings.Instance.TunerFontHeight, sizeNormal + 2);
         }
 
     }

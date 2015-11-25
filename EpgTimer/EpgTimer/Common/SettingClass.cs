@@ -652,27 +652,27 @@ namespace EpgTimer
         public string FontName
         {
             get { return fontName; }
-            set { fontName = value; }
+            set { fontName = value; CommonManager.Instance.VUtil.GlyphTypefaceNormal = null; }
         }
         public double FontSize
         {
             get { return fontSize; }
-            set { fontSize = value; }
+            set { fontSize = value; CommonManager.Instance.VUtil.GlyphTypefaceNormal = null; }
         }
         public string FontNameTitle
         {
             get { return fontNameTitle; }
-            set { fontNameTitle = value; }
+            set { fontNameTitle = value; CommonManager.Instance.VUtil.GlyphTypefaceTitle = null; }
         }
         public double FontSizeTitle
         {
             get { return fontSizeTitle; }
-            set { fontSizeTitle = value; }
+            set { fontSizeTitle = value; CommonManager.Instance.VUtil.GlyphTypefaceTitle = null; }
         }
         public bool FontBoldTitle
         {
             get { return fontBoldTitle; }
-            set { fontBoldTitle = value; }
+            set { fontBoldTitle = value; CommonManager.Instance.VUtil.GlyphTypefaceTitle = null; }
         }
         public bool NoToolTip
         {
@@ -782,27 +782,27 @@ namespace EpgTimer
         public string TunerFontNameService
         {
             get { return tunerFontNameService; }
-            set { tunerFontNameService = value; }
+            set { tunerFontNameService = value; CommonManager.Instance.VUtil.GlyphTypefaceTunerService = null; }
         }
         public double TunerFontSizeService
         {
             get { return tunerFontSizeService; }
-            set { tunerFontSizeService = value; }
+            set { tunerFontSizeService = value; CommonManager.Instance.VUtil.GlyphTypefaceTunerService = null; }
         }
         public bool TunerFontBoldService
         {
             get { return tunerFontBoldService; }
-            set { tunerFontBoldService = value; }
+            set { tunerFontBoldService = value; CommonManager.Instance.VUtil.GlyphTypefaceTunerService = null; }
         }
         public string TunerFontName
         {
             get { return tunerFontName; }
-            set { tunerFontName = value; }
+            set { tunerFontName = value; CommonManager.Instance.VUtil.GlyphTypefaceTunerNormal = null; }
         }
         public double TunerFontSize
         {
             get { return tunerFontSize; }
-            set { tunerFontSize = value; }
+            set { tunerFontSize = value; CommonManager.Instance.VUtil.GlyphTypefaceTunerNormal = null; }
         }
         public List<string> TunerServiceColors
         {
@@ -1885,6 +1885,23 @@ namespace EpgTimer
             {
                 Settings.Instance.CustomEpgTabList[i].ID = i;
             }
+        }
+
+        public double FontHeight
+        {
+            get { return FontSize * CommonManager.Instance.VUtil.GlyphTypefaceNormal.Height; }
+        }
+        public double FontHeightTitle
+        {
+            get { return FontSizeTitle * CommonManager.Instance.VUtil.GlyphTypefaceTitle.Height; }
+        }
+        public double TunerFontHeight
+        {
+            get { return tunerFontSize * CommonManager.Instance.VUtil.GlyphTypefaceTunerNormal.Height; }
+        }
+        public double TunerFontHeightService
+        {
+            get { return tunerFontSizeService * CommonManager.Instance.VUtil.GlyphTypefaceTunerService.Height; }
         }
     }
 }

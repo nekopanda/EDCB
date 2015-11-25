@@ -15,46 +15,61 @@ namespace EpgTimer.TunerReserveViewCtrl
             Items = new List<ReserveViewItem>();
         }
 
-        protected bool RenderText(String text, DrawingContext dc, GlyphTypeface glyphType, SolidColorBrush brush, double fontSize, double maxWidth, double maxHeight, double x, double y, ref double useHeight, bool nowrap = false)
+        protected bool RenderText(String text, DrawingContext dc, GlyphTypeface glyphType, SolidColorBrush brush, double fontSize, double maxWidth, double maxHeight, double x, double baseline, ref double useHeight, bool nowrap = false)
         {
-            if (maxHeight < fontSize + 2)
+            if (x <= 0 || maxWidth <= 0)
             {
                 useHeight = 0;
                 return false;
             }
+
             double totalHeight = 0;
+            double fontHeight = fontSize * glyphType.Height;
 
             string[] lineText = text.Replace("\r", "").Split('\n');
             foreach (string line in lineText)
             {
                 //高さ確認
-                if (totalHeight + fontSize > maxHeight)
+                if (totalHeight + fontHeight > maxHeight)
                 {
                     //これ以上は無理
                     useHeight = totalHeight;
                     return false;
                 }
-                totalHeight += Math.Floor(2 + fontSize);
+
+                //ベースラインの位置
+                Point origin = new Point(x, Math.Round(totalHeight + baseline));
+
+                //メイリオみたいに行間のあるフォントと MS P ゴシックみたいな行間のないフォントがあるので
+                //なんとなく行間を作ってみる。
+                totalHeight += Math.Max(fontHeight, fontSize + 2);
+                double totalWidth = 0;
+
                 List<ushort> glyphIndexes = new List<ushort>();
                 List<double> advanceWidths = new List<double>();
-                double totalWidth = 0;
                 for (int n = 0; n < line.Length; n++)
                 {
                     ushort glyphIndex = glyphType.CharacterToGlyphMap[line[n]];
                     double width = glyphType.AdvanceWidths[glyphIndex] * fontSize;
+
                     if (totalWidth + width > maxWidth)
                     {
                         if (nowrap == true) break;//改行しない場合ここで終り
                         if (totalWidth == 0) return false;//一文字も置けなかった(glyphIndexesなどのCount=0のまま)
 
-                        if (totalHeight + fontSize > maxHeight)
+                        if (totalHeight + fontHeight > maxHeight)
                         {
                             //次の行無理
                             glyphIndex = glyphType.CharacterToGlyphMap['…'];
+                            double widthEllipsis = glyphType.AdvanceWidths[glyphIndex] * fontSize;
+                            while (totalWidth - advanceWidths.Last() + widthEllipsis > maxWidth)
+                            {
+                                glyphIndexes.RemoveAt(glyphIndexes.Count-1);
+                                advanceWidths.RemoveAt(advanceWidths.Count - 1);
+                            }
                             glyphIndexes[glyphIndexes.Count - 1] = glyphIndex;
-                            advanceWidths[advanceWidths.Count - 1] = width;
+                            advanceWidths[advanceWidths.Count - 1] = widthEllipsis;
 
-                            Point origin = new Point(x + 2, y + totalHeight);
                             GlyphRun glyphRun = new GlyphRun(glyphType, 0, false, fontSize,
                                 glyphIndexes, origin, advanceWidths, null, null, null, null,
                                 null, null);
@@ -67,16 +82,17 @@ namespace EpgTimer.TunerReserveViewCtrl
                         else
                         {
                             //次の行いけるので今までの分出力
-                            Point origin = new Point(x + 2, y + totalHeight);
                             GlyphRun glyphRun = new GlyphRun(glyphType, 0, false, fontSize,
                                 glyphIndexes, origin, advanceWidths, null, null, null, null,
                                 null, null);
 
                             dc.DrawGlyphRun(brush, glyphRun);
-                            totalHeight += fontSize + 2;
+
+                            origin = new Point(x, Math.Round(totalHeight + baseline));
+                            totalHeight += Math.Max(fontHeight, fontSize + 2);
+                            totalWidth = 0;
                             glyphIndexes = new List<ushort>();
                             advanceWidths = new List<double>();
-                            totalWidth = 0;
                         }
                     }
                     glyphIndexes.Add(glyphIndex);
@@ -85,7 +101,6 @@ namespace EpgTimer.TunerReserveViewCtrl
                 }
                 if (glyphIndexes.Count > 0)
                 {
-                    Point origin = new Point(x + 2, y + totalHeight);
                     GlyphRun glyphRun = new GlyphRun(glyphType, 0, false, fontSize,
                         glyphIndexes, origin, advanceWidths, null, null, null, null,
                         null, null);
@@ -112,35 +127,55 @@ namespace EpgTimer.TunerReserveViewCtrl
                 double sizeNormal = Settings.Instance.TunerFontSize;
                 double indentTitle = Math.Floor(sizeMin * 1.7);
                 double indentNormal = Math.Floor(Settings.Instance.TunerTitleIndent ? indentTitle : 2);
-                GlyphTypeface glyphTypefaceSeervice = vutil.GetGlyphTypeface(Settings.Instance.TunerFontNameService, Settings.Instance.TunerFontBoldService);
-                GlyphTypeface glyphTypefaceNormal = vutil.GetGlyphTypeface(Settings.Instance.TunerFontName, false);
                 SolidColorBrush colorTitle = CommonManager.Instance.CustTunerServiceColor;
                 SolidColorBrush colorNormal = CommonManager.Instance.CustTunerTextColor;
+
+                double heightMin = Settings.Instance.TunerFontHeight;
+                double heightTitle = Settings.Instance.TunerFontHeightService;
+                double heightNormal = Settings.Instance.TunerFontHeight;
+                double height1stLine = Math.Max(heightMin, heightTitle);
+
+                // 起点はベースラインになるので、それぞれのベースラインを計算しておく。
+                // 分とサービス名はフォントが異なることができるのでセンタリングして合うように調整しておく。
+                double baselineMin = sizeMin * vutil.GlyphTypefaceTunerNormal.Baseline + (height1stLine - heightMin) / 2;
+                double baselineTitle = sizeTitle * vutil.GlyphTypefaceTunerService.Baseline + (height1stLine - heightTitle) / 2;
+                double baselineNormal = sizeNormal * vutil.GlyphTypefaceTunerNormal.Baseline;
 
                 foreach (ReserveViewItem info in Items)
                 {
                     colorTitle = Settings.Instance.TunerColorModeUse == true ? info.ForeColorPri : colorTitle;
 
-                    double dInfoTopPos = Math.Floor(info.TopPos);
-                    double dInfoHeight = Math.Floor(info.Height);
+                    double x = info.LeftPos;  // Math.Floor(info.LeftPos);
+                    double y = info.TopPos; // Math.Floor(info.TopPos);
+                    double height = Math.Max(info.Height, 0); // Math.Ceiling(Math.Max(info.Height, 0)); // 1行分の高さを収めるため切り上げておく
+                    double width = info.Width; // Math.Floor(info.Width);
 
-                    dc.DrawRectangle(Brushes.LightGray, null, new Rect(info.LeftPos, dInfoTopPos, info.Width, Math.Max(dInfoHeight, 0)));
-                    if (dInfoHeight > 2)
+                    dc.DrawRectangle(Brushes.LightGray, null, new Rect(x, y, width, height));
+                    if (height > 2)
                     {
-                        dc.DrawRectangle(info.BackColor, null, new Rect(info.LeftPos + 1, dInfoTopPos + 1, info.Width - 2, dInfoHeight - 2));
-                        if (dInfoHeight < 4 + sizeTitle + 2)
+                        // 枠の内側を計算
+                        x += 1;
+                        y += 1;
+                        width -= 2;
+                        height -= 2;
+                        dc.DrawRectangle(info.BackColor, null, new Rect(x, y, width, height));
+
+                        if (height < height1stLine) // ModifierMinimumHeight してるので足りなくならないハズ。
                         {
                             //高さ足りない
                             info.TitleDrawErr = true;
                             continue;
                         }
 
-                        double totalHeight = 0;
+                        // margin 設定
+                        x += 2;
+                        width -= 2;
+
                         double useHeight = 0;
 
                         //分
                         string min = info.ReserveInfo.StartTime.Minute.ToString("d02");
-                        if (RenderText(min, dc, glyphTypefaceNormal, colorTitle, sizeMin, info.Width - 4, dInfoHeight - 4, info.LeftPos, dInfoTopPos - 2, ref useHeight) == false)
+                        if (RenderText(min, dc, vutil.GlyphTypefaceTunerNormal, colorTitle, sizeMin, width, height, x, y + baselineMin, ref useHeight) == false)
                         {
                             info.TitleDrawErr = true;
                             continue;
@@ -151,23 +186,22 @@ namespace EpgTimer.TunerReserveViewCtrl
                         {
                             string serviceName = info.ReserveInfo.StationName
                                 + "(" + CommonManager.ConvertNetworkNameText(info.ReserveInfo.OriginalNetworkID) + ")";
-                            if (RenderText(serviceName, dc, glyphTypefaceSeervice, colorTitle, sizeTitle, info.Width - 6 - indentTitle, dInfoHeight - 6 - totalHeight, info.LeftPos + indentTitle, dInfoTopPos - 2 + totalHeight, ref useHeight, Settings.Instance.TunerServiceNoWrap) == false)
+                            if (RenderText(serviceName, dc, vutil.GlyphTypefaceTunerService, colorTitle, sizeTitle, width - indentTitle, height, x + indentTitle, y + baselineTitle, ref useHeight, Settings.Instance.TunerServiceNoWrap) == false)
                             {
                                 info.TitleDrawErr = true;
                                 continue;
                             }
-                            totalHeight += Math.Floor(useHeight + sizeTitle / 3);
+                            useHeight += 2; // margin: 番組名との間隔は 2px にする
                         }
 
                         //番組名
                         if (info.ReserveInfo.Title.Length > 0)
                         {
-                            if (RenderText(info.ReserveInfo.Title, dc, glyphTypefaceNormal, colorNormal, sizeNormal, info.Width - 6 - indentNormal, dInfoHeight - 6 - totalHeight, info.LeftPos + indentNormal, dInfoTopPos - 2 + totalHeight, ref useHeight) == false)
+                            if (RenderText(info.ReserveInfo.Title, dc, vutil.GlyphTypefaceTunerNormal, colorNormal, sizeNormal, width - indentNormal, height - useHeight, x + indentNormal, y + useHeight + baselineNormal, ref useHeight) == false)
                             {
                                 info.TitleDrawErr = true;
                                 continue;
                             }
-                            totalHeight += useHeight + sizeNormal;
                         }
                     }
                 }

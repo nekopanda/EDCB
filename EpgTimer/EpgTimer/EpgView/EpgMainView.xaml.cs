@@ -396,8 +396,20 @@ namespace EpgTimer
                     }
                 }
 
-                //最低表示行数を適用。また、最低表示高さを確保して、位置も調整する。
-                vutil.ModifierMinimumLine<EpgEventInfo, ProgramViewItem>(programList, Settings.Instance.MinimumHeight);
+                //最低表示行数からドット数を計算する。
+                //double fontHeight = Math.Max(Settings.Instance.FontHeight, Settings.Instance.FontHeightTitle);
+                //double lineHeight = Settings.Instance.MinimumHeight * fontHeight;
+                // メイリオみたいに行間のあるフォントはフォントの高さをそのまま使う。
+                double fontHeight = Math.Max(Settings.Instance.FontHeight, Settings.Instance.FontHeightTitle);
+                // MS P ゴシックみたいな行間のないフォントは 2px あける。
+                double fontSize = Math.Max(Settings.Instance.FontSize, Settings.Instance.FontSizeTitle) + 2;
+                // 大きい方をフォントの高さとして採用し、最低表示px数を計算する。
+                double lineHeight = Settings.Instance.MinimumHeight * Math.Max(fontHeight, fontSize);
+                if (Settings.Instance.MinimumHeight >= 2)
+                {
+                    lineHeight += 4; // 説明との間隔は 4px にする
+                }
+                vutil.ModifierMinimumHeight<EpgEventInfo, ProgramViewItem>(programList, lineHeight + 1); //1ドットは枠の分
 
                 //必要時間リストと時間と番組の関連づけ
                 foreach (ProgramViewItem item in programList)
