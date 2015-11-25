@@ -400,10 +400,20 @@ namespace EpgTimer
 
             Title = appName;
 
+            if (pipeServer != null)
+            {
+                cmd.SetConnectTimeOut(3000);
+                cmd.SendUnRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
+                pipeServer.StopServer();
+                pipeServer = null;
+            }
+
             CommonManager.Instance.NW.DisconnectServer();
             CommonManager.Instance.NWMode = Settings.Instance.NWMode;
             cmd.SetSendMode(CommonManager.Instance.NWMode);
             cmd.SetNWSetting("", Settings.Instance.NWServerPort);
+
+            CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
 
             CommonManager.Instance.IsConnected = false;
             if (CommonManager.Instance.NWMode == false)
@@ -486,29 +496,21 @@ namespace EpgTimer
 
                 CommonManager.Instance.DB.SetNoAutoReloadEPG(false);
 
-                if (pipeServer == null)
-                {
-                    pipeServer = new PipeServer();
-                    pipeServer.StartServer(pipeEventName, pipeName, OutsideCmdCallback, this);
+                pipeServer = new PipeServer();
+                pipeServer.StartServer(pipeEventName, pipeName, OutsideCmdCallback, this);
 
-                    for (int i = 0; i < 150 && cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id) != ErrCode.CMD_SUCCESS; i++)
-                    {
-                        Thread.Sleep(100);
-                    }
+                ErrCode err = ErrCode.CMD_SUCCESS;
+                int j = 0;
+                do
+                {
+                    Thread.Sleep(300);
+                    err = cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
                 }
-                CommonManager.Instance.IsConnected = true;
+                while (j++ < 50 && err != ErrCode.CMD_SUCCESS);
+                CommonManager.Instance.IsConnected = (err == ErrCode.CMD_SUCCESS);
             }
             else
             {
-                if (pipeServer != null)
-                {
-                    cmd.SetConnectTimeOut(3000);
-                    cmd.SendUnRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
-                    pipeServer.StopServer();
-                    pipeServer = null;
-                }
-                CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
-
                 String srvIP = Settings.Instance.NWServerIP;
                 try
                 {
