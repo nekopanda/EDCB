@@ -36,18 +36,6 @@ namespace EpgTimer
             return txtKey1;
         }
 
-        public string EpgKeyword_TrimMode()
-        {
-            return TrimModeTooltip(Settings.Instance.MenuSet.Keyword_Trim);
-        }
-
-        private string TrimModeTooltip(bool mode)
-        {
-            string str_mode = (mode == true ? "オン" : "オフ");
-            string str_mode_toggle = (mode == false ? "'オン'" : "'オフ'");
-            return "記号除去モード : " + str_mode + " (Shift+クリックで一時的に" + str_mode_toggle + ")";
-        }
-
         public void CopyTitle2Clipboard(string txtTitle, bool NotToggle = false)
         {
             string txtTitle1 = txtTitle;
@@ -63,11 +51,6 @@ namespace EpgTimer
             }
 
             Clipboard.SetDataObject(txtTitle1, true);
-        }
-
-        public string CopyTitle_TrimMode()
-        {
-            return TrimModeTooltip(Settings.Instance.MenuSet.CopyTitle_Trim);
         }
 
         public void CopyContent2Clipboard(EpgEventInfo eventInfo, bool NotToggle = false)
@@ -136,13 +119,6 @@ namespace EpgTimer
             Clipboard.SetDataObject(text, true);
         }
 
-        public string CopyContent_Mode()
-        {
-            string mode = (Settings.Instance.MenuSet.CopyContentBasic == true ? "基本情報のみ" : "詳細情報");
-            string mode_toggle = (Settings.Instance.MenuSet.CopyContentBasic == false ? "'基本情報のみ'" : "'詳細情報'");
-            return "取得モード : " + mode + " (Shift+クリックで一時的に" + mode_toggle + ")";
-        }
-
         public void SearchText(string txtKey, bool NotToggle = false)
         {
             string txtKey1 = txtKey;
@@ -169,11 +145,6 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 MessageBox.Show("'検索のURI'の設定を確認してください。");
             }
-        }
-
-        public string SearchText_TrimMode()
-        {
-            return TrimModeTooltip(Settings.Instance.MenuSet.SearchTitle_Trim);
         }
 
         public string TrimKeyword(string txtKey)
@@ -316,6 +287,29 @@ namespace EpgTimer
             try
             {
                 return converter(box.Text.ToString());
+            }
+            catch
+            {
+                box.Text = defValue.ToString();
+                return defValue;
+            }
+        }
+        public T MyToNumerical<T>(TextBox box, Func<string, T> converter, T max, T min, T defValue = default(T)) where T : IComparable
+        {
+            try
+            {
+                T val = MyToNumerical(box, converter, defValue);
+                if (val.CompareTo(min) < 0)
+                {
+                    box.Text = min.ToString();
+                    return min;
+                }
+                if (val.CompareTo(max) > 0)
+                {
+                    box.Text = max.ToString();
+                    return max;
+                }
+                return val;
             }
             catch
             {
@@ -957,8 +951,8 @@ namespace EpgTimer
                 if (Data != null)
                 {
                     dlg.SetChgAutoAddID(Data.dataID);
-                    dlg.SetSearchDefKey(Data.searchInfo);
-                    dlg.SetRecInfoDef(Data.recSetting);
+                    dlg.SetSearchKey(Data.searchInfo);
+                    dlg.SetRecSetting(Data.recSetting);
                     dlg.SetRecFileList(Data.recFileList);
                 }
                 return dlg.ShowDialog();
@@ -995,7 +989,7 @@ namespace EpgTimer
                 key.serviceList.Clear();
                 key.serviceList.Add((Int64)sidKey);
 
-                dlg.SetSearchDefKey(key);
+                dlg.SetSearchKey(key);
                 dlg.ShowDialog();
             }
             catch (Exception ex)
@@ -1110,16 +1104,52 @@ namespace EpgTimer
             return Math.Min(Math.Min(ts1.TotalSeconds, ts2.TotalSeconds), Math.Min(d1, d2));
         }
 
+        public void FilePlay(ReserveData info)
+        {
+            if (info == null || info.RecSetting == null || info.RecSetting.RecMode == 5) return;
+            if (info.IsOnRec() == false)
+            {
+                MessageBox.Show("まだ録画が開始されていません。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            string file = "";
+            string folder = "";
+            if(info.RecFileNameList.Count!=0)
+            {
+                file=info.RecFileNameList[0];
+            }
+            if (info.RecSetting.RecFolderList.Count != 0)
+            {
+                folder = info.RecSetting.RecFolderList[0].RecFolder;
+            }
+            else
+            {
+                List<string> defFolders = Settings.GetDefRecFolders();
+                if (defFolders.Count != 0)
+                {
+                    folder = defFolders[0];
+                }
+            }
+
+            if (file=="" || folder == "")
+            {
+                MessageBox.Show("録画ファイルの場所がわかりませんでした。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            FilePlay(folder.TrimEnd('\\') + "\\" + file);
+        }
         public void FilePlay(String filePath)
         {
             try
             {
                 if (filePath == null || filePath.Length == 0) return;
 
+                System.Diagnostics.Process process;
                 CommonManager cmg = CommonManager.Instance;
                 if (cmg.NWMode == false)
                 {
-                    System.Diagnostics.Process process;
                     if (Settings.Instance.FilePlayExe.Length == 0)
                     {
                         process = System.Diagnostics.Process.Start(filePath);
@@ -1133,7 +1163,25 @@ namespace EpgTimer
                 }
                 else
                 {
-                    cmg.TVTestCtrl.StartStreamingPlay(filePath, cmg.NW.ConnectedIP, cmg.NW.ConnectedPort);
+                    if (Settings.Instance.FilePlayExe.Length == 0)
+                    {
+                        cmg.TVTestCtrl.StartStreamingPlay(filePath, cmg.NW.ConnectedIP, cmg.NW.ConnectedPort);
+                    }
+                    else
+                    {
+                        String nPath = "";
+                        ErrCode err = cmg.CtrlCmd.SendGetRecFileNetworkPath(filePath, ref nPath);
+                        if (err == ErrCode.CMD_SUCCESS)
+                        {
+                            String cmdLine = Settings.Instance.FilePlayCmd;
+                            cmdLine = cmdLine.Replace("$FilePath$", nPath);
+                            process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
+                        }
+                        else
+                        {
+                            cmg.TVTestCtrl.StartStreamingPlay(filePath, cmg.NW.ConnectedIP, cmg.NW.ConnectedPort);
+                        }
+                    }
                 }
             }
             catch (Exception ex)

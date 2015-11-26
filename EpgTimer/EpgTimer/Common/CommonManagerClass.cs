@@ -16,95 +16,44 @@ namespace EpgTimer
     class CommonManager
     {
         public CtrlCmdUtil CtrlCmd
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public DBManager DB
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public TVTestCtrlClass TVTestCtrl
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<UInt16, ContentKindInfo> ContentKindDictionary
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public List<ContentKindInfo> ContentKindList
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<UInt16, ContentKindInfo> ContentKindDictionary2
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<UInt16, ComponentKindInfo> ComponentKindDictionary
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<byte, DayOfWeekInfo> DayOfWeekDictionary
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<UInt16, UInt16> HourDictionary
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<UInt16, UInt16> MinDictionary
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<byte, RecModeInfo> RecModeDictionary
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<byte, YesNoInfo> YesNoDictionary
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public Dictionary<byte, PriorityInfo> PriorityDictionary
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public bool NWMode
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public List<NotifySrvInfo> NotifyLogList
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public NWConnect NW
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public MenuUtil MUtil
-        {
-            get;
-            set;
-        }
+        { get; set; }
         public ViewUtil VUtil
-        {
-            get;
-            set;
-        }
+        { get; set; }
+        public bool IsConnected
+        { get; set; }
+
         MenuManager _mm;
         public MenuManager MM
         {
@@ -117,31 +66,28 @@ namespace EpgTimer
             }
             set { _mm = value; }
         }
-        public List<Brush> CustContentColorList
-        {
-            get;
-            set;
-        }
-        public SolidColorBrush CustTitle1Color
-        {
-            get;
-            set;
-        }
-        public SolidColorBrush CustTitle2Color
-        {
-            get;
-            set;
-        }
-        public List<Brush> CustTimeColorList
-        {
-            get;
-            set;
-        }
-        public Brush CustServiceColor
-        {
-            get;
-            set;
-        }
+
+        public List<Brush> CustContentColorList { get; private set; }
+        public SolidColorBrush CustTitle1Color { get; private set; }
+        public SolidColorBrush CustTitle2Color { get; private set; }
+        public SolidColorBrush CustTunerServiceColor { get; private set; }
+        public SolidColorBrush CustTunerTextColor { get; private set; }
+        public List<SolidColorBrush> CustTunerServiceColorPri { get; private set; }
+        public List<Brush> CustTimeColorList { get; private set; }
+        public Brush CustServiceColor { get; private set; }
+        public SolidColorBrush ResDefBackColor { get; private set; }
+        public SolidColorBrush ResErrBackColor { get; private set; }
+        public SolidColorBrush ResWarBackColor { get; private set; }
+        public SolidColorBrush ResNoBackColor { get; private set; }
+        public SolidColorBrush ResAutoAddMissingBackColor { get; private set; }
+        public SolidColorBrush ListDefForeColor { get; private set; }
+        public List<SolidColorBrush> RecModeForeColor { get; private set; }
+        public SolidColorBrush RecEndDefBackColor { get; private set; }
+        public SolidColorBrush RecEndErrBackColor { get; private set; }
+        public SolidColorBrush RecEndWarBackColor { get; private set; }
+        public SolidColorBrush StatResForeColor { get; private set; }
+        public SolidColorBrush StatRecForeColor { get; private set; }
+        public SolidColorBrush StatOnAirForeColor { get; private set; }
 
         private static CommonManager _instance;
         public static CommonManager Instance
@@ -314,7 +260,8 @@ namespace EpgTimer
                 ContentKindDictionary.Add(0x0FFF, new ContentKindInfo("その他", "", 0x0F, 0xFF));
                 ContentKindDictionary.Add(0x0F0F, new ContentKindInfo("その他", "その他", 0x0F, 0x0F));
 
-                ContentKindDictionary.Add(0xFFFF, new ContentKindInfo("なし", "", 0xFF, 0xFF));
+                ContentKindDictionary.Add(0xFEFF, new ContentKindInfo("不明なジャンル(未実装)", "", 0xFE, 0xFF));
+                ContentKindDictionary.Add(0xFFFF, new ContentKindInfo("ジャンル情報なし", "", 0xFF, 0xFF));
             }
             if (ContentKindDictionary2 == null)
             {
@@ -371,8 +318,7 @@ namespace EpgTimer
                     //表示順が追加順にならないことの対策。OrderedDictionary使えるならその方が簡単かとは思うが
                     if (ContentKindList == null)
                     {
-                        ContentKindList = new List<ContentKindInfo>(ContentKindDictionary.Values);
-                        ContentKindList.Sort((i1, i2) => (int)i1.SortKey - (int)i2.SortKey);
+                        ContentKindList = ContentKindDictionary.Values.OrderBy(info => info.SortKey).ToList();
                     }
                 }
             }
@@ -516,9 +462,17 @@ namespace EpgTimer
             {
                 CustContentColorList = new List<Brush>();
             }
+            if (CustTunerServiceColorPri == null)
+            {
+                CustTunerServiceColorPri = new List<SolidColorBrush>();
+            }
             if (CustTimeColorList == null)
             {
                 CustTimeColorList = new List<Brush>();
+            }
+            if (RecModeForeColor == null)
+            {
+                RecModeForeColor = new List<SolidColorBrush>();
             }
         }
 
@@ -531,12 +485,6 @@ namespace EpgTimer
         public static UInt64 Create64PgKey(UInt16 ONID, UInt16 TSID, UInt16 SID, UInt16 EventID)
         {
             UInt64 key = ((UInt64)ONID) << 48 | ((UInt64)TSID) << 32 | ((UInt64)SID) << 16 | (UInt64)EventID;
-            return key;
-        }
-
-        public static UInt32 CreateARGBKey(byte a, byte r, byte g, byte b)
-        {
-            UInt32 key = ((UInt32)a) << 24 | ((UInt32)r) << 16 | ((UInt32)g) << 8 | (UInt32)b;
             return key;
         }
 
@@ -719,6 +667,7 @@ namespace EpgTimer
         /// 良くある通信エラー(CMD_ERR_CONNECT,CMD_ERR_TIMEOUT)をMessageBoxで表示する。
         /// Owner(this)を指定するとDispatcher.BeginInvokeで実行する。
         /// </summary>
+        private static bool showing = false;
         public static bool CmdErrMsgTypical(ErrCode err, string caption = "通信エラー", Control Owner = null)
         {
             if (err == ErrCode.CMD_SUCCESS) return true;
@@ -729,9 +678,9 @@ namespace EpgTimer
                 case ErrCode.CMD_ERR_CONNECT:
                     msg="サーバー または EpgTimerSrv に接続できませんでした。";
                     break;
-                //case ErrCode.CMD_ERR_BUSY:  //もう表示しないことにしているようだ。
-                //    msg = "データの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）";
-                //    break;
+                case ErrCode.CMD_ERR_BUSY:
+                    msg = "データの読み込みを行える状態ではありません。\r\n（EPGデータ読み込み中。など）";
+                    break;
                 case ErrCode.CMD_ERR_TIMEOUT:
                     msg = "EpgTimerSrvとの接続にタイムアウトしました。";
                     break;
@@ -742,11 +691,28 @@ namespace EpgTimer
 
             if (Owner != null)
             {
-                Owner.Dispatcher.BeginInvoke(new Action(() => MessageBox.Show(msg, caption)), null);
+                Owner.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    // MessageBox 表示中は新たに表示させない。
+                    // Lock とかしてないのでまれに表示するかもだけど、もともと表示する流れだったし気にしない。
+                    if (showing == false)
+                    {
+                        showing = true;
+                        MessageBox.Show(msg, caption);
+                        showing = false;
+                    }
+                }), null);
             }
             else
             {
-                MessageBox.Show(msg, caption);
+                // MessageBox 表示中は新たに表示させない。
+                // Lock とかしてないのでまれに表示するかもだけど、もともと表示する流れだったし気にしない。
+                if (showing == false)
+                {
+                    showing = true;
+                    MessageBox.Show(msg, caption);
+                    showing = false;
+                }
             }
 
             return false;
@@ -801,53 +767,15 @@ namespace EpgTimer
             view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
 
             String recMode = ConvertRecModeText(reserveInfo.RecSetting.RecMode);
-            String tuijyu = "";
-            if (reserveInfo.RecSetting.TuijyuuFlag == 0)
-            {
-                tuijyu = "しない";
-            }
-            else if (reserveInfo.RecSetting.TuijyuuFlag == 1)
-            {
-                tuijyu = "する";
-            }
-            String pittari = "";
-            if (reserveInfo.RecSetting.PittariFlag == 0)
-            {
-                pittari = "しない";
-            }
-            else if (reserveInfo.RecSetting.PittariFlag == 1)
-            {
-                pittari = "する";
-            }
 
             view += reserveInfo.StationName;
-            if (0x7880 <= reserveInfo.OriginalNetworkID && reserveInfo.OriginalNetworkID <= 0x7FE8)
-            {
-                view += " (地デジ)";
-            }
-            else if (reserveInfo.OriginalNetworkID == 0x0004)
-            {
-                view += " (BS)";
-            }
-            else if (reserveInfo.OriginalNetworkID == 0x0006)
-            {
-                view += " (CS1)";
-            }
-            else if (reserveInfo.OriginalNetworkID == 0x0007)
-            {
-                view += " (CS2)";
-            }
-            else
-            {
-                view += " (その他)";
-            }
-            view += "\r\n";
+            view += "(" + ConvertNetworkNameText(reserveInfo.OriginalNetworkID) + ")" + "\r\n";
 
             view += reserveInfo.Title + "\r\n\r\n";
             view += "録画モード : " + recMode + "\r\n";
             view += "優先度 : " + reserveInfo.RecSetting.Priority.ToString() + "\r\n";
-            view += "追従 : " + tuijyu + "\r\n";
-            view += "ぴったり（？） : " + pittari + "\r\n";
+            view += "追従 : " + YesNoDictionary[reserveInfo.RecSetting.TuijyuuFlag] + "\r\n";
+            view += "ぴったり（？） : " + YesNoDictionary[reserveInfo.RecSetting.PittariFlag] + "\r\n";
             if ((reserveInfo.RecSetting.ServiceMode & 0x01) == 0)
             {
                 view += "指定サービス対象データ : デフォルト\r\n";
@@ -1107,7 +1035,7 @@ namespace EpgTimer
                 extInfo += "\r\n";
 
                 //スクランブル
-                if (!(0x7880 <= eventInfo.original_network_id && eventInfo.original_network_id <= 0x7FE8))
+                if (!ChSet5.IsDttv(eventInfo.original_network_id))
                 {
                     if (eventInfo.FreeCAFlag == 0)
                     {
@@ -1164,24 +1092,24 @@ namespace EpgTimer
             return retText;
         }
 
-        public String ConvertNetworkNameText(ushort originalNetworkID)
+        public static String ConvertNetworkNameText(ushort originalNetworkID, bool IsSimple = false)
         {
             String retText = "";
-            if (0x7880 <= originalNetworkID && originalNetworkID <= 0x7FE8)
+            if (ChSet5.IsDttv(originalNetworkID) == true)
             {
                 retText = "地デジ";
             }
-            else if (originalNetworkID == 0x0004)
+            else if (ChSet5.IsBS(originalNetworkID) == true)
             {
                 retText = "BS";
             }
-            else if (originalNetworkID == 0x0006)
+            else if (ChSet5.IsCS1(originalNetworkID) == true)
             {
-                retText = "CS1";
+                retText = IsSimple == true ? "CS" : "CS1";
             }
-            else if (originalNetworkID == 0x0007)
+            else if (ChSet5.IsCS2(originalNetworkID) == true)
             {
-                retText = "CS2";
+                retText = IsSimple == true ? "CS" : "CS2";
             }
             else
             {
@@ -1360,6 +1288,38 @@ namespace EpgTimer
             return flowDoc;
         }
 
+        //デフォルト番組表の情報作成
+        public List<CustomEpgTabInfo> CreateDefaultTabInfo()
+        {
+            List<CustomEpgTabInfo> setInfo = Enumerable.Range(0, 4).Select(i => new CustomEpgTabInfo()).ToList();
+
+            setInfo[0].TabName = "地デジ";
+            setInfo[1].TabName = "BS";
+            setInfo[2].TabName = "CS";
+            setInfo[3].TabName = "その他";
+
+            foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+            {
+                int i = 3;//その他
+                if (info.IsDttv == true)//地デジ
+                {
+                    i = 0;
+                }
+                else if (info.IsBS == true)//BS
+                {
+                    i = 1;
+                }
+                else if (info.IsCS == true)//CS
+                {
+                    i = 2;
+                }
+
+                setInfo[i].ViewServiceList.Add(info.Key);
+            }
+
+            return setInfo.Where(info => info.ViewServiceList.Count != 0).ToList();
+        }
+        
         void h_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             try
@@ -1467,23 +1427,65 @@ namespace EpgTimer
                 {
                     MessageBox.Show(msg);
                 }
-                else if (System.IO.File.Exists(folder_path) != true)
-                {
-                    String folderPath = GetDirectoryName2(folder_path);
-                    System.Diagnostics.Process.Start("EXPLORER.EXE", folderPath);
-                }
                 else
                 {
-                    String cmd = "/select,";
-                    cmd += "\"" + folder_path + "\"";
+                    if (CommonManager.Instance.NWMode == false)
+                    {
+                        if (System.IO.File.Exists(folder_path) != true)
+                        {
+                            String folderPath = GetDirectoryName2(folder_path);
+                            System.Diagnostics.Process.Start("EXPLORER.EXE", folderPath);
+                        }
+                        else
+                        {
+                            String cmdline = "/select,";
+                            cmdline += "\"" + folder_path + "\"";
+                            
+                            System.Diagnostics.Process.Start("EXPLORER.EXE", cmdline);
+                        }
+                    }
+                    else
+                    {
+                        String nPath = "";
+                        CommonManager.Instance.CtrlCmd.SendGetRecFileNetworkPath(folder_path, ref nPath); 
 
-                    System.Diagnostics.Process.Start("EXPLORER.EXE", cmd);
+                        String cmdline = "/select,";
+                        cmdline += "\"" + nPath + "\"";
+                        
+                        System.Diagnostics.Process.Start("EXPLORER.EXE", cmdline);
+                    }
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
+        }
+
+        //ReloadCustContentColorList()用のコンバートメソッド
+        private Brush _GetColorBrush(string colorName, uint colorValue = 0
+            , bool gradation = false, double luminance = -1, double saturation = -1)
+        {
+            Color c = (colorName == "カスタム" ? ColorDef.FromUInt(colorValue) : ColorDef.FromName(colorName));
+            if (gradation == false)
+            {
+                return ColorDef.SolidBrush(c);
+            }
+            else
+            {
+                if (luminance == -1)
+                {
+                    return ColorDef.GradientBrush(c);
+                }
+                else
+                {
+                    return ColorDef.GradientBrush(c, luminance, saturation);
+                }
+            }
+        }
+        private SolidColorBrush _GetSolidBrush(string s)
+        {
+            return ColorDef.SolidBrush((Color)ColorConverter.ConvertFromString(s));
         }
         public void ReloadCustContentColorList()
         {
@@ -1492,413 +1494,54 @@ namespace EpgTimer
                 CustContentColorList.Clear();
                 for (int i = 0; i < Settings.Instance.ContentColorList.Count; i++)
                 {
-                    String name = Settings.Instance.ContentColorList[i];
-                    Color color;
-                    if (String.Compare(name, "カスタム") == 0)
-                    {
-                        UInt32 argb = Settings.Instance.ContentCustColorList[i];
-
-                        byte r = (byte)((argb & 0x00FF0000) >> 16);
-                        byte g = (byte)((argb & 0x0000FF00) >> 8);
-                        byte b = (byte)(argb & 0x000000FF);
-
-                        color = Color.FromArgb(0xFF, r, g, b);
-                    }
-                    else
-                    {
-                        color = ColorDef.ColorFromName(name);
-                    }
-                    if (Settings.Instance.EpgGradation == false)
-                    {
-                        CustContentColorList.Add(new SolidColorBrush(color));
-                        CustContentColorList[CustContentColorList.Count - 1].Freeze();
-                    }
-                    else
-                    {
-                        CustContentColorList.Add(ColorDef.GradientBrush(color));
-                    }
+                    CustContentColorList.Add(_GetColorBrush(Settings.Instance.ContentColorList[i], Settings.Instance.ContentCustColorList[i], Settings.Instance.EpgGradation));
                 }
-                if (String.Compare(Settings.Instance.ReserveRectColorNormal, "カスタム") == 0)
+                CustContentColorList.Add(_GetColorBrush(Settings.Instance.ReserveRectColorNormal, Settings.Instance.ContentCustColorList[0x11]));
+                CustContentColorList.Add(_GetColorBrush(Settings.Instance.ReserveRectColorNo, Settings.Instance.ContentCustColorList[0x12]));
+                CustContentColorList.Add(_GetColorBrush(Settings.Instance.ReserveRectColorNoTuner, Settings.Instance.ContentCustColorList[0x13]));
+                CustContentColorList.Add(_GetColorBrush(Settings.Instance.ReserveRectColorWarning, Settings.Instance.ContentCustColorList[0x14]));
+                CustContentColorList.Add(_GetColorBrush(Settings.Instance.ReserveRectColorAutoAddMissing, Settings.Instance.ContentCustColorList[0x15]));
+
+                CustTitle1Color = (SolidColorBrush)_GetColorBrush(Settings.Instance.TitleColor1, Settings.Instance.TitleCustColor1);
+                CustTitle2Color = (SolidColorBrush)_GetColorBrush(Settings.Instance.TitleColor2, Settings.Instance.TitleCustColor2);
+                CustTunerServiceColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.TunerServiceColors[0], Settings.Instance.TunerServiceCustColors[0]);
+                CustTunerTextColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.TunerServiceColors[1], Settings.Instance.TunerServiceCustColors[1]);
+
+                CustTunerServiceColorPri.Clear();
+                for (int i = 2; i < 2 + 5; i++)
                 {
-                    UInt32 argb = Settings.Instance.ContentCustColorList[0x11];
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustContentColorList.Add(backColor);
-                }
-                else
-                {
-                    CustContentColorList.Add(ColorDef.Instance.ColorTable[Settings.Instance.ReserveRectColorNormal]);
-                }
-                if (String.Compare(Settings.Instance.ReserveRectColorNo, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.ContentCustColorList[0x12];
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustContentColorList.Add(backColor);
-                }
-                else
-                {
-                    CustContentColorList.Add(ColorDef.Instance.ColorTable[Settings.Instance.ReserveRectColorNo]);
-                }
-                if (String.Compare(Settings.Instance.ReserveRectColorNoTuner, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.ContentCustColorList[0x13];
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustContentColorList.Add(backColor);
-                }
-                else
-                {
-                    CustContentColorList.Add(ColorDef.Instance.ColorTable[Settings.Instance.ReserveRectColorNoTuner]);
-                }
-                if (String.Compare(Settings.Instance.ReserveRectColorWarning, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.ContentCustColorList[0x14];
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustContentColorList.Add(backColor);
-                }
-                else
-                {
-                    CustContentColorList.Add(ColorDef.Instance.ColorTable[Settings.Instance.ReserveRectColorWarning]);
+                    CustTunerServiceColorPri.Add((SolidColorBrush)_GetColorBrush(Settings.Instance.TunerServiceColors[i], Settings.Instance.TunerServiceCustColors[i]));
                 }
 
-                if (String.Compare(Settings.Instance.TitleColor1, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.TitleCustColor1;
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustTitle1Color = backColor;
-                }
-                else
-                {
-                    CustTitle1Color = ColorDef.Instance.ColorTable[Settings.Instance.TitleColor1];
-                }
-                if (String.Compare(Settings.Instance.TitleColor2, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.TitleCustColor2;
-
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
-
-                    Color item = Color.FromArgb(0xFF, r, g, b);
-                    SolidColorBrush backColor = new SolidColorBrush();
-                    backColor.Color = item;
-                    backColor.Freeze();
-
-                    CustTitle2Color = backColor;
-                }
-                else
-                {
-                    CustTitle2Color = ColorDef.Instance.ColorTable[Settings.Instance.TitleColor2];
-                }
                 CustTimeColorList.Clear();
                 for (int i = 0; i < Settings.Instance.TimeColorList.Count; i++)
                 {
-                    String name = Settings.Instance.TimeColorList[i];
-                    Color color;
-                    if (String.Compare(name, "カスタム") == 0)
-                    {
-                        UInt32 argb = Settings.Instance.TimeCustColorList[i];
+                    CustTimeColorList.Add(_GetColorBrush(Settings.Instance.TimeColorList[i], Settings.Instance.TimeCustColorList[i], Settings.Instance.EpgGradationHeader));
+                }
 
-                        byte r = (byte)((argb & 0x00FF0000) >> 16);
-                        byte g = (byte)((argb & 0x0000FF00) >> 8);
-                        byte b = (byte)(argb & 0x000000FF);
+                CustServiceColor = _GetColorBrush(Settings.Instance.ServiceColor, Settings.Instance.ServiceCustColor, Settings.Instance.EpgGradationHeader, 1.0, 2.0);
 
-                        color = Color.FromArgb(0xFF, r, g, b);
-                    }
-                    else
-                    {
-                        color = ColorDef.ColorFromName(name);
-                    }
-                    if (Settings.Instance.EpgGradationHeader == false)
-                    {
-                        CustTimeColorList.Add(new SolidColorBrush(color));
-                        CustTimeColorList[CustTimeColorList.Count - 1].Freeze();
-                    }
-                    else
-                    {
-                        CustTimeColorList.Add(ColorDef.GradientBrush(color, 0.9, 1.1));
-                    }
-                }
-                Color serviceColor;
-                if (String.Compare(Settings.Instance.ServiceColor, "カスタム") == 0)
-                {
-                    UInt32 argb = Settings.Instance.ServiceCustColor;
+                ResDefBackColor = _GetSolidBrush(Settings.Instance.ResDefBackColor);
+                ResErrBackColor = _GetSolidBrush(Settings.Instance.ResErrBackColor);
+                ResWarBackColor = _GetSolidBrush(Settings.Instance.ResWarBackColor);
+                ResNoBackColor = _GetSolidBrush(Settings.Instance.ResNoBackColor);
+                ResAutoAddMissingBackColor = _GetSolidBrush(Settings.Instance.ResAutoAddMissingBackColor);
 
-                    byte r = (byte)((argb & 0x00FF0000) >> 16);
-                    byte g = (byte)((argb & 0x0000FF00) >> 8);
-                    byte b = (byte)(argb & 0x000000FF);
+                ListDefForeColor = _GetSolidBrush(Settings.Instance.ListDefFontColor);
 
-                    serviceColor = Color.FromArgb(0xFF, r, g, b);
-                }
-                else
-                {
-                    serviceColor = ColorDef.ColorFromName(Settings.Instance.ServiceColor);
-                }
-                if (Settings.Instance.EpgGradationHeader == false)
-                {
-                    CustServiceColor = new SolidColorBrush(serviceColor);
-                    CustServiceColor.Freeze();
-                }
-                else
-                {
-                    CustServiceColor = ColorDef.GradientBrush(serviceColor, 1.0, 2.0);
-                }
+                RecModeForeColor = Settings.Instance.RecModeFontColorList.Select(c => (_GetSolidBrush(c))).ToList();
+
+                RecEndDefBackColor = _GetSolidBrush(Settings.Instance.RecEndDefBackColor);
+                RecEndErrBackColor = _GetSolidBrush(Settings.Instance.RecEndErrBackColor);
+                RecEndWarBackColor = _GetSolidBrush(Settings.Instance.RecEndWarBackColor);
+
+                StatResForeColor = _GetSolidBrush(Settings.Instance.StatResForeColor);
+                StatRecForeColor = _GetSolidBrush(Settings.Instance.StatRecForeColor);
+                StatOnAirForeColor = _GetSolidBrush(Settings.Instance.StatOnAirForeColor);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-
-        private SolidColorBrush resDefBackColor = null;
-        public SolidColorBrush ResDefBackColor
-        {
-            get
-            {
-                if (resDefBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResDefColorR, Settings.Instance.ResDefColorG, Settings.Instance.ResDefColorB);
-                    resDefBackColor = new SolidColorBrush();
-                    resDefBackColor.Color = item;
-                    resDefBackColor.Freeze();
-                }
-                return resDefBackColor;
-            }
-        }
-        private SolidColorBrush resErrBackColor = null;
-        public SolidColorBrush ResErrBackColor
-        {
-            get
-            {
-                if (resErrBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResErrColorR, Settings.Instance.ResErrColorG, Settings.Instance.ResErrColorB);
-                    resErrBackColor = new SolidColorBrush();
-                    resErrBackColor.Color = item;
-                    resErrBackColor.Freeze();
-                }
-                return resErrBackColor;
-            }
-        }
-        private SolidColorBrush resWarBackColor = null;
-        public SolidColorBrush ResWarBackColor
-        {
-            get
-            {
-                if (resWarBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResWarColorR, Settings.Instance.ResWarColorG, Settings.Instance.ResWarColorB);
-                    resWarBackColor = new SolidColorBrush();
-                    resWarBackColor.Color = item;
-                    resWarBackColor.Freeze();
-                }
-                return resWarBackColor;
-            }
-        }
-        private SolidColorBrush resNoBackColor = null;
-        public SolidColorBrush ResNoBackColor
-        {
-            get
-            {
-                if (resNoBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.ResNoColorR, Settings.Instance.ResNoColorG, Settings.Instance.ResNoColorB);
-                    resNoBackColor = new SolidColorBrush();
-                    resNoBackColor.Color = item;
-                    resNoBackColor.Freeze();
-                }
-                return resNoBackColor;
-            }
-        }
-        private SolidColorBrush listDefForeColor = null;
-        public SolidColorBrush ListDefForeColor
-        {
-            get
-            {
-                if (listDefForeColor == null)
-                {
-                    listDefForeColor = new SolidColorBrush((Color)(ColorConverter.ConvertFromString(Settings.Instance.ListDefFontColor)));
-                    listDefForeColor.Freeze();
-                }
-                return listDefForeColor;
-            }
-        }
-        private List<SolidColorBrush> eventItemForeColor = null;
-        public SolidColorBrush EventItemForeColor(byte RecMode = 6)
-        {
-            if (eventItemForeColor == null)
-            {
-                eventItemForeColor = new List<SolidColorBrush>();
-                foreach (string strColor1 in Settings.Instance.RecModeFontColorList)
-                {
-                    eventItemForeColor.Add(new SolidColorBrush((Color)(ColorConverter.ConvertFromString(strColor1))));
-                }
-                foreach (SolidColorBrush color1 in eventItemForeColor)
-                {
-                    color1.Freeze();
-                }
-            }
-
-            return RecMode < eventItemForeColor.Count ? eventItemForeColor[RecMode] : ListDefForeColor;
-        }
-        private SolidColorBrush recEndDefBackColor = null;
-        public SolidColorBrush RecEndDefBackColor
-        {
-            get
-            {
-                if (recEndDefBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndDefColorR, Settings.Instance.RecEndDefColorG, Settings.Instance.RecEndDefColorB);
-                    recEndDefBackColor = new SolidColorBrush();
-                    recEndDefBackColor.Color = item;
-                    recEndDefBackColor.Freeze();
-                }
-                return recEndDefBackColor;
-            }
-        }
-        
-        private SolidColorBrush recEndErrBackColor = null;
-        public SolidColorBrush RecEndErrBackColor
-        {
-            get
-            {
-                if( recEndErrBackColor == null ){
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndErrColorR, Settings.Instance.RecEndErrColorG, Settings.Instance.RecEndErrColorB);
-                    recEndErrBackColor = new SolidColorBrush();
-                    recEndErrBackColor.Color = item;
-                    recEndErrBackColor.Freeze();
-                }
-                return recEndErrBackColor;
-            }
-        }
-
-        private SolidColorBrush recEndWarBackColor = null;
-        public SolidColorBrush RecEndWarBackColor
-        {
-            get
-            {
-                if (recEndWarBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.RecEndWarColorR, Settings.Instance.RecEndWarColorG, Settings.Instance.RecEndWarColorB);
-                    recEndWarBackColor = new SolidColorBrush();
-                    recEndWarBackColor.Color = item;
-                    recEndWarBackColor.Freeze();
-                }
-                return recEndWarBackColor;
-            }
-        }
-        private SolidColorBrush statResForeColor = null;
-        public SolidColorBrush StatResForeColor
-        {
-            get
-            {
-                if (statResForeColor == null)
-                {
-                    statResForeColor = new SolidColorBrush((Color)(ColorConverter.ConvertFromString(Settings.Instance.StatResForeColor)));
-                    statResForeColor.Freeze();
-                }
-                return statResForeColor;
-            }
-        }
-        private SolidColorBrush statRecForeColor = null;
-        public SolidColorBrush StatRecForeColor
-        {
-            get
-            {
-                if (statRecForeColor == null)
-                {
-                    statRecForeColor = new SolidColorBrush((Color)(ColorConverter.ConvertFromString(Settings.Instance.StatRecForeColor)));
-                    statRecForeColor.Freeze();
-                }
-                return statRecForeColor;
-            }
-        }
-        private SolidColorBrush statOnAirForeColor = null;
-        public SolidColorBrush StatOnAirForeColor
-        {
-            get
-            {
-                if (statOnAirForeColor == null)
-                {
-                    statOnAirForeColor = new SolidColorBrush((Color)(ColorConverter.ConvertFromString(Settings.Instance.StatOnAirForeColor)));
-                    statOnAirForeColor.Freeze();
-                }
-                return statOnAirForeColor;
-            }
-        }
-
-        private SolidColorBrush epgTipsBackColor = null;
-        public SolidColorBrush EpgTipsBackColor
-        {
-            get
-            {
-                if (epgTipsBackColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.EpgTipsBackColorR, Settings.Instance.EpgTipsBackColorG, Settings.Instance.EpgTipsBackColorB);
-                    epgTipsBackColor = new SolidColorBrush();
-                    epgTipsBackColor.Color = item;
-                    epgTipsBackColor.Freeze();
-                }
-                return epgTipsBackColor;
-            }
-        }
-        private SolidColorBrush epgTipsForeColor = null;
-        public SolidColorBrush EpgTipsForeColor
-        {
-            get
-            {
-                if (epgTipsForeColor == null)
-                {
-                    Color item = Color.FromArgb(0xFF, Settings.Instance.EpgTipsForeColorR, Settings.Instance.EpgTipsForeColorG, Settings.Instance.EpgTipsForeColorB);
-                    epgTipsForeColor = new SolidColorBrush();
-                    epgTipsForeColor.Color = item;
-                    epgTipsForeColor.Freeze();
-                }
-                return epgTipsForeColor;
             }
         }
 

@@ -33,8 +33,6 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	this->moduleIniPath = strPath.c_str();
 	GetCommonIniPath(strPath);
 	this->commonIniPath = strPath.c_str();
-	GetEpgTimerSrvIniPath(strPath);
-	this->timerSrvIniPath = strPath.c_str();
 
 	this->initONID = GetPrivateProfileInt( L"Set", L"LastONID", -1, this->moduleIniPath.c_str() );
 	this->initTSID = GetPrivateProfileInt( L"Set", L"LastTSID", -1, this->moduleIniPath.c_str() );
@@ -156,7 +154,7 @@ BOOL CEpgDataCap_BonDlg::OnInitDialog()
 	//ウインドウの復元
 	WINDOWPLACEMENT Pos;
 	Pos.length = sizeof(WINDOWPLACEMENT);
-	Pos.flags = NULL;
+	Pos.flags = 0;
 	if( this->iniMin == FALSE ){
 		Pos.showCmd = SW_SHOW;
 	}else{
@@ -465,6 +463,13 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 						buff ) == FALSE ){
 							SetTimer(RETRY_ADD_TRAY, 5000, NULL);
 				}
+			}
+			break;
+		case TIMER_TRY_STOP_SERVER:
+			if( this->main.StopServer(true) ){
+				KillTimer(TIMER_TRY_STOP_SERVER);
+				OutputDebugString(L"CmdServer stopped\r\n");
+				EndDialog(m_hWnd, IDCANCEL);
 			}
 			break;
 		default:
@@ -1245,7 +1250,9 @@ INT_PTR CALLBACK CEpgDataCap_BonDlg::DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam
 			break;
 		case IDOK:
 		case IDCANCEL:
-			EndDialog(hDlg, LOWORD(wParam));
+			//デッドロック回避のためメッセージポンプを維持しつつサーバを終わらせる
+			pSys->main.StopServer(true);
+			pSys->SetTimer(TIMER_TRY_STOP_SERVER, 20, NULL);
 			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, 0);
 			return TRUE;
 		}

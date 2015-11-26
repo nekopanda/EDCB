@@ -97,59 +97,8 @@ namespace EpgTimer
         /// </summary>
         protected override void ReDrawNowLine()
         {
-            try
-            {
-                nowViewTimer.Stop();
-                DateTime nowTime = GetWeekMainViewTime(DateTime.Now);
-
-                if (nowLine == null)
-                {
-                    nowLine = new Line();
-                    Canvas.SetZIndex(nowLine, 20);
-                    nowLine.Stroke = new SolidColorBrush(Colors.Red);
-                    nowLine.StrokeThickness = Settings.Instance.MinHeight * 2;
-                    nowLine.Opacity = 0.5;
-                    epgProgramView.canvas.Children.Add(nowLine);
-                }
-
-                double posY = 0;
-                DateTime chkNowTime = GetWeekMainViewTime(DateTime.Now, TimeSelect.HourOnly);
-                for (int i = 0; i < timeList.Count; i++)
-                {
-                    if (chkNowTime == timeList.Keys[i])
-                    {
-                        posY = Math.Ceiling((i * 60 + (nowTime - chkNowTime).TotalMinutes) * Settings.Instance.MinHeight);
-                        break;
-                    }
-                    else if (chkNowTime < timeList.Keys[i])
-                    {
-                        //時間省かれてる
-                        posY = Math.Ceiling(i * 60 * Settings.Instance.MinHeight);
-                        break;
-                    }
-                }
-
-                if (posY > epgProgramView.canvas.Height)
-                {
-                    if (nowLine != null)
-                    {
-                        epgProgramView.canvas.Children.Remove(nowLine);
-                    }
-                    nowLine = null;
-                    return;
-                }
-
-                nowLine.X1 = 0;
-                nowLine.Y1 = posY;
-                nowLine.X2 = epgProgramView.canvas.Width;
-                nowLine.Y2 = posY;
-
-                nowViewTimer.Interval = TimeSpan.FromSeconds(60 - nowTime.Second);
-                nowViewTimer.Start();
-            }
-            catch
-            {
-            }
+            var nowTime = DateTime.Now;
+            ReDrawNowLineBase(GetWeekMainViewTime(nowTime), GetWeekMainViewTime(nowTime, TimeSelect.HourOnly));
         }
 
         protected override DateTime SetNowTime()
@@ -185,53 +134,44 @@ namespace EpgTimer
 
                 foreach (ReserveData info in CommonManager.Instance.DB.ReserveList.Values)
                 {
-                    UInt64 key = info.Create64Key();
-                    if (selectID == key)
+                    if (selectID == info.Create64Key())
                     {
-                        var startTime = GetWeekMainViewTime(info.StartTime);
-                        var chkStartTime = GetWeekMainViewTime(info.StartTime, TimeSelect.HourOnly);
-
                         //時間ないので除外
+                        DateTime chkStartTime = GetWeekMainViewTime(info.StartTime, TimeSelect.HourOnly);
                         if (timeList.ContainsKey(chkStartTime) == false) continue;
 
-                        DateTime baseStartTime = startTime;
+                        DateTime baseStartTime = GetWeekMainViewTime(info.StartTime); ;
 
                         //マージンを適用
+                        DateTime startTime = baseStartTime;
                         Int32 duration = (Int32)info.DurationSecond;
-                        vutil.ApplyMarginForPanelView(info, ref duration, ref startTime, true);
+                        vutil.ApplyMarginForPanelView(info, ref startTime, ref duration);
 
-                        ReserveViewItem viewItem = new ReserveViewItem(info);
-                        //viewItem.LeftPos = i * Settings.Instance.ServiceWidth;
-                        viewItem.Height = Math.Max((duration * Settings.Instance.MinHeight) / 60, Settings.Instance.MinHeight);
-                        viewItem.Width = Settings.Instance.ServiceWidth;
-
-                        bool modified = false;
-                        if (Settings.Instance.MinimumHeight > 0 && viewItem.ReserveInfo.EventID != 0xFFFF)
-                        {
-                            //予約情報から番組情報を特定し、枠表示位置を再設定する
-                            foreach (ProgramViewItem pgInfo in timeList[chkStartTime])
-                            {
-                                if (viewItem.ReserveInfo.Create64PgKey() == pgInfo.EventInfo.Create64PgKey() &&
-                                    info.DurationSecond != 0)
-                                {
-                                    viewItem.TopPos = pgInfo.TopPos + pgInfo.Height * (startTime - baseStartTime).TotalSeconds / info.DurationSecond;
-                                    viewItem.Height = Math.Max(pgInfo.Height * duration / info.DurationSecond, Settings.Instance.MinHeight);
-                                    modified = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if (modified == false)
-                        {
-                            int index = timeList.IndexOfKey(chkStartTime);
-                            viewItem.TopPos = index * 60 * Settings.Instance.MinHeight;
-                            viewItem.TopPos += Math.Floor((startTime - chkStartTime).TotalMinutes * Settings.Instance.MinHeight);
-                        }
-
+                        var viewItem = new ReserveViewItem(info);
+                        reserveList.Add(viewItem);
                         DateTime chkDay = GetWeekMainViewTime(info.StartTime, TimeSelect.DayOnly);
                         viewItem.LeftPos = Settings.Instance.ServiceWidth * dayList.IndexOfKey(chkDay);
+                        viewItem.Width = Settings.Instance.ServiceWidth;
 
-                        reserveList.Add(viewItem);
+                        ProgramViewItem pgInfo = null;
+                        if (Settings.Instance.MinimumHeight > 0 && viewItem.ReserveInfo.EventID != 0xFFFF && info.DurationSecond != 0)
+                        {
+                            //予約情報から番組情報を特定し、枠表示位置を再設定する
+                            UInt64 key = info.Create64PgKey();
+                            pgInfo = timeList[chkStartTime].Find(info1 => key == info1.EventInfo.Create64PgKey());
+                        }
+
+                        if (pgInfo != null)
+                        {
+                            viewItem.TopPos = pgInfo.TopPos + pgInfo.Height * (startTime - baseStartTime).TotalSeconds / info.DurationSecond;
+                            viewItem.Height = Math.Max(pgInfo.Height * duration / info.DurationSecond, 2);//最低2px。MinHeightの値は信用できない。
+                        }
+                        else
+                        {
+                            int index = timeList.IndexOfKey(chkStartTime);
+                            viewItem.TopPos = Settings.Instance.MinHeight * (index * 60 + (startTime - chkStartTime).TotalMinutes);
+                            viewItem.Height = Math.Max(duration * Settings.Instance.MinHeight / 60, 2);//最低2px。
+                        }
                     }
                 }
                 epgProgramView.SetReserveList(reserveList);
@@ -321,9 +261,9 @@ namespace EpgTimer
                     {
                         continue;
                     }
-                    ProgramViewItem viewItem = new ProgramViewItem(eventInfo);
-                    //後で最低行数修正入前提で、高さが0になっても取りあえず気にしない
-                    viewItem.Height = ((eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) * Settings.Instance.MinHeight) / 60;
+
+                    var viewItem = new ProgramViewItem(eventInfo);
+                    viewItem.Height = Settings.Instance.MinHeight * (eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) / 60;
                     viewItem.Width = Settings.Instance.ServiceWidth;
                     programList.Add(viewItem);
 
@@ -353,8 +293,8 @@ namespace EpgTimer
                 if (viewCustNeedTimeOnly == false)
                 {
                     //番組のない時間帯を追加
-                    DateTime chkStartTime = new DateTime(2001, 1, 1, setViewInfo.StartTimeWeek, 0, 0);
-                    DateTime chkEndTime = new DateTime(2001, 1, 2, setViewInfo.StartTimeWeek, 0, 0);
+                    var chkStartTime = new DateTime(2001, 1, 1, setViewInfo.StartTimeWeek, 0, 0);
+                    var chkEndTime = new DateTime(2001, 1, 2, setViewInfo.StartTimeWeek, 0, 0);
                     while (chkStartTime < chkEndTime)
                     {
                         if (timeList.ContainsKey(chkStartTime) == false)
@@ -368,9 +308,9 @@ namespace EpgTimer
                 //番組の表示位置設定
                 foreach (ProgramViewItem item in programList)
                 {
-                    DateTime chkStartTime = GetWeekMainViewTime(item.EventInfo.start_time, TimeSelect.HourOnly);
-                    DateTime startTime = GetWeekMainViewTime(item.EventInfo.start_time);
-                    DateTime dayInfo = GetWeekMainViewTime(item.EventInfo.start_time, TimeSelect.DayOnly);
+                    var chkStartTime = GetWeekMainViewTime(item.EventInfo.start_time, TimeSelect.HourOnly);
+                    var startTime = GetWeekMainViewTime(item.EventInfo.start_time);
+                    var dayInfo = GetWeekMainViewTime(item.EventInfo.start_time, TimeSelect.DayOnly);
 
                     if (timeList.ContainsKey(chkStartTime) == true)
                     {
@@ -383,8 +323,19 @@ namespace EpgTimer
                         item.LeftPos = index * Settings.Instance.ServiceWidth;
                     }
                 }
-                //最低表示行数を適用
-                vutil.ModifierMinimumHeight<EpgEventInfo, ProgramViewItem>(programList);
+
+                //最低表示行数からドット数を計算する。
+                // メイリオみたいに行間のあるフォントはフォントの高さをそのまま使う。
+                double fontHeight = Math.Max(Settings.Instance.FontHeight, Settings.Instance.FontHeightTitle);
+                // MS P ゴシックみたいな行間のないフォントは 2px あける。
+                double fontSize = Math.Max(Settings.Instance.FontSize, Settings.Instance.FontSizeTitle) + 2;
+                // 大きい方をフォントの高さとして採用し、最低表示px数を計算する。
+                double lineHeight = Settings.Instance.MinimumHeight * Math.Max(fontHeight, fontSize);
+                if (Settings.Instance.MinimumHeight >= 2)
+                {
+                    lineHeight += 4; // 説明との間隔は 4px にする
+                }
+                vutil.ModifierMinimumHeight<EpgEventInfo, ProgramViewItem>(programList, lineHeight + 1); //1ドットは枠の分
 
                 //必要時間リストと時間と番組の関連づけ
                 foreach (ProgramViewItem item in programList)
@@ -402,7 +353,7 @@ namespace EpgTimer
                     dayList.Count * Settings.Instance.ServiceWidth,
                     timeList.Count * 60 * Settings.Instance.MinHeight);
 
-                List<DateTime> dateTimeList = new List<DateTime>();
+                var dateTimeList = new List<DateTime>();
                 foreach (var item in timeList)
                 {
                     dateTimeList.Add(item.Key);

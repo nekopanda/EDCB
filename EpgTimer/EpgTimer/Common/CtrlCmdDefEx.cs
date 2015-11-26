@@ -259,6 +259,45 @@ namespace EpgTimer
             return info => (ulong)info.GetHashCode();
         }
 
+        //簡易ステータス
+        public static RecEndStatusBasic RecStatusBasic(this RecFileInfo info)
+        {
+            switch ((RecEndStatus)info.RecStatus)
+            {
+                case RecEndStatus.NORMAL:           //正常終了
+                    return RecEndStatusBasic.DEFAULT;
+                case RecEndStatus.OPEN_ERR:         //チューナーのオープンができなかった
+                    return RecEndStatusBasic.ERR;   
+                case RecEndStatus.ERR_END:          //録画中にエラーが発生した
+                    return RecEndStatusBasic.ERR;
+                case RecEndStatus.NEXT_START_END:   //次の予約開始のため終了
+                    return RecEndStatusBasic.ERR;
+                case RecEndStatus.START_ERR:        //開始時間が過ぎていた
+                    return RecEndStatusBasic.ERR;
+                case RecEndStatus.CHG_TIME:         //開始時間が変更された
+                    return RecEndStatusBasic.DEFAULT;
+                case RecEndStatus.NO_TUNER:         //チューナーが足りなかった
+                    return RecEndStatusBasic.ERR;
+                case RecEndStatus.NO_RECMODE:       //無効扱いだった
+                    return RecEndStatusBasic.DEFAULT;
+                case RecEndStatus.NOT_FIND_PF:      //p/fに番組情報確認できなかった
+                    return RecEndStatusBasic.WARN;
+                case RecEndStatus.NOT_FIND_6H:      //6時間番組情報確認できなかった
+                    return RecEndStatusBasic.WARN;
+                case RecEndStatus.END_SUBREC:       //サブフォルダへの録画が発生した
+                    return RecEndStatusBasic.WARN;
+                case RecEndStatus.ERR_RECSTART:     //録画開始に失敗した
+                    return RecEndStatusBasic.ERR;
+                case RecEndStatus.NOT_START_HEAD:   //一部のみ録画された
+                    return RecEndStatusBasic.ERR;
+                case RecEndStatus.ERR_CH_CHG:       //チャンネル切り替えに失敗した
+                    return RecEndStatusBasic.ERR;
+                case RecEndStatus.ERR_END2:         //録画中にエラーが発生した(Writeでexception)
+                    return RecEndStatusBasic.ERR;
+                default:                            //状況不明
+                    return RecEndStatusBasic.ERR;
+            }
+        }
 
         public static List<RecSettingData> RecSettingList(this List<ReserveData> list)
         {
@@ -328,17 +367,37 @@ namespace EpgTimer
             return CommonManager.Create64PgKey(obj.OriginalNetworkID, obj.TransportStreamID, obj.ServiceID, obj.EventID);
         }
 
+        public static bool IsAutoAddMissing(this ReserveData reserveInfo)
+        {
+            if (Settings.Instance.DisplayReserveAutoAddMissing == false) return false;
+            //
+            return CommonManager.Instance.DB.IsReserveAutoAddMissing(reserveInfo);
+        }
+
+        public static DateTime StartTimeWithMargin(this ReserveData reserveInfo, int MarginMin = 0)
+        {
+            if (reserveInfo == null) return new DateTime();
+            //
+            int StartMargin = CommonManager.Instance.MUtil.GetMargin(reserveInfo.RecSetting, true) + 60 * MarginMin;
+            return reserveInfo.StartTime.AddSeconds(StartMargin * -1);
+        }
+        public static DateTime EndTimeWithMargin(this ReserveData reserveInfo)
+        {
+            if (reserveInfo == null) return new DateTime();
+            //
+            int EndMargin = CommonManager.Instance.MUtil.GetMargin(reserveInfo.RecSetting, false);
+            return reserveInfo.StartTime.AddSeconds((int)reserveInfo.DurationSecond + EndMargin);
+        }
+
         public static bool IsOnRec(this ReserveData reserveInfo, int MarginMin = 0)
         {
             if (reserveInfo == null) return false;
             //
-            int duration = (int)reserveInfo.DurationSecond;
             int StartMargin = CommonManager.Instance.MUtil.GetMargin(reserveInfo.RecSetting, true) + 60 * MarginMin;
             int EndMargin = CommonManager.Instance.MUtil.GetMargin(reserveInfo.RecSetting, false);
 
             DateTime startTime = reserveInfo.StartTime.AddSeconds(StartMargin * -1);
-            duration += StartMargin;
-            duration += EndMargin;
+            int duration = (int)reserveInfo.DurationSecond + StartMargin + EndMargin;
 
             return isOnTime(startTime, duration);
         }

@@ -29,11 +29,21 @@ struct REC_EVENT_INFO : public EPGDB_EVENT_INFO {
 		, fileExist(false)
 	{ }
 
+	void DeepCopy(const REC_EVENT_INFO & o) {
+		EPGDB_EVENT_INFO::DeepCopy(o);
+		recFileId = o.recFileId;
+		loadErrorCount = o.loadErrorCount;
+		rawData = o.rawData;
+		startTime64 = o.startTime64;
+		filePath = o.filePath;
+		fileExist = o.fileExist;
+	}
+
 	bool HasEpgInfo() const { return rawData.GetSize() > 0; }
 };
 
 struct REC_EVENT_SERVICE_DATA {
-	std::vector<REC_EVENT_INFO*> eventList;
+	std::vector<REC_EVENT_INFO> eventList;
 
 	const REC_EVENT_SERVICE_DATA* operator->() const {
 		return this;

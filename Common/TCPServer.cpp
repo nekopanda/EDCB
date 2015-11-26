@@ -13,7 +13,7 @@ CTCPServer::CTCPServer(void)
 	m_hStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	m_hThread = NULL;
 
-	m_sock = NULL;
+	m_sock = INVALID_SOCKET;
 
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(2,0), &wsaData);
@@ -33,15 +33,15 @@ CTCPServer::~CTCPServer(void)
 	::CloseHandle(m_hStopEvent);
 	m_hStopEvent = NULL;
 	
-	if( m_sock != NULL ){
+	if( m_sock != INVALID_SOCKET ){
 		shutdown(m_sock,SD_RECEIVE);
 		closesocket(m_sock);
-		m_sock = NULL;
+		m_sock = INVALID_SOCKET;
 	}
 	WSACleanup();
 }
 
-BOOL CTCPServer::StartServer(DWORD dwPort, CMD_CALLBACK_PROC pfnCmdProc, void* pParam, int iThreadPriority, int iCtrlCmdEventID)
+BOOL CTCPServer::StartServer(DWORD dwPort, CMD_CALLBACK_PROC pfnCmdProc, void* pParam)
 {
 	if( pfnCmdProc == NULL || pParam == NULL ){
 		return FALSE;
@@ -52,12 +52,9 @@ BOOL CTCPServer::StartServer(DWORD dwPort, CMD_CALLBACK_PROC pfnCmdProc, void* p
 	m_pCmdProc = pfnCmdProc;
 	m_pParam = pParam;
 	m_dwPort = dwPort;
-	m_iThreadPriority = iThreadPriority;
-	m_iCtrlCmdEventID = iCtrlCmdEventID;
 
 	m_sock = socket(AF_INET, SOCK_STREAM, 0);
 	if( m_sock == INVALID_SOCKET ){
-		m_sock = NULL;
 		return FALSE;
 	}
 	m_addr.sin_family = AF_INET;
@@ -93,10 +90,10 @@ void CTCPServer::StopServer()
 		m_hThread = NULL;
 	}
 	
-	if( m_sock != NULL ){
+	if( m_sock != INVALID_SOCKET ){
 		shutdown(m_sock,SD_RECEIVE);
 		closesocket(m_sock);
-		m_sock = NULL;
+		m_sock = INVALID_SOCKET;
 	}
 }
 
@@ -104,19 +101,8 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 {
 	CTCPServer* pSys = (CTCPServer*)pParam;
 
-	HANDLE hCurThread = GetCurrentThread();
-	SetThreadPriority(hCurThread, pSys->m_iThreadPriority);
-
-	SOCKET sock = NULL;
-	SOCKET sock2 = NULL;
+	SOCKET sock = INVALID_SOCKET;
 	struct sockaddr_in client;
-	
-	HANDLE hEventCmdWait = NULL;
-	if( pSys->m_iCtrlCmdEventID != -1 ){
-		wstring strCmdEvent;
-		Format(strCmdEvent, L"%s%d", CMD2_CTRL_EVENT_WAIT, pSys->m_iCtrlCmdEventID);
-		hEventCmdWait = CreateEvent(NULL, FALSE, TRUE, strCmdEvent.c_str());
-	}
 	
 	fd_set ready;
 	struct timeval to;
@@ -135,22 +121,18 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 		if( select(0, &ready, NULL, NULL, &to ) == SOCKET_ERROR ){
 			break;
 		}
-		if( sock == NULL ){
+		if( sock == INVALID_SOCKET ){
 			if ( FD_ISSET(pSys->m_sock, &ready) ){
 				int len = sizeof(client);
 				sock = accept(pSys->m_sock, (struct sockaddr *)&client, &len);
 				if (sock == INVALID_SOCKET) {
 					closesocket(pSys->m_sock);
-					pSys->m_sock = NULL;
+					pSys->m_sock = INVALID_SOCKET;
 					break;
 				}
 			}
 		}
-		if( sock != NULL ){
-			//ほかのサーバーで処理中？
-			if( hEventCmdWait != NULL ){
-				WaitForSingleObject(hEventCmdWait, INFINITE);
-			}
+		if( sock != INVALID_SOCKET ){
 			DWORD socketBuffSize = 1024*1024;
 			setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (const char*)&socketBuffSize, sizeof(socketBuffSize));
 			setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (const char*)&socketBuffSize, sizeof(socketBuffSize));
@@ -161,7 +143,8 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 			FD_SET(sock, &ready);
 			if( select(0, &ready, NULL, NULL, &to ) == SOCKET_ERROR ){
 				shutdown(sock,SD_RECEIVE);
-				sock = NULL;
+				closesocket(sock);
+				sock = INVALID_SOCKET;
 				continue;
 			}
 			if ( FD_ISSET(sock, &ready) ){
@@ -235,19 +218,13 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 			}
 			shutdown(sock,SD_RECEIVE);
 			closesocket(sock);
-			sock = NULL;
-			if( hEventCmdWait != NULL ){
-				SetEvent(hEventCmdWait);
-			}
+			sock = INVALID_SOCKET;
 		}
 	}
 
-	if( sock != NULL ){
+	if( sock != INVALID_SOCKET ){
 		shutdown(sock,SD_RECEIVE);
 		closesocket(sock);
-	}
-	if( hEventCmdWait != NULL ){
-		CloseHandle(hEventCmdWait);
 	}
 	
 	return 0;

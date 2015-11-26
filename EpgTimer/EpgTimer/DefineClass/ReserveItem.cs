@@ -59,7 +59,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return CommonManager.Instance.ConvertNetworkNameText(ReserveInfo.OriginalNetworkID);
+                return CommonManager.ConvertNetworkNameText(ReserveInfo.OriginalNetworkID);
             }
         }
         public override String StartTime
@@ -72,7 +72,7 @@ namespace EpgTimer
                 return ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ") + endTime.ToString("HH:mm:ss");
             }
         }
-        public String ShortTime
+        public String StartTimeShort
         {
             get
             {
@@ -82,6 +82,8 @@ namespace EpgTimer
                 return ReserveInfo.StartTime.ToString("MM/dd(ddd) HH:mm～") + endTime.ToString("HH:mm");
             }
         }
+        public String ShortTime { get { return StartTimeShort; } }
+
         public override TimeSpan ProgramDuration
         {
             get
@@ -159,7 +161,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return ReserveInfo.RecSetting.TuijyuuFlag == 0 ? "しない" : "する";
+                return CommonManager.Instance.YesNoDictionary[ReserveInfo.RecSetting.TuijyuuFlag].DisplayName;
             }
         }
         public String Pittari
@@ -168,7 +170,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return ReserveInfo.RecSetting.PittariFlag == 0 ? "しない" : "する";
+                return CommonManager.Instance.YesNoDictionary[ReserveInfo.RecSetting.PittariFlag].DisplayName;
             }
         }
         public String Tuner
@@ -186,7 +188,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                String view = ReserveInfo.Comment.ToString();
+                String view = (ReserveInfo.IsAutoAddMissing() == true ? "不明な" : "") + ReserveInfo.Comment.ToString();
                 if (view == "")
                 {
                     view = "個別予約(" + (ReserveInfo.EventID == 0xFFFF ? "プログラム" : "EPG") + ")";
@@ -270,19 +272,18 @@ namespace EpgTimer
         {
             get
             {
-                SolidColorBrush color = CommonManager.Instance.StatResForeColor;
                 if (ReserveInfo != null)
                 {
-                    if (ReserveInfo.IsOnAir() == true)
-                    {
-                        color = CommonManager.Instance.StatOnAirForeColor;
-                    }
                     if (ReserveInfo.IsOnRec() == true)
                     {
-                        color = CommonManager.Instance.StatRecForeColor;
+                        return CommonManager.Instance.StatRecForeColor;
+                    }
+                    if (ReserveInfo.IsOnAir() == true)
+                    {
+                        return CommonManager.Instance.StatOnAirForeColor;
                     }
                 }
-                return color;
+                return CommonManager.Instance.StatResForeColor;
             }
         }
 

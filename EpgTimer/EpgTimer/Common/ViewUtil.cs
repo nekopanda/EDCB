@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shapes;
 
 namespace EpgTimer
 {
@@ -21,48 +22,55 @@ namespace EpgTimer
             mutil = MUtil;
         }
 
-        public Brush EventDataBorderBrush(EpgEventInfo EventInfo)
+        public Brush EpgDataContentBrush(EpgEventInfo EventInfo)
         {
-            Brush color1 = Brushes.White;
-            if (EventInfo != null)
+            if (EventInfo == null) return Brushes.White;
+            if (EventInfo.ContentInfo == null) return CommonManager.Instance.CustContentColorList[0x10];
+
+            return EpgDataContentBrush(EventInfo.ContentInfo.nibbleList);
+        }
+        public Brush EpgDataContentBrush(List<EpgContentData> nibbleList)
+        {
+            if (nibbleList != null)
             {
-                if (EventInfo.ContentInfo != null)
+                EpgContentData info = nibbleList.Find(info1 =>
+                    info1.content_nibble_level_1 <= 0x0B || info1.content_nibble_level_1 == 0x0F);
+
+                if (info != null)
                 {
-                    if (EventInfo.ContentInfo.nibbleList.Count > 0)
-                    {
-                        try
-                        {
-                            foreach (EpgContentData info1 in EventInfo.ContentInfo.nibbleList)
-                            {
-                                if (info1.content_nibble_level_1 <= 0x0B || info1.content_nibble_level_1 == 0x0F && Settings.Instance.ContentColorList.Count > info1.content_nibble_level_1)
-                                {
-                                    color1 = CommonManager.Instance.CustContentColorList[info1.content_nibble_level_1];
-                                    break;
-                                }
-                            }
-                        }
-                        catch
-                        {
-                        }
-                    }
-                    else
-                    {
-                        color1 = CommonManager.Instance.CustContentColorList[0x10];
-                    }
-                }
-                else
-                {
-                    color1 = CommonManager.Instance.CustContentColorList[0x10];
+                    return CommonManager.Instance.CustContentColorList[info.content_nibble_level_1];
                 }
             }
-
-            return color1;
+            return CommonManager.Instance.CustContentColorList[0x10];
         }
 
+        public SolidColorBrush ReserveErrBrush(ReserveData ReserveData)
+        {
+            if (ReserveData != null)
+            {
+                if (ReserveData.RecSetting.RecMode == 5)
+                {
+                    return CommonManager.Instance.ResNoBackColor;
+                }
+                if (ReserveData.OverlapMode == 2)
+                {
+                    return CommonManager.Instance.ResErrBackColor;
+                }
+                if (ReserveData.OverlapMode == 1)
+                {
+                    return CommonManager.Instance.ResWarBackColor;
+                }
+                if (ReserveData.IsAutoAddMissing() == true)
+                {
+                    return CommonManager.Instance.ResAutoAddMissingBackColor;
+                }
+            }
+            return CommonManager.Instance.ResDefBackColor;
+        }
+        
         public void SetSpecificChgAppearance(Control obj)
         {
-            obj.Background = new SolidColorBrush(Colors.LavenderBlush);
-            //obj.BorderBrush = new SolidColorBrush(Colors.Red);
+            obj.Background = Brushes.LavenderBlush;
             obj.BorderThickness = new Thickness(2);
         }
 
@@ -84,14 +92,14 @@ namespace EpgTimer
             }
         }
 
-        public void view_PreviewMouseWheel<T>(object sender, MouseWheelEventArgs e, ScrollViewer scrollViewer)
+        public void view_PreviewMouseWheel<T>(object sender, MouseWheelEventArgs e, ScrollViewer scrollViewer, bool auto, double scrollSize)
         {
             try
             {
                 e.Handled = true;
                 if (sender.GetType() == typeof(T))
                 {
-                    if (Settings.Instance.MouseScrollAuto == true)
+                    if (auto == true)
                     {
                         scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - e.Delta);
                     }
@@ -100,18 +108,18 @@ namespace EpgTimer
                         if (e.Delta < 0)
                         {
                             //下方向
-                            scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + Settings.Instance.ScrollSize);
+                            scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + scrollSize);
                         }
                         else
                         {
                             //上方向
-                            if (scrollViewer.VerticalOffset < Settings.Instance.ScrollSize)
+                            if (scrollViewer.VerticalOffset < scrollSize)
                             {
                                 scrollViewer.ScrollToVerticalOffset(0);
                             }
                             else
                             {
-                                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - Settings.Instance.ScrollSize);
+                                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - scrollSize);
                             }
                         }
                     }
@@ -144,8 +152,11 @@ namespace EpgTimer
             //絞り込み無し
             if (ContentKindList.Count == 0) return true;
 
-            //ジャンルデータなしは該当無し扱い
-            if (info.ContentInfo == null || info.ContentInfo.nibbleList.Count == 0) return false;
+            //ジャンルデータ'なし'扱い
+            if (info.ContentInfo == null || info.ContentInfo.nibbleList.Count == 0)
+            {
+                return ContentKindList.ContainsKey(0xFFFF) == true;
+            }
 
             foreach (EpgContentData contentInfo in info.ContentInfo.nibbleList)
             {
@@ -174,19 +185,14 @@ namespace EpgTimer
         }
 
         //パネルアイテムにマージンを適用。
-        public void ApplyMarginForPanelView(ReserveData resInfo,
-            ref int duration, ref DateTime startTime, bool already_set = false)
+        public void ApplyMarginForPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
         {
-            if (already_set == false)
-            {
-                duration = (Int32)resInfo.DurationSecond;
-                startTime = resInfo.StartTime;
-            }
             int StartMargine = mutil.GetMargin(resInfo.RecSetting, true);
             int EndMargine = mutil.GetMargin(resInfo.RecSetting, false);
 
             if (StartMargine < 0)
             {
+                //メモ:番組長より長いマイナスマージンの扱いは?
                 startTime = startTime.AddSeconds(StartMargine * -1);
                 duration += StartMargine;
             }
@@ -196,13 +202,85 @@ namespace EpgTimer
             }
         }
 
-        //最低表示行数を適用
-        public void ModifierMinimumHeight<T, S>(List<S> list) where S : ViewPanelItem<T>
+        public GlyphTypeface GetGlyphTypeface(string fontName, bool isBold)
         {
-            if (Settings.Instance.MinimumHeight <= 0) return;
+            try
+            {
+                var fontWeights = (isBold == true ? FontWeights.Bold : FontWeights.Normal);
+                Typeface typeface = new Typeface(new FontFamily(fontName),
+                                                FontStyles.Normal, fontWeights, FontStretches.Normal);
 
+                GlyphTypeface glyphTypeface;
+                if (typeface.TryGetGlyphTypeface(out glyphTypeface) == false)
+                {
+                    typeface = new Typeface(new FontFamily(System.Drawing.SystemFonts.DefaultFont.Name),
+                                                    FontStyles.Normal, fontWeights, FontStretches.Normal);
+
+                    if (typeface.TryGetGlyphTypeface(out glyphTypeface) == false)
+                    {
+                        MessageBox.Show("フォント指定が不正です");
+                        return null;
+                    }
+                }
+                return glyphTypeface;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                return null;
+            }
+        }
+
+        private GlyphTypeface glyphTypefaceNormal;
+        public GlyphTypeface GlyphTypefaceNormal
+        {
+            get
+            {
+                if (glyphTypefaceNormal == null)
+                    glyphTypefaceNormal = GetGlyphTypeface(Settings.Instance.FontName, false);
+                return glyphTypefaceNormal;
+            }
+            set { glyphTypefaceNormal = null; }
+        }
+        private GlyphTypeface glyphTypefaceTitle;
+        public GlyphTypeface GlyphTypefaceTitle
+        {
+            get
+            {
+                if (glyphTypefaceTitle == null)
+                    glyphTypefaceTitle = GetGlyphTypeface(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle);
+                return glyphTypefaceTitle;
+            }
+            set { glyphTypefaceTitle = null; }
+        }
+        private GlyphTypeface glyphTypefaceTunerNormal;
+        public GlyphTypeface GlyphTypefaceTunerNormal
+        {
+            get
+            {
+                if (glyphTypefaceTunerNormal == null)
+                    glyphTypefaceTunerNormal = GetGlyphTypeface(Settings.Instance.TunerFontName, false);
+                return glyphTypefaceTunerNormal;
+            }
+            set { glyphTypefaceTunerNormal = null; }
+        }
+        private GlyphTypeface glyphTypefaceTunerService;
+        public GlyphTypeface GlyphTypefaceTunerService
+        {
+            get
+            {
+                if (glyphTypefaceTunerService == null)
+                    glyphTypefaceTunerService = GetGlyphTypeface(Settings.Instance.TunerFontNameService, Settings.Instance.TunerFontBoldService);
+                return glyphTypefaceTunerService;
+            }
+            set { glyphTypefaceTunerService = null; }
+        }
+
+        //最低表示行数を適用。また、最低表示高さ2pxを確保して、位置も調整する。
+        public void ModifierMinimumLine<T, S>(List<S> list, double MinimumLine) where S : ViewPanelItem<T>
+        {
             list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
-            double minimum = (Settings.Instance.FontSizeTitle + 2) * Settings.Instance.MinimumHeight;
+            double minimum = Math.Max((Settings.Instance.FontSizeTitle + 2) * MinimumLine, 2);
             double lastLeft = double.MinValue;
             double lastBottom = 0;
             foreach (S item in list)
@@ -212,24 +290,114 @@ namespace EpgTimer
                     lastLeft = item.LeftPos;
                     lastBottom = double.MinValue;
                 }
-                item.Height = Math.Max(item.Height, minimum);
                 if (item.TopPos < lastBottom)
                 {
                     item.Height = Math.Max(item.TopPos + item.Height - lastBottom, minimum);
                     item.TopPos = lastBottom;
                 }
+                else
+                {
+                    item.Height = Math.Max(item.Height, minimum);
+                }
                 lastBottom = item.TopPos + item.Height;
             }
         }
 
-        public void DisableControlChildren(Control tab)
+        //最低表示px数を適用。
+        public void ModifierMinimumHeight<T, S>(List<S> list, double MinimumHeight) where S : ViewPanelItem<T>
         {
-            tab.Foreground = new SolidColorBrush(Colors.Gray);
-            ChangeChildren(tab, false);
+            list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
+            double minimum = Math.Max(MinimumHeight, 1);
+            double lastLeft = double.MinValue;
+            double lastBottom = 0;
+            foreach (S item in list)
+            {
+                if (lastLeft != item.LeftPos)
+                {
+                    lastLeft = item.LeftPos;
+                    lastBottom = double.MinValue;
+                }
+                if (item.TopPos < lastBottom)
+                {
+                    item.Height = Math.Max(item.TopPos + item.Height - lastBottom, minimum);
+                    item.TopPos = lastBottom;
+                }
+                else
+                {
+                    item.Height = Math.Max(item.Height, minimum);
+                }
+                lastBottom = item.TopPos + item.Height;
+            }
         }
-        public void ChangeChildren(UIElement obj, bool enabled)
+
+        public void ScrollToFindItem(SearchItem target_item, ListBox listBox, bool IsMarking)
         {
-            foreach (var child in LogicalTreeHelper.GetChildren(obj))
+            try
+            {
+                ScrollToItem(target_item, listBox);
+
+                //パネルビューと比較して、こちらでは最後までゆっくり点滅させる。全表示時間は同じ。
+                //ただ、結局スクロールさせる位置がうまく調整できてないので効果は限定的。
+                if (IsMarking == true)
+                {
+                    listBox.SelectedItem = null;
+
+                    var notifyTimer = new System.Windows.Threading.DispatcherTimer();
+                    notifyTimer.Interval = TimeSpan.FromSeconds(0.2);
+                    TimeSpan RemainTime = TimeSpan.FromSeconds(Settings.Instance.DisplayNotifyJumpTime);
+                    notifyTimer.Tick += (sender, e) =>
+                    {
+                        RemainTime -= notifyTimer.Interval;
+                        if (RemainTime <= TimeSpan.FromSeconds(0))
+                        {
+                            target_item.NowJumpingTable = 0;
+                            listBox.SelectedItem = target_item;
+                            notifyTimer.Stop();
+                        }
+                        else
+                        {
+                            target_item.NowJumpingTable = target_item.NowJumpingTable != 1 ? 1 : 2;
+                        }
+                        listBox.Items.Refresh();
+                    };
+                    notifyTimer.Start();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        public void ScrollToItem(object target_item, ListBox listBox)
+        {
+            try
+            {
+                if (target_item == null) return;
+
+                listBox.SelectedItem = target_item;
+                listBox.ScrollIntoView(target_item);
+
+                //いまいちな感じ
+                //listView_event.ScrollIntoView(listView_event.Items[0]);
+                //listView_event.ScrollIntoView(listView_event.Items[listView_event.Items.Count-1]);
+                //int scrollpos = ((listView_event.SelectedIndex - 5) >= 0 ? listView_event.SelectedIndex - 5 : 0);
+                //listView_event.ScrollIntoView(listView_event.Items[scrollpos]);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        public void DisableControlChildren(Control ctrl)
+        {
+            ctrl.Foreground = Brushes.Gray;
+            ChangeChildren(ctrl, false);
+        }
+        public void ChangeChildren(UIElement ele, bool enabled)
+        {
+            foreach (var child in LogicalTreeHelper.GetChildren(ele))
             {
                 if (child is UIElement)
                 {

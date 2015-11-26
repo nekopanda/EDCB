@@ -28,6 +28,7 @@ namespace EpgTimer
         Dictionary<UInt32, ManualAutoAddData> manualAutoAddList = new Dictionary<UInt32, ManualAutoAddData>();
         Dictionary<UInt32, EpgAutoAddData> epgAutoAddList = new Dictionary<UInt32, EpgAutoAddData>();
         Dictionary<UInt32, EpgAutoAddDataAppend> epgAutoAddAppendList = null;
+        Dictionary<UInt32, bool> reserveAutoAddMissing = null;
 
         public Dictionary<UInt64, EpgServiceEventInfo> ServiceEventList
         {
@@ -61,10 +62,6 @@ namespace EpgTimer
         {
             get { return epgAutoAddList; }
         }
-        public Dictionary<UInt32, EpgAutoAddDataAppend> EpgAutoAddAppendList
-        {
-            get { return epgAutoAddAppendList; }
-        }
         public EpgAutoAddDataAppend GetEpgAutoAddDataAppend(EpgAutoAddData master)
         {
             if (master == null) return null;
@@ -91,10 +88,10 @@ namespace EpgTimer
                     cmd.SendSearchPgByKey(keyList, ref list_list);
 
                     //通常あり得ないが、コマンド成功にもかかわらず何か問題があった場合は飛ばす
-                    if (EpgAutoAddList.Count == list_list.Count)
+                    if (epgAutoAddList.Count == list_list.Count)
                     {
                         int i = 0;
-                        foreach (EpgAutoAddData item in EpgAutoAddList.Values)
+                        foreach (EpgAutoAddData item in epgAutoAddList.Values)
                         {
                             epgAutoAddAppendList.Add(item.dataID, new EpgAutoAddDataAppend(item, list_list[i++]));
                         }
@@ -109,6 +106,7 @@ namespace EpgTimer
             //予約情報との突き合わせが古い場合
             if (updateAutoAddAppendReserveInfo == true)
             {
+                ReloadReserveInfo();//notify残ってれば更新
                 foreach (EpgAutoAddDataAppend item in epgAutoAddAppendList.Values)
                 {
                     item.updateCounts = true;
@@ -123,6 +121,62 @@ namespace EpgTimer
                 retv = new EpgAutoAddDataAppend(master);
                 epgAutoAddAppendList.Add(master.dataID, retv);
             }
+            return retv;
+        }
+
+        public bool IsReserveAutoAddMissing(ReserveData info)
+        {
+            if (info == null) return false;
+
+            if (reserveAutoAddMissing == null)
+            {
+                //notify残ってれば更新
+                ReloadReserveInfo();//通常残ってないはず
+                ReloadEpgAutoAddInfo();
+                ReloadManualAutoAddInfo();
+
+                //EPG自動登録リスト
+                var epgAutoResList = new List<ReserveData>();
+                foreach (var data in epgAutoAddList.Values)
+                {
+                    var reserveList = data.GetReserveList();
+                    if (reserveList != null)
+                    {
+                        epgAutoResList.AddRange(reserveList);
+                    }
+                }
+                var epgAutoResDict = epgAutoResList.Distinct().ToDictionary(data => data.ReserveID, data => data);
+
+                //マニュアル自動登録リスト
+                var manualAutoResList = new List<ReserveData>();
+                foreach (var data in manualAutoAddList.Values)
+                {
+                    manualAutoResList.AddRange(data.GetReserveList());
+                }
+                var manualAutoResDict = manualAutoResList.Distinct().ToDictionary(data => data.ReserveID, data => data);
+
+                //突き合わせ
+                reserveAutoAddMissing = new Dictionary<uint, bool>();
+                foreach (var resdata in reserveList.Values)
+                {
+                    if (resdata.Comment.StartsWith("EPG自動予約") == true)
+                    {
+                        reserveAutoAddMissing.Add(resdata.ReserveID, !epgAutoResDict.ContainsKey(resdata.ReserveID));
+                    }
+                    else if (resdata.Comment.StartsWith("プログラム自動予約") == true)
+                    {
+                        reserveAutoAddMissing.Add(resdata.ReserveID, !manualAutoResDict.ContainsKey(resdata.ReserveID));
+                    }
+                    else
+                    {
+                        reserveAutoAddMissing.Add(resdata.ReserveID, false);
+                    }
+                }
+            }
+
+            bool retv;
+            if (reserveAutoAddMissing.TryGetValue(info.ReserveID, out retv) == false) return false;
+
             return retv;
         }
 
@@ -144,6 +198,7 @@ namespace EpgTimer
             manualAutoAddList = new Dictionary<uint, ManualAutoAddData>();
             epgAutoAddList = new Dictionary<uint, EpgAutoAddData>();
             epgAutoAddAppendList = null;
+            reserveAutoAddMissing = null;
         }
 
         /// <summary>
@@ -170,18 +225,24 @@ namespace EpgTimer
             {
                 case UpdateNotifyItem.EpgData:
                     updateEpgData = true;
+                    epgAutoAddAppendList = null;//検索数が変わる。
                     break;
                 case UpdateNotifyItem.ReserveInfo:
                     updateReserveInfo = true;
+                    updateAutoAddAppendReserveInfo = true;
+                    reserveAutoAddMissing = null;
                     break;
                 case UpdateNotifyItem.RecInfo:
                     updateRecInfo = true;
                     break;
                 case UpdateNotifyItem.AutoAddEpgInfo:
                     updateAutoAddEpgInfo = true;
+                    epgAutoAddAppendList = null;
+                    reserveAutoAddMissing = null;
                     break;
                 case UpdateNotifyItem.AutoAddManualInfo:
                     updateAutoAddManualInfo = true;
+                    reserveAutoAddMissing = null;
                     break;
                 case UpdateNotifyItem.PlugInFile:
                     updatePlugInFile = true;
@@ -249,7 +310,6 @@ namespace EpgTimer
                     list2.ForEach(info => tunerReserveList.Add(info.tunerID, info));
 
                     updateReserveInfo = false;
-                    updateAutoAddAppendReserveInfo = true;
                 }
             }
             catch (Exception ex)
@@ -351,7 +411,6 @@ namespace EpgTimer
                         list.ForEach(info => epgAutoAddList.Add(info.dataID, info));
 
                         updateAutoAddEpgInfo = false;
-                        epgAutoAddAppendList = null;
 
                         if (EpgAutoAddUpdated != null)
                             EpgAutoAddUpdated(this, new EventArgs());
@@ -399,26 +458,5 @@ namespace EpgTimer
             return ret;
         }
 
-        public bool GetNextReserve(ref ReserveData info)
-        {
-            var sortList = new SortedList<String, ReserveData>();
-            foreach (ReserveData resInfo in reserveList.Values)
-            {
-                if (resInfo.RecSetting.RecMode != 5 && resInfo.StartTime > DateTime.Now)
-                {
-                    String key = resInfo.StartTime.ToString("yyyyMMddHHmmss");
-                    key += resInfo.ReserveID.ToString("X8");
-                    sortList.Add(key, resInfo);
-                }
-            }
-
-            if (sortList.Count != 0)
-            {
-                info = sortList.Values[0];
-                return true;
-            }
-
-            return false;
-        }
     }
 }

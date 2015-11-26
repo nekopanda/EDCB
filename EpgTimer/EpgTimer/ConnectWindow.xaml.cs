@@ -24,6 +24,16 @@ namespace EpgTimer
 
             try
             {
+                if (ServiceCtrlClass.ServiceIsInstalled("EpgTimer Service") == false &&
+                    System.IO.File.Exists(SettingPath.ModulePath.TrimEnd('\\') + "\\EpgTimerSrv.exe") == false)
+                {
+                    Settings.Instance.NWMode = true;
+                    radioButton_pipe.IsEnabled = false;
+                }
+
+                (Settings.Instance.NWMode ? radioButton_tcp : radioButton_pipe).IsChecked = true;
+                grid_tcp.IsEnabled = Settings.Instance.NWMode;
+
                 textBox_srvIP.Text = Settings.Instance.NWServerIP.ToString();
                 textBox_srvPort.Text = Settings.Instance.NWServerPort.ToString();
                 textBox_clientPort.Text = Settings.Instance.NWWaitPort.ToString();
@@ -38,6 +48,7 @@ namespace EpgTimer
         {
             try
             {
+                Settings.Instance.NWMode = (radioButton_tcp.IsChecked == true);
                 Settings.Instance.NWServerIP = textBox_srvIP.Text;
                 Settings.Instance.NWServerPort = Convert.ToUInt32(textBox_srvPort.Text);
                 Settings.Instance.NWWaitPort = Convert.ToUInt32(textBox_clientPort.Text);
@@ -67,6 +78,17 @@ namespace EpgTimer
                 macAddress[i] = Convert.ToByte(mac[i],16);
             }
             NWConnect.SendMagicPacket(macAddress);
+        }
+
+        private void radioButton_pipe_Click(object sender, RoutedEventArgs e)
+        {
+            grid_tcp.IsEnabled = false;
+        }
+
+        private void radioButton_tcp_Click(object sender, RoutedEventArgs e)
+        {
+            grid_tcp.IsEnabled = true;
+
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
