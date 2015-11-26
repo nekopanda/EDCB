@@ -1467,8 +1467,8 @@ DWORD CReserveManager::Check()
 				this->recInfo2Text.SaveText();
 				this->recEventDB.Save();
 				this->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+				this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
 				AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
-				AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
 				AddPostBatWork(batWorkList, L"PostRecEnd.bat");
 			}
 		}
