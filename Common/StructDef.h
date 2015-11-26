@@ -1,8 +1,6 @@
 #ifndef __STRUCT_DEF_H__
 #define __STRUCT_DEF_H__
 
-#include "Util.h"
-
 //録画フォルダ情報
 typedef struct _REC_FILE_SET_INFO{
 	wstring recFolder;			//録画フォルダ
@@ -296,23 +294,6 @@ private:
 	_CMD_STREAM & operator= (const _CMD_STREAM &);
 } CMD_STREAM;
 
-typedef struct _HTTP_STREAM{
-	string httpHeader;	//送信時コマンド、受信時エラーコード
-	DWORD dataSize;	//dataのサイズ（BYTE単位）
-	BYTE* data;		//送受信するバイナリデータ
-	_HTTP_STREAM(void){
-		httpHeader = "";
-		dataSize = 0;
-		data = NULL;
-	}
-	~_HTTP_STREAM(void){
-		delete[] data;
-	}
-private:
-	_HTTP_STREAM(const _HTTP_STREAM &);
-	_HTTP_STREAM & operator= (const _HTTP_STREAM &);
-} HTTP_STREAM;
-
 //EPG基本情報
 typedef struct _EPGDB_SHORT_EVENT_INFO{
 	wstring event_name;			//イベント名
@@ -388,35 +369,19 @@ typedef struct _EPGDB_EVENT_INFO{
 	BYTE DurationFlag;						//durationの値が有効かどうか
 	DWORD durationSec;						//総時間（単位：秒）
 
-	EPGDB_SHORT_EVENT_INFO* shortInfo;		//基本情報
-	EPGDB_EXTENDED_EVENT_INFO* extInfo;		//拡張情報
-	EPGDB_CONTEN_INFO* contentInfo;			//ジャンル情報
-	EPGDB_COMPONENT_INFO* componentInfo;		//映像情報
-	EPGDB_AUDIO_COMPONENT_INFO* audioInfo;	//音声情報
-	EPGDB_EVENTGROUP_INFO* eventGroupInfo;	//イベントグループ情報
-	EPGDB_EVENTGROUP_INFO* eventRelayInfo;	//イベントリレー情報
+	std::unique_ptr<EPGDB_SHORT_EVENT_INFO> shortInfo;		//基本情報
+	std::unique_ptr<EPGDB_EXTENDED_EVENT_INFO> extInfo;		//拡張情報
+	std::unique_ptr<EPGDB_CONTEN_INFO> contentInfo;			//ジャンル情報
+	std::unique_ptr<EPGDB_COMPONENT_INFO> componentInfo;	//映像情報
+	std::unique_ptr<EPGDB_AUDIO_COMPONENT_INFO> audioInfo;	//音声情報
+	std::unique_ptr<EPGDB_EVENTGROUP_INFO> eventGroupInfo;	//イベントグループ情報
+	std::unique_ptr<EPGDB_EVENTGROUP_INFO> eventRelayInfo;	//イベントリレー情報
 
 	BYTE freeCAFlag;						//ノンスクランブルフラグ
 
 	wstring serviceName;
 
 	_EPGDB_EVENT_INFO(void){
-		shortInfo = NULL;
-		extInfo = NULL;
-		contentInfo = NULL;
-		componentInfo = NULL;
-		audioInfo = NULL;
-		eventGroupInfo = NULL;
-		eventRelayInfo = NULL;
-	};
-	~_EPGDB_EVENT_INFO(void){
-		delete shortInfo;
-		delete extInfo;
-		delete contentInfo;
-		delete componentInfo;
-		delete audioInfo;
-		delete eventGroupInfo;
-		delete eventRelayInfo;
 	};
 	void DeepCopy(const _EPGDB_EVENT_INFO & o){
 		original_network_id = o.original_network_id;
@@ -429,24 +394,20 @@ typedef struct _EPGDB_EVENT_INFO{
 		durationSec = o.durationSec;
 		freeCAFlag = o.freeCAFlag;
 		serviceName = o.serviceName;
-		SAFE_DELETE(shortInfo);
-		SAFE_DELETE(extInfo);
-		SAFE_DELETE(contentInfo);
-		SAFE_DELETE(componentInfo);
-		SAFE_DELETE(audioInfo);
-		SAFE_DELETE(eventGroupInfo);
-		SAFE_DELETE(eventRelayInfo);
-		if( o.shortInfo ) shortInfo = new EPGDB_SHORT_EVENT_INFO(*o.shortInfo);
-		if( o.extInfo ) extInfo = new EPGDB_EXTENDED_EVENT_INFO(*o.extInfo);
-		if( o.contentInfo ) contentInfo = new EPGDB_CONTEN_INFO(*o.contentInfo);
-		if( o.componentInfo ) componentInfo = new EPGDB_COMPONENT_INFO(*o.componentInfo);
-		if( o.audioInfo ) audioInfo = new EPGDB_AUDIO_COMPONENT_INFO(*o.audioInfo);
-		if( o.eventGroupInfo ) eventGroupInfo = new EPGDB_EVENTGROUP_INFO(*o.eventGroupInfo);
-		if( o.eventRelayInfo ) eventRelayInfo = new EPGDB_EVENTGROUP_INFO(*o.eventRelayInfo);
+		shortInfo.reset(o.shortInfo ? new EPGDB_SHORT_EVENT_INFO(*o.shortInfo) : NULL);
+		extInfo.reset(o.extInfo ? new EPGDB_EXTENDED_EVENT_INFO(*o.extInfo) : NULL);
+		contentInfo.reset(o.contentInfo ? new EPGDB_CONTEN_INFO(*o.contentInfo) : NULL);
+		componentInfo.reset(o.componentInfo ? new EPGDB_COMPONENT_INFO(*o.componentInfo) : NULL);
+		audioInfo.reset(o.audioInfo ? new EPGDB_AUDIO_COMPONENT_INFO(*o.audioInfo) : NULL);
+		eventGroupInfo.reset(o.eventGroupInfo ? new EPGDB_EVENTGROUP_INFO(*o.eventGroupInfo) : NULL);
+		eventRelayInfo.reset(o.eventRelayInfo ? new EPGDB_EVENTGROUP_INFO(*o.eventRelayInfo) : NULL);
 	};
-private:
-	_EPGDB_EVENT_INFO(const _EPGDB_EVENT_INFO &);
-	_EPGDB_EVENT_INFO & operator= (const _EPGDB_EVENT_INFO &);
+#if defined(_MSC_VER) && _MSC_VER < 1900
+	//暗黙ムーブ未対応の古いコンパイラに限りコピーを定義しておく
+	//コンテナで無駄なコピーが走らないように少しだけ考慮すべき(神経質になる必要はない)
+	_EPGDB_EVENT_INFO(const _EPGDB_EVENT_INFO & o){ DeepCopy(o); }
+	_EPGDB_EVENT_INFO & operator= (const _EPGDB_EVENT_INFO & o){ DeepCopy(o); return *this; }
+#endif
 }EPGDB_EVENT_INFO;
 
 typedef struct _EPGDB_SERVICE_INFO{
@@ -476,7 +437,7 @@ typedef struct _EPGDB_SERVICE_INFO{
 
 typedef struct _EPGDB_SERVICE_EVENT_INFO{
 	EPGDB_SERVICE_INFO serviceInfo;
-	vector<EPGDB_EVENT_INFO*> eventList;
+	vector<EPGDB_EVENT_INFO> eventList;
 }EPGDB_SERVICE_EVENT_INFO;
 
 typedef struct _EPGDB_SEARCH_DATE_INFO{
@@ -670,219 +631,5 @@ typedef struct _NOTIFY_SRV_INFO{
 		param3 = 0;
 	};
 } NOTIFY_SRV_INFO;
-
-
-////////////////////////////////////////////////////////////////////////////////////////////
-//旧バージョンコマンド送信用
-typedef struct _OLD_RESERVE_DATA{
-	wstring strTitle;
-	SYSTEMTIME StartTime;
-	DWORD dwDurationSec;
-	wstring strStationName;
-	unsigned short usONID;
-	unsigned short usTSID;
-	unsigned short usServiceID;
-	unsigned short usEventID;
-	unsigned char ucPriority;
-	unsigned char ucTuijyuu;
-	wstring strComment;
-	DWORD dwRecMode;
-	BOOL bPittari;
-	wstring strBatPath;
-	DWORD dwReserveID; //同一番組判別用ID
-	BOOL bSetWait; //予約待機入った？
-	DWORD dwPiledUpMode; //かぶり状態 1:かぶってチューナー足りない予約あり 2:チューナー足りなくて予約できない
-	wstring strRecFolder;
-	WORD wSuspendMode;
-	BOOL bReboot;
-	wstring strRecFilePath;
-	BOOL bUseMargine;
-	int iStartMargine;
-	int iEndMargine;
-	DWORD dwServiceMode;
-	_OLD_RESERVE_DATA & operator= (const _RESERVE_DATA & o) {
-		strTitle=o.title;
-		StartTime = o.startTime;
-		dwDurationSec = o.durationSecond;
-		strStationName = o.stationName;
-		usONID = o.originalNetworkID;
-		usTSID = o.transportStreamID;
-		usServiceID = o.serviceID;
-		usEventID = o.eventID;
-		ucPriority = o.recSetting.priority;
-		ucTuijyuu = o.recSetting.tuijyuuFlag;
-		strComment = o.comment;
-		dwRecMode = o.recSetting.recMode;
-		bPittari = o.recSetting.pittariFlag;
-		strBatPath = o.recSetting.batFilePath;
-		dwReserveID = o.reserveID;
-		bSetWait = 0;
-		dwPiledUpMode = o.overlapMode;
-		if( o.recSetting.recFolderList.size() >0 ){
-			strRecFolder = o.recSetting.recFolderList[0].recFolder;
-		}else{
-			strRecFolder = L"";
-		}
-		wSuspendMode = o.recSetting.suspendMode;
-		bReboot = o.recSetting.rebootFlag;
-		strRecFilePath = L"";
-		bUseMargine = o.recSetting.useMargineFlag;
-		iStartMargine = o.recSetting.startMargine;
-		iEndMargine = o.recSetting.endMargine;
-		dwServiceMode = o.recSetting.serviceMode;
-		return *this;
-	};
-} OLD_RESERVE_DATA;
-
-
-typedef struct _OLD_SEARCH_KEY{
-	wstring strAnd;
-	wstring strNot;
-	BOOL bTitle;
-	int iJanru;
-	int iSH;
-	int iSM;
-	int iEH;
-	int iEM;
-	BOOL bChkMon;
-	BOOL bChkTue;
-	BOOL bChkWed;
-	BOOL bChkThu;
-	BOOL bChkFri;
-	BOOL bChkSat;
-	BOOL bChkSun;
-	vector<__int64> CHIDList; //ONID<<24 | TSID<<16 | SID
-	//以下自動予約登録時関係のみ使用
-	int iAutoAddID; //自動予約登録一覧の識別用キー
-	int iPriority;
-	int iTuijyuu;
-	int iRecMode;
-	int iPittari;
-	wstring strBat;
-	wstring strRecFolder;
-	WORD wSuspendMode;
-	BOOL bReboot;
-	BOOL bUseMargine;
-	int iStartMargine;
-	int iEndMargine;
-	DWORD dwServiceMode;
-
-	BOOL bRegExp;
-	wstring strPattern;
-} OLD_SEARCH_KEY;
-
-typedef struct _OLD_EVENT_ID_INFO{
-	DWORD dwOriginalNID;
-	DWORD dwTSID;
-	DWORD dwServiceID;
-	DWORD dwEventID;
-}OLD_EVENT_ID_INFO;
-
-typedef struct _OLD_NIBBLE_DATA{
-	unsigned char ucContentNibbleLv1; //content_nibble_level_1
-	unsigned char ucContentNibbleLv2; //content_nibble_level_2
-	unsigned char ucUserNibbleLv1; //user_nibble
-	unsigned char ucUserNibbleLv2; //user_nibble
-}OLD_NIBBLE_DATA;
-
-typedef struct _OLD_EVENT_INFO_DATA3{
-	WORD wOriginalNID;
-	WORD wTSID;
-	WORD wServiceID;
-	WORD wEventID;
-	wstring strEventName;
-	wstring strEventText;
-	wstring strEventExtText;
-	SYSTEMTIME stStartTime;
-	DWORD dwDurationSec;
-	unsigned char ucComponentType;
-	wstring strComponentTypeText;
-	unsigned char ucAudioComponentType;
-	unsigned char ucESMultiLangFlag;
-	unsigned char ucMainComponentFlag;
-	unsigned char ucSamplingRate;
-	wstring strAudioComponentTypeText;
-	vector<OLD_NIBBLE_DATA> NibbleList;
-	vector<OLD_EVENT_ID_INFO> EventRelayList;
-
-	wstring strSearchTitle;
-	wstring strSearchInfo;
-	vector<OLD_EVENT_ID_INFO> EventGroupList;
-
-	_OLD_EVENT_INFO_DATA3 & operator= (const _EPGDB_EVENT_INFO & o) {
-		wOriginalNID = o.original_network_id;
-		wTSID = o.transport_stream_id;
-		wServiceID = o.service_id;
-		wEventID = o.event_id;
-		if( o.shortInfo != NULL ){
-			strEventName = o.shortInfo->event_name;
-		}else{
-			strEventName = L"";
-		}
-		if( o.shortInfo != NULL ){
-			strEventText = o.shortInfo->text_char;
-		}else{
-			strEventText = L"";
-		}
-		if( o.extInfo != NULL ){
-			strEventText = o.extInfo->text_char;
-		}else{
-			strEventText = L"";
-		}
-		stStartTime = o.start_time;
-		dwDurationSec = o.durationSec;
-		if( o.componentInfo != NULL ){
-			ucComponentType = o.componentInfo->component_type;
-			strComponentTypeText = o.componentInfo->text_char;
-		}else{
-			ucComponentType = 0;
-			strComponentTypeText = L"";
-		}
-		if( o.audioInfo != NULL ){
-			if( o.audioInfo->componentList.size() > 0 ){
-				ucAudioComponentType = o.audioInfo->componentList[0].component_type;
-				ucESMultiLangFlag = o.audioInfo->componentList[0].ES_multi_lingual_flag;
-				ucMainComponentFlag = o.audioInfo->componentList[0].main_component_flag;
-				ucSamplingRate = o.audioInfo->componentList[0].sampling_rate;
-				strAudioComponentTypeText = o.audioInfo->componentList[0].text_char;
-			}
-		}
-		if( o.contentInfo != NULL ){
-			NibbleList.clear();
-			for( size_t i=0; i<o.contentInfo->nibbleList.size(); i++ ){
-				OLD_NIBBLE_DATA item;
-				item.ucContentNibbleLv1 = o.contentInfo->nibbleList[i].content_nibble_level_1;
-				item.ucContentNibbleLv2 = o.contentInfo->nibbleList[i].content_nibble_level_2;
-				item.ucUserNibbleLv1 = o.contentInfo->nibbleList[i].user_nibble_1;
-				item.ucUserNibbleLv2 = o.contentInfo->nibbleList[i].user_nibble_2;
-				NibbleList.push_back(item);
-			}
-		}
-		if( o.eventGroupInfo != NULL ){
-			EventGroupList.clear();
-			for( size_t i=0; i<o.eventGroupInfo->eventDataList.size(); i++ ){
-				OLD_EVENT_ID_INFO item;
-				item.dwOriginalNID = o.eventGroupInfo->eventDataList[i].original_network_id;
-				item.dwTSID = o.eventGroupInfo->eventDataList[i].transport_stream_id;
-				item.dwServiceID = o.eventGroupInfo->eventDataList[i].service_id;
-				item.dwEventID = o.eventGroupInfo->eventDataList[i].event_id;
-				EventGroupList.push_back(item);
-			}
-		}
-		if( o.eventRelayInfo != NULL ){
-			EventRelayList.clear();
-			for( size_t i=0; i<o.eventRelayInfo->eventDataList.size(); i++ ){
-				OLD_EVENT_ID_INFO item;
-				item.dwOriginalNID = o.eventRelayInfo->eventDataList[i].original_network_id;
-				item.dwTSID = o.eventRelayInfo->eventDataList[i].transport_stream_id;
-				item.dwServiceID = o.eventRelayInfo->eventDataList[i].service_id;
-				item.dwEventID = o.eventRelayInfo->eventDataList[i].event_id;
-				EventRelayList.push_back(item);
-			}
-		}
-
-		return *this;
-	};
-}OLD_EVENT_INFO_DATA3;
 
 #endif

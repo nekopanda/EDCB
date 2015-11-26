@@ -28,7 +28,6 @@ namespace EpgTimer
                 return (ReserveInfo != null);
             }
         }
-
         public virtual String EventName
         {
             get
@@ -42,15 +41,15 @@ namespace EpgTimer
         {
             get
             {
-                if (EventInfo == null) return "";
-                //
-                String view = "";
-                UInt64 serviceKey = EventInfo.Create64Key();
-                if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
+                if (EventInfo != null)
                 {
-                    view = ChSet5.Instance.ChList[serviceKey].ServiceName;
+                    UInt64 serviceKey = EventInfo.Create64Key();
+                    if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
+                    {
+                        return ChSet5.Instance.ChList[serviceKey].ServiceName;
+                    }
                 }
-                return view;
+                return "";
             }
         }
         public virtual String NetworkName
@@ -59,7 +58,7 @@ namespace EpgTimer
             {
                 if (EventInfo == null) return "";
                 //
-                return CommonManager.Instance.ConvertNetworkNameText(EventInfo.original_network_id);
+                return CommonManager.ConvertNetworkNameText(EventInfo.original_network_id);
             }
         }
         public virtual String StartTime
@@ -79,7 +78,7 @@ namespace EpgTimer
         {
             get
             {
-                if (this.EventInfo == null || this.EventInfo.DurationFlag == 0) { return new TimeSpan(); }
+                if (EventInfo == null || EventInfo.DurationFlag == 0) return new TimeSpan();
                 //
                 return TimeSpan.FromSeconds(EventInfo.durationSec);
             }
@@ -91,7 +90,7 @@ namespace EpgTimer
         {
             get
             {
-                if (EventInfo == null) return "";
+                if (EventInfo == null || EventInfo.ShortInfo == null) return "";
                 //
                 return EventInfo.ShortInfo.text_char.Replace("\r\n", " ");
             }
@@ -150,22 +149,21 @@ namespace EpgTimer
         {
             get
             {
-                SolidColorBrush color = CommonManager.Instance.StatResForeColor;
                 if (EventInfo != null)
                 {
-                    if (EventInfo.IsOnAir() == true)
-                    {
-                        color = CommonManager.Instance.StatOnAirForeColor;
-                    }
                     if (IsReserved == true)
                     {
                         if (ReserveInfo.IsOnRec() == true)
                         {
-                            color = CommonManager.Instance.StatRecForeColor;
+                            return CommonManager.Instance.StatRecForeColor;
                         }
                     }
+                    if (EventInfo.IsOnAir() == true)
+                    {
+                        return CommonManager.Instance.StatOnAirForeColor;
+                    }
                 }
-                return color;
+                return CommonManager.Instance.StatResForeColor;
             }
         }
         public int NowJumpingTable { set; get; }
@@ -176,14 +174,14 @@ namespace EpgTimer
                 //番組表へジャンプ時の強調表示
                 switch(NowJumpingTable)
                 {
-                    case 1: return new SolidColorBrush(Colors.Red);
+                    case 1: return Brushes.Red;
                     case 2: return CommonManager.Instance.ListDefForeColor;
                 }
 
                 //通常表示
                 if (ReserveInfo == null) return CommonManager.Instance.ListDefForeColor;
                 //
-                return CommonManager.Instance.EventItemForeColor(ReserveInfo.RecSetting.RecMode);
+                return CommonManager.Instance.RecModeForeColor[ReserveInfo.RecSetting.RecMode];
             }
         }
         public SolidColorBrush BackColor
@@ -194,34 +192,18 @@ namespace EpgTimer
                 switch (NowJumpingTable)
                 {
                     case 1: return CommonManager.Instance.ResDefBackColor;
-                    case 2: return new SolidColorBrush(Colors.Red);
+                    case 2: return Brushes.Red;
                 }
 
                 //通常表示
-                SolidColorBrush color = CommonManager.Instance.ResDefBackColor;
-                if (ReserveInfo != null)
-                {
-                    if (ReserveInfo.RecSetting.RecMode == 5)
-                    {
-                        color = CommonManager.Instance.ResNoBackColor;
-                    }
-                    else if (ReserveInfo.OverlapMode == 2)
-                    {
-                        color = CommonManager.Instance.ResErrBackColor;
-                    }
-                    else if (ReserveInfo.OverlapMode == 1)
-                    {
-                        color = CommonManager.Instance.ResWarBackColor;
-                    }
-                }
-                return color;
+                return vutil.ReserveErrBrush(ReserveInfo);
             }
         }
         public Brush BorderBrush
         {
             get
             {
-                return vutil.EventDataBorderBrush(EventInfo);
+                return vutil.EpgDataContentBrush(EventInfo);
             }
         }
     }

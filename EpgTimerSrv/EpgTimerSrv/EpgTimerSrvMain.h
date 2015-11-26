@@ -59,7 +59,9 @@ private:
 	bool RemoveNolinkedReserve(vector<DWORD> beforeReserveIds);
 
 	//外部制御コマンド関係
-	static int CALLBACK CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
+	static int CALLBACK CtrlCmdPipeCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
+	static int CALLBACK CtrlCmdTcpCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
+	static int CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag);
 	static int InitLuaCallback(lua_State* L);
 	//Lua-edcb空間のコールバック
 	class CLuaWorkspace
@@ -84,10 +86,10 @@ private:
 	static int LuaEpgCapNow(lua_State* L);
 	static int LuaGetChDataList(lua_State* L);
 	static int LuaGetServiceList(lua_State* L);
-	static void LuaGetEventMinMaxTimeCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param);
+	static void LuaGetEventMinMaxTimeCallback(const vector<EPGDB_EVENT_INFO>* pval, void* param);
 	static int LuaGetEventMinMaxTime(lua_State* L);
-	static void LuaEnumEventInfoCallback(vector<EPGDB_EVENT_INFO*>* pval, void* param);
-	static void LuaEnumEventAllCallback(vector<EPGDB_SERVICE_EVENT_INFO>* pval, void* param);
+	static void LuaEnumEventInfoCallback(const vector<EPGDB_EVENT_INFO>* pval, void* param);
+	static void LuaEnumEventAllCallback(vector<const EPGDB_SERVICE_EVENT_INFO*>* pval, void* param);
 	static int LuaEnumEventInfo(lua_State* L);
 	static void LuaSearchEpgCallback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, void* param);
 	static int LuaSearchEpg(lua_State* L);
@@ -154,5 +156,5 @@ private:
 	bool nwtvTcp;
 	DWORD notifyUpdateCount[6];
 
-	vector<OLD_EVENT_INFO_DATA3> oldSearchList;
+	vector<EPGDB_EVENT_INFO> oldSearchList[2];
 };

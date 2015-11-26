@@ -1,10 +1,13 @@
-//  (C) Copyright Nekopanda 2015.
 #pragma once
+
+#define ENABLE_GPL_CODE 1
 
 #include <vector>
 #include <map>
 
 #include "../../Common/FileUtil.h"
+
+#if ENABLE_GPL_CODE
 
 #include "LightTsUtils.h"
 #include "EpgDBManager.h"
@@ -26,11 +29,21 @@ struct REC_EVENT_INFO : public EPGDB_EVENT_INFO {
 		, fileExist(false)
 	{ }
 
+	void DeepCopy(const REC_EVENT_INFO & o) {
+		EPGDB_EVENT_INFO::DeepCopy(o);
+		recFileId = o.recFileId;
+		loadErrorCount = o.loadErrorCount;
+		rawData = o.rawData;
+		startTime64 = o.startTime64;
+		filePath = o.filePath;
+		fileExist = o.fileExist;
+	}
+
 	bool HasEpgInfo() const { return rawData.GetSize() > 0; }
 };
 
 struct REC_EVENT_SERVICE_DATA {
-	std::vector<REC_EVENT_INFO*> eventList;
+	std::vector<REC_EVENT_INFO> eventList;
 
 	const REC_EVENT_SERVICE_DATA* operator->() const {
 		return this;
@@ -113,3 +126,30 @@ private:
 	// 録画ファイルを検索　マッチした録画ファイルのIDを返す
 	vector<DWORD> SearchRecFile_(const EPGDB_SEARCH_KEY_INFO& item, SERVICE_EVENT_MAP& targetEvents);
 };
+
+#else
+
+// ダミー
+struct REC_EVENT_INFO : public EPGDB_EVENT_INFO {
+	bool fileExist;
+	bool HasEpgInfo() const { return false; }
+};
+class CRecEventDB {
+public:
+	typedef std::map<DWORD, REC_FILE_INFO> REC_INFO_MAP;
+	typedef std::map<DWORD, REC_EVENT_INFO*> REC_EVENT_MAP;
+	bool Load(const std::wstring& filePath, const REC_INFO_MAP& recFiles) { return true; }
+	void AddRecInfo(const REC_FILE_INFO& item) { }
+	bool Save() { return true; }
+	void Clear() { }
+	void MergeNew() { }
+	vector<DWORD> SearchRecFile(const EPGDB_SEARCH_KEY_INFO& item, bool fromNew = false) {
+		return vector<DWORD>();
+	}
+	void UpdateFileExist() { }
+	int GetNewCount() const { return 0; }
+	const REC_EVENT_INFO* Get(DWORD id) const { return NULL; }
+	bool HasEpgInfo(DWORD id) const { return false; }
+};
+
+#endif

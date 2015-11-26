@@ -20,9 +20,6 @@
 #define CMD2_VIEW_CTRL_WAIT_CONNECT _T("Global\\View_Ctrl_BonConnect_") //+プロセスID
 #define CMD2_TVTEST_CTRL_WAIT_CONNECT _T("Global\\TvTest_Ctrl_BonConnect_") //+プロセスID
 
-//モジュール内コマンド実行イベント
-#define CMD2_CTRL_EVENT_WAIT _T("CtrlCmdEvent_") //+ID
-
 //コマンドバージョン
 //#define CMD_VER 2	//バージョン情報追加対応　録画設定への部分受信録画フォルダ指定追加
 //#define CMD_VER 3	//検索条件に同一録画チェック追加
@@ -92,7 +89,8 @@
 #define CMD2_EPG_SRV_FILE_COPY				1060 //指定ファイルを転送する
 #define CMD2_EPG_SRV_ENUM_PLUGIN			1061 //PlugInファイルの一覧を取得する（1:ReName、2:Write）
 #define CMD2_EPG_SRV_GET_CHG_CH_TVTEST		1062 //TVTestのチャンネル切り替え用の情報を取得する
-#define CMD2_EPG_SRV_PROFILE_UPDATE			1063 //設定ファイル(ini)の更新を通知させる
+#define CMD2_EPG_SRV_PROFILE_UPDATE			1063 //設定ファイル(ini)の更新を通知させる (tkntrec氏版)
+#define CMD2_EPG_SRV_UPDATE_SETTING			1064 //INIファイルを更新する
 
 #define CMD2_EPG_SRV_NWTV_SET_CH			1070 //ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え
 #define CMD2_EPG_SRV_NWTV_CLOSE				1071 //ネットワークモードで起動中のEpgDataCap_Bonを終了
@@ -106,6 +104,9 @@
 #define CMD2_EPG_SRV_NWPLAY_SET_POS			1085 //ストリーム配信で送信位置をシークする
 #define CMD2_EPG_SRV_NWPLAY_SET_IP			1086 //ストリーム配信で送信先を設定する
 #define CMD2_EPG_SRV_NWPLAY_TF_OPEN			1087 //ストリーム配信用ファイルをタイムシフトモードで開く
+
+//外部アプリ再生用
+#define CMD2_EPG_SRV_GET_NETWORK_PATH		1299 //録画ファイルのネットワークパスを取得
 
 //タイマーGUI（EpgTimer_Bon.exe）用
 #define CMD2_TIMER_GUI_SHOW_DLG				101 //ダイアログを前面に表示

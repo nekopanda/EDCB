@@ -11,8 +11,6 @@ namespace EpgTimer
 {
     public class MenuManager
     {
-        public DateTime? LastMenuSettingTime { get; private set; }
-
         private Dictionary<CtxmCode, CtxmData> DefCtxmData;//デフォルトのコンテキストメニュー
         private Dictionary<CtxmCode, List<ICommand>> DefCtxmCmdList;//デフォルトのコンテキストメニューのコマンドリスト
 
@@ -49,6 +47,8 @@ namespace EpgTimer
             var cm_Delete2 = new CtxmItemData("予約ごと削除", EpgCmds.Delete2);
             var cm_Delete3 = new CtxmItemData("予約のみ削除", EpgCmds.Delete3);
             var cm_AdjustReserve = new CtxmItemData("予約を自動登録に合わせる", EpgCmds.AdjustReserve);
+            var cm_JumpReserve = new CtxmItemData("予約一覧へジャンプ", EpgCmds.JumpReserve);
+            var cm_JumpTuner = new CtxmItemData("チューナ画面へジャンプ", EpgCmds.JumpTuner);
             var cm_JumpTable = new CtxmItemData("番組表へジャンプ", EpgCmds.JumpTable);
             var cm_ToAutoadd = new CtxmItemData("自動予約登録", EpgCmds.ToAutoadd);
             var cm_Play = new CtxmItemData("追っかけ再生", EpgCmds.Play);
@@ -176,6 +176,7 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("削除", cm_Delete));
             ctmd.Items.Add(new CtxmItemData("プログラム予約追加", cm_ShowAddDialog));
             ctmd.Items.Add(new CtxmItemData("自動予約変更", cm_ChangeAutoAddMenu));
+            ctmd.Items.Add(new CtxmItemData("チューナ画面へジャンプ", cm_JumpTuner));
             ctmd.Items.Add(new CtxmItemData("番組表へジャンプ", cm_JumpTable));
             ctmd.Items.Add(new CtxmItemData("自動予約登録", cm_ToAutoadd));
             ctmd.Items.Add(new CtxmItemData("追っかけ再生", cm_Play));
@@ -185,10 +186,12 @@ namespace EpgTimer
 
             //メニューアイテム:使用予定チューナー
             ctmd = DefCtxmData[CtxmCode.TunerReserveView];
+            ctmd.Items.Add(new CtxmItemData("予約←→無効", cm_ChangeOnOff));
             ctmd.Items.Add(new CtxmItemData("変更", cm_ChangeMenu));
             ctmd.Items.Add(new CtxmItemData("削除", cm_Delete));
             ctmd.Items.Add(new CtxmItemData("プログラム予約追加", cm_ShowAddDialog));
             ctmd.Items.Add(new CtxmItemData("自動予約変更", cm_ChangeAutoAddMenu));
+            ctmd.Items.Add(new CtxmItemData("予約一覧へジャンプ", cm_JumpReserve));
             ctmd.Items.Add(new CtxmItemData("番組表へジャンプ", cm_JumpTable));
             ctmd.Items.Add(new CtxmItemData("自動予約登録", cm_ToAutoadd));
             ctmd.Items.Add(new CtxmItemData("追っかけ再生", cm_Play));
@@ -245,6 +248,8 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("変更", cm_ChangeMenu));
             ctmd.Items.Add(new CtxmItemData("削除", cm_Delete));
             ctmd.Items.Add(new CtxmItemData("自動予約変更", cm_ChangeAutoAddMenu));
+            ctmd.Items.Add(new CtxmItemData("予約一覧へジャンプ", cm_JumpReserve));
+            ctmd.Items.Add(new CtxmItemData("チューナ画面へジャンプ", cm_JumpTuner));
             ctmd.Items.Add(new CtxmItemData("番組表(標準モード)へジャンプ", cm_JumpTable));
             ctmd.Items.Add(new CtxmItemData("自動予約登録", cm_ToAutoadd));
             ctmd.Items.Add(new CtxmItemData("追っかけ再生", cm_Play));
@@ -261,6 +266,8 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("変更", cm_ChangeMenu));
             ctmd.Items.Add(new CtxmItemData("削除", cm_Delete));
             ctmd.Items.Add(new CtxmItemData("自動予約変更", cm_ChangeAutoAddMenu));
+            ctmd.Items.Add(new CtxmItemData("予約一覧へジャンプ", cm_JumpReserve));
+            ctmd.Items.Add(new CtxmItemData("チューナ画面へジャンプ", cm_JumpTuner));
             ctmd.Items.Add(new CtxmItemData("番組表へジャンプ", cm_JumpTable));
             ctmd.Items.Add(new CtxmItemData("番組名で再検索", EpgCmds.ReSearch));
             ctmd.Items.Add(new CtxmItemData("番組名で再検索(サブウィンドウ)", EpgCmds.ReSearch2));
@@ -293,8 +300,6 @@ namespace EpgTimer
 
         public void ReloadWorkData()
         {
-            LastMenuSettingTime = DateTime.Now;
-
             MC.SetWorkCmdOptions();
             SetWorkCxtmData();
             SetWorkGestureCmdList();
@@ -519,22 +524,28 @@ namespace EpgTimer
         }
         private string GetCtxmTooltip(ICommand icmd)
         {
-            MenuUtil mutil = CommonManager.Instance.MUtil;
+            Func<bool, string, string, string, string> _ToggleModeTooltip = (mode, Caption, OnText, OffText) =>
+            {
+                string ModeText = (mode == true ? OnText : OffText);
+                string ToggleText = (mode == false ? OnText : OffText);
+                return Caption + ModeText + " (Shift+クリックで一時的に'" + ToggleText + "')";
+            };
+
             if (icmd == EpgCmds.ToAutoadd || icmd == EpgCmds.ReSearch || icmd == EpgCmds.ReSearch2)
             {
-                return mutil.EpgKeyword_TrimMode();
+                return _ToggleModeTooltip(Settings.Instance.MenuSet.Keyword_Trim, "記号除去モード : ", "オン", "オフ");
             }
             else if (icmd == EpgCmds.CopyTitle)
             {
-                return mutil.CopyTitle_TrimMode();
+                return _ToggleModeTooltip(Settings.Instance.MenuSet.CopyTitle_Trim, "記号除去モード : ", "オン", "オフ");
             }
             else if (icmd == EpgCmds.CopyContent)
             {
-                return mutil.CopyContent_Mode();
+                return _ToggleModeTooltip(Settings.Instance.MenuSet.CopyContentBasic, "取得モード : ", "基本情報のみ", "詳細情報");
             }
             else if (icmd == EpgCmds.SearchTitle)
             {
-                return mutil.SearchText_TrimMode();
+                return _ToggleModeTooltip(Settings.Instance.MenuSet.SearchTitle_Trim, "記号除去モード : ", "オン", "オフ");
             }
             return null;
         }

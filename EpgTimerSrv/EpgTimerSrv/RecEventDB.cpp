@@ -1,7 +1,8 @@
-//  (C) Copyright Nekopanda 2015.
 #include "stdafx.h"
 
 #include "RecEventDB.h"
+
+#if ENABLE_GPL_CODE
 
 #include "../../Common/EpgTimerUtil.h"
 #include "../../Common/TimeUtil.h"
@@ -80,12 +81,12 @@ bool CRecEventDB::Save() {
 }
 
 void CRecEventDB::Clear() {
-	for (std::pair<DWORD, REC_EVENT_INFO*> entry : eventMapNew) {
+	for (std::pair<DWORD, const REC_EVENT_INFO*> entry : eventMapNew) {
 		SAFE_DELETE(entry.second);
 	}
 	eventMapNew.clear();
 	serviceMapNew.clear();
-	for (std::pair<DWORD, REC_EVENT_INFO*> entry : eventMap) {
+	for (std::pair<DWORD, const REC_EVENT_INFO*> entry : eventMap) {
 		SAFE_DELETE(entry.second);
 	}
 	eventMap.clear();
@@ -351,7 +352,9 @@ void CRecEventDB::AddToServiceMap(REC_EVENT_MAP& from, SERVICE_EVENT_MAP& to) {
 		if (eventInfo->HasEpgInfo()) {
 			// 有効なデータがあるときだけ
 			LONGLONG key = _Create64Key(eventInfo->original_network_id, eventInfo->transport_stream_id, eventInfo->service_id);
-			to[key].eventList.push_back(eventInfo);
+			to[key].eventList.resize(to[key].eventList.size() + 1);
+			to[key].eventList.back().DeepCopy(*eventInfo);
+			//to[key].eventList.push_back(*eventInfo);
 		}
 	}
 }
@@ -404,3 +407,5 @@ vector<DWORD> CRecEventDB::SearchRecFile_(const EPGDB_SEARCH_KEY_INFO& item, SER
 
 	return ret;
 }
+
+#endif

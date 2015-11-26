@@ -1,4 +1,6 @@
-//  (C) Copyright Nekopanda 2015.
+// 軽量TSパーサ
+// TvTestのコードを流用しているためこのコードのライセンスはGPLです。
+//
 #pragma once
 
 #include <Windows.h>

@@ -1,8 +1,10 @@
-//  (C) Copyright Nekopanda 2015.
-
+// 軽量TSパーサ
+// TvTestのコードを流用しているためこのコードのライセンスはGPLです。
+//
 #include "stdafx.h"
 
 #include <crtdbg.h>
+#include <stdint.h>
 
 #include "LightTsUtils.h"
 
@@ -911,7 +913,7 @@ void CEitConverter::Feed(CSiSectionEIT& eit, int idx, EPGDB_EVENT_INFO* dest) {
 void CEitConverter::OnShortEvent(CDescShortEvent& desc)
 {
 	if (dest->shortInfo) return;
-	dest->shortInfo = new EPGDB_SHORT_EVENT_INFO;
+	dest->shortInfo.reset(new EPGDB_SHORT_EVENT_INFO);
 	dest->shortInfo->event_name = arib.DecodeString(desc.GetName());
 	//ごく稀にAPR(改行)を含むため
 	Replace(dest->shortInfo->event_name, L"\r\n", L"");
@@ -949,7 +951,7 @@ void CEitConverter::OnExtEvent(CDescExtEvent& desc)
 	//	desc.GetLastDescriptorNumber());
 
 	if (dest->extInfo) return;
-	dest->extInfo = new EPGDB_EXTENDED_EVENT_INFO;
+	dest->extInfo.reset(new EPGDB_EXTENDED_EVENT_INFO);
 	ExtEventHandler Handler(dest->extInfo->text_char, arib);
 	desc.ParseText(Handler);
 }
@@ -957,7 +959,7 @@ void CEitConverter::OnExtEvent(CDescExtEvent& desc)
 void CEitConverter::OnComponent(CDescComponent& desc)
 {
 	if (dest->componentInfo) return;
-	dest->componentInfo = new EPGDB_COMPONENT_INFO;
+	dest->componentInfo.reset(new EPGDB_COMPONENT_INFO);
 	dest->componentInfo->stream_content = desc.GetStreamContent();
 	dest->componentInfo->component_type = desc.GetComponentType();
 	dest->componentInfo->component_tag = desc.GetComponentTag();
@@ -967,7 +969,7 @@ void CEitConverter::OnComponent(CDescComponent& desc)
 void CEitConverter::OnContent(CDescContent& desc)
 {
 	if (dest->contentInfo) return;
-	dest->contentInfo = new EPGDB_CONTEN_INFO;
+	dest->contentInfo.reset(new EPGDB_CONTEN_INFO);
 	int DataCnt = desc.GetDataCount();
 	for (int i = 0; i < DataCnt; i++) {
 		EPGDB_CONTENT_DATA item;
@@ -982,9 +984,10 @@ void CEitConverter::OnContent(CDescContent& desc)
 
 void CEitConverter::OnAudioComponent(CDescAudioComponent& desc)
 {
-	if (dest->audioInfo == NULL) {
-		dest->audioInfo = new EPGDB_AUDIO_COMPONENT_INFO;
-	}
+	//if (dest->audioInfo == NULL) {
+	//	dest->audioInfo = new EPGDB_AUDIO_COMPONENT_INFO;
+	//}
+	dest->audioInfo.reset(new EPGDB_AUDIO_COMPONENT_INFO);
 	EPGDB_AUDIO_COMPONENT_INFO_DATA item;
 	item.stream_content = desc.GetStreamContent();
 	item.component_type = desc.GetComponentType();
@@ -1002,7 +1005,7 @@ void CEitConverter::OnAudioComponent(CDescAudioComponent& desc)
 void CEitConverter::OnEventGroup(CDescEventGroup& desc)
 {
 	if (dest->eventGroupInfo) return;
-	dest->eventGroupInfo = new EPGDB_EVENTGROUP_INFO;
+	dest->eventGroupInfo.reset(new EPGDB_EVENTGROUP_INFO);
 	dest->eventGroupInfo->group_type = desc.GetGroupType();
 	int DataCnt = desc.GetEventCount();
 	for (int i = 0; i < DataCnt; i++) {

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "BonDriverUtil.h"
+#include "../Common/PathUtil.h"
 #include "../Common/StringUtil.h"
 #include "../Common/BlockLock.h"
 #include "IBonDriver2.h"
@@ -184,7 +185,7 @@ LRESULT CALLBACK CBonDriverUtil::DriverWindowProc(HWND hwnd, UINT uMsg, WPARAM w
 		SetTimer(hwnd, 1, 20, NULL);
 		return 0;
 	case WM_DESTROY:
-		SetWindowLongPtr(hwnd, GWLP_USERDATA, NULL);
+		SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
 		PostQuitMessage(0);
 		return 0;
 	case WM_TIMER:

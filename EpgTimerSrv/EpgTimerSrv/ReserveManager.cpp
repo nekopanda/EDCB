@@ -177,6 +177,10 @@ vector<RESERVE_DATA> CReserveManager::GetReserveDataAll(bool getRecFileName) con
 {
 	CBlockLock lock(&this->managerLock);
 
+	// GetReserveData の中で LoadLibrary/FreeLibrary を繰り返すのを抑止するため参照カウンタを増やしておく。
+	// GetInstance() & ReleaseInstance() でくくっても同じ。
+	CReNamePlugInUtil avoidLotsOfLoadLibrary;
+
 	vector<RESERVE_DATA> list;
 	list.reserve(this->reserveText.GetMap().size());
 	for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().begin(); itr != this->reserveText.GetMap().end(); itr++ ){
@@ -478,8 +482,10 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 				    r.durationSecond != itr->second.durationSecond ||
 				    r.recSetting.recMode != itr->second.recSetting.recMode ||
 				    r.recSetting.priority != itr->second.recSetting.priority ||
-				    r.recSetting.startMargine != itr->second.recSetting.startMargine ||
-				    r.recSetting.endMargine != itr->second.recSetting.endMargine ||
+				    r.recSetting.useMargineFlag != itr->second.recSetting.useMargineFlag ||
+				    r.recSetting.useMargineFlag && (
+				        r.recSetting.startMargine != itr->second.recSetting.startMargine ||
+				        r.recSetting.endMargine != itr->second.recSetting.endMargine) ||
 				    r.recSetting.tunerID != itr->second.recSetting.tunerID ){
 					__int64 startTime, startTimeNext;
 					CalcEntireReserveTime(&startTime, NULL, itr->second);
@@ -1191,7 +1197,7 @@ void CReserveManager::CheckAutoDel() const
 	for( size_t i = 0; i < this->autoDelFolderList.size(); i++ ){
 		wstring mountPath;
 		GetChkDrivePath(this->autoDelFolderList[i], mountPath);
-		std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
+		std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), towupper);
 		map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator itr = mountMap.find(mountPath);
 		if( itr == mountMap.end() ){
 			itr = mountMap.insert(std::make_pair(mountPath, std::make_pair(0ULL, vector<wstring>()))).first;
@@ -1222,7 +1228,7 @@ void CReserveManager::CheckAutoDel() const
 			for( size_t i = 0; i < recFolderList.size(); i++ ){
 				wstring mountPath;
 				GetChkDrivePath(recFolderList[i], mountPath);
-				std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
+				std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), towupper);
 				map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator jtr = mountMap.find(mountPath);
 				if( jtr != mountMap.end() ){
 					if( jtr->second.first == 0 ){
@@ -1242,8 +1248,6 @@ void CReserveManager::CheckAutoDel() const
 	}
 
 	//ドライブレベルでのチェック
-	map<wstring, wstring> protectFiles;
-	recInfoText.GetProtectFiles(&protectFiles);
 	for( map<wstring, pair<ULONGLONG, vector<wstring>>>::const_iterator itr = mountMap.begin(); itr != mountMap.end(); itr++ ){
 		ULARGE_INTEGER freeBytes;
 		if( itr->second.first > 0 && GetDiskFreeSpaceEx(itr->first.c_str(), &freeBytes, NULL, NULL) && freeBytes.QuadPart < itr->second.first ){
@@ -1270,9 +1274,9 @@ void CReserveManager::CheckAutoDel() const
 			}
 			while( needFreeSize > 0 && tsFileMap.empty() == false ){
 				wstring delPath = tsFileMap.begin()->second.second;
-				wstring delPathUpper = delPath;
-				std::transform(delPathUpper.begin(), delPathUpper.end(), delPathUpper.begin(), toupper);
-				if( protectFiles.find(delPathUpper) != protectFiles.end() ){
+				if( this->recInfoText.GetMap().end() != std::find_if(this->recInfoText.GetMap().begin(), this->recInfoText.GetMap().end(),
+				        [&](const pair<DWORD, REC_FILE_INFO>& a) { return a.second.protectFlag && CompareNoCase(a.second.recFilePath, delPath) == 0; }) ){
+					//プロテクトされた録画済みファイルは消さない
 					_OutputDebugString(L"★No Delete(Protected) : %s\r\n", delPath.c_str());
 				}else{
 					DeleteFile(delPath.c_str());
@@ -1467,8 +1471,8 @@ DWORD CReserveManager::Check()
 				this->recInfo2Text.SaveText();
 				this->recEventDB.Save();
 				this->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+				this->notifyManager.AddNotify(NOTIFY_UPDATE_REC_INFO);
 				AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
-				AddNotifyAndPostBat(NOTIFY_UPDATE_REC_INFO);
 				AddPostBatWork(batWorkList, L"PostRecEnd.bat");
 			}
 		}
@@ -2021,12 +2025,12 @@ bool CReserveManager::AutoAddReserveEPG(
 
 	reserveText.RemoveReserveAutoAddId(data.dataID, data.reserveList);
 
-	vector<std::unique_ptr<CEpgDBManager::SEARCH_RESULT_EVENT_DATA>> resultList;
+	vector<CEpgDBManager::SEARCH_RESULT_EVENT_DATA> resultList;
 	vector<EPGDB_SEARCH_KEY_INFO> key(1, data.searchInfo);
 	this->epgDBManager.SearchEpg(&key, &resultList);
 
 	for (size_t i = 0; i < resultList.size(); i++) {
-		const EPGDB_EVENT_INFO& info = resultList[i]->info;
+		const EPGDB_EVENT_INFO& info = resultList[i].info;
 		//時間未定でなく対象期間内かどうか
 		if (info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
 			now < ConvertI64Time(info.start_time) && ConvertI64Time(info.start_time) < now + autoAddHour_ * 60 * 60 * I64_1SEC) {
@@ -2083,8 +2087,8 @@ bool CReserveManager::AutoAddReserveEPG(
 						item.recSetting.recMode = RECMODE_NO;
 					}
 					item.comment = L"EPG自動予約";
-					if (resultList[i]->findKey.empty() == false) {
-						item.comment += L"(" + resultList[i]->findKey + L")";
+					if (resultList[i].findKey.empty() == false) {
+						item.comment += L"(" + resultList[i].findKey + L")";
 						Replace(item.comment, L"\r", L"");
 						Replace(item.comment, L"\n", L"");
 					}

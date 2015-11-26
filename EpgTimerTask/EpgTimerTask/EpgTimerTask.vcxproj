@@ -93,6 +93,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -115,6 +116,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -138,6 +140,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -164,6 +167,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -194,7 +198,6 @@
     <ClInclude Include="..\..\Common\CommonDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdUtil.h" />
-    <ClInclude Include="..\..\Common\CtrlCmdUtil2.h" />
     <ClInclude Include="..\..\Common\ErrDef.h" />
     <ClInclude Include="..\..\Common\NWStructDef.h" />
     <ClInclude Include="..\..\Common\PathUtil.h" />
@@ -204,7 +207,6 @@
     <ClInclude Include="..\..\Common\StringUtil.h" />
     <ClInclude Include="..\..\Common\StructDef.h" />
     <ClInclude Include="..\..\Common\TimeUtil.h" />
-    <ClInclude Include="..\..\Common\Util.h" />
     <ClInclude Include="EpgTimerTask.h" />
     <ClInclude Include="EpgTimerTaskDlg.h" />
     <ClInclude Include="QueryWaitDlg.h" />
@@ -214,14 +216,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Common\CtrlCmdUtil.cpp" />
-    <ClCompile Include="..\..\Common\CtrlCmdUtil2.cpp" />
     <ClCompile Include="..\..\Common\PathUtil.cpp" />
     <ClCompile Include="..\..\Common\PipeServer.cpp" />
     <ClCompile Include="..\..\Common\SendCtrlCmd.cpp" />
     <ClCompile Include="..\..\Common\ServiceUtil.cpp" />
     <ClCompile Include="..\..\Common\StringUtil.cpp" />
     <ClCompile Include="..\..\Common\TimeUtil.cpp" />
-    <ClCompile Include="..\..\Common\Util.cpp" />
     <ClCompile Include="EpgTimerTask.cpp" />
     <ClCompile Include="EpgTimerTaskDlg.cpp" />
     <ClCompile Include="QueryWaitDlg.cpp" />

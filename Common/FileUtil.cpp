@@ -1,4 +1,3 @@
-//  (C) Copyright Nekopanda 2015.
 #include "stdafx.h"
 
 #include "PathUtil.h"

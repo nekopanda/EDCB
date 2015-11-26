@@ -73,14 +73,13 @@ public:
 	void ReadSupplementFileAll();
 	//プロテクト情報を変更する
 	bool ChgProtectRecInfo(DWORD id, BYTE flag);
-	void GetProtectFiles(map<wstring, wstring>* fileMap) const;
-	//
+	//EPG自動予約登録と、登録された予約、および録画済みファイルとの関連付けを実装
 	void RemoveReserveAutoAddId(DWORD id, const vector<REC_FILE_BASIC_INFO>& list);
 	void AddReserveAutoAddId(const EPG_AUTO_ADD_DATA& data, const vector<REC_FILE_BASIC_INFO>& list);
 	//AddRecInfo直後に残しておく非プロテクトの録画済み情報の個数を設定する
 	void SetKeepCount(DWORD keepCount = UINT_MAX) { this->keepCount = keepCount; }
 	void SetRecInfoDelFile(bool recInfoDelFile) { this->recInfoDelFile = recInfoDelFile; }
-	void SetRecInfoFolder(LPCWSTR recInfoFolder) { ChkFolderPath(this->recInfoFolder = recInfoFolder); }
+	void SetRecInfoFolder(LPCWSTR recInfoFolder);
 protected:
 	bool ParseLine(const wstring& parseLine, pair<DWORD, REC_FILE_INFO>& item);
 	bool SaveLine(const pair<DWORD, REC_FILE_INFO>& item, wstring& saveLine) const;

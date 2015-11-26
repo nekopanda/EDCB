@@ -1,9 +1,7 @@
 #pragma once
 
-#include "../../Common/Util.h"
 #include "../../Common/StructDef.h"
 #include "../../Common/EpgDataCap3Def.h"
-#include <memory>
 
 #import "RegExp.tlb" no_namespace named_guids
 
@@ -11,7 +9,7 @@ class CEpgDBManager
 {
 public:
 	typedef struct _SEARCH_RESULT_EVENT{
-		EPGDB_EVENT_INFO* info;
+		const EPGDB_EVENT_INFO* info;
 		wstring findKey;
 	}SEARCH_RESULT_EVENT;
 
@@ -32,7 +30,7 @@ public:
 
 	BOOL CancelLoadData();
 
-	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<std::unique_ptr<SEARCH_RESULT_EVENT_DATA>>* result);
+	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, vector<SEARCH_RESULT_EVENT_DATA>* result);
 
 	BOOL SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, void (*enumProc)(vector<SEARCH_RESULT_EVENT>*, void*), void* param);
 
@@ -40,11 +38,11 @@ public:
 
 	BOOL GetServiceList(vector<EPGDB_SERVICE_INFO>* list);
 
-	BOOL EnumEventInfo(LONGLONG serviceKey, vector<std::unique_ptr<EPGDB_EVENT_INFO>>* result);
+	BOOL EnumEventInfo(LONGLONG serviceKey, vector<EPGDB_EVENT_INFO>* result);
 
-	BOOL EnumEventInfo(LONGLONG serviceKey, void (*enumProc)(vector<EPGDB_EVENT_INFO*>*, void*), void* param);
+	BOOL EnumEventInfo(LONGLONG serviceKey, void (*enumProc)(const vector<EPGDB_EVENT_INFO>*, void*), void* param);
 
-	BOOL EnumEventAll(void (*enumProc)(vector<EPGDB_SERVICE_EVENT_INFO>*, void*), void* param);
+	BOOL EnumEventAll(void (*enumProc)(vector<const EPGDB_SERVICE_EVENT_INFO*>*, void*), void* param);
 
 	BOOL SearchEpg(
 		WORD ONID,
@@ -216,9 +214,9 @@ public:
 			auto itrService = epgMap.find(key->serviceList[i]);
 			if (itrService != epgMap.end()) {
 				//サービス発見
-				for (auto itrEvent_ = itrService->second->eventList.begin(); itrEvent_ != itrService->second->eventList.end(); itrEvent_++) {
-					pair<WORD, EPGDB_EVENT_INFO*> autoEvent(std::make_pair((*itrEvent_)->event_id, *itrEvent_));
-					pair<WORD, EPGDB_EVENT_INFO*>* itrEvent = &autoEvent;
+				for (auto itrEvent_ = itrService->second.eventList.begin(); itrEvent_ != itrService->second.eventList.end(); itrEvent_++) {
+					pair<WORD, const EPGDB_EVENT_INFO*> autoEvent(std::make_pair(itrEvent_->event_id, &*itrEvent_));
+					pair<WORD, const EPGDB_EVENT_INFO*>* itrEvent = &autoEvent;
 					wstring matchKey = L"";
 					if (key->freeCAFlag == 1) {
 						//無料放送のみ
@@ -355,38 +353,38 @@ public:
 
 					//キーワード確認
 					if (notKeyList.size() != 0) {
-						if (IsFindKeyword(key->regExpFlag, regExp, key->titleOnlyFlag, caseFlag, &notKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, FALSE) == TRUE) {
+						if (IsFindKeyword(key->regExpFlag, regExp, key->titleOnlyFlag, caseFlag, &notKeyList, itrEvent->second->shortInfo.get(), itrEvent->second->extInfo.get(), FALSE) == TRUE) {
 							//notキーワード見つかったので対象外
 							continue;
 						}
 
 						//if( key->regExpFlag == FALSE && key->aimaiFlag == 1){
 						//	//あいまい検索
-						//	if( IsFindLikeKeyword(key->titleOnlyFlag, &notKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, FALSE) == TRUE ){
+						//	if( IsFindLikeKeyword(key->titleOnlyFlag, &notKeyList, itrEvent->second->shortInfo.get(), itrEvent->second->extInfo.get(), FALSE) == TRUE ){
 						//		//notキーワード見つかったので対象外
 						//		continue;
 						//	}
 						//}else{
-						//	if( IsFindKeyword(key->regExpFlag, key->titleOnlyFlag, &notKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, FALSE) == TRUE ){
+						//	if( IsFindKeyword(key->regExpFlag, key->titleOnlyFlag, &notKeyList, itrEvent->second->shortInfo.get(), itrEvent->second->extInfo.get(), FALSE) == TRUE ){
 						//		//notキーワード見つかったので対象外
 						//		continue;
 						//	}
 						//}
 					}
 					if (andKeyList.size() != 0) {
-						//if( IsFindKeyword(key->regExpFlag, key->titleOnlyFlag, &andKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, TRUE) == FALSE ){
+						//if( IsFindKeyword(key->regExpFlag, key->titleOnlyFlag, &andKeyList, itrEvent->second->shortInfo.get(), itrEvent->second->extInfo.get(), TRUE) == FALSE ){
 						//	//andキーワード見つからなかったので対象外
 						//	continue;
 						//}
 						if (key->regExpFlag == FALSE && key->aimaiFlag == 1) {
 							//あいまい検索
-							if (IsFindLikeKeyword(key->titleOnlyFlag, caseFlag, &andKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, TRUE, &matchKey) == FALSE) {
+							if (IsFindLikeKeyword(key->titleOnlyFlag, caseFlag, &andKeyList, itrEvent->second->shortInfo.get(), itrEvent->second->extInfo.get(), TRUE, &matchKey) == FALSE) {
 								//andキーワード見つからなかったので対象外
 								continue;
 							}
 						}
 						else {
-							if (IsFindKeyword(key->regExpFlag, regExp, key->titleOnlyFlag, caseFlag, &andKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, TRUE, &matchKey) == FALSE) {
+							if (IsFindKeyword(key->regExpFlag, regExp, key->titleOnlyFlag, caseFlag, &andKeyList, itrEvent->second->shortInfo.get(), itrEvent->second->extInfo.get(), TRUE, &matchKey) == FALSE) {
 								//andキーワード見つからなかったので対象外
 								continue;
 							}
@@ -403,20 +401,20 @@ public:
 		}
 		/*
 		for( itrService = this->epgMap.begin(); itrService != this->epgMap.end(); itrService++ ){
-		map<WORD, EPGDB_EVENT_INFO*>::iterator itrEvent;
-		for( itrEvent = itrService->second->eventMap.begin(); itrEvent != itrService->second->eventMap.end(); itrEvent++ ){
-		if( itrEvent->second->shortInfo != NULL ){
-		if( itrEvent->second->shortInfo->search_event_name.find(key->andKey) != string::npos ){
-		ULONGLONG mapKey = _Create64Key2(
-		itrEvent->second->original_network_id,
-		itrEvent->second->transport_stream_id,
-		itrEvent->second->service_id,
-		itrEvent->second->event_id);
+			map<WORD, EPGDB_EVENT_INFO*>::iterator itrEvent;
+			for( itrEvent = itrService->second->eventMap.begin(); itrEvent != itrService->second->eventMap.end(); itrEvent++ ){
+				if( itrEvent->second->shortInfo != NULL ){
+					if( itrEvent->second->shortInfo->search_event_name.find(key->andKey) != string::npos ){
+						ULONGLONG mapKey = _Create64Key2(
+							itrEvent->second->original_network_id,
+							itrEvent->second->transport_stream_id,
+							itrEvent->second->service_id,
+							itrEvent->second->event_id);
 
-		resultMap->insert(pair<ULONGLONG, EPGDB_EVENT_INFO*>(mapKey, itrEvent->second));
-		}
-		}
-		}
+						resultMap->insert(pair<ULONGLONG, EPGDB_EVENT_INFO*>(mapKey, itrEvent->second));
+					}
+				}
+			}
 		}
 		*/
 	}
@@ -427,30 +425,15 @@ protected:
 	BOOL loadStop;
 	BOOL initialLoadDone;
 
-	typedef struct _EPGDB_SERVICE_DATA{
-		EPGDB_SERVICE_INFO serviceInfo;
-		vector<EPGDB_EVENT_INFO*> eventList;
-		EPGDB_EVENT_INFO* eventArray;
-		_EPGDB_SERVICE_DATA(void){
-			eventArray = NULL;
-		}
-		~_EPGDB_SERVICE_DATA(void){
-			delete[] eventArray;
-		};
-		static bool CompareEventInfo(const EPGDB_EVENT_INFO* l, const EPGDB_EVENT_INFO* r){
-			return l->event_id < r->event_id;
-		}
-	}EPGDB_SERVICE_DATA;
-
 	typedef struct _TIME_SEARCH{
 		BYTE week;
 		DWORD start;
 		DWORD end;
 	}TIME_SEARCH;
 
-	map<LONGLONG, EPGDB_SERVICE_DATA*> epgMap;
+	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> epgMap;
 protected:
-	static BOOL ConvertEpgInfo(EPGDB_SERVICE_INFO* service, EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest);
+	static BOOL ConvertEpgInfo(const EPGDB_SERVICE_INFO* service, const EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest);
 	static BOOL CALLBACK EnumEpgInfoListProc(DWORD epgInfoListSize, EPG_EVENT_INFO* epgInfoList, LPVOID param);
 	void ClearEpgData();
 	static UINT WINAPI LoadThread_(LPVOID param);

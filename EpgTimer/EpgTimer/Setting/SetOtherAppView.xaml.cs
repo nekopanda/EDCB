@@ -26,7 +26,6 @@ namespace EpgTimer.Setting
 
             if (CommonManager.Instance.NWMode == true)
             {
-                CommonManager.Instance.VUtil.DisableControlChildren(tabItem_play);
                 label3.IsEnabled = false;
                 listBox_bon.IsEnabled = false;
                 button_del.IsEnabled = false;
@@ -44,35 +43,39 @@ namespace EpgTimer.Setting
 
                 textBox_playExe.Text = Settings.Instance.FilePlayExe;
                 textBox_playCmd.Text = Settings.Instance.FilePlayCmd;
+                checkBox_playOnAirWithExe.IsChecked = Settings.Instance.FilePlayOnAirWithExe;
 
-                string[] files = Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt");
-                SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
-                foreach (string info in files)
+                if (comboBox_bon.IsEnabled && Directory.Exists(SettingPath.SettingFolderPath))
                 {
-                    try
+                    string[] files = Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt");
+                    SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
+                    foreach (string info in files)
                     {
-                        String bonName = "";
-                        String fileName = System.IO.Path.GetFileName(info);
-                        bonName = GetBonFileName(fileName);
-                        bonName += ".dll";
-                        comboBox_bon.Items.Add(bonName);
+                        try
+                        {
+                            String bonName = "";
+                            String fileName = System.IO.Path.GetFileName(info);
+                            bonName = GetBonFileName(fileName);
+                            bonName += ".dll";
+                            comboBox_bon.Items.Add(bonName);
+                        }
+                        catch
+                        {
+                        }
                     }
-                    catch
+                    if (comboBox_bon.Items.Count > 0)
                     {
+                        comboBox_bon.SelectedIndex = 0;
                     }
-                }
-                if (comboBox_bon.Items.Count > 0)
-                {
-                    comboBox_bon.SelectedIndex = 0;
-                }
 
-                int num = IniFileHandler.GetPrivateProfileInt("TVTEST", "Num", 0, SettingPath.TimerSrvIniPath);
-                for (uint i = 0; i < num; i++)
-                {
-                    string item = IniFileHandler.GetPrivateProfileString("TVTEST", i.ToString(), "", SettingPath.TimerSrvIniPath);
-                    if (item.Length > 0)
+                    int num = IniFileHandler.GetPrivateProfileInt("TVTEST", "Num", 0, SettingPath.TimerSrvIniPath);
+                    for (uint i = 0; i < num; i++)
                     {
-                        listBox_bon.Items.Add(item);
+                        string item = IniFileHandler.GetPrivateProfileString("TVTEST", i.ToString(), "", SettingPath.TimerSrvIniPath);
+                        if (item.Length > 0)
+                        {
+                            listBox_bon.Items.Add(item);
+                        }
                     }
                 }
             }
@@ -139,16 +142,19 @@ namespace EpgTimer.Setting
                 Settings.Instance.NwTvModeTCP = false;
             }
 
-            IniFileHandler.WritePrivateProfileString("TVTEST", "Num", listBox_bon.Items.Count.ToString(), SettingPath.TimerSrvIniPath);
-            for (int i = 0; i < listBox_bon.Items.Count; i++)
+            if (listBox_bon.IsEnabled)
             {
-                string val = listBox_bon.Items[i] as string;
-                IniFileHandler.WritePrivateProfileString("TVTEST", i.ToString(), val, SettingPath.TimerSrvIniPath);
+                IniFileHandler.WritePrivateProfileString("TVTEST", "Num", listBox_bon.Items.Count.ToString(), SettingPath.TimerSrvIniPath);
+                for (int i = 0; i < listBox_bon.Items.Count; i++)
+                {
+                    string val = listBox_bon.Items[i] as string;
+                    IniFileHandler.WritePrivateProfileString("TVTEST", i.ToString(), val, SettingPath.TimerSrvIniPath);
+                }
             }
 
             Settings.Instance.FilePlayExe = textBox_playExe.Text;
             Settings.Instance.FilePlayCmd = textBox_playCmd.Text;
-
+            Settings.Instance.FilePlayOnAirWithExe = checkBox_playOnAirWithExe.IsChecked == true;
         }
 
         private void button_exe_Click(object sender, RoutedEventArgs e)

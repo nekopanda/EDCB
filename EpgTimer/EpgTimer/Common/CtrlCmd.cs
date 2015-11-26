@@ -114,6 +114,10 @@ namespace EpgTimer
         /// <summary>オブジェクトの型に従ってストリームから読み込む</summary>
         public void Read<T>(ref T v)
         {
+            if (Stream.Position >= tailPos)
+            {
+                throw new EndOfStreamException("サイズフィールドの値を超えて読み込もうとしました");
+            }
             // このメソッドがジェネリックなのは単にこのBoxingのため
             object o = v;
             if (v is byte) o = ReadBytes(1)[0];
@@ -336,8 +340,10 @@ namespace EpgTimer
         CMD_EPG_SRV_ENUM_PLUGIN = 1061,
         /// <summary>TVTestのチャンネル切り替え用の情報を取得する</summary>
         CMD_EPG_SRV_GET_CHG_CH_TVTEST = 1062,
-        /// <summary>設定ファイル(ini)の更新を通知させる</summary>
+        /// <summary>設定ファイル(ini)の更新を通知させる (tkntrec氏版)</summary>
         CMD_EPG_SRV_PROFILE_UPDATE = 1063,
+        /// <summary>INIファイルを更新する</summary>
+        CMD_EPG_SRV_UPDATE_SETTING = 1064,
         /// <summary>ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え</summary>
         CMD_EPG_SRV_NWTV_SET_CH = 1070,
         /// <summary>ネットワークモードで起動中のEpgDataCap_Bonを終了</summary>
@@ -360,6 +366,8 @@ namespace EpgTimer
         CMD_EPG_SRV_NWPLAY_SET_IP = 1086,
         /// <summary>ストリーム配信用ファイルをタイムシフトモードで開く</summary>
         CMD_EPG_SRV_NWPLAY_TF_OPEN = 1087,
+        /// <summary>録画ファイルのネットワークパスを取得</summary>
+        CMD_EPG_SRV_GET_NETWORK_PATH = 1299,
         /// <summary>ダイアログを前面に表示</summary>
         CMD_TIMER_GUI_SHOW_DLG = 101,
         /// <summary>予約一覧の情報が更新された</summary>
@@ -566,6 +574,8 @@ namespace EpgTimer
         public ErrCode SendChgProtectRecInfo(List<RecFileInfo> val) { return SendCmdData2(CtrlCmd.CMD_EPG_SRV_CHG_PROTECT_RECINFO2, val); }
         /// <summary>指定キーワードで番組情報を検索する</summary>
         public ErrCode SendSearchPg(List<EpgSearchKeyInfo> key, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_SEARCH_PG2, key, ref o); }
+        /// <summary>録画ファイルのネットワークパスを取得</summary>
+        public ErrCode SendGetRecFileNetworkPath(string path, ref string val) { object o = val; var ret = SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_GET_NETWORK_PATH, path, ref o); val = (string)o; return ret; }
 
         /// <summary>指定キーワードで番組情報を検索する(キーごと)</summary>
         public ErrCode SendSearchPgByKey(List<EpgSearchKeyInfo> key, ref List<List<EpgEventInfo>> val)
@@ -618,6 +628,15 @@ namespace EpgTimer
             ErrCode ret = SendCmdStream(CtrlCmd.CMD_EPG_SRV_FILE_COPY, w.Stream, ref res);
             resVal = ret == ErrCode.CMD_SUCCESS ? res.ToArray() : null;
             return ret;
+        }
+
+        /// <summary>INIファイルを更新する</summary>
+        public ErrCode SendUpdateSetting(string val)
+        {
+            var w = new CtrlCmdWriter(new MemoryStream());
+            w.Write(val);
+            MemoryStream res = null;
+            return SendCmdStream(CtrlCmd.CMD_EPG_SRV_UPDATE_SETTING, w.Stream, ref res);
         }
 
         private ErrCode SendPipe(CtrlCmd param, MemoryStream send, ref MemoryStream res)

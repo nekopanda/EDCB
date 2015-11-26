@@ -38,8 +38,12 @@ namespace EpgTimer
                 setEpgView.SaveSetting();
                 setOtherAppView.SaveSetting();
 
+                // Common.ini や EpgTimerSrv.ini の更新分をサーバー側へ通知する
+                IniSetting.Instance.UpToDate();
+
                 Settings.SaveToXmlFile();
-                ChSet5.SaveFile();
+                // EpgTimer 側から更新することはないはず
+                //ChSet5.SaveFile();
                 CommonManager.Instance.ReloadCustContentColorList();
             }
             catch (Exception ex)
@@ -53,6 +57,7 @@ namespace EpgTimer
 
         private void button_cancel_Click(object sender, RoutedEventArgs e)
         {
+            IniSetting.Instance.Clear();
             this.DialogResult = false;
         }
 

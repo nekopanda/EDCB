@@ -39,6 +39,8 @@ namespace EpgTimer
             new List<ICommand>{EpgCmds.ProtectChange},
             new List<ICommand>{EpgCmds.ShowAddDialog},
 
+            new List<ICommand>{EpgCmds.JumpReserve},
+            new List<ICommand>{EpgCmds.JumpTuner},
             new List<ICommand>{EpgCmds.JumpTable},
             new List<ICommand>{EpgCmds.ToAutoadd},
             new List<ICommand>{EpgCmds.ReSearch},
@@ -115,6 +117,7 @@ namespace EpgTimer
                 bx.SourceBox = this.listBox_Default;
                 bx.TargetBox = this.listBox_Setting;
                 bx.DuplicationSpecific = new List<object> { EpgCmdsEx.SeparatorString };
+                bx.DoubleClickMoveAllow();
                 button_reset.Click += new RoutedEventHandler(bx.button_reset_Click);
                 button_add.Click += new RoutedEventHandler(bx.button_add_Click);
                 button_del.Click += new RoutedEventHandler(bx.button_del_Click);
