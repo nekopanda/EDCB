@@ -92,7 +92,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                 recInfoText.FontSize = sizeNormal;
                 //recInfoText.FontWeight = FontWeights.Normal;
                 recInfoText.Foreground = colorTitle;
-                recInfoText.Margin = new Thickness(indentTitle, 0, 0, Math.Floor(sizeTitle / 3));
+                recInfoText.Margin = new Thickness(indentTitle, 0, 2, 4);
                 recInfoText.LineHeight = Math.Max(Settings.Instance.TunerFontHeight, sizeNormal + 2);
             }
             else
@@ -117,15 +117,16 @@ namespace EpgTimer.TunerReserveViewCtrl
             titleText.FontWeight = weightTitle;
             titleText.Foreground = colorTitle;
             titleText.VerticalAlignment = VerticalAlignment.Center;
-            titleText.Margin = new Thickness(indentTitle, 0, 0, 2);
+            titleText.Margin = new Thickness(indentTitle, 0, 2, 3);
             titleText.LineHeight = Math.Max(Settings.Instance.TunerFontHeightService, sizeTitle + 2);
 
-            infoText.Text = resItem.EventName;
+            //必ず文字単位で折り返すためにZWSPを挿入  (\\w を使うと記号の間にZWSPが入らない)
+            infoText.Text = System.Text.RegularExpressions.Regex.Replace(resItem.EventName, ".", "$0\u200b");
             infoText.FontFamily = fontNormal;
             infoText.FontSize = sizeNormal;
             //infoText.FontWeight = FontWeights.Normal;
             infoText.Foreground = colorNormal;
-            infoText.Margin = new Thickness(indentNormal, 1, 0, 2);
+            infoText.Margin = new Thickness(indentNormal, 0, 2, 3);
             infoText.LineHeight = Math.Max(Settings.Instance.TunerFontHeight, sizeNormal + 2);
         }
 

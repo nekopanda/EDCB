@@ -92,27 +92,35 @@ namespace EpgTimer.EpgView
             minText.FontSize = sizeMin;
             minText.FontWeight = titleWeight;
             minText.Foreground = CommonManager.Instance.CustTitle1Color;
-            //minText.Margin = new Thickness(0, 0, 0, 0);
+            minText.Margin = new Thickness(1, 1, 0, 0);
             minText.LineHeight = Settings.Instance.FontHeightTitle;
 
             if (epgInfo.ShortInfo != null)
             {
-                //必ず文字単位で折り返すためにZWSPを挿入
-                titleText.Text = System.Text.RegularExpressions.Regex.Replace(epgInfo.ShortInfo.event_name, "\\w", "$0\u200b");
+                //必ず文字単位で折り返すためにZWSPを挿入  (\\w を使うと記号の間にZWSPが入らない)
+                titleText.Text = System.Text.RegularExpressions.Regex.Replace(epgInfo.ShortInfo.event_name, ".", "$0\u200b");
                 titleText.FontFamily = fontTitle;
                 titleText.FontSize = sizeTitle;
                 titleText.FontWeight = titleWeight;
                 titleText.Foreground = CommonManager.Instance.CustTitle1Color;
-                titleText.Margin = new Thickness(indentTitle, 0, 0, 4);
-                titleText.LineHeight = Math.Max(Settings.Instance.FontHeightTitle, sizeTitle + 2); 
+                titleText.Margin = new Thickness(indentTitle, 1, 3, 3);
+                titleText.LineHeight = Math.Max(Settings.Instance.FontHeightTitle, sizeTitle + 2);
 
-                infoText.Text = System.Text.RegularExpressions.Regex.Replace(epgInfo.ShortInfo.text_char, "\\w", "$0\u200b");
-                infoText.FontFamily = fontNormal;
-                infoText.FontSize = sizeNormal;
-                //infoText.FontWeight = FontWeights.Normal;
-                infoText.Foreground = CommonManager.Instance.CustTitle2Color;
-                infoText.Margin = new Thickness(indentNormal, 0, 0, 3);
-                infoText.LineHeight = Math.Max(Settings.Instance.FontHeight, sizeNormal + 2);
+                if (epgInfo.ShortInfo.text_char.Length == 0)
+                {
+                    infoText.Visibility = Visibility.Collapsed;
+                }
+                else
+                {
+                    infoText.Visibility = Visibility.Visible;
+                    infoText.Text = System.Text.RegularExpressions.Regex.Replace(epgInfo.ShortInfo.text_char, ".", "$0\u200b");
+                    infoText.FontFamily = fontNormal;
+                    infoText.FontSize = sizeNormal;
+                    //infoText.FontWeight = FontWeights.Normal;
+                    infoText.Foreground = CommonManager.Instance.CustTitle2Color;
+                    infoText.Margin = new Thickness(indentNormal, 1, 3, 3);
+                    infoText.LineHeight = Math.Max(Settings.Instance.FontHeight, sizeNormal + 2);
+                }
             }
             else
             {
