@@ -156,7 +156,8 @@ namespace EpgTimer.EpgView
                 //ベースラインの位置
                 double dpix = x * m.M11;
                 double dpiy = (totalHeight + baseline) * m.M22;
-                Point origin = new Point(dpix / m.M11, dpiy / m.M22);
+                // ビットマップフォントがかすれる問題 とりあえず整数にしておく
+                Point origin = new Point(Math.Round(dpix / m.M11), Math.Round(dpiy / m.M22)); 
 
                 //メイリオみたいに行間のあるフォントと MS P ゴシックみたいな行間のないフォントがあるので
                 //なんとなく行間を作ってみる。
@@ -192,7 +193,7 @@ namespace EpgTimer.EpgView
                         {
                             //次の行いける
                             dpiy = (totalHeight + baseline) * m.M22;
-                            origin = new Point(dpix / m.M11, dpiy / m.M22);
+                            origin = new Point(Math.Round(dpix / m.M11), Math.Round(dpiy / m.M22));
                             totalHeight += Math.Max(fontHeight, fontSize + 2);
                             totalWidth = 0;
 

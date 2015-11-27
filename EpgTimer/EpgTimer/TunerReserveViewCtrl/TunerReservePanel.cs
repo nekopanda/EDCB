@@ -37,8 +37,9 @@ namespace EpgTimer.TunerReserveViewCtrl
                     return false;
                 }
 
-                //ベースラインの位置
-                Point origin = new Point(x, Math.Round(totalHeight + baseline));
+                // ベースラインの位置の計算
+                // ビットマップフォントがかすれる問題 とりあえず整数にしておく
+                Point origin = new Point(Math.Round(x), Math.Round(totalHeight + baseline));
 
                 //メイリオみたいに行間のあるフォントと MS P ゴシックみたいな行間のないフォントがあるので
                 //なんとなく行間を作ってみる。
@@ -88,7 +89,7 @@ namespace EpgTimer.TunerReserveViewCtrl
 
                             dc.DrawGlyphRun(brush, glyphRun);
 
-                            origin = new Point(x, Math.Round(totalHeight + baseline));
+                            origin = new Point(Math.Round(x), Math.Round(totalHeight + baseline));
                             totalHeight += Math.Max(fontHeight, fontSize + 2);
                             totalWidth = 0;
                             glyphIndexes = new List<ushort>();
@@ -108,7 +109,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                     dc.DrawGlyphRun(brush, glyphRun);
                 }
             }
-            useHeight = Math.Floor(totalHeight);
+            useHeight = totalHeight;
             return true;
         }
         protected override void OnRender(DrawingContext dc)
@@ -121,12 +122,11 @@ namespace EpgTimer.TunerReserveViewCtrl
 
             try
             {
-                // ビットマップフォントがかすれる問題 とりあえず整数にしておく
                 double sizeMin = Settings.Instance.TunerFontSize;
                 double sizeTitle = Settings.Instance.TunerFontSizeService;
                 double sizeNormal = Settings.Instance.TunerFontSize;
-                double indentTitle = Math.Floor(sizeMin * 1.7);
-                double indentNormal = Math.Floor(Settings.Instance.TunerTitleIndent ? indentTitle : 2);
+                double indentTitle = sizeMin * 1.7;
+                double indentNormal = Settings.Instance.TunerTitleIndent ? indentTitle : 2;
                 SolidColorBrush colorTitle = CommonManager.Instance.CustTunerServiceColor;
                 SolidColorBrush colorNormal = CommonManager.Instance.CustTunerTextColor;
 
@@ -145,10 +145,10 @@ namespace EpgTimer.TunerReserveViewCtrl
                 {
                     colorTitle = Settings.Instance.TunerColorModeUse == true ? info.ForeColorPri : colorTitle;
 
-                    double x = info.LeftPos;  // Math.Floor(info.LeftPos);
-                    double y = info.TopPos; // Math.Floor(info.TopPos);
-                    double height = Math.Max(info.Height, 0); // Math.Ceiling(Math.Max(info.Height, 0)); // 1行分の高さを収めるため切り上げておく
-                    double width = info.Width; // Math.Floor(info.Width);
+                    double x = info.LeftPos;
+                    double y = info.TopPos;
+                    double height = Math.Max(info.Height, 0);
+                    double width = info.Width;
 
                     dc.DrawRectangle(Brushes.LightGray, null, new Rect(x, y, width, height));
                     if (height > 2)
