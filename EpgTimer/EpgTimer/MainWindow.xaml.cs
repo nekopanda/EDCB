@@ -88,7 +88,10 @@ namespace EpgTimer
 
             // Icon化起動すると Windows_Loaded イベントが来ないので
             // InitializeComponent 後に ConnectCmd しておく。
-            ConnectCmd(false);
+            if (Settings.Instance.NWMode == false || Settings.Instance.WakeReconnectNW == true)
+            {
+                ConnectCmd(false);
+            }
 
             initExe = true;
 
