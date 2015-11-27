@@ -399,14 +399,10 @@ namespace EpgTimer
                 r.Read(ref RecFileNameList);
                 r.Read(ref UnusedParam1);
             }
-            try
+            if (!r.EOF && version >= 6)
             {
-                if (version >= 6)
-                {
-                    r.Read(ref AutoAddInfo);
-                }
+                r.Read(ref AutoAddInfo);
             }
-            catch(EndOfStreamException) { /* 同一バージョン内で protocol を変更するとここに来る。本当はダメだよ！ */ }
             r.End();
         }
     }
@@ -629,16 +625,12 @@ namespace EpgTimer
             {
                 r.Read(ref ProtectFlag);
             }
-            try
+            if (!r.EOF && version >= 6)
             {
-                if (version >= 6)
-                {
-                    r.Read(ref FileExist);
-                    r.Read(ref AutoAddInfoFlag);
-                    r.Read(ref AutoAddInfo);
-                }
+                r.Read(ref FileExist);
+                r.Read(ref AutoAddInfoFlag);
+                r.Read(ref AutoAddInfo);
             }
-            catch (EndOfStreamException) { /* 同一バージョン内で protocol を変更するとここに来る。本当はダメだよ！ */ }
             r.End();
         }
     }
@@ -1373,16 +1365,12 @@ namespace EpgTimer
                 r.Read(ref chkRecEnd);
                 r.Read(ref chkRecDay);
             }
-            try
+            if (!r.EOF && version >= 5)
             {
-                if (version >= 5)
-                {
-                    r.Read(ref chkRecNoService);
-                    r.Read(ref chkDurationMin);
-                    r.Read(ref chkDurationMax);
-                }
+                r.Read(ref chkRecNoService);
+                r.Read(ref chkDurationMin);
+                r.Read(ref chkDurationMax);
             }
-            catch (EndOfStreamException) { /* 同一バージョン内で protocol を変更するとここに来る。本当はダメだよ！ */ }
             r.End();
         }
     }
@@ -1440,15 +1428,11 @@ namespace EpgTimer
             {
                 r.Read(ref addCount);
             }
-            try
+            if (!r.EOF && version >= 6)
             {
-                if (version >= 6)
-                {
-                    r.Read(ref reserveList);
-                    r.Read(ref recFileList);
-                }
+                r.Read(ref reserveList);
+                r.Read(ref recFileList);
             }
-            catch (EndOfStreamException) { /* 同一バージョン内で protocol を変更するとここに来る。本当はダメだよ！ */ }
             r.End();
         }
     }

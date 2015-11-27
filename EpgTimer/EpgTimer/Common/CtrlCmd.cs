@@ -222,6 +222,7 @@ namespace EpgTimer
             Stream.Seek(tailPos, SeekOrigin.Begin);
             tailPos = long.MaxValue;
         }
+        public bool EOF { get { return (Stream.Position == tailPos); } }
     }
 
     public enum CtrlCmd : uint
