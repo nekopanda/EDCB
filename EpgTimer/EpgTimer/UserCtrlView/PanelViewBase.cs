@@ -48,20 +48,26 @@ namespace EpgTimer.UserCtrlView
         protected virtual void SetPopup(object item) { return; }
         protected virtual FrameworkElement PopUp { get { return new FrameworkElement(); } }
         protected ScrollViewer scroll;
-        protected PanelBase viewPanel;
         protected Canvas cnvs;
 
         public virtual void ClearInfo()
         {
-            viewPanel.ReleaseMouseCapture();
+            cnvs.ReleaseMouseCapture();
             isDrag = false;
             isDragMoved = false;
 
             cnvs.Height = 0;
             cnvs.Width = 0;
-            viewPanel.ClearInfo();
-            viewPanel.Height = 0;
-            viewPanel.Width = 0;
+
+            for(int i = 0; i < cnvs.Children.Count; i++)
+            {
+                var panel = cnvs.Children[i] as PanelBase;
+                if (panel != null)
+                {
+                    panel.ClearInfo();
+                    break;
+                }
+            }
 
             PopupClear();
         }
@@ -85,7 +91,7 @@ namespace EpgTimer.UserCtrlView
                     return false;
                 }
 
-                Point itemPos = Mouse.GetPosition(viewPanel);
+                Point itemPos = Mouse.GetPosition(cnvs); //ProgramViewのマウスイベントを親要素(canvas)に集約する
                 object item = GetPopupItem(itemPos);
 
                 if (item != lastPopupInfo)
@@ -110,40 +116,37 @@ namespace EpgTimer.UserCtrlView
                 ScrollChanged(this, e);
             }
         }
-        protected virtual void viewPanel_MouseMove(object sender, MouseEventArgs e)
+        protected virtual void canvas_MouseMove(object sender, MouseEventArgs e)
         {
             try
             {
-                if (sender is PanelBase)
+                if (e.LeftButton == MouseButtonState.Pressed && isDrag == true)
                 {
-                    if (e.LeftButton == MouseButtonState.Pressed && isDrag == true)
+                    isDragMoved = true;
+
+                    Point CursorPos = Mouse.GetPosition(null);
+                    double MoveX = lastDownMousePos.X - CursorPos.X;
+                    double MoveY = lastDownMousePos.Y - CursorPos.Y;
+
+                    double OffsetH = 0;
+                    double OffsetV = 0;
+                    MoveX *= DragScroll;
+                    MoveY *= DragScroll;
+                    OffsetH = lastDownHOffset + MoveX;
+                    OffsetV = lastDownVOffset + MoveY;
+                    if (OffsetH < 0) OffsetH = 0;
+                    if (OffsetV < 0) OffsetV = 0;
+
+                    scroll.ScrollToHorizontalOffset(Math.Floor(OffsetH));
+                    scroll.ScrollToVerticalOffset(Math.Floor(OffsetV));
+                }
+                else
+                {
+                    if (IsPopupEnabled == true)
                     {
-                        isDragMoved = true;
-
-                        Point CursorPos = Mouse.GetPosition(null);
-                        double MoveX = lastDownMousePos.X - CursorPos.X;
-                        double MoveY = lastDownMousePos.Y - CursorPos.Y;
-
-                        double OffsetH = 0;
-                        double OffsetV = 0;
-                        MoveX *= DragScroll;
-                        MoveY *= DragScroll;
-                        OffsetH = lastDownHOffset + MoveX;
-                        OffsetV = lastDownVOffset + MoveY;
-                        if (OffsetH < 0) OffsetH = 0;
-                        if (OffsetV < 0) OffsetV = 0;
-
-                        scroll.ScrollToHorizontalOffset(Math.Floor(OffsetH));
-                        scroll.ScrollToVerticalOffset(Math.Floor(OffsetV));
-                    }
-                    else
-                    {
-                        if (IsPopupEnabled == true)
+                        if (PopupItem() == false)
                         {
-                            if (PopupItem() == false)
-                            {
-                                PopupClear();
-                            }
+                            PopupClear();
                         }
                     }
                 }
@@ -153,20 +156,20 @@ namespace EpgTimer.UserCtrlView
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-        protected virtual void viewPanel_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        protected virtual void canvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             try
             {
                 lastDownMousePos = Mouse.GetPosition(null);
                 lastDownHOffset = scroll.HorizontalOffset;
                 lastDownVOffset = scroll.VerticalOffset;
-                viewPanel.CaptureMouse();
+                cnvs.CaptureMouse();
                 isDrag = true;
                 isDragMoved = false;
 
                 if (e.ClickCount == 2)
                 {
-                    Point cursorPos = Mouse.GetPosition(viewPanel);
+                    Point cursorPos = Mouse.GetPosition(cnvs);
                     if (LeftDoubleClick != null)
                     {
                         LeftDoubleClick(sender, cursorPos);
@@ -178,17 +181,17 @@ namespace EpgTimer.UserCtrlView
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-        protected virtual void viewPanel_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        protected virtual void canvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             try
             {
-                viewPanel.ReleaseMouseCapture();
+                cnvs.ReleaseMouseCapture();
                 isDrag = false;
                 if (isDragMoved == false)
                 {
                     if (IsSingleClickOpen == true)
                     {
-                        Point cursorPos = Mouse.GetPosition(viewPanel);
+                        Point cursorPos = Mouse.GetPosition(cnvs);
                         if (LeftDoubleClick != null)
                         {
                             LeftDoubleClick(sender, cursorPos);
@@ -203,23 +206,23 @@ namespace EpgTimer.UserCtrlView
             }
         }
 
-        protected virtual void viewPanel_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        protected virtual void canvas_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
-            viewPanel.ReleaseMouseCapture();
+            cnvs.ReleaseMouseCapture();
             isDrag = false;
             lastDownMousePos = Mouse.GetPosition(null);
             lastDownHOffset = scroll.HorizontalOffset;
             lastDownVOffset = scroll.VerticalOffset;
             if (e.ClickCount == 1)
             {
-                Point cursorPos = Mouse.GetPosition(viewPanel);
+                Point cursorPos = Mouse.GetPosition(cnvs);
                 if (RightClick != null)
                 {
                     RightClick(sender, cursorPos);
                 }
             }
         }
-        protected virtual void viewPanel_MouseLeave(object sender, MouseEventArgs e)
+        protected virtual void canvas_MouseLeave(object sender, MouseEventArgs e)
         {
             if (IsPopupEnabled == true)
             {

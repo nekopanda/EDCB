@@ -28,7 +28,6 @@ namespace EpgTimer.EpgView
             InitializeComponent();
 
             base.scroll = scrollViewer;
-            base.viewPanel = epgViewPanel;
             base.cnvs = canvas;
         }
 
