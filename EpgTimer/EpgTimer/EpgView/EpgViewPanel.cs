@@ -20,9 +20,18 @@ namespace EpgTimer.EpgView
             set
             {
                 items = value;
-                CreateDrawTextList();
             }
         }
+
+        public EpgViewPanel()
+        {
+            // これらの設定を OnRender 中に行うと、再度 OnRender イベントが発生してしまうようだ。
+            // 2度同じ Render を行うことになりパフォーマンスを落とすので、OnRender の外に出しておく。
+            this.VisualTextRenderingMode = TextRenderingMode.ClearType;
+            this.VisualTextHintingMode = TextHintingMode.Fixed;
+            this.UseLayoutRounding = true;
+        }
+
 
         public override void ClearInfo()
         {
@@ -34,9 +43,6 @@ namespace EpgTimer.EpgView
             textDrawDict = new Dictionary<ProgramViewItem, List<TextDrawItem>>();
             Matrix m = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice;
 
-            this.VisualTextRenderingMode = TextRenderingMode.ClearType;
-            this.VisualTextHintingMode = TextHintingMode.Fixed;
-            this.UseLayoutRounding = true;
             if (Items == null)
             {
                 return;
@@ -227,9 +233,6 @@ namespace EpgTimer.EpgView
         {
             Brush bgBrush = Background;
             dc.DrawRectangle(bgBrush, null, new Rect(RenderSize));
-            this.VisualTextRenderingMode = TextRenderingMode.ClearType;
-            this.VisualTextHintingMode = TextHintingMode.Fixed;
-            this.UseLayoutRounding = true;
 
             if (Items == null)
             {
@@ -238,8 +241,11 @@ namespace EpgTimer.EpgView
             
             try
             {
-                double sizeNormal = Settings.Instance.FontSize;
-                double sizeTitle = Settings.Instance.FontSizeTitle;
+                // Items 設定時に CreateDrawTextList を行うと、番組表に複数のタブを設定していると
+                // 全てのタブの GlyphRun を一度に生成しようとするので、最初の表示までに多くの時間がかかる。
+                // 表示しようとするタブのみ GlyphRun を行うことで、最初の応答時間を削減することにする。
+                CreateDrawTextList();
+
                 foreach (ProgramViewItem info in Items)
                 {
                     dc.DrawRectangle(bgBrush, null, new Rect(info.LeftPos, info.TopPos, info.Width, 1));
