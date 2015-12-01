@@ -91,11 +91,11 @@ namespace EpgTimer.TunerReserveViewCtrl
                 minText.Visibility = Visibility.Collapsed;
 
                 //'録画中'を表示
+                statusText.Text = viewInfo.StatusTuner;
                 statusText.Visibility = Visibility.Collapsed;
                 if (statusText.Text != "")
                 {
                     statusText.Visibility = Visibility.Visible;
-                    statusText.Text = viewInfo.StatusTuner;
                     statusText.FontFamily = fontNormal;
                     statusText.FontSize = sizeNormal;
                     //statusText.FontWeight = FontWeights.Normal;
