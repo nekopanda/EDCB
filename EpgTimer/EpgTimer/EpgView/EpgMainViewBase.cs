@@ -35,21 +35,10 @@ namespace EpgTimer.EpgView
 
             //コマンド集の初期化の続き
             mc.SetFuncGetDataList(isAll => isAll == true ? reserveList.GetDataList() : reserveList.GetHitDataList(clickPos));
-            mc.SetFuncGetEpgEventList(() =>
+            mc.SetFuncGetEpgEventList(() => 
             {
-                try
-                {
-                    int timeIndex = (int)(clickPos.Y / (60 * Settings.Instance.MinHeight));
-                    if (0 <= timeIndex && timeIndex < timeList.Count)
-                    {
-                        return timeList.Values[timeIndex].GetHitDataList(clickPos);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }
-                return new List<EpgEventInfo>();
+                ProgramViewItem hitItem = programView.GetProgramViewData(clickPos);
+                return hitItem != null && hitItem.EventInfo !=null ? mutil.ToList(hitItem.EventInfo) : new List<EpgEventInfo>();
             });
         }
         public override void RefreshMenu()
@@ -64,7 +53,6 @@ namespace EpgTimer.EpgView
             timeView = tv;
             horizontalViewScroll = hv;
 
-            programView.PreviewMouseWheel += new MouseWheelEventHandler(epgProgramView_PreviewMouseWheel);
             programView.ScrollChanged += new ScrollChangedEventHandler(epgProgramView_ScrollChanged);
             programView.LeftDoubleClick += new ProgramView.PanelViewClickHandler(epgProgramView_LeftDoubleClick);
             programView.RightClick += new ProgramView.PanelViewClickHandler(epgProgramView_RightClick);
@@ -150,14 +138,7 @@ namespace EpgTimer.EpgView
         /// <summary>表示スクロールイベント呼び出し</summary>
         protected void epgProgramView_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            vutil.view_ScrollChanged<ProgramView>(sender, e,
-                programView.scrollViewer, timeView.scrollViewer, horizontalViewScroll);
-        }
-
-        /// <summary>マウスホイールイベント呼び出し</summary>
-        protected void epgProgramView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            vutil.view_PreviewMouseWheel<ProgramView>(sender, e, programView.scrollViewer, Settings.Instance.MouseScrollAuto, Settings.Instance.ScrollSize);
+            programView.view_ScrollChanged(programView.scrollViewer, timeView.scrollViewer, horizontalViewScroll);
         }
 
         /// <summary>左ボタンダブルクリックイベント呼び出し/summary>
@@ -187,16 +168,16 @@ namespace EpgTimer.EpgView
             }
         }
 
-        protected override void MoveToReserveItem(ReserveItem target, bool IsMarking)
+        protected override void MoveToReserveItem(ReserveData target, bool IsMarking)
         {
-            uint ID = target.ReserveInfo.ReserveID;
+            uint ID = target.ReserveID;
             ReserveViewItem target_item = this.reserveList.Find(item => item.ReserveInfo.ReserveID == ID);
             this.programView.ScrollToFindItem(target_item, IsMarking);
         }
 
-        protected override void MoveToProgramItem(SearchItem target, bool IsMarking)
+        protected override void MoveToProgramItem(EpgEventInfo target, bool IsMarking)
         {
-            ulong PgKey = target.EventInfo.Create64PgKey();
+            ulong PgKey = target.Create64PgKey();
             ProgramViewItem target_item = this.programList.Find(item => item.EventInfo.Create64PgKey() == PgKey);
             this.programView.ScrollToFindItem(target_item, IsMarking);
         }

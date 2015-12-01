@@ -21,27 +21,85 @@ namespace EpgTimer
         public bool DuplicationAllowed { set; get; }//項目の重複を全て許可
         public IList DuplicationSpecific { set; get; }//特定の項目のみ重複を許可
 
-        //ダブルクリックでの移動を行うかどうか
+        /// <summary>ソース側のEnter、ターゲット側のDelete、Escによる選択解除を有効にする</summary>
+        public void KeyActionAllow()
+        {
+            if (SourceBox != null) sourceBoxKeyEnable(SourceBox, button_add_Click);
+            if (TargetBox != null) targetBoxKeyEnable(TargetBox, button_del_Click);
+        }
+        public void sourceBoxKeyEnable(ListBox box, KeyEventHandler add_handler)
+        {
+            if (box == null) return;
+            //
+            box.PreviewKeyDown += getBoxKeyEnableHandler(box, add_handler, true);
+        }
+        public void targetBoxKeyEnable(ListBox box, KeyEventHandler delete_handler)
+        {
+            if (box == null) return;
+            //
+            box.PreviewKeyDown += getBoxKeyEnableHandler(box, delete_handler, false);
+        }
+        private KeyEventHandler getBoxKeyEnableHandler(ListBox box, KeyEventHandler handler, bool src)
+        {
+            return new KeyEventHandler((sender, e) =>
+            {
+                if (Keyboard.Modifiers == ModifierKeys.None)
+                {
+                    switch (e.Key)
+                    {
+                        case Key.Escape:
+                            if (box.SelectedItem != null)
+                            {
+                                box.UnselectAll();
+                                e.Handled = true;
+                            }
+                            break;
+                        case Key.Enter:
+                            if (src == true)
+                            {
+                                handler(sender, e);
+                                //一つ下へ移動する。ただし、カーソル位置は正しく動かない。
+                                int pos = box.SelectedIndex + 1;
+                                box.SelectedIndex = Math.Max(0, Math.Min(pos, box.Items.Count - 1));
+                                box.ScrollIntoViewFix(box.SelectedIndex);
+                                e.Handled = true;
+                            }
+                            break;
+                        case Key.Delete:
+                            if (src == false)
+                            {
+                                handler(sender, e);
+                                e.Handled = true;
+                            }
+                            break;
+                    }
+                }
+            });
+        }
+
+        /// <summary>ダブルクリックでの移動を行うよう設定する</summary>
         public void DoubleClickMoveAllow()
         {
-            if (SourceBox != null) SourceBox.MouseDoubleClick += new MouseButtonEventHandler(sourceBox_MouseDoubleClick);
-            if (TargetBox != null) TargetBox.MouseDoubleClick += new MouseButtonEventHandler(targetBox_MouseDoubleClick);
+            if (SourceBox != null) doubleClickSetter(SourceBox, sourceBox_MouseDoubleClick);
+            if (TargetBox != null) doubleClickSetter(TargetBox, targetBox_MouseDoubleClick);
         }
-
+        public void doubleClickSetter(ListBox box, MouseButtonEventHandler handler)
+        {
+            if (box == null) return;
+            //
+            if (box.ItemContainerStyle == null)
+            {
+                box.ItemContainerStyle = (Style)new Style(typeof(ListBoxItem));
+            }
+            box.ItemContainerStyle.Setters.Add(new EventSetter(Button.MouseDoubleClickEvent, new MouseButtonEventHandler(handler)));
+        }
         public void sourceBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (SourceBox.IsMouseCaptured)
-            {
-                addItems(SourceBox, TargetBox);
-            }
+            addItems(SourceBox, TargetBox);
         }
-
         public void targetBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (TargetBox.IsMouseCaptured)
-            {
-                deleteItems(TargetBox);
-            }
+            deleteItems(TargetBox);
         }
 
         /// <summary>全アイテム追加</summary>
@@ -158,7 +216,7 @@ namespace EpgTimer
                 if (target.Items.Count != 0 && LastIndex >=0)
                 {
                     target.SelectedIndex = LastIndex;
-                    target.ScrollIntoView(target.SelectedItem);
+                    target.ScrollIntoViewFix(LastIndex);
                 }
             }
             catch (Exception ex)
@@ -190,9 +248,10 @@ namespace EpgTimer
 
                 if (target.Items.Count != 0)
                 {
+                    target.Items.Refresh();
                     newSelectedIndex = (newSelectedIndex == target.Items.Count ? newSelectedIndex - 1 : newSelectedIndex);
                     target.SelectedIndex = newSelectedIndex;
-                    target.ScrollIntoView(target.SelectedItem);
+                    target.ScrollIntoViewFix(newSelectedIndex);
                 }
             }
             catch (Exception ex)
@@ -213,14 +272,13 @@ namespace EpgTimer
                 target.Items.RemoveAt(target.SelectedIndex);
                 target.Items.Insert(newIndex, temp);
                 target.SelectedIndex = newIndex;
-                target.ScrollIntoView(target.SelectedItem);
+                target.ScrollIntoViewFix(newIndex);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-
 
     }
 }

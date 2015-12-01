@@ -11,8 +11,6 @@ namespace EpgTimer.UserCtrlView
 {
     public class PanelBase : FrameworkElement //とりあえず。TunerReservePanelとEpgViewPanel結構実装違う
     {
-        protected ViewUtil vutil = CommonManager.Instance.VUtil;
- 
         public static readonly DependencyProperty BackgroundProperty =
             Panel.BackgroundProperty.AddOwner(typeof(PanelBase));
 
@@ -22,7 +20,46 @@ namespace EpgTimer.UserCtrlView
             get { return (Brush)GetValue(BackgroundProperty); }
         }
 
-        public virtual void ClearInfo() { }
+        public class ItemFont
+        {
+            public string FamilyName { get; private set; }
+            public bool IsBold { get; private set; }
+            public GlyphTypeface GlyphType { get; private set; }
+            public ushort[] GlyphIndexCache { get; private set; }
+            public float[] GlyphWidthCache { get; private set; }
+
+            public ItemFont(string familyName, bool isBold)
+            {
+                FamilyName = familyName;
+                IsBold = isBold;
+                GlyphTypeface glyphType = null;
+                if ((new Typeface(new FontFamily(FamilyName),
+                                  FontStyles.Normal,
+                                  IsBold ? FontWeights.Bold : FontWeights.Normal,
+                                  FontStretches.Normal)).TryGetGlyphTypeface(out glyphType) == false)
+                {
+                    (new Typeface(new FontFamily(System.Drawing.SystemFonts.DefaultFont.Name),
+                                  FontStyles.Normal,
+                                  IsBold ? FontWeights.Bold : FontWeights.Normal,
+                                  FontStretches.Normal)).TryGetGlyphTypeface(out glyphType);
+                }
+                GlyphType = glyphType;
+            }
+            public void PrepareCache()
+            {
+                if (GlyphIndexCache == null)
+                {
+                    GlyphIndexCache = new ushort[ushort.MaxValue + 1];
+                    GlyphWidthCache = new float[ushort.MaxValue + 1];
+                }
+            }
+            public void ClearCache()
+            {
+                GlyphIndexCache = null;
+                GlyphWidthCache = null;
+            }
+        }
+       
     }
     
     public class PanelViewBase : UserControl
@@ -43,6 +80,8 @@ namespace EpgTimer.UserCtrlView
 
         protected virtual bool IsSingleClickOpen { get { return false; } }
         protected virtual double DragScroll { get { return 1; } }
+        protected virtual bool IsMouseScrollAuto { get { return false; } }
+        protected virtual double ScrollSize { get { return 240; } }
         protected virtual bool IsPopupEnabled { get { return false; } }
         protected virtual object GetPopupItem(Point cursorPos) { return null; }
         protected virtual void SetPopup(object item) { return; }
@@ -59,6 +98,7 @@ namespace EpgTimer.UserCtrlView
             cnvs.Height = 0;
             cnvs.Width = 0;
 
+/*
             for(int i = 0; i < cnvs.Children.Count; i++)
             {
                 var panel = cnvs.Children[i] as PanelBase;
@@ -68,6 +108,7 @@ namespace EpgTimer.UserCtrlView
                     break;
                 }
             }
+*/
 
             PopupClear();
         }
@@ -78,8 +119,16 @@ namespace EpgTimer.UserCtrlView
             lastPopupInfo = null;
             lastPopupPos = new Point(-1, -1);
         }
-        public virtual bool PopupItem()
+
+        protected virtual void PopUpWork(bool reset = false)
         {
+            if (IsPopupEnabled == false) return;
+
+            if (reset == true)
+            {
+                PopupClear();
+            }
+
             Point cursorPos = Mouse.GetPosition(scroll);
             if (lastPopupPos != cursorPos)
             {
@@ -88,7 +137,8 @@ namespace EpgTimer.UserCtrlView
                 if (cursorPos.X < 0 || cursorPos.Y < 0 ||
                     scroll.ViewportWidth < cursorPos.X || scroll.ViewportHeight < cursorPos.Y)
                 {
-                    return false;
+                    PopupClear();
+                    return;
                 }
 
                 Point itemPos = Mouse.GetPosition(cnvs); //ProgramViewのマウスイベントを親要素(canvas)に集約する
@@ -98,13 +148,51 @@ namespace EpgTimer.UserCtrlView
                 {
                     lastPopupInfo = item;
 
-                    if (item == null) return false;
+                    if (item == null)
+                    {
+                        PopupClear();
+                        return;
+                    }
 
                     SetPopup(item);
                     PopUp.Visibility = Visibility.Visible;
                 }
             }
-            return true;
+        }
+
+        /// <summary>マウスホイールイベント呼び出し</summary>
+        protected virtual void scrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            try
+            {
+                e.Handled = true;
+
+                if (IsMouseScrollAuto == true)
+                {
+                    scroll.ScrollToVerticalOffset(scroll.VerticalOffset - e.Delta);
+                }
+                else
+                {
+                    if (e.Delta < 0)
+                    {
+                        //下方向
+                        scroll.ScrollToVerticalOffset(scroll.VerticalOffset + ScrollSize);
+                    }
+                    else
+                    {
+                        //上方向
+                        if (scroll.VerticalOffset < ScrollSize)
+                        {
+                            scroll.ScrollToVerticalOffset(0);
+                        }
+                        else
+                        {
+                            scroll.ScrollToVerticalOffset(scroll.VerticalOffset - ScrollSize);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         protected virtual void scrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
@@ -116,6 +204,19 @@ namespace EpgTimer.UserCtrlView
                 ScrollChanged(this, e);
             }
         }
+
+        public void view_ScrollChanged(ScrollViewer main_scroll, ScrollViewer v_scroll, ScrollViewer h_scroll)
+        {
+            try
+            {
+                //時間軸の表示もスクロール
+                v_scroll.ScrollToVerticalOffset(main_scroll.VerticalOffset);
+                //サービス名表示もスクロール
+                h_scroll.ScrollToHorizontalOffset(main_scroll.HorizontalOffset);
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+        }
+
         protected virtual void canvas_MouseMove(object sender, MouseEventArgs e)
         {
             try
@@ -142,13 +243,7 @@ namespace EpgTimer.UserCtrlView
                 }
                 else
                 {
-                    if (IsPopupEnabled == true)
-                    {
-                        if (PopupItem() == false)
-                        {
-                            PopupClear();
-                        }
-                    }
+                    PopUpWork();
                 }
             }
             catch (Exception ex)
@@ -226,7 +321,11 @@ namespace EpgTimer.UserCtrlView
         {
             if (IsPopupEnabled == true)
             {
-                PopupClear();
+                //右クリック時はポップアップを維持
+                if (e.RightButton != MouseButtonState.Pressed)
+                {
+                    PopupClear();
+                }
             }
         }
 

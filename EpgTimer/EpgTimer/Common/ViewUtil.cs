@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace EpgTimer
 {
@@ -74,63 +75,6 @@ namespace EpgTimer
             obj.BorderThickness = new Thickness(2);
         }
 
-        public void view_ScrollChanged<T>(object sender, ScrollChangedEventArgs e, ScrollViewer main_scroll, ScrollViewer v_scroll, ScrollViewer h_scroll)
-        {
-            try
-            {
-                if (sender.GetType() == typeof(T))
-                {
-                    //時間軸の表示もスクロール
-                    v_scroll.ScrollToVerticalOffset(main_scroll.VerticalOffset);
-                    //サービス名表示もスクロール
-                    h_scroll.ScrollToHorizontalOffset(main_scroll.HorizontalOffset);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        public void view_PreviewMouseWheel<T>(object sender, MouseWheelEventArgs e, ScrollViewer scrollViewer, bool auto, double scrollSize)
-        {
-            try
-            {
-                e.Handled = true;
-                if (sender.GetType() == typeof(T))
-                {
-                    if (auto == true)
-                    {
-                        scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - e.Delta);
-                    }
-                    else
-                    {
-                        if (e.Delta < 0)
-                        {
-                            //下方向
-                            scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + scrollSize);
-                        }
-                        else
-                        {
-                            //上方向
-                            if (scrollViewer.VerticalOffset < scrollSize)
-                            {
-                                scrollViewer.ScrollToVerticalOffset(0);
-                            }
-                            else
-                            {
-                                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - scrollSize);
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
         public bool ReloadReserveData(Control Owner = null)
         {
             if (EpgTimerNWNotConnect() == true) return false;
@@ -187,19 +131,28 @@ namespace EpgTimer
         //パネルアイテムにマージンを適用。
         public void ApplyMarginForPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
         {
-            int StartMargine = mutil.GetMargin(resInfo.RecSetting, true);
-            int EndMargine = mutil.GetMargin(resInfo.RecSetting, false);
+            int StartMargin = mutil.GetMargin(resInfo.RecSetting, true);
+            int EndMargin = mutil.GetMargin(resInfo.RecSetting, false);
 
-            if (StartMargine < 0)
+            if (StartMargin < 0)
             {
                 //メモ:番組長より長いマイナスマージンの扱いは?
-                startTime = startTime.AddSeconds(StartMargine * -1);
-                duration += StartMargine;
+                startTime = startTime.AddSeconds(StartMargin * -1);
+                duration += StartMargin;
             }
-            if (EndMargine < 0)
+            if (EndMargin < 0)
             {
-                duration += EndMargine;
+                duration += EndMargin;
             }
+        }
+
+        public void ApplyMarginForTunerPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
+        {
+            int StartMargin = mutil.GetMargin(resInfo.RecSetting, true);
+            int EndMargin = mutil.GetMargin(resInfo.RecSetting, false);
+
+            startTime = resInfo.StartTime.AddSeconds(StartMargin * -1);
+            duration = (int)resInfo.DurationSecond + StartMargin + EndMargin;
         }
 
         public GlyphTypeface GetGlyphTypeface(string fontName, bool isBold)
@@ -276,11 +229,14 @@ namespace EpgTimer
             set { glyphTypefaceTunerService = null; }
         }
 
-        //最低表示行数を適用。また、最低表示高さ2pxを確保して、位置も調整する。
-        public void ModifierMinimumLine<T, S>(List<S> list, double MinimumLine) where S : ViewPanelItem<T>
+        //最低表示高さ
+        public const double PanelMinimumHeight = 2;
+
+        //最低表示行数を適用。また、最低表示高さを確保して、位置も調整する。
+        public void ModifierMinimumLine<T, S>(List<S> list, double minimumLine, double fontHeight) where S : ViewPanelItem<T>
         {
             list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
-            double minimum = Math.Max((Settings.Instance.FontSizeTitle + 2) * MinimumLine, 2);
+            double minimum = Math.Max((fontHeight + 2) * minimumLine, PanelMinimumHeight);
             double lastLeft = double.MinValue;
             double lastBottom = 0;
             foreach (S item in list)
@@ -327,6 +283,30 @@ namespace EpgTimer
                     item.Height = Math.Max(item.Height, minimum);
                 }
                 lastBottom = item.TopPos + item.Height;
+            }
+        }
+
+        public void SetTimeList(List<ProgramViewItem> programList, SortedList<DateTime, List<ProgramViewItem>> timeList)
+        {
+            foreach (ProgramViewItem item in programList)
+            {
+                double top = Math.Min(item.TopPos, item.TopPosDef);
+                double bottom = Math.Max(item.TopPos + item.Height, item.TopPosDef + item.HeightDef);
+                int index = Math.Max((int)(top / (60 * Settings.Instance.MinHeight)), 0);
+                int end = (int)(bottom / (60 * Settings.Instance.MinHeight)) + 1;
+
+                //必要時間リストの修正。最低表示行数の適用で下に溢れた分を追加する。
+                while (end > timeList.Count)
+                {
+                    DateTime time_tail = timeList.Keys[timeList.Count - 1].AddHours(1);
+                    timeList.Add(time_tail, new List<ProgramViewItem>());
+                }
+
+                //必要時間リストと時間と番組の関連づけ。
+                while (index < end)
+                {
+                    timeList.Values[index++].Add(item);
+                }
             }
         }
 
@@ -404,6 +384,41 @@ namespace EpgTimer
                     (child as UIElement).IsEnabled = enabled;
                 }
             }
+        }
+    }
+
+    public static class ViewUtilEx
+    {
+        ///<summary>同じアイテムがあってもスクロールするようにしたもの(ItemSource使用時無効)</summary>
+        //ScrollIntoView()は同じアイテムが複数あると上手く動作しないので、ダミーを使って無理矢理移動させる。
+        //同じ理由でSelectedItemも正しく動作しないので、スクロール位置はindexで取るようにする。
+        public static void ScrollIntoViewFix(this ListBox box, int index)
+        {
+            try
+            {
+                if (box == null || index < 0 || index >= box.Items.Count) return;
+
+                //リストに追加・削除をするので、ItemsSourceなどあるときは動作しない
+                if (box.ItemsSource == null)
+                {
+                    object key = box.Items[index];
+                    if (box.Items.OfType<object>().Count(item => item.Equals(key)) != 1)//==は失敗する
+                    {
+                        var dummy = new ListBoxItem();
+                        dummy.Visibility = Visibility.Collapsed;//まだスクロールバーがピクピクする
+                        box.Items.Insert(index + (index == 0 ? 0 : 1), dummy);
+                        box.ScrollIntoView(dummy);
+
+                        //ScrollIntoView()は遅延して実行されるので、実行後にダミーを削除する。
+                        Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() => box.Items.Remove(dummy)), DispatcherPriority.ContextIdle);
+
+                        return;
+                    }
+                }
+
+                box.ScrollIntoView(box.Items[index]);
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
     }
 }

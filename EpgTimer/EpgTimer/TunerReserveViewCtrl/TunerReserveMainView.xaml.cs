@@ -27,7 +27,6 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            tunerReserveView.PreviewMouseWheel += new MouseWheelEventHandler(tunerReserveView_PreviewMouseWheel);
             tunerReserveView.ScrollChanged += new ScrollChangedEventHandler(tunerReserveView_ScrollChanged);
             tunerReserveView.LeftDoubleClick += new TunerReserveView.PanelViewClickHandler(tunerReserveView_LeftDoubleClick);
             tunerReserveView.RightClick += new TunerReserveView.PanelViewClickHandler(tunerReserveView_RightClick);
@@ -66,14 +65,7 @@ namespace EpgTimer
         /// <summary>表示スクロールイベント呼び出し</summary>
         void tunerReserveView_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            vutil.view_ScrollChanged<TunerReserveView>(sender, e,
-                tunerReserveView.scrollViewer, tunerReserveTimeView.scrollViewer, tunerReserveNameView.scrollViewer);
-        }
-
-        /// <summary>マウスホイールイベント呼び出し</summary>
-        void tunerReserveView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            vutil.view_PreviewMouseWheel<TunerReserveView>(sender, e, tunerReserveView.scrollViewer, Settings.Instance.TunerMouseScrollAuto, Settings.Instance.TunerScrollSize);
+            tunerReserveView.view_ScrollChanged(tunerReserveView.scrollViewer, tunerReserveTimeView.scrollViewer, tunerReserveNameView.scrollViewer);
         }
 
         /// <summary>左ボタンダブルクリックイベント呼び出し/summary>
@@ -128,6 +120,10 @@ namespace EpgTimer
                     tunerReserveList.Add(tuner_off);
                 }
 
+                //チューナ不足と無効予約はアイテムがなければ非表示
+                var delList = tunerReserveList.Where(item => item.tunerID == 0xFFFFFFFF && item.reserveList.Count == 0).ToList();
+                delList.ForEach(item => tunerReserveList.Remove(item));
+
                 double tunerWidthSingle = Settings.Instance.TunerWidth;
                 double leftPos = 0;
                 tunerReserveList.ForEach(info =>
@@ -142,52 +138,52 @@ namespace EpgTimer
                         {
                             continue;
                         }
-                        var viewItem = new ReserveViewItem(reserveInfo);
+                        var newItem = new ReserveViewItem(reserveInfo);
 
                         //マージンを適用
                         DateTime startTime = reserveInfo.StartTime;
                         Int32 duration = (Int32)reserveInfo.DurationSecond;
-                        vutil.ApplyMarginForPanelView(reserveInfo, ref startTime, ref duration);
+                        vutil.ApplyMarginForTunerPanelView(reserveInfo, ref startTime, ref duration);
 
-                        DateTime EndTime = startTime.AddSeconds(duration);
+                        newItem.Height = duration * Settings.Instance.TunerMinHeight / 60;
+                        newItem.Width = tunerWidthSingle;
+                        newItem.LeftPos = leftPos;
 
-                        viewItem.Height = duration * Settings.Instance.TunerMinHeight / 60;
-                        viewItem.Width = tunerWidthSingle;
-                        viewItem.LeftPos = leftPos;
-
-                        foreach (ReserveViewItem addItem in tunerAddList)
+                        foreach (ReserveViewItem addedItem in tunerAddList)
                         {
-                            ReserveData addInfo = addItem.ReserveInfo;
+                            ReserveData addedInfo = addedItem.ReserveInfo;
 
                             //マージンを適用
-                            DateTime startTimeAdd = addInfo.StartTime;
-                            Int32 durationAdd = (Int32)addInfo.DurationSecond;
-                            vutil.ApplyMarginForPanelView(addInfo, ref startTimeAdd, ref durationAdd);
+                            DateTime startTimeAdd = addedInfo.StartTime;
+                            Int32 durationAdd = (Int32)addedInfo.DurationSecond;
+                            vutil.ApplyMarginForTunerPanelView(addedInfo, ref startTimeAdd, ref durationAdd);
 
-                            DateTime endTimeAdd = startTimeAdd.AddSeconds(durationAdd);
-
-                            if ((startTimeAdd <= startTime && startTime < endTimeAdd) ||
-                                (startTimeAdd < EndTime && EndTime <= endTimeAdd) ||
-                                (startTime <= startTimeAdd && startTimeAdd < EndTime) ||
-                                (startTime < endTimeAdd && endTimeAdd <= EndTime)
-                                )
+                            if (MenuUtil.CulcOverlapLength(startTime, (UInt32)duration, startTimeAdd, (UInt32)durationAdd) > 0)
                             {
-                                if (addItem.LeftPos >= viewItem.LeftPos)
+                                if (newItem.LeftPos <= addedItem.LeftPos)
                                 {
-                                    viewItem.LeftPos += tunerWidthSingle;
-                                    if (viewItem.LeftPos - leftPos >= tunerWidth)
+                                    if (reserveInfo.Create64Key() == addedInfo.Create64Key())
                                     {
-                                        tunerWidth += tunerWidthSingle;
+                                        newItem.LeftPos = addedItem.LeftPos;
+                                    }
+                                    else
+                                    {
+                                        newItem.LeftPos = addedItem.LeftPos + tunerWidthSingle;
+                                        if (newItem.LeftPos - leftPos >= tunerWidth)
+                                        {
+                                            tunerWidth += tunerWidthSingle;
+                                        }
                                     }
                                 }
                             }
                         }
 
-                        reserveList.Add(viewItem);
-                        tunerAddList.Add(viewItem);
+                        reserveList.Add(newItem);
+                        tunerAddList.Add(newItem);
 
                         //必要時間リストの構築
                         var chkStartTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
+                        DateTime EndTime = startTime.AddSeconds(duration);
                         while (chkStartTime <= EndTime)
                         {
                             int index = timeList.BinarySearch(chkStartTime);
@@ -207,27 +203,25 @@ namespace EpgTimer
                 //表示位置設定
                 foreach (ReserveViewItem item in reserveList)
                 {
+                    //マージンを適用
                     DateTime startTime = item.ReserveInfo.StartTime;
-                    if (item.ReserveInfo.RecSetting.UseMargineFlag == 1)
-                    {
-                        if (item.ReserveInfo.RecSetting.StartMargine < 0)
-                        {
-                            startTime = item.ReserveInfo.StartTime.AddSeconds(item.ReserveInfo.RecSetting.StartMargine * -1);
-                        }
-                    }
+                    Int32 dummy = 0;
+                    vutil.ApplyMarginForTunerPanelView(item.ReserveInfo, ref startTime, ref dummy);
 
-                    var chkStartTime = new DateTime(startTime.Year,
-                        startTime.Month,
-                        startTime.Day,
-                        startTime.Hour,
-                        0,
-                        0);
+                    var chkStartTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, 0, 0);
                     int index = timeList.BinarySearch(chkStartTime);
                     if (index >= 0)
                     {
                         item.TopPos = (index * 60 + (startTime - chkStartTime).TotalMinutes) * Settings.Instance.TunerMinHeight;
                     }
                 }
+
+                //ごく小さいマージンの表示を抑制する。
+                reserveList.ForEach(info =>
+                {
+                    info.TopPos = Math.Round(info.TopPos);
+                    info.Height = Math.Round(info.Height);
+                });
 
                 //最低表示行数からドット数を計算する。
                 // メイリオみたいに行間のあるフォントはフォントの高さをそのまま使う。
@@ -241,6 +235,18 @@ namespace EpgTimer
                     lineHeight += 2; // 番組名との間隔は 2px にする
                 }
                 vutil.ModifierMinimumHeight<ReserveData, ReserveViewItem>(reserveList, lineHeight + 2); //2ドットは枠の分
+
+                //必要時間リストの修正。最低表示行数の適用で下に溢れた分を追加する。
+                if (reserveList.Count != 0 && timeList.Count > 0)
+                {
+                    double bottom = reserveList.Max(info => info.TopPos + info.Height);
+                    int end = (int)(bottom / (60 * Settings.Instance.TunerMinHeight)) + 1;
+                    while (end > timeList.Count)
+                    {
+                        DateTime time_tail = timeList[timeList.Count - 1].AddHours(1);
+                        timeList.Add(time_tail);
+                    }
+                }
 
                 tunerReserveTimeView.SetTime(timeList, true);
                 tunerReserveNameView.SetTunerInfo(tunerList);
@@ -260,17 +266,17 @@ namespace EpgTimer
 
             if (this.IsVisible == false) return;
 
-            if (BlackoutWindow.SelectedReserveItem != null)
+            if (BlackoutWindow.HasReserveData == true)
             {
-                MoveToReserveItem(BlackoutWindow.SelectedReserveItem, BlackoutWindow.NowJumpTable);
+                MoveToReserveItem(BlackoutWindow.SelectedItem.ReserveInfo, BlackoutWindow.NowJumpTable);
             }
 
             BlackoutWindow.Clear();
         }
 
-        protected void MoveToReserveItem(ReserveItem target, bool IsMarking)
+        protected void MoveToReserveItem(ReserveData target, bool IsMarking)
         {
-            uint ID = target.ReserveInfo.ReserveID;
+            uint ID = target.ReserveID;
             ReserveViewItem target_item = this.reserveList.Find(item => item.ReserveInfo.ReserveID == ID);
             this.tunerReserveView.ScrollToFindItem(target_item, IsMarking);
         }

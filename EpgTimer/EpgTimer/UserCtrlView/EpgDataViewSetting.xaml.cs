@@ -122,20 +122,19 @@ namespace EpgTimer
         private BoxExchangeEditor bxj = new BoxExchangeEditor();
         private void listBox_Button_Set()
         {
-            //サービス選択関係
-            tabControl2.SelectionChanged += (sender, e) =>
-            {
-                //ソースのリストボックスは複数あるので、リストボックスが選択されるたびにソースの設定を行う
-                try
-                {
-                    bxs.SourceBox = ((sender as TabControl).SelectedItem as TabItem).Content as ListBox;
-                    bxs.SourceBox.MouseDoubleClick += new MouseButtonEventHandler(bxs.sourceBox_MouseDoubleClick);
-                }
-                catch { }
-            };
+            //サービス選択関係はソースのリストボックスが複数あるので、追加関連操作のみリストボックス選択操作を追加する。
             bxs.TargetBox = this.listBox_serviceView;
+            bxs.KeyActionAllow();
             bxs.DoubleClickMoveAllow();
+            new List<ListBox> { listBox_serviceDttv, listBox_serviceBS, listBox_serviceCS, listBox_serviceOther, listBox_serviceAll }
+                .ForEach(box => 
+                {
+                    bxs.sourceBoxKeyEnable(box, (sender, e) => button_service_add.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+                    bxs.doubleClickSetter(box, (sender, e) => button_service_add.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+                });
+            button_service_addAll.Click += new RoutedEventHandler((sender, e) => bxs.SourceBox = SelectedServiceListBox());
             button_service_addAll.Click += new RoutedEventHandler(bxs.button_addAll_Click);
+            button_service_add.Click += new RoutedEventHandler((sender, e) => bxs.SourceBox = SelectedServiceListBox());
             button_service_add.Click += new RoutedEventHandler(bxs.button_add_Click);
             button_service_del.Click += new RoutedEventHandler(bxs.button_del_Click);
             button_service_delAll.Click += new RoutedEventHandler(bxs.button_delAll_Click);
@@ -147,6 +146,7 @@ namespace EpgTimer
             //ジャンル選択関係
             bxj.SourceBox = this.listBox_jyanru;
             bxj.TargetBox = this.listBox_jyanruView;
+            bxj.KeyActionAllow();
             bxj.DoubleClickMoveAllow();
             button_jyanru_addAll.Click += new RoutedEventHandler(bxj.button_addAll_Click);
             button_jyanru_add.Click += new RoutedEventHandler(bxj.button_add_Click);
@@ -159,7 +159,7 @@ namespace EpgTimer
         {
             try
             {
-                ListBox listBox = bxs.SourceBox;
+                ListBox listBox = SelectedServiceListBox();
                 if (listBox == null) return;
 
                 listBox.UnselectAll();
@@ -182,7 +182,7 @@ namespace EpgTimer
 
         private void listBox_service_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            Display_ServiceView(bxs.SourceBox, textBox_serviceView2);
+            Display_ServiceView(SelectedServiceListBox(), textBox_serviceView2);
         }
 
         private void Display_ServiceView(ListBox srclistBox, TextBox targetBox)
@@ -205,6 +205,16 @@ namespace EpgTimer
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
+        private ListBox SelectedServiceListBox()
+        {
+            if (tabItem_bs.IsSelected == true) return listBox_serviceBS;
+            if (tabItem_cs.IsSelected == true) return listBox_serviceCS;
+            if (tabItem_dttv.IsSelected == true) return listBox_serviceDttv;
+            if (tabItem_other.IsSelected == true) return listBox_serviceOther;
+            if (tabItem_all.IsSelected == true) return listBox_serviceAll;
+            return null;
+        }
+
         private void button_searchKey_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new SetDefSearchSettingWindow();
@@ -216,5 +226,6 @@ namespace EpgTimer
                 dlg.GetSetting(ref searchKey);
             }
         }
+
     }
 }

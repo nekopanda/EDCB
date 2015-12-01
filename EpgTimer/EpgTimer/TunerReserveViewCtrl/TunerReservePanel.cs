@@ -10,12 +10,17 @@ namespace EpgTimer.TunerReserveViewCtrl
     {
         public List<ReserveViewItem> Items { get; set; }
 
-        public override void ClearInfo() 
+        public ItemFont ItemFontNormal { get; set; }
+        public ItemFont ItemFontTitle { get; set; }
+
+        public TunerReservePanel()
         {
-            Items = new List<ReserveViewItem>();
+            this.VisualTextRenderingMode = TextRenderingMode.ClearType;
+            this.VisualTextHintingMode = TextHintingMode.Fixed;
+            this.UseLayoutRounding = true;
         }
 
-        protected bool RenderText(String text, DrawingContext dc, GlyphTypeface glyphType, SolidColorBrush brush, double fontSize, double maxWidth, double maxHeight, double x, double baseline, ref double useHeight, bool nowrap = false)
+        protected bool RenderText(String text, DrawingContext dc, ItemFont itemFont, SolidColorBrush brush, double fontSize, double maxWidth, double maxHeight, double x, double baseline, ref double useHeight, bool nowrap = false)
         {
             if (x <= 0 || maxWidth <= 0)
             {
@@ -24,7 +29,7 @@ namespace EpgTimer.TunerReserveViewCtrl
             }
 
             double totalHeight = 0;
-            double fontHeight = fontSize * glyphType.Height;
+            double fontHeight = fontSize * itemFont.GlyphType.Height;
 
             string[] lineText = text.Replace("\r", "").Split('\n');
             foreach (string line in lineText)
@@ -50,8 +55,16 @@ namespace EpgTimer.TunerReserveViewCtrl
                 List<double> advanceWidths = new List<double>();
                 for (int n = 0; n < line.Length; n++)
                 {
-                    ushort glyphIndex = glyphType.CharacterToGlyphMap[line[n]];
-                    double width = glyphType.AdvanceWidths[glyphIndex] * fontSize;
+                    //ushort glyphIndex = glyphType.CharacterToGlyphMap[line[n]];
+                    //double width = glyphType.AdvanceWidths[glyphIndex] * fontSize;
+
+                    ushort glyphIndex = itemFont.GlyphIndexCache[line[n]];
+                    if (glyphIndex == 0)
+                    {
+                        itemFont.GlyphIndexCache[line[n]] = glyphIndex = itemFont.GlyphType.CharacterToGlyphMap[line[n]];
+                        itemFont.GlyphWidthCache[glyphIndex] = (float)itemFont.GlyphType.AdvanceWidths[glyphIndex];
+                    }
+                    double width = itemFont.GlyphWidthCache[glyphIndex] * fontSize;
 
                     if (totalWidth + width > maxWidth)
                     {
@@ -61,8 +74,10 @@ namespace EpgTimer.TunerReserveViewCtrl
                         if (totalHeight + fontHeight > maxHeight)
                         {
                             //次の行無理
-                            glyphIndex = glyphType.CharacterToGlyphMap['…'];
-                            double widthEllipsis = glyphType.AdvanceWidths[glyphIndex] * fontSize;
+                            //glyphIndex = glyphType.CharacterToGlyphMap['…'];
+                            //double widthEllipsis = glyphType.AdvanceWidths[glyphIndex] * fontSize;
+                            glyphIndex = itemFont.GlyphType.CharacterToGlyphMap['…'];
+                            double widthEllipsis = itemFont.GlyphType.AdvanceWidths[glyphIndex] * fontSize;
                             while (totalWidth - advanceWidths.Last() + widthEllipsis > maxWidth)
                             {
                                 glyphIndexes.RemoveAt(glyphIndexes.Count-1);
@@ -71,7 +86,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                             glyphIndexes[glyphIndexes.Count - 1] = glyphIndex;
                             advanceWidths[advanceWidths.Count - 1] = widthEllipsis;
 
-                            GlyphRun glyphRun = new GlyphRun(glyphType, 0, false, fontSize,
+                            GlyphRun glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
                                 glyphIndexes, origin, advanceWidths, null, null, null, null,
                                 null, null);
 
@@ -83,7 +98,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                         else
                         {
                             //次の行いけるので今までの分出力
-                            GlyphRun glyphRun = new GlyphRun(glyphType, 0, false, fontSize,
+                            GlyphRun glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
                                 glyphIndexes, origin, advanceWidths, null, null, null, null,
                                 null, null);
 
@@ -102,7 +117,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                 }
                 if (glyphIndexes.Count > 0)
                 {
-                    GlyphRun glyphRun = new GlyphRun(glyphType, 0, false, fontSize,
+                    GlyphRun glyphRun = new GlyphRun(itemFont.GlyphType, 0, false, fontSize,
                         glyphIndexes, origin, advanceWidths, null, null, null, null,
                         null, null);
 
@@ -115,10 +130,16 @@ namespace EpgTimer.TunerReserveViewCtrl
         protected override void OnRender(DrawingContext dc)
         {
             dc.DrawRectangle(Background, null, new Rect(RenderSize));
-            this.VisualTextRenderingMode = TextRenderingMode.ClearType;
-            this.VisualTextHintingMode = TextHintingMode.Fixed;
 
             if (Items == null) return;
+
+            if (ItemFontNormal == null || ItemFontNormal.GlyphType == null ||
+                ItemFontTitle == null || ItemFontTitle.GlyphType == null)
+            {
+                return;
+            }
+            ItemFontNormal.PrepareCache();
+            ItemFontTitle.PrepareCache();
 
             try
             {
@@ -137,20 +158,26 @@ namespace EpgTimer.TunerReserveViewCtrl
 
                 // 起点はベースラインになるので、それぞれのベースラインを計算しておく。
                 // 分とサービス名はフォントが異なることができるのでセンタリングして合うように調整しておく。
-                double baselineMin = sizeMin * vutil.GlyphTypefaceTunerNormal.Baseline + (height1stLine - heightMin) / 2;
-                double baselineTitle = sizeTitle * vutil.GlyphTypefaceTunerService.Baseline + (height1stLine - heightTitle) / 2;
-                double baselineNormal = sizeNormal * vutil.GlyphTypefaceTunerNormal.Baseline;
+                // (ベースラインを合わせてみたら XAML と違うので PopupItem の表示との差が大きかった。)
+                double baselineMin = sizeMin * ItemFontNormal.GlyphType.Baseline + (height1stLine - heightMin) / 2;
+                double baselineTitle = sizeTitle * ItemFontTitle.GlyphType.Baseline + (height1stLine - heightTitle) / 2;
+                double baselineNormal = sizeNormal * ItemFontNormal.GlyphType.Baseline;
+
+                //録画中のものを後で描画する
+                List<ReserveViewItem> postdrawList = Items.Where(info => info.ReserveInfo.IsOnRec()).ToList();
+                postdrawList.ForEach(info => Items.Remove(info));
+                Items.AddRange(postdrawList);
 
                 foreach (ReserveViewItem info in Items)
                 {
-                    colorTitle = Settings.Instance.TunerColorModeUse == true ? info.ForeColorPri : colorTitle;
+                    colorTitle = Settings.Instance.TunerColorModeUse == true ? info.ForeColorPriTuner : colorTitle;
 
                     double x = info.LeftPos;
                     double y = info.TopPos;
                     double height = Math.Max(info.Height, 0);
                     double width = info.Width;
 
-                    dc.DrawRectangle(Brushes.LightGray, null, new Rect(x, y, width, height));
+                    dc.DrawRectangle(info.BorderBrushTuner, null, new Rect(x, y, width, height));
                     if (height > 2)
                     {
                         // 枠の内側を計算
@@ -158,7 +185,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                         y += 1;
                         width -= 2;
                         height -= 2;
-                        dc.DrawRectangle(info.BackColor, null, new Rect(x, y, width, height));
+                        dc.DrawRectangle(info.BackColorTuner, null, new Rect(x, y, width, height));
 
                         if (height < height1stLine) // ModifierMinimumHeight してるので足りなくならないハズ。
                         {
@@ -175,7 +202,7 @@ namespace EpgTimer.TunerReserveViewCtrl
 
                         //分
                         string min = info.ReserveInfo.StartTime.Minute.ToString("d02");
-                        if (RenderText(min, dc, vutil.GlyphTypefaceTunerNormal, colorTitle, sizeMin, width, height, x, y + baselineMin, ref useHeight) == false)
+                        if (RenderText(min, dc, ItemFontNormal, colorTitle, sizeMin, width, height, x, y + baselineMin, ref useHeight) == false)
                         {
                             info.TitleDrawErr = true;
                             continue;
@@ -186,7 +213,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                         {
                             string serviceName = info.ReserveInfo.StationName
                                 + "(" + CommonManager.ConvertNetworkNameText(info.ReserveInfo.OriginalNetworkID) + ")";
-                            if (RenderText(serviceName, dc, vutil.GlyphTypefaceTunerService, colorTitle, sizeTitle, width - indentTitle, height, x + indentTitle, y + baselineTitle, ref useHeight, Settings.Instance.TunerServiceNoWrap) == false)
+                            if (RenderText(serviceName, dc, ItemFontTitle, colorTitle, sizeTitle, width - indentTitle, height, x + indentTitle, y + baselineTitle, ref useHeight, Settings.Instance.TunerServiceNoWrap) == false)
                             {
                                 info.TitleDrawErr = true;
                                 continue;
@@ -197,7 +224,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                         //番組名
                         if (info.ReserveInfo.Title.Length > 0)
                         {
-                            if (RenderText(info.ReserveInfo.Title, dc, vutil.GlyphTypefaceTunerNormal, colorNormal, sizeNormal, width - indentNormal, height - useHeight, x + indentNormal, y + useHeight + baselineNormal, ref useHeight) == false)
+                            if (RenderText(info.ReserveInfo.Title, dc, ItemFontNormal, colorNormal, sizeNormal, width - indentNormal, height - useHeight, x + indentNormal, y + useHeight + baselineNormal, ref useHeight) == false)
                             {
                                 info.TitleDrawErr = true;
                                 continue;

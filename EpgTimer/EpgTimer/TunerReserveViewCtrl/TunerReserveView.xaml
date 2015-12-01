@@ -8,14 +8,15 @@
              xmlns:local2="clr-namespace:EpgTimer.UserCtrlView"
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
-        <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Visible" ScrollChanged="scrollViewer_ScrollChanged">
-            <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top" MouseMove="canvas_MouseMove" MouseLeftButtonDown="canvas_MouseLeftButtonDown" MouseLeftButtonUp="canvas_MouseLeftButtonUp" MouseRightButtonDown="canvas_MouseRightButtonDown" MouseLeave="canvas_MouseLeave">
+        <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Visible" ScrollChanged="scrollViewer_ScrollChanged" PreviewMouseWheel="scrollViewer_PreviewMouseWheel">
+            <Canvas Name="canvas" HorizontalAlignment="Left" VerticalAlignment="Top" MouseMove="canvas_MouseMove" MouseLeftButtonDown="canvas_MouseLeftButtonDown" MouseLeftButtonUp="canvas_MouseLeftButtonUp" MouseRightButtonDown="canvas_MouseRightButtonDown" MouseLeave="canvas_MouseLeave" >
                 <local:TunerReservePanel x:Name="reserveViewPanel" Background="DarkGray" HorizontalAlignment="Left" VerticalAlignment="Top" />
-                <Border x:Name="popupItem" BorderBrush="DarkGray" BorderThickness="0.5" IsHitTestVisible="False" Canvas.ZIndex="20">
+                <Border x:Name="popupItem" BorderBrush="DarkGray" BorderThickness="1" IsHitTestVisible="False" Canvas.ZIndex="20">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" Opacity="0.5"/>
                     </Border.Effect>
                     <StackPanel x:Name="popupItemTextArea">
+                        <TextBlock x:Name="statusText" LineStackingStrategy="BlockLineHeight"/>
                         <TextBlock x:Name="timeText" TextWrapping="Wrap"  LineStackingStrategy="BlockLineHeight"/>
                         <TextBlock x:Name="recInfoText" TextWrapping="Wrap"  LineStackingStrategy="BlockLineHeight"/>
                         <Grid>

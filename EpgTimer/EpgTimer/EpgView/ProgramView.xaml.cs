@@ -15,10 +15,11 @@ namespace EpgTimer.EpgView
     {
         protected override bool IsSingleClickOpen { get { return Settings.Instance.EpgInfoSingleClick; } }
         protected override double DragScroll { get { return Settings.Instance.DragScroll; } }
+        protected override bool IsMouseScrollAuto { get { return Settings.Instance.MouseScrollAuto; } }
+        protected override double ScrollSize { get { return Settings.Instance.ScrollSize; } }
         protected override bool IsPopupEnabled { get { return Settings.Instance.EpgPopup; } }
         protected override FrameworkElement PopUp { get { return popupItem; } }
 
-        private SortedList<DateTime, List<ProgramViewItem>> programTimeList = null;
         private List<ReserveViewItem> reserveList = null;
         private List<Rectangle> rectBorder = new List<Rectangle>();
         private ReserveViewItem resPopItem = null;
@@ -34,8 +35,17 @@ namespace EpgTimer.EpgView
         public override void ClearInfo()
         {
             base.ClearInfo();
+            reserveList = null;
             rectBorder.ForEach(item => canvas.Children.Remove(item));
             rectBorder.Clear();
+
+            for (int i = 0; i < canvas.Children.Count; i++)
+            {
+                if (canvas.Children[i] is EpgViewPanel)
+                {
+                    canvas.Children.RemoveAt(i--);
+                }
+            }
         }
 
         protected override void PopupClear()
@@ -45,16 +55,10 @@ namespace EpgTimer.EpgView
         }
         protected override object GetPopupItem(Point cursorPos)
         {
-            if (programTimeList == null) return null;
-            if (reserveList == null) return null;
-
             ReserveViewItem lastresPopItem = resPopItem;
-            resPopItem = reserveList.Find(pg => pg.IsPicked(cursorPos));
+            resPopItem = reserveList == null ? null : reserveList.Find(pg => pg.IsPicked(cursorPos));
 
             if (Settings.Instance.EpgPopupResOnly == true && resPopItem == null) return null;
-
-            int index = (int)(cursorPos.Y / epgViewPanel.Height * programTimeList.Count);
-            if ((0 <= index && index < programTimeList.Count) == false) return null;
 
             //予約枠を通過したので同じ番組でもポップアップを書き直させる。
             if (lastresPopItem != resPopItem)
@@ -62,7 +66,7 @@ namespace EpgTimer.EpgView
                 base.PopupClear();
             }
 
-            return programTimeList.Values[index].Find(pg => pg.IsPicked(cursorPos));
+            return GetProgramViewData(cursorPos);
         }
 
         protected override void SetPopup(object item)
@@ -96,7 +100,7 @@ namespace EpgTimer.EpgView
 
             if (epgInfo.ShortInfo != null)
             {
-                //必ず文字単位で折り返すためにZWSPを挿入  (\\w を使うと記号の間にZWSPが入らない)
+                //必ず文字単位で折り返すためにZWSPを挿入 (\\w を使うと記号の間にZWSPが入らない)
                 titleText.Text = System.Text.RegularExpressions.Regex.Replace(epgInfo.ShortInfo.event_name, ".", "$0\u200b");
                 titleText.FontFamily = fontTitle;
                 titleText.FontSize = sizeTitle;
@@ -130,7 +134,7 @@ namespace EpgTimer.EpgView
             //予約枠の表示
             double marginEpg = 1;
             double marginRes = marginEpg + 3;
-            popupItemTextArea.Margin = new Thickness(marginEpg, marginEpg - 2, marginEpg, marginEpg);
+            popupItemTextArea.Margin = new Thickness(marginEpg, marginEpg - 2, marginEpg + 3, marginEpg);
             if (resPopItem != null)
             {
                 SetReserveBorder(popupItemBorder, resPopItem);
@@ -144,6 +148,23 @@ namespace EpgTimer.EpgView
             {
                 popupItemBorder.Visibility = Visibility.Collapsed;
             }
+        }
+
+        public ProgramViewItem GetProgramViewData(Point cursorPos)
+        {
+            try
+            {
+                foreach (var childPanel in canvas.Children.OfType<EpgViewPanel>())
+                {
+                    if (childPanel.Items != null && Canvas.GetLeft(childPanel) <= cursorPos.X && cursorPos.X < Canvas.GetLeft(childPanel) + childPanel.Width)
+                    {
+                        return childPanel.Items.OfType<ProgramViewItem>().FirstOrDefault(pg => pg.IsPicked(cursorPos));
+                    }
+                }
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+
+            return null;
         }
 
         private void SetReserveBorder(Rectangle rect, ReserveViewItem info)
@@ -188,6 +209,8 @@ namespace EpgTimer.EpgView
                     canvas.Children.Add(rect);
                     rectBorder.Add(rect);
                 }
+
+                PopUpWork(true);
             }
             catch (Exception ex)
             {
@@ -195,23 +218,50 @@ namespace EpgTimer.EpgView
             }
         }
 
-        public void SetProgramList(List<ProgramViewItem> programList, SortedList<DateTime, List<ProgramViewItem>> timeList, double width, double height)
+        public void SetProgramList(List<ProgramViewItem> programList, double width, double height)
+        {
+            var programGroupList = new List<Tuple<double, List<ProgramViewItem>>>();
+            programGroupList.Add(new Tuple<double, List<ProgramViewItem>>(width, programList));
+            SetProgramList(programGroupList, height);
+        }
+
+        public void SetProgramList(List<Tuple<double, List<ProgramViewItem>>> programGroupList, double height)
         {
             try
             {
-                programTimeList = timeList;
+                for (int i = 0; i < canvas.Children.Count; i++)
+                {
+                    if (canvas.Children[i] is EpgViewPanel)
+                    {
+                        canvas.Children.RemoveAt(i--);
+                    }
+                }
+                var itemFontNormal = new EpgViewPanel.ItemFont(Settings.Instance.FontName, false);
+                var itemFontTitle = new EpgViewPanel.ItemFont(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle);
+                double totalWidth = 0;
+                foreach (var programList in programGroupList)
+                {
+                    EpgViewPanel item = new EpgViewPanel();
+                    item.Background = epgViewPanel.Background;
+                    item.Height = Math.Ceiling(height);
+                    item.Width = programList.Item1;
+                    item.ItemFontNormal = itemFontNormal;
+                    item.ItemFontTitle = itemFontTitle;
+                    Canvas.SetLeft(item, totalWidth);
+                    item.Items = programList.Item2;
+                    item.InvalidateVisual();
+                    canvas.Children.Add(item);
+                    totalWidth += programList.Item1;
+                }
                 canvas.Height = Math.Ceiling(height);
-                canvas.Width = Math.Ceiling(width);
-                epgViewPanel.Height = canvas.Height;
-                epgViewPanel.Width = canvas.Width;
-                epgViewPanel.Items = programList;
-                epgViewPanel.InvalidateVisual();
+                canvas.Width = totalWidth;
+                itemFontNormal.ClearCache();
+                itemFontTitle.ClearCache();
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
-
     }
 }

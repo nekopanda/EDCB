@@ -117,6 +117,7 @@ namespace EpgTimer
                 bx.SourceBox = this.listBox_Default;
                 bx.TargetBox = this.listBox_Setting;
                 bx.DuplicationSpecific = new List<object> { EpgCmdsEx.SeparatorString };
+                bx.KeyActionAllow();
                 bx.DoubleClickMoveAllow();
                 button_reset.Click += new RoutedEventHandler(bx.button_reset_Click);
                 button_add.Click += new RoutedEventHandler(bx.button_add_Click);
@@ -320,7 +321,7 @@ namespace EpgTimer
         {
             listBox_Setting.Items.Add(EpgCmdsEx.SeparatorString);
             listBox_Setting.SelectedIndex = listBox_Setting.Items.Count - 1;
-            listBox_Setting.ScrollIntoView(listBox_Setting.SelectedItem);
+            listBox_Setting.ScrollIntoViewFix(listBox_Setting.SelectedIndex);
         }
         
     }

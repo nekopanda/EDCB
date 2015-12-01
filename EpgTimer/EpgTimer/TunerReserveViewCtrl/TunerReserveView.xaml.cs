@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -14,6 +15,8 @@ namespace EpgTimer.TunerReserveViewCtrl
     {
         protected override bool IsSingleClickOpen { get { return Settings.Instance.TunerInfoSingleClick; } }
         protected override double DragScroll { get { return Settings.Instance.TunerDragScroll; } }
+        protected override bool IsMouseScrollAuto { get { return Settings.Instance.TunerMouseScrollAuto; } }
+        protected override double ScrollSize { get { return Settings.Instance.TunerScrollSize; } }
         protected override bool IsPopupEnabled { get { return Settings.Instance.TunerPopup; } }
         protected override FrameworkElement PopUp { get { return popupItem; } }
 
@@ -29,12 +32,19 @@ namespace EpgTimer.TunerReserveViewCtrl
         {
             try
             {
-                canvas.Height = Math.Ceiling(height);
-                canvas.Width = Math.Ceiling(width);
+                canvas.Height = Math.Ceiling(height + 1);//右端のチューナ列の線を描画するため+1。他の+1も同じ。
+                canvas.Width = Math.Ceiling(width + 1);
+                reserveViewPanel.ItemFontNormal = new TunerReservePanel.ItemFont(Settings.Instance.TunerFontName, false);
+                reserveViewPanel.ItemFontTitle = new TunerReservePanel.ItemFont(Settings.Instance.TunerFontNameService, Settings.Instance.TunerFontBoldService);
                 reserveViewPanel.Height = canvas.Height;
                 reserveViewPanel.Width = canvas.Width;
                 reserveViewPanel.Items = reserveList;
                 reserveViewPanel.InvalidateVisual();
+
+                reserveViewPanel.ItemFontNormal.ClearCache();
+                reserveViewPanel.ItemFontTitle.ClearCache();
+
+                PopUpWork(true);
             }
             catch (Exception ex)
             {
@@ -54,13 +64,14 @@ namespace EpgTimer.TunerReserveViewCtrl
             var viewInfo = (ReserveViewItem)item;
             var resItem = new ReserveItem(viewInfo.ReserveInfo);
             
-            popupItem.Background = viewInfo.BackColor;
+            popupItem.Background = viewInfo.BackColorTuner;
 
             Canvas.SetLeft(popupItem, Math.Floor(viewInfo.LeftPos));
             Canvas.SetTop(popupItem, Math.Floor(viewInfo.TopPos));
-            popupItem.Width = Math.Ceiling(viewInfo.Width);
-            popupItem.MinHeight = Math.Ceiling(viewInfo.Height);
-            popupItemTextArea.Margin = new Thickness(2, -1, 0, 0);
+            popupItem.Width = Math.Ceiling(viewInfo.Width + 1);
+            popupItem.MinHeight = Math.Ceiling(viewInfo.Height + 1);
+            //popupItemTextArea.Margin = new Thickness(2, -1, 0, 0);
+            popupItemTextArea.Margin = new Thickness(1, -1, 5, 1);
 
             double sizeTitle = Settings.Instance.TunerFontSizeService;
             double sizeNormal = Settings.Instance.TunerFontSize;
@@ -69,8 +80,11 @@ namespace EpgTimer.TunerReserveViewCtrl
             var fontTitle = new FontFamily(Settings.Instance.TunerFontNameService);
             var fontNormal = new FontFamily(Settings.Instance.TunerFontName);
             FontWeight weightTitle = Settings.Instance.TunerFontBoldService == true ? FontWeights.Bold : FontWeights.Normal;
-            SolidColorBrush colorTitle = Settings.Instance.TunerColorModeUse == true ? viewInfo.ForeColorPri : CommonManager.Instance.CustTunerServiceColor;
+            SolidColorBrush colorTitle = Settings.Instance.TunerColorModeUse == true ? viewInfo.ForeColorPriTuner : CommonManager.Instance.CustTunerServiceColor;
             SolidColorBrush colorNormal = CommonManager.Instance.CustTunerTextColor;
+
+            //録画中は枠をかえる
+            popupItem.BorderBrush = viewInfo.BorderBrushTuner;
 
             //追加情報の表示
             if (Settings.Instance.TunerPopupRecinfo == true)
@@ -79,14 +93,28 @@ namespace EpgTimer.TunerReserveViewCtrl
                 recInfoText.Visibility = Visibility.Visible;
                 minText.Visibility = Visibility.Collapsed;
 
+                //'録画中'を表示
+                statusText.Visibility = Visibility.Collapsed;
+                if (statusText.Text != "")
+                {
+                    statusText.Visibility = Visibility.Visible;
+                    statusText.Text = viewInfo.StatusTuner;
+                    statusText.FontFamily = fontNormal;
+                    statusText.FontSize = sizeNormal;
+                    //statusText.FontWeight = FontWeights.Normal;
+                    statusText.Foreground = CommonManager.Instance.StatRecForeColor;
+                    minText.Margin = new Thickness(1, 1, 0, 4);
+                    statusText.LineHeight = Math.Max(Settings.Instance.TunerFontHeight, sizeNormal + 2);
+                }
+
                 timeText.Text = resItem.StartTimeShort;
                 timeText.FontFamily = fontNormal;
                 timeText.FontSize = sizeNormal;
                 timeText.Foreground = colorTitle;
                 timeText.Margin = new Thickness(1, 1, 0, 2);
                 timeText.LineHeight = Math.Max(Settings.Instance.TunerFontHeight, sizeNormal + 2);
-                recInfoText.Text = "優先度 : " + resItem.Priority + "\r\n";
-                recInfoText.Text += "録画モード : " + resItem.RecMode;
+
+                recInfoText.Text = "優先度 : " + resItem.Priority + "\r\n" + "録画モード : " + resItem.RecMode;
                 recInfoText.FontFamily = fontNormal;
                 recInfoText.FontSize = sizeNormal;
                 //recInfoText.FontWeight = FontWeights.Normal;
@@ -96,6 +124,7 @@ namespace EpgTimer.TunerReserveViewCtrl
             }
             else
             {
+                statusText.Visibility = Visibility.Collapsed;
                 timeText.Visibility = Visibility.Collapsed;
                 recInfoText.Visibility = Visibility.Collapsed;
                 minText.Visibility = Visibility.Visible;
@@ -110,7 +139,8 @@ namespace EpgTimer.TunerReserveViewCtrl
                 minText.LineHeight = Settings.Instance.TunerFontHeight;
             }
 
-            titleText.Text = resItem.ServiceName + "(" + resItem.NetworkName + ")";
+            var titletext = resItem.ServiceName + "(" + resItem.NetworkName + ")";
+            titleText.Text = Regex.Replace(titletext, ".", "$0\u200b");
             titleText.FontFamily = fontTitle;
             titleText.FontSize = sizeTitle;
             titleText.FontWeight = weightTitle;
@@ -119,8 +149,9 @@ namespace EpgTimer.TunerReserveViewCtrl
             titleText.Margin = new Thickness(indentTitle, 0, 2, 3);
             titleText.LineHeight = Math.Max(Settings.Instance.TunerFontHeightService, sizeTitle + 2);
 
-            //必ず文字単位で折り返すためにZWSPを挿入  (\\w を使うと記号の間にZWSPが入らない)
-            infoText.Text = System.Text.RegularExpressions.Regex.Replace(resItem.EventName, ".", "$0\u200b");
+            //必ず文字単位で折り返すためにZWSPを挿入 (\\w を使うと記号の間にZWSPが入らない)
+            infoText.Text = Regex.Replace(resItem.EventName, ".", "$0\u200b"); 
+            //infoText.Text = resItem.EventName;
             infoText.FontFamily = fontNormal;
             infoText.FontSize = sizeNormal;
             //infoText.FontWeight = FontWeights.Normal;

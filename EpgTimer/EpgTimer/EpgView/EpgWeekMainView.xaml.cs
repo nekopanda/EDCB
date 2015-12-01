@@ -136,25 +136,28 @@ namespace EpgTimer
                 {
                     if (selectID == info.Create64Key())
                     {
-                        //時間ないので除外
-                        DateTime chkStartTime = GetWeekMainViewTime(info.StartTime, TimeSelect.HourOnly);
+                        //timeListは番組表ベースなので、chkStartTimeはマージン適用前に作成する。
+                        DateTime startTime = GetWeekMainViewTime(info.StartTime);
+                        DateTime chkStartTime = GetWeekMainViewTime(startTime, TimeSelect.HourOnly);
+                        DateTime baseStartTime = startTime;
+
+                        //離れた時間のプログラム予約など、番組表が無いので表示不可
                         if (timeList.ContainsKey(chkStartTime) == false) continue;
 
-                        DateTime baseStartTime = GetWeekMainViewTime(info.StartTime); ;
-
                         //マージンを適用
-                        DateTime startTime = baseStartTime;
                         Int32 duration = (Int32)info.DurationSecond;
                         vutil.ApplyMarginForPanelView(info, ref startTime, ref duration);
 
                         var viewItem = new ReserveViewItem(info);
                         reserveList.Add(viewItem);
+
                         DateTime chkDay = GetWeekMainViewTime(info.StartTime, TimeSelect.DayOnly);
                         viewItem.LeftPos = Settings.Instance.ServiceWidth * dayList.IndexOfKey(chkDay);
                         viewItem.Width = Settings.Instance.ServiceWidth;
 
+                        //最低表示行数の適用の際、最低表示高さを設定しているので、Settings.Instance.MinimumHeight == 0 でも検索するようにする
                         ProgramViewItem pgInfo = null;
-                        if (Settings.Instance.MinimumHeight > 0 && viewItem.ReserveInfo.EventID != 0xFFFF && info.DurationSecond != 0)
+                        if (info.EventID != 0xFFFF && info.DurationSecond != 0)
                         {
                             //予約情報から番組情報を特定し、枠表示位置を再設定する
                             UInt64 key = info.Create64PgKey();
@@ -164,13 +167,13 @@ namespace EpgTimer
                         if (pgInfo != null)
                         {
                             viewItem.TopPos = pgInfo.TopPos + pgInfo.Height * (startTime - baseStartTime).TotalSeconds / info.DurationSecond;
-                            viewItem.Height = Math.Max(pgInfo.Height * duration / info.DurationSecond, 2);//最低2px。MinHeightの値は信用できない。
+                            viewItem.Height = Math.Max(pgInfo.Height * duration / info.DurationSecond, ViewUtil.PanelMinimumHeight);
                         }
                         else
                         {
                             int index = timeList.IndexOfKey(chkStartTime);
                             viewItem.TopPos = Settings.Instance.MinHeight * (index * 60 + (startTime - chkStartTime).TotalMinutes);
-                            viewItem.Height = Math.Max(duration * Settings.Instance.MinHeight / 60, 2);//最低2px。
+                            viewItem.Height = Math.Max(duration * Settings.Instance.MinHeight / 60, ViewUtil.PanelMinimumHeight);
                         }
                     }
                 }
@@ -264,6 +267,7 @@ namespace EpgTimer
 
                     var viewItem = new ProgramViewItem(eventInfo);
                     viewItem.Height = Settings.Instance.MinHeight * (eventInfo.DurationFlag == 0 ? 300 : eventInfo.durationSec) / 60;
+                    viewItem.HeightDef = viewItem.Height;//元の情報も保存
                     viewItem.Width = Settings.Instance.ServiceWidth;
                     programList.Add(viewItem);
 
@@ -316,6 +320,7 @@ namespace EpgTimer
                     {
                         int index = timeList.IndexOfKey(chkStartTime);
                         item.TopPos = (index * 60 + (startTime - chkStartTime).TotalMinutes) * Settings.Instance.MinHeight;
+                        item.TopPosDef = item.TopPos;//元の情報も保存
                     }
                     if (dayList.ContainsKey(dayInfo) == true)
                     {
@@ -338,18 +343,10 @@ namespace EpgTimer
                 vutil.ModifierMinimumHeight<EpgEventInfo, ProgramViewItem>(programList, lineHeight + 1); //1ドットは枠の分
 
                 //必要時間リストと時間と番組の関連づけ
-                foreach (ProgramViewItem item in programList)
-                {
-                    int index = Math.Max((int)(item.TopPos / (60 * Settings.Instance.MinHeight)), 0);
-                    while (index < Math.Min((int)((item.TopPos + item.Height) / (60 * Settings.Instance.MinHeight)) + 1, timeList.Count))
-                    {
-                        timeList.Values[index++].Add(item);
-                    }
-                }
-
+                vutil.SetTimeList(programList, timeList);
+                
                 epgProgramView.SetProgramList(
                     programList,
-                    timeList,
                     dayList.Count * Settings.Instance.ServiceWidth,
                     timeList.Count * 60 * Settings.Instance.MinHeight);
 
