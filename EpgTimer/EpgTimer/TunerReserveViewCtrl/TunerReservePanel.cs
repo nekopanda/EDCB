@@ -10,8 +10,8 @@ namespace EpgTimer.TunerReserveViewCtrl
     {
         public List<ReserveViewItem> Items { get; set; }
 
-        public ItemFont ItemFontNormal { get; set; }
-        public ItemFont ItemFontTitle { get; set; }
+        public ViewUtil.ItemFont ItemFontNormal { get; set; }
+        public ViewUtil.ItemFont ItemFontTitle { get; set; }
 
         public TunerReservePanel()
         {
@@ -20,7 +20,7 @@ namespace EpgTimer.TunerReserveViewCtrl
             this.UseLayoutRounding = true;
         }
 
-        protected bool RenderText(String text, DrawingContext dc, ItemFont itemFont, SolidColorBrush brush, double fontSize, double maxWidth, double maxHeight, double x, double baseline, ref double useHeight, bool nowrap = false)
+        protected bool RenderText(String text, DrawingContext dc, ViewUtil.ItemFont itemFont, SolidColorBrush brush, double fontSize, double maxWidth, double maxHeight, double x, double baseline, ref double useHeight, bool nowrap = false)
         {
             if (x <= 0 || maxWidth <= 0)
             {
@@ -138,8 +138,6 @@ namespace EpgTimer.TunerReserveViewCtrl
             {
                 return;
             }
-            ItemFontNormal.PrepareCache();
-            ItemFontTitle.PrepareCache();
 
             try
             {
@@ -232,6 +230,9 @@ namespace EpgTimer.TunerReserveViewCtrl
                         }
                     }
                 }
+
+                ItemFontNormal.ClearCache();
+                ItemFontTitle.ClearCache();
             }
             catch (Exception ex)
             {

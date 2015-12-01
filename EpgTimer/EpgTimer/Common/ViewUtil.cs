@@ -155,78 +155,103 @@ namespace EpgTimer
             duration = (int)resInfo.DurationSecond + StartMargin + EndMargin;
         }
 
-        public GlyphTypeface GetGlyphTypeface(string fontName, bool isBold)
+        public class ItemFont
         {
-            try
-            {
-                var fontWeights = (isBold == true ? FontWeights.Bold : FontWeights.Normal);
-                Typeface typeface = new Typeface(new FontFamily(fontName),
-                                                FontStyles.Normal, fontWeights, FontStretches.Normal);
+            public string FamilyName { get; private set; }
+            public bool IsBold { get; private set; }
+            public GlyphTypeface GlyphType { get; private set; }
+            public ushort[] GlyphIndexCache { get; private set; }
+            public float[] GlyphWidthCache { get; private set; }
 
-                GlyphTypeface glyphTypeface;
-                if (typeface.TryGetGlyphTypeface(out glyphTypeface) == false)
+            public ItemFont(string familyName, bool isBold)
+            {
+                FamilyName = familyName;
+                IsBold = isBold;
+                GlyphTypeface glyphType = null;
+                if ((new Typeface(new FontFamily(FamilyName),
+                                  FontStyles.Normal,
+                                  IsBold ? FontWeights.Bold : FontWeights.Normal,
+                                  FontStretches.Normal)).TryGetGlyphTypeface(out glyphType) == false)
                 {
-                    typeface = new Typeface(new FontFamily(System.Drawing.SystemFonts.DefaultFont.Name),
-                                                    FontStyles.Normal, fontWeights, FontStretches.Normal);
-
-                    if (typeface.TryGetGlyphTypeface(out glyphTypeface) == false)
-                    {
-                        MessageBox.Show("フォント指定が不正です");
-                        return null;
-                    }
+                    (new Typeface(new FontFamily(System.Drawing.SystemFonts.DefaultFont.Name),
+                                  FontStyles.Normal,
+                                  IsBold ? FontWeights.Bold : FontWeights.Normal,
+                                  FontStretches.Normal)).TryGetGlyphTypeface(out glyphType);
                 }
-                return glyphTypeface;
+                GlyphType = glyphType;
             }
-            catch (Exception ex)
+            private int refCacheCount;
+            public ItemFont PrepareCache()
             {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                return null;
+                refCacheCount++;
+                if (GlyphIndexCache == null)
+                {
+                    GlyphIndexCache = new ushort[ushort.MaxValue + 1];
+                    GlyphWidthCache = new float[ushort.MaxValue + 1];
+                }
+                return this;
+            }
+            public void ClearCache()
+            {
+                if (--refCacheCount <= 0)
+                {
+                    GlyphIndexCache = null;
+                    GlyphWidthCache = null;
+                    refCacheCount = 0;
+                }
             }
         }
-
-        private GlyphTypeface glyphTypefaceNormal;
-        public GlyphTypeface GlyphTypefaceNormal
+        private ItemFont itemFontNormal;
+        public ItemFont ItemFontNormal
         {
             get
             {
-                if (glyphTypefaceNormal == null)
-                    glyphTypefaceNormal = GetGlyphTypeface(Settings.Instance.FontName, false);
-                return glyphTypefaceNormal;
+                if (itemFontNormal == null)
+                {
+                    itemFontNormal = new ItemFont(Settings.Instance.FontName, false);
+                }
+                return itemFontNormal;
             }
-            set { glyphTypefaceNormal = null; }
+            set { itemFontNormal = null; }
         }
-        private GlyphTypeface glyphTypefaceTitle;
-        public GlyphTypeface GlyphTypefaceTitle
+        private ItemFont itemFontTitle;
+        public ItemFont ItemFontTitle
         {
             get
             {
-                if (glyphTypefaceTitle == null)
-                    glyphTypefaceTitle = GetGlyphTypeface(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle);
-                return glyphTypefaceTitle;
+                if (itemFontTitle == null)
+                {
+                    itemFontTitle = new ItemFont(Settings.Instance.FontNameTitle, Settings.Instance.FontBoldTitle);
+                }
+                return itemFontTitle;
             }
-            set { glyphTypefaceTitle = null; }
+            set { itemFontTitle = null; }
         }
-        private GlyphTypeface glyphTypefaceTunerNormal;
-        public GlyphTypeface GlyphTypefaceTunerNormal
+        private ItemFont itemFontTunerNormal;
+        public ItemFont ItemFontTunerNormal
         {
             get
             {
-                if (glyphTypefaceTunerNormal == null)
-                    glyphTypefaceTunerNormal = GetGlyphTypeface(Settings.Instance.TunerFontName, false);
-                return glyphTypefaceTunerNormal;
+                if (itemFontTunerNormal == null)
+                {
+                    itemFontTunerNormal = new ItemFont(Settings.Instance.TunerFontName, false);
+                }
+                return itemFontTunerNormal;
             }
-            set { glyphTypefaceTunerNormal = null; }
+            set { itemFontTunerNormal = null; }
         }
-        private GlyphTypeface glyphTypefaceTunerService;
-        public GlyphTypeface GlyphTypefaceTunerService
+        private ItemFont itemFontTunerService;
+        public ItemFont ItemFontTunerService
         {
             get
             {
-                if (glyphTypefaceTunerService == null)
-                    glyphTypefaceTunerService = GetGlyphTypeface(Settings.Instance.TunerFontNameService, Settings.Instance.TunerFontBoldService);
-                return glyphTypefaceTunerService;
+                if (itemFontTunerService == null)
+                {
+                    itemFontTunerService = new ItemFont(Settings.Instance.TunerFontNameService, Settings.Instance.TunerFontBoldService);
+                }
+                return itemFontTunerService;
             }
-            set { glyphTypefaceTunerService = null; }
+            set { itemFontTunerService = null; }
         }
 
         //最低表示高さ

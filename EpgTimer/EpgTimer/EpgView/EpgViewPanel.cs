@@ -14,8 +14,8 @@ namespace EpgTimer.EpgView
         //ProgramViewItemの座標系は番組表基準なので、この時点でCanvas.SetLeft()によりEpgViewPanel自身の座標を添付済みでなければならない
         public List<ProgramViewItem> Items { get; set; }
 
-        public ItemFont ItemFontNormal { get; set; }
-        public ItemFont ItemFontTitle { get; set; }
+        public ViewUtil.ItemFont ItemFontNormal { get; set; }
+        public ViewUtil.ItemFont ItemFontTitle { get; set; }
 
         public EpgViewPanel()
         {
@@ -38,8 +38,6 @@ namespace EpgTimer.EpgView
             {
                 return;
             }
-            ItemFontNormal.PrepareCache();
-            ItemFontTitle.PrepareCache();
 
             try
             {
@@ -56,8 +54,8 @@ namespace EpgTimer.EpgView
 
                 // あらかじめベースラインをそろえるために計算しておく。
                 // 今は sizeMin と sizeTitle 同じだけどね…
-                double baselineMin = Math.Max(sizeMin * ItemFontTitle.GlyphType.Baseline/*vutil.GlyphTypefaceTitle.Baseline*/, sizeTitle * ItemFontTitle.GlyphType.Baseline/*vutil.GlyphTypefaceTitle.Baseline*/);
-                double baselineNormal = sizeNormal * ItemFontNormal.GlyphType.Baseline/*vutil.GlyphTypefaceNormal.Baseline*/;
+                double baselineMin = Math.Max(sizeMin * ItemFontTitle.GlyphType.Baseline, sizeTitle * ItemFontTitle.GlyphType.Baseline);
+                double baselineNormal = sizeNormal * ItemFontNormal.GlyphType.Baseline;
 
                 foreach (ProgramViewItem info in Items)
                 {
@@ -89,7 +87,7 @@ namespace EpgTimer.EpgView
                         //分
                         string min = (info.EventInfo.StartTimeFlag != 1 ? "未定 " : info.EventInfo.start_time.Minute.ToString("d02"));
                         double useHeight = 0;
-                        if (RenderText(min, ref textDrawList, ItemFontTitle/*vutil.GlyphTypefaceTitle*/, sizeMin, width, height, x, y + baselineMin, ref useHeight, colorTitle, m) == false)
+                        if (RenderText(min, ref textDrawList, ItemFontTitle, sizeMin, width, height, x, y + baselineMin, ref useHeight, colorTitle, m) == false)
                         {
                             info.TitleDrawErr = true;
                             continue;
@@ -101,7 +99,7 @@ namespace EpgTimer.EpgView
                             //タイトル
                             if (info.EventInfo.ShortInfo.event_name.Length > 0)
                             {
-                                if (RenderText(info.EventInfo.ShortInfo.event_name, ref textDrawList, ItemFontTitle/*vutil.GlyphTypefaceTitle*/, sizeTitle, width - indentTitle, height - totalHeight, x + indentTitle, y + totalHeight + baselineMin, ref useHeight, colorTitle, m) == false)
+                                if (RenderText(info.EventInfo.ShortInfo.event_name, ref textDrawList, ItemFontTitle, sizeTitle, width - indentTitle, height - totalHeight, x + indentTitle, y + totalHeight + baselineMin, ref useHeight, colorTitle, m) == false)
                                 {
                                     info.TitleDrawErr = true;
                                     continue;
@@ -111,7 +109,7 @@ namespace EpgTimer.EpgView
                             //説明
                             if (info.EventInfo.ShortInfo.text_char.Length > 0)
                             {
-                                if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, ItemFontNormal/*vutil.GlyphTypefaceNormal*/, sizeNormal, width - indentNormal, height - totalHeight, x + indentNormal, y + totalHeight + baselineNormal, ref useHeight, colorNormal, m) == false)
+                                if (RenderText(info.EventInfo.ShortInfo.text_char, ref textDrawList, ItemFontNormal, sizeNormal, width - indentNormal, height - totalHeight, x + indentNormal, y + totalHeight + baselineNormal, ref useHeight, colorNormal, m) == false)
                                 {
                                     continue;
                                 }
@@ -123,7 +121,7 @@ namespace EpgTimer.EpgView
 //                            {
 //                                if (info.EventInfo.ExtInfo.text_char.Length > 0)
 //                                {
-//                                    if (RenderText(info.EventInfo.ExtInfo.text_char, ref textDrawList, ItemFontNormal/*vutil.GlyphTypefaceNormal*/, sizeNormal, width - widthOffset, height - totalHeight, x + widthOffset, y + totalHeight + baselineNormal, ref useHeight, colorNormal, m) == false)
+//                                    if (RenderText(info.EventInfo.ExtInfo.text_char, ref textDrawList, ItemFontNormal, sizeNormal, width - widthOffset, height - totalHeight, x + widthOffset, y + totalHeight + baselineNormal, ref useHeight, colorNormal, m) == false)
 //                                    {
 //                                        continue;
 //                                    }
@@ -140,11 +138,10 @@ namespace EpgTimer.EpgView
             }
         }
 
-        //protected bool RenderText(String text, ref List<TextDrawItem> textDrawList, GlyphTypeface glyphType, double fontSize, double maxWidth, double maxHeight, double x, double baseline, ref double useHeight, SolidColorBrush fontColor, Matrix m)
-        protected bool RenderText(String text, ref List<TextDrawItem> textDrawList, ItemFont itemFont, double fontSize, double maxWidth, double maxHeight, double x, double baseline, ref double useHeight, SolidColorBrush fontColor, Matrix m)
+        protected bool RenderText(String text, ref List<TextDrawItem> textDrawList, ViewUtil.ItemFont itemFont, double fontSize, double maxWidth, double maxHeight, double x, double baseline, ref double useHeight, SolidColorBrush fontColor, Matrix m)
         {
             double totalHeight = 0;
-            double fontHeight = fontSize * itemFont.GlyphType.Height/*glyphType.Height*/;
+            double fontHeight = fontSize * itemFont.GlyphType.Height;
 
             string[] lineText = text.Replace("\r", "").Split('\n');
             foreach (string line in lineText)
@@ -271,6 +268,11 @@ namespace EpgTimer.EpgView
                         }
                     }
                 }
+
+                // EpgViewPanel は複数に分けて Render するので、最後のパネルが Render し終わったら
+                // 些細なメモリ節約のために cache をクリアする
+                ItemFontNormal.ClearCache();
+                ItemFontTitle.ClearCache();
 
                 //パフォーマンス計測用
                 //long tickDraw = DateTime.Now.Ticks;

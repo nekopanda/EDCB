@@ -652,27 +652,27 @@ namespace EpgTimer
         public string FontName
         {
             get { return fontName; }
-            set { fontName = value; CommonManager.Instance.VUtil.GlyphTypefaceNormal = null; }
+            set { fontName = value; CommonManager.Instance.VUtil.ItemFontNormal = null; }
         }
         public double FontSize
         {
             get { return fontSize; }
-            set { fontSize = value; CommonManager.Instance.VUtil.GlyphTypefaceNormal = null; }
+            set { fontSize = value; CommonManager.Instance.VUtil.ItemFontNormal = null; }
         }
         public string FontNameTitle
         {
             get { return fontNameTitle; }
-            set { fontNameTitle = value; CommonManager.Instance.VUtil.GlyphTypefaceTitle = null; }
+            set { fontNameTitle = value; CommonManager.Instance.VUtil.ItemFontTitle = null; }
         }
         public double FontSizeTitle
         {
             get { return fontSizeTitle; }
-            set { fontSizeTitle = value; CommonManager.Instance.VUtil.GlyphTypefaceTitle = null; }
+            set { fontSizeTitle = value; CommonManager.Instance.VUtil.ItemFontTitle = null; }
         }
         public bool FontBoldTitle
         {
             get { return fontBoldTitle; }
-            set { fontBoldTitle = value; CommonManager.Instance.VUtil.GlyphTypefaceTitle = null; }
+            set { fontBoldTitle = value; CommonManager.Instance.VUtil.ItemFontTitle = null; }
         }
         public bool NoToolTip
         {
@@ -782,27 +782,27 @@ namespace EpgTimer
         public string TunerFontNameService
         {
             get { return tunerFontNameService; }
-            set { tunerFontNameService = value; CommonManager.Instance.VUtil.GlyphTypefaceTunerService = null; }
+            set { tunerFontNameService = value; CommonManager.Instance.VUtil.ItemFontTunerService = null; }
         }
         public double TunerFontSizeService
         {
             get { return tunerFontSizeService; }
-            set { tunerFontSizeService = value; CommonManager.Instance.VUtil.GlyphTypefaceTunerService = null; }
+            set { tunerFontSizeService = value; CommonManager.Instance.VUtil.ItemFontTunerService = null; }
         }
         public bool TunerFontBoldService
         {
             get { return tunerFontBoldService; }
-            set { tunerFontBoldService = value; CommonManager.Instance.VUtil.GlyphTypefaceTunerService = null; }
+            set { tunerFontBoldService = value; CommonManager.Instance.VUtil.ItemFontTunerService = null; }
         }
         public string TunerFontName
         {
             get { return tunerFontName; }
-            set { tunerFontName = value; CommonManager.Instance.VUtil.GlyphTypefaceTunerNormal = null; }
+            set { tunerFontName = value; CommonManager.Instance.VUtil.ItemFontTunerNormal = null; }
         }
         public double TunerFontSize
         {
             get { return tunerFontSize; }
-            set { tunerFontSize = value; CommonManager.Instance.VUtil.GlyphTypefaceTunerNormal = null; }
+            set { tunerFontSize = value; CommonManager.Instance.VUtil.ItemFontTunerNormal = null; }
         }
         public List<string> TunerServiceColors
         {
@@ -1889,19 +1889,19 @@ namespace EpgTimer
 
         public double FontHeight
         {
-            get { return FontSize * CommonManager.Instance.VUtil.GlyphTypefaceNormal.Height; }
+            get { return FontSize * CommonManager.Instance.VUtil.ItemFontNormal.GlyphType.Height; }
         }
         public double FontHeightTitle
         {
-            get { return FontSizeTitle * CommonManager.Instance.VUtil.GlyphTypefaceTitle.Height; }
+            get { return FontSizeTitle * CommonManager.Instance.VUtil.ItemFontTitle.GlyphType.Height; }
         }
         public double TunerFontHeight
         {
-            get { return tunerFontSize * CommonManager.Instance.VUtil.GlyphTypefaceTunerNormal.Height; }
+            get { return tunerFontSize * CommonManager.Instance.VUtil.ItemFontTunerNormal.GlyphType.Height; }
         }
         public double TunerFontHeightService
         {
-            get { return tunerFontSizeService * CommonManager.Instance.VUtil.GlyphTypefaceTunerService.Height; }
+            get { return tunerFontSizeService * CommonManager.Instance.VUtil.ItemFontTunerService.GlyphType.Height; }
         }
     }
 }
