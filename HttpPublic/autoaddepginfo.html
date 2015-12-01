@@ -1,0 +1,307 @@
+dofile(mg.document_root..'\\util.lua')
+
+path='Setting\\HttpPublic.ini'
+tkntrec=0+edcb.GetPrivateProfile('SET','tkntrec',true,path)~=0
+
+ct=[=[
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1.5">
+<title>EpgTimer</title>
+<link rel="shortcut icon" href="img/EpgTimer.ico">
+<link href="css/default.css" rel="stylesheet" type="text/css">
+<script src="js/jquery.min.js"></script>
+<script src="js/common.js"></script>
+</head>
+<body>
+<div id="wrap">
+<div id="wrap2">
+<div id="header" class="shadow">
+<div id="menu">
+<div id="menu_ico"><span></span></div>
+<div class="menu">
+]=]
+
+page=0+(mg.get_var(mg.request_info.query_string,'page') or 0)
+
+edcb.htmlEscape=15
+post=nil
+if mg.request_info.request_method=='POST' then
+  post=''
+  repeat
+    s=mg.read()
+    post=post..(s or '')
+  until not s
+  if #post~=mg.request_info.content_length then
+    post=nil
+  end
+end
+
+aa={}
+aa.dataID=0+(mg.get_var(mg.request_info.query_string, 'id') or 0)
+
+if aa.dataID==0 then
+  ct=ct..'<span>EPG予約 新規追加</span>\n'
+  aa.searchInfo={
+    andKey='',
+    notKey='',
+    regExpFlag=false,
+    titleOnlyFlag=false,
+    aimaiFlag=false,
+    notContetFlag=false,
+    freeCAFlag=0,
+    chkRecEnd=false,
+    chkRecDay=6,
+    chkRecNoService=false,
+    chkDurationMin=0,
+    chkDurationMax=0,
+    contentList={},
+    dateList={},
+    serviceList={}
+  }
+  for i,v in ipairs(edcb.GetChDataList()) do
+    if v.searchFlag then
+      table.insert(aa.searchInfo.serviceList, v)
+    end
+  end
+else
+  ct=ct..'<span>EPG予約 条件変更</span>\n'
+  for i,v in ipairs(edcb.EnumAutoAdd()) do
+    if v.dataID==aa.dataID then
+      aa=v
+      break
+    end
+  end
+end
+
+ct=ct..[=[
+<div class="space"></div>
+<nav>
+<a href="epg.html">番組表</a>
+<a class="sp" href="reserve.html">予約一覧</a>
+<a class="sp" href="recinfo.html">録画結果</a>
+<a class="sp" href="search.html">検索</a>
+</nav>
+</div>
+</div>
+</div>
+<div class="sidemenu">
+<span class="title">EpgTimer</span>
+<nav>
+<a class="link" href="epg.html">番組表</a>
+<a class="link" href="reserve.html">予約一覧</a>
+<a class="link" href="tunerreserve.html">チューナー別</a>
+<a class="link" href="autoaddepg.html">EPG予約</a>
+<a class="link" href="recinfo.html">録画結果</a>
+<a class="link" href="search.html">検索</a>
+<a class="link" href="setting.html">設定</a>
+</nav>
+</div>
+<div class="obfuscator"></div>
+<div id="main">
+<div class="center">
+]=]
+
+if aa.searchInfo then
+  si=aa.searchInfo
+  if post then
+    si.andKey=mg.get_var(post, 'andKey')
+    si.notKey=mg.get_var(post, 'notKey')
+    si.regExpFlag=mg.get_var(post, 'regExpFlag')
+    si.titleOnlyFlag=mg.get_var(post, 'titleOnlyFlag')
+    si.aimaiFlag=mg.get_var(post, 'aimaiFlag')
+    si.notContetFlag=mg.get_var(post, 'notContetFlag')
+    si.notDateFlag=mg.get_var(post, 'notDateFlag')
+    si.freeCAFlag=0+(mg.get_var(post, 'freeCAFlag') or 0)
+    si.chkRecEnd=mg.get_var(post, 'chkRecEnd')
+    si.chkRecDay=mg.get_var(post, 'chkRecDay') or 0
+    si.chkRecNoService=0+(mg.get_var(post, 'chkRecNoService') or 0)~=0
+    si.chkDurationMin=0+(mg.get_var(post, 'chkDurationMin') or 0)
+    si.chkDurationMax=0+(mg.get_var(post, 'chkDurationMax') or 0)
+    si.contentList={}
+    for i=0,10000 do
+      v=mg.get_var(post, 'contentList', i)
+      if not v then break end
+      table.insert(si.contentList, {content_nibble=0+v})
+    end
+    si.serviceList={}
+    for i=0,10000 do
+      v=mg.get_var(post, 'serviceList', i)
+      if not v then break end
+      m={string.match(v, '^(%d+)%-(%d+)%-(%d+)$')}
+      if #m==3 then
+        table.insert(si.serviceList, {onid=0+m[1], tsid=0+m[2], sid=0+m[3]})
+      end
+    end
+    si.dateList={}
+    for v in string.gmatch(mg.get_var(post, 'dateList') or '', '[^,]+') do
+      m={string.match(v, '^(.-)%-(%d+):(%d+)%-(.-)%-(%d+):(%d+)$')}
+      if #m==6 then
+        dateInfo={
+          startDayOfWeek=({['日']=0,['月']=1,['火']=2,['水']=3,['木']=4,['金']=5,['土']=6})[m[1]],
+          endDayOfWeek=({['日']=0,['月']=1,['火']=2,['水']=3,['木']=4,['金']=5,['土']=6})[m[4]]
+        }
+        if dateInfo.startDayOfWeek and dateInfo.endDayOfWeek then
+          dateInfo.startHour=0+m[2]
+          dateInfo.startMin=0+m[3]
+          dateInfo.endHour=0+m[5]
+          dateInfo.endMin=0+m[6]
+          table.insert(si.dateList, dateInfo)
+        end
+      end
+    end
+  end
+  Key=string.match(si.andKey, '^%^%!{999}(.*)')
+  ct=ct..'<div id="rec" class="card"><div class="form">\n'
+    ..'<form id="reserveadd" method="POST" action="autoaddepgaddchgkey.html?id='..aa.dataID..'&page='..page..'" data-autoid="'..aa.dataID..'">\n<div class="serch"><h3>検索条件</h3>\n'
+    ..'<ul class="sbs"><li>検索無効</li><li class="onoff sp"><input id="disable" type="checkbox" name="disableFlag" value="1"'..(Key and ' checked="checked"' or '')..'><label class="switch right" for="disable"></label></li></ul>\n'
+    ..'<ul><li>検索キーワード</li><li><input type="text" name="andKey" value="'..(Key and Key or si.andKey)..'" size="25"></li></ul>\n'
+    ..'<ul class="bottom"><li>NOTキーワード</li><li class="sp"><input type="text" name="notKey" value="'..si.notKey..'" size="25"></li></ul>\n'
+    ..'<ul><li></li><li class="float"><input id="reg" type="checkbox" name="regExpFlag" value="1"'..(si.regExpFlag and ' checked="checked"' or '')..'><label for="reg">正規表現</label></li>'
+    ..'<li><input id="aimai" type="checkbox" name="aimaiFlag" value="1"'..(si.aimaiFlag and ' checked="checked"' or '')..'><label for="aimai">あいまい検索</label></li>'
+    ..'<li class="float"><input id="title" type="checkbox" name="titleOnlyFlag" value="1"'..(si.titleOnlyFlag and ' checked="checked"' or '')..'><label for="title">番組名のみ</label></li></ul>\n'
+    ..'<ul class="check bottom btn"><li>ジャンル絞り込み</li><li><ul><li class="select"><select id="content">\n'
+    ..'<option value="all">すべて表示</option>\n'
+  for i=0,15 do
+    nibble1=edcb.GetGenreName(i*256+255)
+    if nibble1~='' then
+      ct=ct..'<option value="'..(i*256+255)..'"'
+      ct=ct..'>'..nibble1..'</option>\n'
+    end
+  end
+  ct=ct..'</select></li><li class="sp"><input id="g_celar" class="button raised" type="button" value="クリア"></li></ul></li></ul>\n'
+   ..'<ul class="check bottom"><li></li><li class="multiple sp"><select id="content2" name="contentList" multiple size="10">\n'
+  for i=0,15 do
+    nibble1=edcb.GetGenreName(i*256+255)
+    if nibble1~='' then
+      ct=ct..'<option class="g'..(i*256+255)..'" value="'..(i*256+255)..'"'
+      for j,v in ipairs(si.contentList) do
+        if v.content_nibble==i*256+255 then
+          ct=ct..' selected'
+          break
+        end
+      end
+      ct=ct..'>'..nibble1..'</option>\n'
+      for j=0,15 do
+        nibble2=edcb.GetGenreName(i*256+j)
+        if nibble2~='' then
+          ct=ct..'<option class="g'..(i*256+255)..'" value="'..(i*256+j)..'"'
+          for k,v in ipairs(si.contentList) do
+            if v.content_nibble==i*256+j then
+              ct=ct..' selected'
+              break
+            end
+          end
+          ct=ct..'>　'..nibble2..'</option>\n'
+        end
+      end
+    end
+  end
+  ct=ct..'</select></li></ul>\n'
+    ..'<ul><li></li><li><input id="notcontet" type="checkbox" name="notContetFlag" value="1"'..(si.notContetFlag and ' checked="checked"' or '')..'><label for="notcontet">NOT扱い</label></li></ul>\n'
+    ..'<input type="hidden" name="service">\n'
+    ..'<ul class="check bottom btn"><li>サービス絞り込み</li><li class="sp"><ul><li class="multiple"><select id="service2" name="serviceList" multiple size="10">\n'
+
+  a=edcb.GetChDataList()
+  st={}
+  table.sort(a, function(a,b) return a.sid<b.sid end)
+  for i,v in ipairs(a or {}) do
+    if 0x7880<=v.onid and v.onid<=0x7FE8 then
+      table.insert(st, v)
+    end
+  end
+  for i,v in ipairs(a or {}) do
+    if (v.onid<0x7880 or 0x7FE8<v.onid) then
+      table.insert(st, v)
+    end
+  end
+
+  for i,v in ipairs(st) do
+      ct=ct..'<option class="'..(
+        v.onid==4 and 'BS'..(v.serviceType==0x01 and ' image' or ' hide') or
+        (v.onid==6 or v.onid==7) and 'CS'..(v.serviceType==0x01 and ' image' or ' hide') or
+        v.onid==10 and 'HD'..(v.serviceType==0x01 and ' image' or ' hide') or
+        (v.onid==1 or v.onid==3) and 'SD'..(v.serviceType==0x01 and ' image' or ' hide') or
+        (0x7880<=v.onid and v.onid<=0x7FE8) and (v.partialFlag and "SEG image hide" or 'DTV'..(v.serviceType==0x01 and ' image' or ' hide')) or 'S-other')
+      ..'" value="'..v.onid..'-'..v.tsid..'-'..v.sid..'"'
+      for j,w in ipairs(si.serviceList) do
+        if w.onid==v.onid and w.tsid==v.tsid and w.sid==v.sid then
+          ct=ct..' selected'
+          break
+        end
+     end
+      ct=ct..'>'..v.serviceName..'</option>\n'
+  end
+  ct=ct ..'</select></li><li class="sp"><input id="select" class="button raised" type="button" value="全選択"></li></ul></li></ul>\n'
+    ..'<ul><li></li>'
+    ..'<li><input id="image" type="checkbox" checked="checked"><label for="image">映像のみ</label></li>'
+    ..'<li class="float"><input id="DTV" class="network" type="checkbox" checked="checked"><label for="DTV">地上波</label></li>'
+    ..'<li><input id="SEG" class="network" type="checkbox"><label for="SEG">ワンセグ</label></li>'
+    ..'<li class="float"><input id="BS" class="network" type="checkbox" checked="checked"><label for="BS">BS</label></li>'
+    ..'<li><input id="CS" class="network" type="checkbox" checked="checked"><label for="CS">CS</label></li>'
+--    ..'<li class="float"><input id="HD" class="network" type="checkbox" checked="checked"><label for="HD">スカパーHD</label></li>'
+--    ..'<li><input id="other" class="network" type="checkbox" checked="checked"><label for="other">その他</label></li>'
+    ..'</ul>\n'
+    ..'<ul class="bottom"><li>時間絞り込み</li><li><input type="text" name="dateList" value="'
+  for i,v in ipairs(si.dateList) do
+    ct=ct..(i==1 and '' or ',')
+      ..({'日','月','火','水','木','金','土',})[v.startDayOfWeek%7+1]..'-'..v.startHour..':'..v.startMin..'-'
+      ..({'日','月','火','水','木','金','土',})[v.endDayOfWeek%7+1]..'-'..v.endHour..':'..v.endMin
+  end
+  ct=ct..'" size="25" placeholder="日-23:00-月-5:00,水-3:00-水-5:00"></li></ul><ul class="bottom hint"><li></li><li class="sp">書式：[日～土]-HH:MM-[日～土]-HH:MM</li></ul>\n'
+    ..'<ul><li></li><li><input id="notdate" type="checkbox" name="notDateFlag" value="1"'..(si.notDateFlag and ' checked="checked"' or '')..'><label for="notdate">NOT扱い</label></li></ul>\n'
+    ..'<ul><li>スクランブル放送</li><li class="select"><select name="freeCAFlag">\n'
+    ..'<option value="0"'..(si.freeCAFlag==0 and ' selected' or '')..'>無料、有料番組を対象とする'
+    ..'<option value="1"'..(si.freeCAFlag==1 and ' selected' or '')..'>無料番組を対象とする'
+    ..'<option value="2"'..(si.freeCAFlag==2 and ' selected' or '')..'>有料番組を対象とする'
+    ..'</select></li></ul>\n'
+    ..(tkntrec and '<ul class="bottom"><li>番組長で絞り込み</li><li class="float"><input type="number" name="chkDurationMin" value="'..si.chkDurationMin..'" min="0">分以上</li><li><input type="number" name="chkDurationMax" value="'..si.chkDurationMax..'" min="0">分以下</li><li></li><li></li></ul></ul><ul class="bottom hint"><li></li><li class="sp">※それぞれ0分で絞り込み無し</li></ul>\n' or '')
+    ..'<ul class="check"><li>無効対象</li><li><input id="chkRecEnd" type="checkbox" name="chkRecEnd" value="1"'..(si.chkRecEnd and ' checked="checked"' or '')..'><label for="chkRecEnd"><input type="number" name="chkRecDay" value="'..si.chkRecDay..'" min="0">日前までの録画結果</label></li></ul>\n'
+    ..(tkntrec and '<ul style="padding-top:0;"><li></li><li><input id="chkRecNoService" type="checkbox" name="chkRecNoService" value="1"'..(si.chkRecNoService and ' checked="checked"' or '')..'><label for="chkRecNoService">全てのサービスで無効にする</label></li></ul>' or '')
+    ..'</div>\n<div><h3>録画設定</h3>\n<ul><li>プリセット</li>\n<li class="select"><select name="presetID">\n'
+  presetID=0+(mg.get_var(mg.request_info.query_string,'presetID') or mg.get_var(post, 'presetID') or 65535)
+  if aa.dataID==0 and presetID==65535 then
+    presetID=0
+  end
+  preset=false
+  rs=aa.recSetting
+  presetList=edcb.EnumRecPresetInfo()
+  for i,v in ipairs(presetList) do
+    if v.id==presetID then
+      preset=true
+      rs=v.recSetting
+    end
+  end
+  for i,v in ipairs(presetList) do
+    ct=ct..'<option value="'..v.id..'"'..(v.id==presetID and ' selected' or '')..'>'..v.name..'\n'
+  end
+  if aa.dataID~=0 then
+    ct=ct..'<option value="65535"'..(preset and '' or ' selected')..'>予約時\n'
+  end
+  ct=ct..'</select></li></ul>\n'
+
+
+  if rs then
+    ct=ct..'<input type="hidden" name="presetID" value="'..(preset and presetID or 65535)..'">'
+      ..RecSettingTemplate(rs)
+  end
+  ct=ct..'</div></form>\n'
+
+  if aa.dataID~=0 then
+    ct=ct..'<form id="del" method="POST" action="autoaddepgdelkey.html?id='..aa.dataID..'&page='..page..'"></form>\n'
+  end
+  ct=ct..'</div>\n<div id="button"><input class="button" form="reserveadd" type="submit" value="'..(aa.dataID==0 and '追加' or '変更')..'">'..(aa.dataID~=0 and '<input form="del" class="button del" type="submit" value="削除">' or '')..'</div>\n'
+
+end
+
+ct=ct..[=[
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
+]=]
+mg.write('HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: '..#ct..(mg.keep_alive(true) and '' or '\r\nConnection: close')..'\r\n\r\n', ct)
