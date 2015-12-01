@@ -12,6 +12,13 @@
 
 BOOL GetNetworkPath(const wstring strPath, wstring& strNetPath)
 {
+	// UNCパスはそのまま返す
+	if (strPath.compare(0, 2, L"\\\\") == 0)
+	{
+		strNetPath = strPath;
+		return TRUE;
+	}
+
 	TCHAR computername[MAX_COMPUTERNAME_LENGTH + 1];
 	DWORD len = MAX_COMPUTERNAME_LENGTH + 1;
 	if (!GetComputerName(computername, &len)) return FALSE;
