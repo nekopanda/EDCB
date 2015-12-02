@@ -136,7 +136,7 @@ public:
 				Replace(notKeyList.back(), L"　", L" ");
 			}
 		}
-
+/*
 		//時間分解
 		vector<TIME_SEARCH> timeList;
 		for (size_t i = 0; i<key->dateList.size(); i++) {
@@ -208,6 +208,8 @@ public:
 				}
 			}
 		}
+*/
+		wstring targetWord;
 
 		//サービスごとに検索
 		for (size_t i = 0; i<key->serviceList.size(); i++) {
@@ -319,12 +321,12 @@ public:
 					}
 
 					//時間確認
-					if (timeList.size() > 0) {
+					if (key->dateList.size() > 0) {
 						if (itrEvent->second->StartTimeFlag == FALSE) {
 							//開始時間不明なので対象外
 							continue;
 						}
-						BOOL inTime = IsInDateTime(&timeList, itrEvent->second->start_time);
+						BOOL inTime = IsInDateTime(key->dateList, itrEvent->second->start_time);
 						if (key->notDateFlag == 0) {
 							if (inTime == FALSE) {
 								//時間範囲外なので対象外
@@ -352,41 +354,44 @@ public:
 					}
 
 					//キーワード確認
-					if (notKeyList.size() != 0) {
-						if (IsFindKeyword(key->regExpFlag, regExp, key->titleOnlyFlag, caseFlag, &notKeyList, itrEvent->second->shortInfo.get(), itrEvent->second->extInfo.get(), FALSE) == TRUE) {
-							//notキーワード見つかったので対象外
+					if (itrEvent->second->shortInfo == NULL) {
+						if (andKeyList.size() != 0) {
+							//内容にかかわらず対象外
 							continue;
 						}
-
-						//if( key->regExpFlag == FALSE && key->aimaiFlag == 1){
-						//	//あいまい検索
-						//	if( IsFindLikeKeyword(key->titleOnlyFlag, &notKeyList, itrEvent->second->shortInfo.get(), itrEvent->second->extInfo.get(), FALSE) == TRUE ){
-						//		//notキーワード見つかったので対象外
-						//		continue;
-						//	}
-						//}else{
-						//	if( IsFindKeyword(key->regExpFlag, key->titleOnlyFlag, &notKeyList, itrEvent->second->shortInfo.get(), itrEvent->second->extInfo.get(), FALSE) == TRUE ){
-						//		//notキーワード見つかったので対象外
-						//		continue;
-						//	}
-						//}
 					}
-					if (andKeyList.size() != 0) {
-						//if( IsFindKeyword(key->regExpFlag, key->titleOnlyFlag, &andKeyList, itrEvent->second->shortInfo.get(), itrEvent->second->extInfo.get(), TRUE) == FALSE ){
-						//	//andキーワード見つからなかったので対象外
-						//	continue;
-						//}
-						if (key->regExpFlag == FALSE && key->aimaiFlag == 1) {
-							//あいまい検索
-							if (IsFindLikeKeyword(key->titleOnlyFlag, caseFlag, &andKeyList, itrEvent->second->shortInfo.get(), itrEvent->second->extInfo.get(), TRUE, &matchKey) == FALSE) {
-								//andキーワード見つからなかったので対象外
+					else if (andKeyList.size() != 0 || notKeyList.size() != 0) {
+						//検索対象の文字列作成
+						targetWord = itrEvent->second->shortInfo->event_name;
+						if (key->titleOnlyFlag == FALSE) {
+							targetWord += L"\r\n";
+							targetWord += itrEvent->second->shortInfo->text_char;
+							if (itrEvent->second->extInfo != NULL) {
+								targetWord += L"\r\n";
+								targetWord += itrEvent->second->extInfo->text_char;
+							}
+						}
+						ConvertSearchText(targetWord);
+
+						if (notKeyList.size() != 0) {
+							if (IsFindKeyword(key->regExpFlag, regExp, caseFlag, &notKeyList, targetWord, FALSE) != FALSE) {
+								//notキーワード見つかったので対象外
 								continue;
 							}
 						}
-						else {
-							if (IsFindKeyword(key->regExpFlag, regExp, key->titleOnlyFlag, caseFlag, &andKeyList, itrEvent->second->shortInfo.get(), itrEvent->second->extInfo.get(), TRUE, &matchKey) == FALSE) {
-								//andキーワード見つからなかったので対象外
-								continue;
+						if (andKeyList.size() != 0) {
+							if (key->regExpFlag == FALSE && key->aimaiFlag == 1) {
+								//あいまい検索
+								if (IsFindLikeKeyword(caseFlag, &andKeyList, targetWord, TRUE, &matchKey) == FALSE) {
+									//andキーワード見つからなかったので対象外
+									continue;
+								}
+							}
+							else {
+								if (IsFindKeyword(key->regExpFlag, regExp, caseFlag, &andKeyList, targetWord, TRUE, &matchKey) == FALSE) {
+									//andキーワード見つからなかったので対象外
+									continue;
+								}
 							}
 						}
 					}
@@ -425,12 +430,6 @@ protected:
 	BOOL loadStop;
 	BOOL initialLoadDone;
 
-	typedef struct _TIME_SEARCH{
-		BYTE week;
-		DWORD start;
-		DWORD end;
-	}TIME_SEARCH;
-
 	map<LONGLONG, EPGDB_SERVICE_EVENT_INFO> epgMap;
 protected:
 	static BOOL ConvertEpgInfo(const EPGDB_SERVICE_INFO* service, const EPG_EVENT_INFO* src, EPGDB_EVENT_INFO* dest);
@@ -441,9 +440,9 @@ protected:
 	UINT LoadThread();
 	void SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARCH_RESULT_EVENT>* resultMap, IRegExpPtr& regExp);
 	static BOOL IsEqualContent(vector<EPGDB_CONTENT_DATA>* searchKey, vector<EPGDB_CONTENT_DATA>* eventData);
-	static BOOL IsInDateTime(vector<TIME_SEARCH>* timeList, SYSTEMTIME startTime);
-	static BOOL IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titleOnlyFlag, BOOL caseFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey = NULL);
-	static BOOL IsFindLikeKeyword(BOOL titleOnlyFlag, BOOL caseFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey = NULL);
+	static BOOL IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList, const SYSTEMTIME& time);
+	static BOOL IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey = NULL);
+	static BOOL IsFindLikeKeyword(BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey = NULL);
 
 };
 

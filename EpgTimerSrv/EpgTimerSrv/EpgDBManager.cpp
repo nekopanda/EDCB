@@ -525,16 +525,18 @@ BOOL CEpgDBManager::IsEqualContent(vector<EPGDB_CONTENT_DATA>* searchKey, vector
 	return FALSE;
 }
 
-BOOL CEpgDBManager::IsInDateTime(vector<TIME_SEARCH>* timeList, SYSTEMTIME startTime)
+BOOL CEpgDBManager::IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList, const SYSTEMTIME& time)
 {
-	if( timeList == NULL ){
-		return FALSE;
-	}
-
-	DWORD start = startTime.wHour*60 + startTime.wMinute;
-	for( size_t i=0; i<timeList->size(); i++){
-		if( (*timeList)[i].week == startTime.wDayOfWeek ){
-			if( (*timeList)[i].start <= start && start <= (*timeList)[i].end ){
+	int weekMin = (time.wDayOfWeek * 24 + time.wHour) * 60 + time.wMinute;
+	for( size_t i=0; i<dateList.size(); i++ ){
+		int start = (dateList[i].startDayOfWeek * 24 + dateList[i].startHour) * 60 + dateList[i].startMin;
+		int end = (dateList[i].endDayOfWeek * 24 + dateList[i].endHour) * 60 + dateList[i].endMin;
+		if( start >= end ){
+			if( start <= weekMin || weekMin <= end ){
+				return TRUE;
+			}
+		}else{
+			if( start <= weekMin && weekMin <= end ){
 				return TRUE;
 			}
 		}
@@ -543,31 +545,16 @@ BOOL CEpgDBManager::IsInDateTime(vector<TIME_SEARCH>* timeList, SYSTEMTIME start
 	return FALSE;
 }
 
-struct IGNORE_CASE_COMPARATOR{
-	bool operator()(wchar_t l, wchar_t r){
-		return (L'a' <= l && l <= L'z' ? l - L'a' + L'A' : l) == (L'a' <= r && r <= L'z' ? r - L'a' + L'A' : r);
-	}
-};
-
-BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titleOnlyFlag, BOOL caseFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey)
+static wstring::const_iterator SearchKeyword(const wstring& str, const wstring& key, BOOL caseFlag)
 {
-	if( shortInfo == NULL ){
-		//基本情報ないので対象外
-		return FALSE;
-	}
+	return caseFlag ?
+		std::search(str.begin(), str.end(), key.begin(), key.end()) :
+		std::search(str.begin(), str.end(), key.begin(), key.end(),
+			[](wchar_t l, wchar_t r) { return (L'a' <= l && l <= L'z' ? l - L'a' + L'A' : l) == (L'a' <= r && r <= L'z' ? r - L'a' + L'A' : r); });
+}
 
-	//検索対象の文字列作成
-	wstring word = shortInfo->event_name;
-	if( titleOnlyFlag == FALSE ){
-		word += L"\r\n";
-		word += shortInfo->text_char;
-		if( extInfo != NULL ){
-			word += L"\r\n";
-			word += extInfo->text_char;
-		}
-	}
-	ConvertSearchText(word);
-
+BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey)
+{
 	if( regExpFlag == TRUE ){
 		//正規表現モード
 		try{
@@ -602,8 +589,7 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 		//通常
 		if( andMode == TRUE ){
 			for( size_t i=0; i<keyList->size(); i++ ){
-				if( caseFlag != FALSE && word.find((*keyList)[i]) == string::npos ||
-				    caseFlag == FALSE && search(word.begin(), word.end(), (*keyList)[i].begin(), (*keyList)[i].end(), IGNORE_CASE_COMPARATOR()) == word.end() ){
+				if( SearchKeyword(word, (*keyList)[i], caseFlag) == word.end() ){
 					//見つからなかったので終了
 					return FALSE;
 				}else{
@@ -618,8 +604,7 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 			return TRUE;
 		}else{
 			for( size_t i=0; i<keyList->size(); i++ ){
-				if( caseFlag != FALSE && word.find((*keyList)[i]) != string::npos ||
-				    caseFlag == FALSE && search(word.begin(), word.end(), (*keyList)[i].begin(), (*keyList)[i].end(), IGNORE_CASE_COMPARATOR()) != word.end() ){
+				if( SearchKeyword(word, (*keyList)[i], caseFlag) != word.end() ){
 					//見つかったので終了
 					return TRUE;
 				}
@@ -629,24 +614,8 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 	}
 }
 
-BOOL CEpgDBManager::IsFindLikeKeyword(BOOL titleOnlyFlag, BOOL caseFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey)
+BOOL CEpgDBManager::IsFindLikeKeyword(BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey)
 {
-	if( shortInfo == NULL ){
-		//基本情報ないので対象外
-		return FALSE;
-	}
-
-	//検索対象の文字列作成
-	wstring word = shortInfo->event_name;
-	if( titleOnlyFlag == FALSE ){
-		word += L"\r\n";
-		word += shortInfo->text_char;
-		if( extInfo != NULL ){
-			word += L"\r\n";
-			word += extInfo->text_char;
-		}
-	}
-	ConvertSearchText(word);
 	BOOL ret = FALSE;
 
 	DWORD hitCount = 0;
@@ -655,12 +624,10 @@ BOOL CEpgDBManager::IsFindLikeKeyword(BOOL titleOnlyFlag, BOOL caseFlag, vector<
 		wstring key= L"";
 		for( size_t j=0; j<(*keyList)[i].size(); j++ ){
 			key += (*keyList)[i].at(j);
-			if( caseFlag != FALSE && word.find(key) == string::npos ||
-			    caseFlag == FALSE && search(word.begin(), word.end(), key.begin(), key.end(), IGNORE_CASE_COMPARATOR()) == word.end() ){
+			if( SearchKeyword(word, key, caseFlag) == word.end() ){
 				missCount+=1;
 				key = (*keyList)[i].at(j);
-				if( caseFlag != FALSE && word.find(key) == string::npos ||
-				    caseFlag == FALSE && search(word.begin(), word.end(), key.begin(), key.end(), IGNORE_CASE_COMPARATOR()) == word.end() ){
+				if( SearchKeyword(word, key, caseFlag) == word.end() ){
 					missCount+=1;
 					key = L"";
 				}else{
