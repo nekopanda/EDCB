@@ -38,6 +38,7 @@ namespace EpgTimer
         private bool closeFlag = false;
         private bool initExe = false;
 
+        private System.Windows.Threading.DispatcherTimer chkRegistTCPTimer = null;
         private bool needUnRegist = true;
 
         private bool idleShowBalloon = false;
@@ -51,6 +52,7 @@ namespace EpgTimer
         {
             Settings.LoadFromXmlFile();
             CommonManager.Instance.NWMode = Settings.Instance.NWMode;
+            ChkRegistTCPTimerWork();
 
             CommonManager.Instance.MM.ReloadWorkData();
             CommonManager.Instance.ReloadCustContentColorList();
@@ -581,6 +583,37 @@ namespace EpgTimer
             return CommonManager.Instance.IsConnected;
         }
 
+        public void ChkRegistTCPTimerWork()
+        {
+            if (CommonManager.Instance.NWMode == true && Settings.Instance.ChkSrvRegistTCP == true)
+            {
+                if (chkRegistTCPTimer == null)
+                {
+                    chkRegistTCPTimer = new System.Windows.Threading.DispatcherTimer();
+                }
+                else
+                {
+                    chkRegistTCPTimer.Stop();
+                }
+                chkRegistTCPTimer.Interval = TimeSpan.FromMinutes(Math.Max(Settings.Instance.ChkSrvRegistInterval, 1));
+                chkRegistTCPTimer.Tick += (sender, e) =>
+                {
+                    if (CommonManager.Instance.NW.IsConnected == true)
+                    {
+                        bool registered = true;
+                        if ((ErrCode)cmd.SendIsRegistTCP(Settings.Instance.NWWaitPort, ref registered) == ErrCode.CMD_SUCCESS)
+                        {
+                            if (registered == false)
+                            {
+                                ConnectCmd(false);
+                            }
+                        }
+                    }
+                };
+                chkRegistTCPTimer.Start();
+            }
+        }
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             if ((Settings.Instance.NWMode == true && Settings.Instance.WakeReconnectNW == false) || ConnectCmd(false) == false)
@@ -830,6 +863,7 @@ namespace EpgTimer
                     if (CommonManager.Instance.NWMode == true)
                     {
                         CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
+                        ChkRegistTCPTimerWork();
                     }
                     else
                     {
