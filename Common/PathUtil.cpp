@@ -71,21 +71,27 @@ void GetEpgTimerSrvIniPath(wstring& strPath)
 	strPath += L"\\EpgTimerSrv.ini";
 }
 
-void GetRecFolderPath(wstring& strPath)
+BOOL GetRecFolderPath(wstring& strPath, int index)
 {
 	wstring strIni = L"";
 	GetCommonIniPath(strIni);
 	
+	int numOfFolders = GetPrivateProfileInt(L"SET", L"RecFolderNum", 0, strIni.c_str());
+	if (numOfFolders < 0 || index >= numOfFolders)
+		return FALSE;
+	wstring strKey = L"RecFolderPath" + std::to_wstring(index);
+
 	WCHAR wPath[MAX_PATH + 8];
-	GetPrivateProfileString( L"Set", L"RecFolderPath0", L"", wPath, MAX_PATH + 8, strIni.c_str() );
+	GetPrivateProfileString( L"Set", strKey.c_str(), L"", wPath, MAX_PATH + 8, strIni.c_str() );
 	strPath = wPath;
 	ChkFolderPath(strPath);
 	if( strPath.size() >= MAX_PATH ){
 		throw std::runtime_error("");
 	}
-	if( strPath.empty() || GetPrivateProfileInt(L"SET", L"RecFolderNum", 0, strIni.c_str()) <= 0 ){
+	if( strPath.empty() || numOfFolders <= 0 ){
 		GetSettingPath(strPath);
 	}
+	return strPath.empty() ? FALSE : TRUE;
 }
 
 void GetFileTitle(const wstring& strPath, wstring& strTitle)

@@ -61,7 +61,7 @@ namespace EpgTimer.Setting
 
                 if (listBox_recFolder.IsEnabled)
                 {
-                    Settings.GetDefRecFolders().ForEach(folder => listBox_recFolder.Items.Add(folder));
+                    Settings.GetDefRecFolders().ForEach(folder => listBox_recFolder.Items.Add(new UserCtrlView.BGBarListBoxItem(folder)));
                 }
 
                 if (tabItem2.IsEnabled && Directory.Exists(SettingPath.SettingFolderPath))
@@ -271,12 +271,12 @@ namespace EpgTimer.Setting
                 if (listBox_recFolder.IsEnabled)
                 {
                     int recFolderCount = listBox_recFolder.Items.Count == 1 &&
-                    string.Compare(((string)listBox_recFolder.Items[0]).TrimEnd('\\'), textBox_setPath.Text.TrimEnd('\\'), true) == 0 ? 0 : listBox_recFolder.Items.Count;
+                    string.Compare(listBox_recFolder.Items[0].ToString().TrimEnd('\\'), textBox_setPath.Text.TrimEnd('\\'), true) == 0 ? 0 : listBox_recFolder.Items.Count;
                     IniFileHandler.WritePrivateProfileString("SET", "RecFolderNum", recFolderCount.ToString(), SettingPath.CommonIniPath);
                     for (int i = 0; i < recFolderCount; i++)
                     {
                         string key = "RecFolderPath" + i.ToString();
-                        string val = listBox_recFolder.Items[i] as string;
+                        string val = listBox_recFolder.Items[i].ToString();
                         IniFileHandler.WritePrivateProfileString("SET", key, val, SettingPath.CommonIniPath);
                     }
                 }
@@ -458,15 +458,26 @@ namespace EpgTimer.Setting
             {
                 if (String.IsNullOrEmpty(textBox_recFolder.Text) == false)
                 {
-                    foreach (String info in listBox_recFolder.Items)
+                    foreach (var info in listBox_recFolder.Items)
                     {
-                        if (String.Compare(textBox_recFolder.Text, info, true) == 0)
+                        if (String.Compare(textBox_recFolder.Text, info.ToString(), true) == 0)
                         {
                             MessageBox.Show("すでに追加されています");
                             return;
                         }
                     }
-                    listBox_recFolder.Items.Add(textBox_recFolder.Text);
+
+                    //追加対象のフォルダーの空き容量をサーバーに問い合わせてみる
+                    var folders = new List<RecFolderInfo>();
+                    if (CommonManager.Instance.CtrlCmd.SendEnumRecFolders(textBox_recFolder.Text, ref folders) != ErrCode.CMD_SUCCESS)
+                    {
+                        //サーバーが問い合わせに対応していないようなので、フォルダー名だけ登録する
+                        folders.Add(new RecFolderInfo(textBox_recFolder.Text));
+                    }
+                    if (folders.Count == 1)
+                    {
+                        listBox_recFolder.Items.Add(new UserCtrlView.BGBarListBoxItem(folders[0]));
+                    }
                 }
             }
             catch (Exception ex)

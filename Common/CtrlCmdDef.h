@@ -70,6 +70,7 @@
 #define CMD2_EPG_SRV_GET_PG_INFO			1023 //”Ô‘gî•ñŽæ“¾
 #define CMD2_EPG_SRV_SEARCH_PG				1025 //”Ô‘gŒŸõ
 #define CMD2_EPG_SRV_ENUM_PG_ALL			1026 //”Ô‘gî•ñˆê——Žæ“¾
+#define CMD2_EPG_SRV_ENUM_REC_FOLDER        1027 //˜^‰æ•Û‘¶êŠˆê——Žæ“¾
 
 #define CMD2_EPG_SRV_ENUM_AUTO_ADD			1031 //Ž©“®—\–ñ“o˜^‚ÌðŒˆê——Žæ“¾
 #define CMD2_EPG_SRV_ADD_AUTO_ADD			1032 //Ž©“®—\–ñ“o˜^‚ÌðŒ’Ç‰Á

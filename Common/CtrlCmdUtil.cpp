@@ -1116,6 +1116,17 @@ BOOL ReadVALUE( WORD ver, REC_FILE_INFO* val, const BYTE* buff, DWORD buffSize, 
 	return TRUE;
 }
 
+DWORD WriteVALUE(WORD ver, BYTE* buff, DWORD buffOffset, const REC_FOLDER_INFO& val)
+{
+	DWORD pos = buffOffset + sizeof(DWORD);
+	pos += WriteVALUE(ver, buff, pos, val.recFolder);
+	pos += WriteVALUE(ver, buff, pos, val.freeBytes);
+	pos += WriteVALUE(ver, buff, pos, val.totalBytes);
+	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
+	return pos - buffOffset;
+}
+
+
 DWORD WriteVALUE(WORD ver, BYTE* buff, DWORD buffOffset, const EPG_AUTO_ADD_BASIC_INFO& val)
 {
 	DWORD pos = buffOffset + sizeof(DWORD);

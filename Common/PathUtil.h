@@ -13,7 +13,7 @@ void GetCommonIniPath(wstring& strPath);
 
 void GetEpgTimerSrvIniPath(wstring& strPath);
 
-void GetRecFolderPath(wstring& strPath);
+BOOL GetRecFolderPath(wstring& strPath, int index = 0);
 
 void GetFileTitle(const wstring& strPath, wstring& strTitle);
 

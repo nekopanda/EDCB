@@ -98,6 +98,9 @@
       <DependentUpon>InfoWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="RestorableWindow.cs" />
+    <Compile Include="UserCtrlView\BGBarListBoxItem.xaml.cs">
+      <DependentUpon>BGBarListBoxItem.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UserCtrlView\DataViewBase.cs" />
     <Compile Include="UserCtrlView\ListViewController.cs" />
     <Compile Include="Menu\MenuSettingData.cs" />
@@ -316,6 +319,10 @@
     <Page Include="Menu\SetContextMenuWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UserCtrlView\BGBarListBoxItem.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UserCtrlView\EpgAutoAddView.xaml">
       <SubType>Designer</SubType>

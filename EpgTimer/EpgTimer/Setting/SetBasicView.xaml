@@ -21,7 +21,7 @@
                     <TextBox Height="24" HorizontalAlignment="Left" Margin="157,48,0,0" Name="textBox_exe" VerticalAlignment="Top" Width="372" ToolTip="{Binding ElementName=textBox_exe, Path=Text}" />
                     <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="535,48,0,0" Name="button_exe" VerticalAlignment="Top" Width="44" Click="button_exe_Click" />
                     <Label Content="録画保存フォルダ　（空き容量が少ない場合、上から順に録画対象のフォルダとします）" Height="28" HorizontalAlignment="Left" Margin="12,80,0,0" Name="label3" VerticalAlignment="Top" />
-                    <ListBox Height="100" HorizontalAlignment="Left" Margin="45,114,0,0" Name="listBox_recFolder" VerticalAlignment="Top" Width="484" />
+                    <ListBox Height="100" HorizontalAlignment="Left" Margin="45,114,0,0" Name="listBox_recFolder" VerticalAlignment="Top" Width="484" HorizontalContentAlignment="Stretch" />
                     <Button Content="↑" Height="23" HorizontalAlignment="Left" Margin="535,114,0,0" Name="button_rec_up" VerticalAlignment="Top" Width="44" />
                     <Button Content="↓" Height="23" HorizontalAlignment="Left" Margin="535,143,0,0" Name="button_rec_down" VerticalAlignment="Top" Width="44" />
                     <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="535,191,0,0" Name="button_rec_del" VerticalAlignment="Top" Width="44" Click="button_rec_del_Click" />

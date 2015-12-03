@@ -1679,6 +1679,45 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			sys->epgDB.EnumEventAll(EnumPgAllCallback, resParam);
 		}
 		break;
+	case CMD2_EPG_SRV_ENUM_REC_FOLDER:
+		OutputDebugString(L"CMD2_EPG_SRV_ENUM_REC_FOLDER\r\n");
+		{
+			vector<REC_FOLDER_INFO> resultList;
+			wstring val;
+			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL)) {
+				int i = 0;
+				if (val.empty()) {
+					GetRecFolderPath(val, i++);
+				}
+				do {
+					if (val.empty()) continue;
+
+					// C: などドライブ名のみの場合、末尾に "\\" が無ければ追加する。
+					if (val.size() == 2 && val.compare(1, 1, L":") == 0) {
+						val += L"\\";
+					}
+
+					REC_FOLDER_INFO rfi = {};
+					rfi.recFolder = val;
+
+					// UNC の場合、末尾に "\\" が無ければ追加する。GetDiskFreeSpaceEx の要求仕様。
+					if (*val.rbegin() != L'\\' && val.compare(0, 2, L"\\\\") == 0) {
+						val += L"\\";
+					}
+
+					ULARGE_INTEGER free;
+					ULARGE_INTEGER total;
+					if (GetDiskFreeSpaceEx(val.c_str(), &free, &total, NULL) != 0) {
+						rfi.freeBytes = free.QuadPart;
+						rfi.totalBytes = total.QuadPart;
+					}
+					resultList.push_back(rfi);
+				} while (i && GetRecFolderPath(val, i++));
+				resParam->data = NewWriteVALUE(&resultList, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
+			}
+		}
+		break;
 	case CMD2_EPG_SRV_ENUM_PLUGIN:
 		{
 			OutputDebugString(L"CMD2_EPG_SRV_ENUM_PLUGIN\r\n");

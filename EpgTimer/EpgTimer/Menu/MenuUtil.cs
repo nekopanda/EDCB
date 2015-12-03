@@ -1126,10 +1126,10 @@ namespace EpgTimer
             }
             else
             {
-                List<string> defFolders = Settings.GetDefRecFolders();
+                List<RecFolderInfo> defFolders = Settings.GetDefRecFolders();
                 if (defFolders.Count != 0)
                 {
-                    folder = defFolders[0];
+                    folder = defFolders[0].recFolder;
                 }
             }
 

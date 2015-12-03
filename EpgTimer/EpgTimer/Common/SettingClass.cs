@@ -1856,23 +1856,26 @@ namespace EpgTimer
             }
         }
 
-        public static List<string> GetDefRecFolders()
+        public static List<RecFolderInfo> GetDefRecFolders()
         {
-            var folders = new List<string>();
-            int num = IniFileHandler.GetPrivateProfileInt("SET", "RecFolderNum", 0, SettingPath.CommonIniPath);
-            if (num == 0)
+            var folders = new List<RecFolderInfo>();
+            if (CommonManager.Instance.CtrlCmd.SendEnumRecFolders("", ref folders) != ErrCode.CMD_SUCCESS)
             {
-                folders.Add(SettingPath.SettingFolderPath);
-            }
-            else
-            {
-                for (uint i = 0; i < num; i++)
+                int num = IniFileHandler.GetPrivateProfileInt("SET", "RecFolderNum", 0, SettingPath.CommonIniPath);
+                if (num == 0)
                 {
-                    string key = "RecFolderPath" + i.ToString();
-                    string folder = IniFileHandler.GetPrivateProfileString("SET", key, "", SettingPath.CommonIniPath);
-                    if (folder.Length > 0)
+                    folders.Add(new RecFolderInfo(SettingPath.SettingFolderPath));
+                }
+                else
+                {
+                    for (uint i = 0; i < num; i++)
                     {
-                        folders.Add(folder);
+                        string key = "RecFolderPath" + i.ToString();
+                        string folder = IniFileHandler.GetPrivateProfileString("SET", key, "", SettingPath.CommonIniPath);
+                        if (folder.Length > 0)
+                        {
+                            folders.Add(new RecFolderInfo(folder));
+                        }
                     }
                 }
             }

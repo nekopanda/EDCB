@@ -211,6 +211,12 @@ typedef struct _REC_FILE_INFO : public REC_FILE_BASIC_INFO {
 	};
 } REC_FILE_INFO;
 
+typedef struct _REC_FOLDER_INFO {
+	wstring  recFolder;
+	unsigned __int64  freeBytes;
+	unsigned __int64  totalBytes;
+} REC_FOLDER_INFO;
+
 typedef struct _TUNER_RESERVE_INFO{
 	DWORD tunerID;
 	wstring tunerName;

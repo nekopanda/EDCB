@@ -635,6 +635,40 @@ namespace EpgTimer
         }
     }
 
+    public class RecFolderInfo : ICtrlCmdReadWrite
+    {
+        public string recFolder;
+        public UInt64 freeBytes;
+        public UInt64 totalBytes;
+
+        public RecFolderInfo()
+        {
+            recFolder = "";
+            freeBytes = 0;
+            totalBytes = 0;
+        }
+        public RecFolderInfo(string path)
+        {
+            recFolder = path;
+            freeBytes = 0;
+            totalBytes = 0;
+        }
+        public void Read(MemoryStream s, ushort version)
+        {
+            var r = new CtrlCmdReader(s, version);
+            r.Begin();
+            r.Read(ref recFolder);
+            r.Read(ref freeBytes);
+            r.Read(ref totalBytes);
+            r.End();
+        }
+
+        public void Write(MemoryStream s, ushort version)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     public class TunerReserveInfo : ICtrlCmdReadWrite
     {
         public uint tunerID;

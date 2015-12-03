@@ -603,7 +603,7 @@ namespace EpgTimer
             }
             else
             {
-                Settings.GetDefRecFolders().ForEach(folder => CtxmGenerateOpenFolderItem(menu, folder, "(デフォルト) "));
+                Settings.GetDefRecFolders().ForEach(folder => CtxmGenerateOpenFolderItem(menu, folder.recFolder, "(デフォルト) "));
             }
 
             if (recSetting != null)

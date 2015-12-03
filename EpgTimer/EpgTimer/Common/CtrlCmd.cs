@@ -285,6 +285,10 @@ namespace EpgTimer
         CMD_EPG_SRV_GET_EPG_FILETIME2 = 2031,
         /// <summary>サーバー連携用　EPGデータファイル取得</summary>
         CMD_EPG_SRV_GET_EPG_FILE2 = 2032,
+        /// <summary>番組検索</summary>
+        CMD_EPG_SRV_SEARCH_PG2 = 2125,
+        /// <summary>番組検索、キーごとのイベントを全て返す</summary>
+        CMD_EPG_SRV_SEARCH_PG_BYKEY2 = 2127,
         /// <summary>自動予約登録の条件一覧取得</summary>
         CMD_EPG_SRV_ENUM_AUTO_ADD2 = 2131,
         /// <summary>自動予約登録の条件追加</summary>
@@ -305,12 +309,10 @@ namespace EpgTimer
         CMD_EPG_SRV_GET_PG_INFO = 1023,
         /// <summary>番組検索</summary>
         CMD_EPG_SRV_SEARCH_PG = 1025,
-        /// <summary>番組検索(Ver対応版)</summary>
-        CMD_EPG_SRV_SEARCH_PG2 = 2125,
-        /// <summary>番組検索(key毎版)</summary>
-        CMD_EPG_SRV_SEARCH_PG_BYKEY2 = 2127,
         /// <summary>番組情報一覧取得</summary>
         CMD_EPG_SRV_ENUM_PG_ALL = 1026,
+        /// <summary>録画保存場所一覧取得</summary>
+        CMD_EPG_SRV_ENUM_REC_FOLDER = 1027,
         /// <summary>自動予約登録の条件一覧取得</summary>
         CMD_EPG_SRV_ENUM_AUTO_ADD = 1031,
         /// <summary>自動予約登録の条件追加</summary>
@@ -524,6 +526,8 @@ namespace EpgTimer
         //public ErrCode SendSearchPg(List<EpgSearchKeyInfo> key, ref List<EpgEventInfo> val) { object o = val; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_SEARCH_PG, key, ref o); }
         /// <summary>番組情報一覧を取得する</summary>
         public ErrCode SendEnumPgAll(ref List<EpgServiceEventInfo> val) { object o = val;  return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_PG_ALL, ref o); }
+        /// <summary>録画保存場所一覧を取得する</summary>
+        public ErrCode SendEnumRecFolders(string val, ref List<RecFolderInfo> resVal) { object o = resVal; return SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_REC_FOLDER, val, ref o); }
         /// <summary>自動予約登録条件を削除する</summary>
         public ErrCode SendDelEpgAutoAdd(List<uint> val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_DEL_AUTO_ADD, val); }
         /// <summary>プログラム予約自動登録の条件削除</summary>
