@@ -469,8 +469,10 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 				    r.durationSecond != itr->second.durationSecond ||
 				    r.recSetting.recMode != itr->second.recSetting.recMode ||
 				    r.recSetting.priority != itr->second.recSetting.priority ||
-				    r.recSetting.startMargine != itr->second.recSetting.startMargine ||
-				    r.recSetting.endMargine != itr->second.recSetting.endMargine ||
+				    r.recSetting.useMargineFlag != itr->second.recSetting.useMargineFlag ||
+				    r.recSetting.useMargineFlag && (
+				        r.recSetting.startMargine != itr->second.recSetting.startMargine ||
+				        r.recSetting.endMargine != itr->second.recSetting.endMargine) ||
 				    r.recSetting.tunerID != itr->second.recSetting.tunerID ){
 					__int64 startTime, startTimeNext;
 					CalcEntireReserveTime(&startTime, NULL, itr->second);
@@ -1166,7 +1168,7 @@ void CReserveManager::CheckAutoDel() const
 	for( size_t i = 0; i < this->autoDelFolderList.size(); i++ ){
 		wstring mountPath;
 		GetChkDrivePath(this->autoDelFolderList[i], mountPath);
-		std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
+		std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), towupper);
 		map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator itr = mountMap.find(mountPath);
 		if( itr == mountMap.end() ){
 			itr = mountMap.insert(std::make_pair(mountPath, std::make_pair(0ULL, vector<wstring>()))).first;
@@ -1197,7 +1199,7 @@ void CReserveManager::CheckAutoDel() const
 			for( size_t i = 0; i < recFolderList.size(); i++ ){
 				wstring mountPath;
 				GetChkDrivePath(recFolderList[i], mountPath);
-				std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
+				std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), towupper);
 				map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator jtr = mountMap.find(mountPath);
 				if( jtr != mountMap.end() ){
 					if( jtr->second.first == 0 ){
@@ -1217,8 +1219,6 @@ void CReserveManager::CheckAutoDel() const
 	}
 
 	//ドライブレベルでのチェック
-	map<wstring, wstring> protectFiles;
-	recInfoText.GetProtectFiles(&protectFiles);
 	for( map<wstring, pair<ULONGLONG, vector<wstring>>>::const_iterator itr = mountMap.begin(); itr != mountMap.end(); itr++ ){
 		ULARGE_INTEGER freeBytes;
 		if( itr->second.first > 0 && GetDiskFreeSpaceEx(itr->first.c_str(), &freeBytes, NULL, NULL) && freeBytes.QuadPart < itr->second.first ){
@@ -1245,9 +1245,9 @@ void CReserveManager::CheckAutoDel() const
 			}
 			while( needFreeSize > 0 && tsFileMap.empty() == false ){
 				wstring delPath = tsFileMap.begin()->second.second;
-				wstring delPathUpper = delPath;
-				std::transform(delPathUpper.begin(), delPathUpper.end(), delPathUpper.begin(), toupper);
-				if( protectFiles.find(delPathUpper) != protectFiles.end() ){
+				if( this->recInfoText.GetMap().end() != std::find_if(this->recInfoText.GetMap().begin(), this->recInfoText.GetMap().end(),
+				        [&](const pair<DWORD, REC_FILE_INFO>& a) { return a.second.protectFlag && CompareNoCase(a.second.recFilePath, delPath) == 0; }) ){
+					//プロテクトされた録画済みファイルは消さない
 					_OutputDebugString(L"★No Delete(Protected) : %s\r\n", delPath.c_str());
 				}else{
 					DeleteFile(delPath.c_str());
