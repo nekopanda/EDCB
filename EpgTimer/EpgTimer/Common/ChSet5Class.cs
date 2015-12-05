@@ -129,19 +129,21 @@ namespace EpgTimer
             return true;
         }
 
-#if false
-// EpgTimer 側から変更することはないはず...
         public static bool SaveFile()
         {
             try
             {
-                String filePath = SettingPath.SettingFolderPath + "\\ChSet5.txt";
-                System.IO.StreamWriter writer = (new System.IO.StreamWriter(filePath, false, System.Text.Encoding.Default));
+                if (IniFileHandler.CanUpdateInifile == false)
+                {
+                    return false;
+                }
+
                 if (Instance.ChList != null)
                 {
+                    string output = "";
                     foreach (ChSet5Item info in Instance.ChList.Values)
                     {
-                        writer.WriteLine("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}",
+                        output += string.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\r\n",
                             info.ServiceName,
                             info.NetworkName,
                             info.ONID,
@@ -152,8 +154,19 @@ namespace EpgTimer
                             info.EpgCapFlag,
                             info.SearchFlag);
                     }
+                    if (output.Length > 0)
+                    {
+                        string header = ";<ChSet5.txt>\r\n";
+                        if (CommonManager.Instance.CtrlCmd.SendUpdateSetting(header + output) != ErrCode.CMD_SUCCESS)
+                        {
+                            // サーバーが対応していないので直接書く。
+                            String filePath = SettingPath.SettingFolderPath + "\\ChSet5.txt";
+                            System.IO.StreamWriter writer = (new System.IO.StreamWriter(filePath, false, System.Text.Encoding.Default));
+                            writer.Write(output);
+                            writer.Close();
+                        }
+                    }
                 }
-                writer.Close();
             }
             catch
             {
@@ -161,7 +174,6 @@ namespace EpgTimer
             }
             return true;
         }
-#endif
     }
 
     public class ChSet5Item

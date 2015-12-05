@@ -42,8 +42,7 @@ namespace EpgTimer
                 IniSetting.Instance.UpToDate();
 
                 Settings.SaveToXmlFile();
-                // EpgTimer 側から更新することはないはず
-                //ChSet5.SaveFile();
+                ChSet5.SaveFile();
                 CommonManager.Instance.ReloadCustContentColorList();
             }
             catch (Exception ex)
