@@ -30,7 +30,6 @@ namespace EpgTimer.Setting
         public bool ngFileStreaming = false;
         public bool ngShareFile = false;
 
-        private MenuSettingData ctxmSetInfo;
         private EpgSearchKeyInfo defSearchKey;
 
         private List<String> extList = new List<string>();
@@ -196,8 +195,6 @@ namespace EpgTimer.Setting
                 ngShareFile = true;
             }
 
-            this.ctxmSetInfo = Settings.Instance.MenuSet.Clone();
-
             comboBox_process.Items.Add("リアルタイム");
             comboBox_process.Items.Add("高");
             comboBox_process.Items.Add("通常以上");
@@ -224,7 +221,6 @@ namespace EpgTimer.Setting
 
             checkBox_cautionOnRecChange.IsChecked = Settings.Instance.CautionOnRecChange;
             textBox_cautionOnRecMarginMin.Text = Settings.Instance.CautionOnRecMarginMin.ToString();
-            checkBox_displayAutoAddMissing.IsChecked = Settings.Instance.DisplayReserveAutoAddMissing;
 
             // button_autoDel
             int count;
@@ -248,28 +244,13 @@ namespace EpgTimer.Setting
                 delChkFolderList.Add(IniFileHandler.GetPrivateProfileString("DEL_CHK", i.ToString(), "", SettingPath.TimerSrvIniPath));
             }
 
-            try
+            if (CommonManager.Instance.IsConnected)
             {
-                if (CommonManager.Instance.NWMode == false)
-                {
-                    String plugInFile = IniFileHandler.GetPrivateProfileString("SET", "RecNamePlugInFile", "RecName_Macro.dll", SettingPath.TimerSrvIniPath);
-                    string[] files = Directory.GetFiles(SettingPath.ModulePath + "\\RecName", "RecName*.dll");
-                    int select = 0;
-                    foreach (string info in files)
-                    {
-                        int index = comboBox_recname.Items.Add(System.IO.Path.GetFileName(info));
-                        if (String.Compare(System.IO.Path.GetFileName(info), plugInFile, true) == 0)
-                        {
-                            select = index;
-                        }
-                    }
-                    if (comboBox_recname.Items.Count != 0)
-                    {
-                        comboBox_recname.SelectedIndex = select;
-                    }
-                }
+                CommonManager.Instance.DB.ReloadPlugInFile();
             }
-            catch { }
+            comboBox_recname.ItemsSource = CommonManager.Instance.DB.RecNamePlugInList.Values;
+            String plugInFile = IniFileHandler.GetPrivateProfileString("SET", "RecNamePlugInFile", "RecName_Macro.dll", SettingPath.TimerSrvIniPath);
+            comboBox_recname.SelectedItem = plugInFile;
         }
 
         private void SetAppView_tabItem3()
@@ -306,7 +287,6 @@ namespace EpgTimer.Setting
             checkBox_minWake.IsChecked = Settings.Instance.WakeMin;
             checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
             checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
-            checkBox_playDClick.IsChecked = Settings.Instance.PlayDClick;
             checkBox_showTray.IsChecked = Settings.Instance.ShowTray;
             checkBox_minHide.IsChecked = Settings.Instance.MinHide;
             checkBox_cautionManyChange.IsChecked = Settings.Instance.CautionManyChange;
@@ -489,8 +469,6 @@ namespace EpgTimer.Setting
             {
                 IniFileHandler.WritePrivateProfileString("SET", "ProcessPriority", comboBox_process.SelectedIndex.ToString(), SettingPath.TimerSrvIniPath);
             }
-
-            Settings.Instance.MenuSet = this.ctxmSetInfo.Clone();
         }
 
         private void SaveSetting_tabItem2()
@@ -538,7 +516,6 @@ namespace EpgTimer.Setting
 
             Settings.Instance.CautionOnRecChange = (checkBox_cautionOnRecChange.IsChecked != false);
             Settings.Instance.CautionOnRecMarginMin = mutil.MyToNumerical(textBox_cautionOnRecMarginMin, Convert.ToInt32, Settings.Instance.CautionOnRecMarginMin); 
-            Settings.Instance.DisplayReserveAutoAddMissing = (checkBox_displayAutoAddMissing.IsChecked != false);
         }
 
         private void SaveSetting_tabItem3()
@@ -592,7 +569,6 @@ namespace EpgTimer.Setting
 
             Settings.Instance.NoToolTip = (checkBox_noToolTips.IsChecked == true);
             Settings.Instance.NoBallonTips = (checkBox_noBallonTips.IsChecked == true);
-            Settings.Instance.PlayDClick = (checkBox_playDClick.IsChecked == true);
             Settings.Instance.CautionManyChange = (checkBox_cautionManyChange.IsChecked != false);
             Settings.Instance.CautionManyNum = mutil.MyToNumerical(textBox_cautionManyChange, Convert.ToInt32, Settings.Instance.CautionManyNum); 
             Settings.Instance.WakeReconnectNW = (checkBox_wakeReconnect.IsChecked == true);
@@ -787,18 +763,6 @@ namespace EpgTimer.Setting
             if (dlg.ShowDialog() == true)
             {
                 dlg.GetSetting(ref defSearchKey);
-            }
-        }
-
-        private void button_set_cm_Click(object sender, RoutedEventArgs e)
-        {
-            SetContextMenuWindow dlg = new SetContextMenuWindow();
-            dlg.info = this.ctxmSetInfo.Clone();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-
-            if (dlg.ShowDialog() == true)
-            {
-                this.ctxmSetInfo = dlg.info.Clone();
             }
         }
 

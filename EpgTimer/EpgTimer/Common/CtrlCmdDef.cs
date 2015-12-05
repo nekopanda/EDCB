@@ -501,7 +501,7 @@ namespace EpgTimer
         }
     }
 
-    public class RecFileInfo : ICtrlCmdReadWrite
+    public partial class RecFileInfo : ICtrlCmdReadWrite
     {
         /// <summary>ID</summary>
         public uint ID;

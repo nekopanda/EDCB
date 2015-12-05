@@ -27,10 +27,8 @@ namespace EpgTimer.Setting
             if (CommonManager.Instance.NWMode == true)
             {
                 label3.IsEnabled = false;
-                listBox_bon.IsEnabled = false;
                 button_del.IsEnabled = false;
                 button_add.IsEnabled = false;
-                comboBox_bon.IsEnabled = false;
             }
 
             try
@@ -45,24 +43,11 @@ namespace EpgTimer.Setting
                 textBox_playCmd.Text = Settings.Instance.FilePlayCmd;
                 checkBox_playOnAirWithExe.IsChecked = Settings.Instance.FilePlayOnAirWithExe;
 
-                if (comboBox_bon.IsEnabled && Directory.Exists(SettingPath.SettingFolderPath))
+                SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
+
+                if (comboBox_bon.IsEnabled)
                 {
-                    string[] files = Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt");
-                    SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
-                    foreach (string info in files)
-                    {
-                        try
-                        {
-                            String bonName = "";
-                            String fileName = System.IO.Path.GetFileName(info);
-                            bonName = GetBonFileName(fileName);
-                            bonName += ".dll";
-                            comboBox_bon.Items.Add(bonName);
-                        }
-                        catch
-                        {
-                        }
-                    }
+                    comboBox_bon.ItemsSource = CommonManager.Instance.GetBonFileList();
                     if (comboBox_bon.Items.Count > 0)
                     {
                         comboBox_bon.SelectedIndex = 0;
@@ -83,33 +68,6 @@ namespace EpgTimer.Setting
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
-        }
-
-        private String GetBonFileName(String src)
-        {
-            int pos = src.LastIndexOf(")");
-            if (pos < 1)
-            {
-                return src;
-            }
-
-            int count = 1;
-            for (int i = pos - 1; i >= 0; i--)
-            {
-                if (src[i] == '(')
-                {
-                    count--;
-                }
-                else if (src[i] == ')')
-                {
-                    count++;
-                }
-                if (count == 0)
-                {
-                    return src.Substring(0, i);
-                }
-            }
-            return src;
         }
 
         public void SaveSetting()

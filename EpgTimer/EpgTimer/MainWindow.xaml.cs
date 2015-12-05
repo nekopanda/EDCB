@@ -573,38 +573,32 @@ namespace EpgTimer
 
         public void ChkRegistTCPTimerWork()
         {
-            if (CommonManager.Instance.NWMode == true && Settings.Instance.ChkSrvRegistTCP == true)
-            {
-                if (chkRegistTCPTimer == null)
-                {
-                    chkRegistTCPTimer = new System.Windows.Threading.DispatcherTimer();
-                    chkRegistTCPTimer.Tick += (sender, e) =>
-                    {
-                        if (CommonManager.Instance.NW.IsConnected == true)
-                        {
-                            bool registered = true;
-                            if ((ErrCode)cmd.SendIsRegistTCP(Settings.Instance.NWWaitPort, ref registered) == ErrCode.CMD_SUCCESS)
-                            {
-                                if (registered == false)
-                                {
-                                    ConnectCmd(false);
-                                }
-                            }
-                        }
-                    };
-                }
-                else
-                {
-                    chkRegistTCPTimer.Stop();
-                }
-
-                chkRegistTCPTimer.Interval = TimeSpan.FromMinutes(Math.Max(Settings.Instance.ChkSrvRegistInterval, 1));
-                chkRegistTCPTimer.Start();
-            }
-            else if (chkRegistTCPTimer != null)
+            //オプション状態などが変っている場合もあるので、いったん破棄する。
+            if (chkRegistTCPTimer != null)
             {
                 chkRegistTCPTimer.Stop();
                 chkRegistTCPTimer = null;
+            }
+
+            if (CommonManager.Instance.NWMode == true && Settings.Instance.ChkSrvRegistTCP == true)
+            {
+                chkRegistTCPTimer = new System.Windows.Threading.DispatcherTimer();
+                chkRegistTCPTimer.Interval = TimeSpan.FromMinutes(Math.Max(Settings.Instance.ChkSrvRegistInterval, 1));
+                chkRegistTCPTimer.Tick += (sender, e) =>
+                {
+                    if (CommonManager.Instance.NW.IsConnected == true)
+                    {
+                        bool registered = true;
+                        if ((ErrCode)cmd.SendIsRegistTCP(Settings.Instance.NWWaitPort, ref registered) == ErrCode.CMD_SUCCESS)
+                        {
+                            if (registered == false)
+                            {
+                                ConnectCmd(false);
+                            }
+                        }
+                    }
+                };
+                chkRegistTCPTimer.Start();
             }
         }
 

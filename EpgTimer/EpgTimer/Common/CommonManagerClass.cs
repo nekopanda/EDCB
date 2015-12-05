@@ -1489,10 +1489,6 @@ namespace EpgTimer
                 }
             }
         }
-        private SolidColorBrush _GetSolidBrush(string s)
-        {
-            return ColorDef.SolidBrush((Color)ColorConverter.ConvertFromString(s));
-        }
         public void ReloadCustContentColorList()
         {
             try
@@ -1520,30 +1516,35 @@ namespace EpgTimer
                 }
 
                 CustTimeColorList.Clear();
-                for (int i = 0; i < Settings.Instance.TimeColorList.Count; i++)
+                for (int i = 0; i < Settings.Instance.EpgEtcColors.Count; i++)
                 {
-                    CustTimeColorList.Add(_GetColorBrush(Settings.Instance.TimeColorList[i], Settings.Instance.TimeCustColorList[i], Settings.Instance.EpgGradationHeader));
+                    CustTimeColorList.Add(_GetColorBrush(Settings.Instance.EpgEtcColors[i], Settings.Instance.EpgEtcCustColors[i], Settings.Instance.EpgGradationHeader));
                 }
 
-                CustServiceColor = _GetColorBrush(Settings.Instance.ServiceColor, Settings.Instance.ServiceCustColor, Settings.Instance.EpgGradationHeader, 1.0, 2.0);
+                CustServiceColor = _GetColorBrush(Settings.Instance.EpgEtcColors[4], Settings.Instance.EpgEtcCustColors[4], Settings.Instance.EpgGradationHeader, 1.0, 2.0);
 
-                ResDefBackColor = _GetSolidBrush(Settings.Instance.ResDefBackColor);
-                ResErrBackColor = _GetSolidBrush(Settings.Instance.ResErrBackColor);
-                ResWarBackColor = _GetSolidBrush(Settings.Instance.ResWarBackColor);
-                ResNoBackColor = _GetSolidBrush(Settings.Instance.ResNoBackColor);
-                ResAutoAddMissingBackColor = _GetSolidBrush(Settings.Instance.ResAutoAddMissingBackColor);
+                RecEndDefBackColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.RecEndColors[0], Settings.Instance.RecEndCustColors[0]);
+                RecEndErrBackColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.RecEndColors[1], Settings.Instance.RecEndCustColors[1]);
+                RecEndWarBackColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.RecEndColors[2], Settings.Instance.RecEndCustColors[2]);
 
-                ListDefForeColor = _GetSolidBrush(Settings.Instance.ListDefFontColor);
 
-                RecModeForeColor = Settings.Instance.RecModeFontColorList.Select(c => (_GetSolidBrush(c))).ToList();
+                ListDefForeColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.ListDefColor, Settings.Instance.ListDefCustColor);
 
-                RecEndDefBackColor = _GetSolidBrush(Settings.Instance.RecEndDefBackColor);
-                RecEndErrBackColor = _GetSolidBrush(Settings.Instance.RecEndErrBackColor);
-                RecEndWarBackColor = _GetSolidBrush(Settings.Instance.RecEndWarBackColor);
+                RecModeForeColor.Clear();
+                for (int i = 0; i < Settings.Instance.RecModeFontColors.Count; i++)
+                {
+                    RecModeForeColor.Add((SolidColorBrush)_GetColorBrush(Settings.Instance.RecModeFontColors[i], Settings.Instance.RecModeFontCustColors[i]));
+                }
 
-                StatResForeColor = _GetSolidBrush(Settings.Instance.StatResForeColor);
-                StatRecForeColor = _GetSolidBrush(Settings.Instance.StatRecForeColor);
-                StatOnAirForeColor = _GetSolidBrush(Settings.Instance.StatOnAirForeColor);
+                ResDefBackColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.ResBackColors[0], Settings.Instance.ResBackCustColors[0]);
+                ResNoBackColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.ResBackColors[1], Settings.Instance.ResBackCustColors[1]);
+                ResErrBackColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.ResBackColors[2], Settings.Instance.ResBackCustColors[2]);
+                ResWarBackColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.ResBackColors[3], Settings.Instance.ResBackCustColors[3]);
+                ResAutoAddMissingBackColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.ResBackColors[4], Settings.Instance.ResBackCustColors[4]);
+
+                StatResForeColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.StatColors[0], Settings.Instance.StatCustColors[0]);
+                StatRecForeColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.StatColors[1], Settings.Instance.StatCustColors[1]);
+                StatOnAirForeColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.StatColors[2], Settings.Instance.StatCustColors[2]);
             }
             catch (Exception ex)
             {
@@ -1566,5 +1567,71 @@ namespace EpgTimer
                 file.Close();
             }
         }
+
+        public List<string> GetBonFileList()
+        {
+            var list = new List<string>();
+
+            try
+            {
+                if (CommonManager.Instance.NWMode == false)
+                {
+                    foreach (string info in Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt"))
+                    {
+                        list.Add(GetBonFileName(System.IO.Path.GetFileName(info)) + ".dll");
+                    }
+                }
+                else
+                {
+                    //EpgTimerが作成したEpgTimerSrv.iniからBonDriverセクションを拾い出す
+                    //将来にわたって確実なリストアップではないし、本来ならSendEnumPlugIn()あたりを変更して取得すべきだが、
+                    //参考表示なので構わない
+                    using (var reader = (new System.IO.StreamReader(SettingPath.TimerSrvIniPath, Encoding.Default)))
+                    {
+                        while (reader.Peek() >= 0)
+                        {
+                            string buff = reader.ReadLine();
+                            int start = buff.IndexOf('[');
+                            int end = buff.LastIndexOf(".dll]");
+                            if (start >= 0 && end >= start + 2)
+                            {
+                                list.Add(buff.Substring(start + 1, end + 3 - start));
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return list;
+        }
+
+        private String GetBonFileName(String src)
+        {
+            int pos = src.LastIndexOf(")");
+            if (pos < 1)
+            {
+                return src;
+            }
+
+            int count = 1;
+            for (int i = pos - 1; i >= 0; i--)
+            {
+                if (src[i] == '(')
+                {
+                    count--;
+                }
+                else if (src[i] == ')')
+                {
+                    count++;
+                }
+                if (count == 0)
+                {
+                    return src.Substring(0, i);
+                }
+            }
+            return src;
+        }
+
     }
 }
