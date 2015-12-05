@@ -1710,8 +1710,8 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 					if (GetDiskFreeSpaceEx(val.c_str(), &free, &total, NULL) != 0) {
 						rfi.freeBytes = free.QuadPart;
 						rfi.totalBytes = total.QuadPart;
+						resultList.push_back(rfi);
 					}
-					resultList.push_back(rfi);
 				} while (i && GetRecFolderPath(val, i++));
 				resParam->data = NewWriteVALUE(&resultList, resParam->dataSize);
 				resParam->param = CMD_SUCCESS;

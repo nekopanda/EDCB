@@ -46,7 +46,7 @@ namespace EpgTimer.Setting
                 CommonManager.Instance.VUtil.DisableControlChildren(tabItem2);
                 grid_tuner.IsEnabled = true;
                 CommonManager.Instance.VUtil.ChangeChildren(grid_tuner, false);
-                listBox_bon.IsEnabled = true;
+                listBox_bon.IsEnabled = IniFileHandler.IsSyncWithServer;
                 if (IniFileHandler.IsSyncWithServer == false)
                 {
                     CommonManager.Instance.VUtil.DisableControlChildren(tabItem3);
@@ -57,11 +57,7 @@ namespace EpgTimer.Setting
                 label2.IsEnabled = false;
                 textBox_exe.IsEnabled = false;
                 button_exe.IsEnabled = false;
-                listBox_recFolder.IsEnabled = IniFileHandler.IsSyncWithServer;
-                button_rec_up.IsEnabled = IniFileHandler.IsSyncWithServer;
-                button_rec_down.IsEnabled = IniFileHandler.IsSyncWithServer;
-                button_rec_del.IsEnabled = IniFileHandler.IsSyncWithServer;
-                textBox_recFolder.IsEnabled = false;
+                listBox_recFolder.IsEnabled = true;
                 button_rec_open.IsEnabled = false;
                 button_rec_add.IsEnabled = IniFileHandler.IsSyncWithServer;
             }
@@ -70,13 +66,19 @@ namespace EpgTimer.Setting
 
             try
             {
+                //tabItem1
                 textBox_setPath.Text = SettingPath.SettingFolderPath;
                 textBox_exe.Text = SettingPath.EdcbExePath;
 
-                if (listBox_recFolder.IsEnabled)
-                {
-                    Settings.GetDefRecFolders().ForEach(folder => listBox_recFolder.Items.Add(new UserCtrlView.BGBarListBoxItem(folder)));
-                }
+                Settings.GetDefRecFolders().ForEach(folder => listBox_recFolder.Items.Add(new UserCtrlView.BGBarListBoxItem(folder)));
+                bool isEnabled = listBox_recFolder.Items.Count > 0;
+                listBox_recFolder.IsEnabled = isEnabled;
+                button_rec_up.IsEnabled = IsEnabled;
+                button_rec_down.IsEnabled = IsEnabled;
+                button_rec_del.IsEnabled = IsEnabled;
+                textBox_recFolder.IsEnabled = IsEnabled;
+                button_rec_open.IsEnabled = IsEnabled;
+                button_rec_add.IsEnabled = IsEnabled;
 
                 //tabItem2
                 if (listBox_bon.IsEnabled)
@@ -444,16 +446,38 @@ namespace EpgTimer.Setting
                         }
                     }
 
-                    //追加対象のフォルダーの空き容量をサーバーに問い合わせてみる
+                    // 追加対象のフォルダーの空き容量をサーバーに問い合わせてみる
+                    // SendEnumRecFolders にフォルダー名を指定した場合、そのフォルダーの空き容量を返してくる
                     var folders = new List<RecFolderInfo>();
                     if (CommonManager.Instance.CtrlCmd.SendEnumRecFolders(textBox_recFolder.Text, ref folders) != ErrCode.CMD_SUCCESS)
                     {
-                        //サーバーが問い合わせに対応していないようなので、フォルダー名だけ登録する
-                        folders.Add(new RecFolderInfo(textBox_recFolder.Text));
+                        if (CommonManager.Instance.NW.IsConnected == false)
+                        {
+                            if (System.IO.Directory.Exists(textBox_recFolder.Text))
+                            {
+                                //サーバーが問い合わせに対応していないようなので、フォルダー名だけ登録する
+                                folders.Add(new RecFolderInfo(textBox_recFolder.Text));
+                            }
+                            else
+                            {
+                                MessageBox.Show("フォルダーが存在するか確認してください。");
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("EpgTimerNW ではフォルダーの追加は出来ません。");
+                            return;
+                        }
                     }
                     if (folders.Count == 1)
                     {
                         listBox_recFolder.Items.Add(new UserCtrlView.BGBarListBoxItem(folders[0]));
+                    }
+                    else
+                    {
+                        // SendEnumRecFolders でフォルダーの空き容量が取得できなかった場合
+                        MessageBox.Show("サーバーからアクセスできるフォルダーか確認してください。");
                     }
                 }
             }

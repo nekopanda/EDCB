@@ -203,7 +203,7 @@ namespace EpgTimer
                     if (_sections == null)
                     {
                         // EpgTimerSrv の FILE_COPY にパッチが当たってないと _sections が null のままなので例外を投げて下層に捕捉させる
-                        throw new NotImplementedException("EpgTimerSrvのバージョンが古いです");
+                        throw new NotImplementedException("EpgTimerSrv.exe が INIファイル読み込みに対応していません");
                     }
                     if (_sections.ContainsKey(section) == false)
                     {
@@ -392,6 +392,10 @@ namespace EpgTimer
                         {
                             _files[f].Flush();
                         }
+                    }
+                    else
+                    {
+                        throw new NotImplementedException("EpgTimerSrv.exe が INIファイル更新に対応していません");
                     }
                 }
             }
@@ -1894,22 +1898,33 @@ namespace EpgTimer
         public static List<RecFolderInfo> GetDefRecFolders()
         {
             var folders = new List<RecFolderInfo>();
+
+            // サーバーから保存フォルダーを取得してみる
             if (CommonManager.Instance.CtrlCmd.SendEnumRecFolders("", ref folders) != ErrCode.CMD_SUCCESS)
             {
-                int num = IniFileHandler.GetPrivateProfileInt("SET", "RecFolderNum", 0, SettingPath.CommonIniPath);
-                if (num == 0)
+                // ローカル接続かサーバーから INI ファイルを取得できれば INI ファイルの内容を直接読む
+                if (CommonManager.Instance.NW.IsConnected == false || IniFileHandler.IsSyncWithServer)
                 {
-                    folders.Add(new RecFolderInfo(SettingPath.SettingFolderPath));
-                }
-                else
-                {
-                    for (uint i = 0; i < num; i++)
+                    int num = IniFileHandler.GetPrivateProfileInt("SET", "RecFolderNum", 0, SettingPath.CommonIniPath);
+                    if (num == 0)
                     {
-                        string key = "RecFolderPath" + i.ToString();
-                        string folder = IniFileHandler.GetPrivateProfileString("SET", key, "", SettingPath.CommonIniPath);
-                        if (folder.Length > 0)
+                        // ネットワーク接続のときにクライアント側のパスを指定しても意味がないので
+                        // ローカル接続のときのみ Setting フォルダーをデフォルト設定にする
+                        if (CommonManager.Instance.NW.IsConnected == false)
                         {
-                            folders.Add(new RecFolderInfo(folder));
+                            folders.Add(new RecFolderInfo(SettingPath.SettingFolderPath));
+                        }
+                    }
+                    else
+                    {
+                        for (uint i = 0; i < num; i++)
+                        {
+                            string key = "RecFolderPath" + i.ToString();
+                            string folder = IniFileHandler.GetPrivateProfileString("SET", key, "", SettingPath.CommonIniPath);
+                            if (folder.Length > 0)
+                            {
+                                folders.Add(new RecFolderInfo(folder));
+                            }
                         }
                     }
                 }
