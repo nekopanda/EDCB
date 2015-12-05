@@ -1610,6 +1610,8 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL)) {
 				wstring path;
 				wstring section;
+				string text[1];	// 0:ChSet5.txt
+				int indexText = -1;
 				size_t pos = 0, found;
 				while ((found = val.find_first_of(L'\n', pos)) != wstring::npos) {
 					wstring line = wstring(val, pos, found - pos);
@@ -1621,17 +1623,34 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 					if (line.length() > 3 && line[0] == L';' && line[1] == L'<' && line.find_first_of(L'>') == line.length() - 1) {
 						wstring filename = wstring(line, 2, line.length() - 3);
 						section.clear();
-						if (CompareNoCase(filename, L"Common.ini") == 0) {
+						if (CompareNoCase(filename, L"ChSet5.txt") == 0) {
+							indexText = 0;
+						}
+						else if (CompareNoCase(filename, L"Common.ini") == 0) {
 							GetCommonIniPath(path);
+							indexText = -1;
 						}
 						else if (CompareNoCase(filename, L"EpgTimerSrv.ini") == 0) {
 							GetEpgTimerSrvIniPath(path);
+							indexText = -1;
+						}
+						else if (CompareNoCase(val, L"EpgDataCap_Bon.ini") == 0) {
+							GetModuleFolderPath(path);
+							path += L"\\EpgDataCap_Bon.ini";
+							indexText = -1;
 						}
 						else {
 							break;
 						}
 					}
+					else if (indexText >= 0) {
+						// テキストファイル形式
+						string str;
+						WtoA(line, str);
+						text[indexText] += str + "\r\n";
+					}
 					else if (path.length() > 0) {
+						// INIファイル形式
 						// セクション名の取得 "[section]" 
 						if (line.length() > 2 && line[0] == L'[') {
 							if (line.find_first_of(L']') != line.length() - 1) {
@@ -1665,6 +1684,18 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 					}
 				}
 				if (found == wstring::npos) {
+					if (text[0].length() > 0)
+					{
+						// ChSet5.txt の更新
+						GetSettingPath(path);
+						path += L"\\ChSet5.txt";
+						HANDLE hFile = CreateFile(path.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+						if (hFile != INVALID_HANDLE_VALUE) {
+							DWORD dwWrite;
+							WriteFile(hFile, text[0].c_str(), text[0].length(), &dwWrite, NULL);
+							CloseHandle(hFile);
+						}
+					}
 					sys->ReloadSetting();
 					resParam->param = CMD_SUCCESS;
 				}
