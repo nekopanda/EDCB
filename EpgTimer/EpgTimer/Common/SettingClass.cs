@@ -127,31 +127,18 @@ namespace EpgTimer
             //SendIniCopy("EpgTimerSrv.ini");
             //SendIniCopy("Common.ini");
             //SendIniCopy("EpgDataCap_Bon.ini");
-            IniSetting.Instance.UpToDate();
+            //SendIniCopy("ChSet5.txt");
 
             Settings.UpdateDefRecSetting();
             ChSet5.LoadFile();
         }
 
-        public static bool IsSyncWithServer
-        {
-            get
-            {
-                if (!IniSetting.Instance.IsAvailable)
-                {
-                    // サーバーから Common.ini の内容を問い合わせてみる
-                    // 内容が返ってきたら IsAvailable = true になる
-                    // 未対応のサーバーの場合 IsAvailable = false のままになる
-                    object o = IniSetting.Instance["Common.ini"];
-                }
-                return IniSetting.Instance.IsAvailable;
-            }
-        }
+        public static bool CanReadInifile { get { return CommonManager.Instance.NW.IsConnected == false || IniSetting.Instance.CanReadInifile == true; } }
+        public static bool CanUpdateInifile { get { return CommonManager.Instance.NW.IsConnected == false || IniSetting.Instance.CanUpdateInifile == true; } }
     }
 
     // サーバーから取得したINIファイルをパースして構造体で保持する
-    //
-    //
+    // (Get/Write)PrivateProfileString の代わりに IniSetting.Instance[lpFileName][lpAppName][lpKeyName] アクセサを用意
     class IniSetting
     {
         public class SectionList
@@ -196,6 +183,7 @@ namespace EpgTimer
             }
 
             private Dictionary<string, PairList> _sections;
+            internal Dictionary<string, PairList>.KeyCollection Keys { get { return _sections.Keys; } }
             public PairList this[string section]
             {
                 get
@@ -220,7 +208,7 @@ namespace EpgTimer
                 }
             }
 
-            internal void loadFile(ref bool supportSendFileCopy)
+            internal void loadFile()
             {
                 try
                 {
@@ -228,10 +216,12 @@ namespace EpgTimer
                     if ((DateTime.Now - _lastAccess).TotalSeconds < 300)
                         return;
 
+                    string filename = _file.Substring(_file.LastIndexOf('\\') + 1);
                     byte[] binData;
-                    if (CommonManager.Instance.CtrlCmd.SendFileCopy(_file, out binData) == ErrCode.CMD_SUCCESS)
+                    if (CommonManager.Instance.CtrlCmd.SendFileCopy(filename, out binData) == ErrCode.CMD_SUCCESS)
                     {
-                        supportSendFileCopy = true;
+                        IniSetting.Instance.CanReadInifile = true;
+                        IniSetting.Instance.CanUpdateInifile = CommonManager.Instance.CtrlCmd.SendUpdateSetting("") == ErrCode.CMD_SUCCESS;
 
                         System.IO.MemoryStream stream = new System.IO.MemoryStream(binData);
                         System.IO.StreamReader reader = new System.IO.StreamReader(stream, System.Text.Encoding.Default);
@@ -314,7 +304,8 @@ namespace EpgTimer
                     //保存すべきデータがあれば、ファイル名を ";<ファイル名>" の形式で先頭に追加
                     if (ini.Length > 0)
                     {
-                        ini = ";<" + _file + ">\r\n" + ini;
+                        string filename = _file.Substring(_file.LastIndexOf('\\') + 1);
+                        ini = ";<" + filename + ">\r\n" + ini;
                     }
                 }
                 return ini;
@@ -343,13 +334,34 @@ namespace EpgTimer
             }
         }
 
-        private bool _available;
-        public bool IsAvailable
+        private bool canRead;
+        public bool CanReadInifile
         {
             get
             {
-                return _available;
+                if (_files == null)
+                {
+                    var o = this["Common.Ini"];
+                }
+                return canRead;
             }
+            internal set
+            {
+                canRead = value;
+            }
+        }
+        private bool canUpdate;
+        public bool CanUpdateInifile
+        {
+            get
+            {
+                if (_files == null)
+                {
+                    var o = this["Common.Ini"];
+                }
+                return canUpdate;
+            }
+            internal set { canUpdate = value; }
         }
 
         private Dictionary<string, SectionList> _files;
@@ -362,20 +374,21 @@ namespace EpgTimer
                     _files = new Dictionary<string, SectionList>(StringComparer.OrdinalIgnoreCase);
                 }
 
-                file = file.Substring(file.LastIndexOf('\\') + 1);
+                //保存時 WritePrivateProfileStriingW するときにフルパスが必要なので短縮しない
+                // file = file.Substring(file.LastIndexOf('\\') + 1);
                 if (_files.ContainsKey(file) == false)
                 {
                     _files.Add(file, new SectionList(file));
                 }
 
-                _files[file].loadFile(ref _available);
+                _files[file].loadFile();
                 return _files[file];
             }
         }
 
         public void UpToDate()
         {
-            if (_available)
+            if (_files != null && CanReadInifile)
             {
                 string output = "";
                 foreach (string f in _files.Keys)
@@ -387,6 +400,7 @@ namespace EpgTimer
                     // 更新が必要な差分だけサーバーに送信。 
                     if (CommonManager.Instance.CtrlCmd.SendUpdateSetting(output) == ErrCode.CMD_SUCCESS)
                     {
+                        CanUpdateInifile = true;
                         // サーバーに送信できたので、更新履歴を消しておく
                         foreach (string f in _files.Keys)
                         {
@@ -395,7 +409,27 @@ namespace EpgTimer
                     }
                     else
                     {
-                        throw new NotImplementedException("EpgTimerSrv.exe が INIファイル更新に対応していません");
+                        //tkntrec版 EpgTimerSrv.exe はここに来る
+                        if (CommonManager.Instance.NW.IsConnected == false)
+                        {
+                            //サーバー側更新ができないので、直接更新する。
+                            foreach (string lpFileName in _files.Keys)
+                            {
+                                foreach (string lpAppName in _files[lpFileName].Keys)
+                                {
+                                    foreach (string lpKeyName in _files[lpFileName][lpAppName].UpdatedKeys)
+                                    {
+                                        string lpString = _files[lpFileName][lpAppName][lpKeyName];
+                                        IniFileHandler.WritePrivateProfileStringW(lpAppName, lpKeyName, lpString, lpFileName);
+                                    }
+                                }
+                                _files[lpFileName].Flush();
+                            }
+                        }
+                        else
+                        {
+                            throw new NotImplementedException("EpgTimerSrv.exe が INIファイル更新に対応していません");
+                        }
                     }
                 }
             }
@@ -428,8 +462,15 @@ namespace EpgTimer
         {
             get
             {
-                string defRecExe = SettingPath.ModulePath.TrimEnd('\\') + "\\EpgDataCap_Bon.exe";
-                return IniFileHandler.GetPrivateProfileString("SET", "RecExePath", defRecExe, SettingPath.CommonIniPath);
+                if (IniFileHandler.CanReadInifile == true)
+                {
+                    string defRecExe = SettingPath.ModulePath.TrimEnd('\\') + "\\EpgDataCap_Bon.exe";
+                    return IniFileHandler.GetPrivateProfileString("SET", "RecExePath", defRecExe, SettingPath.CommonIniPath);
+                }
+                else
+                {
+                    return "";
+                }
             }
         }
         public static string EdcbIniPath
@@ -447,14 +488,14 @@ namespace EpgTimer
         {
             get
             {
-                if (CommonManager.Instance.NWMode == false)
+                if (IniFileHandler.CanReadInifile == true)
                 {
-                    string path = IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", SettingPath.DefSettingFolderPath, SettingPath.CommonIniPath);
+                    string path = IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", ModulePath.TrimEnd('\\') + "\\Setting", SettingPath.CommonIniPath);
                     return (Path.IsPathRooted(path) ? "" : SettingPath.ModulePath.TrimEnd('\\') + "\\") + path;
                 }
                 else
                 {
-                    return SettingPath.DefSettingFolderPath;
+                    return "";
                 }
             }
         }
@@ -1903,7 +1944,7 @@ namespace EpgTimer
             if (CommonManager.Instance.CtrlCmd.SendEnumRecFolders("", ref folders) != ErrCode.CMD_SUCCESS)
             {
                 // ローカル接続かサーバーから INI ファイルを取得できれば INI ファイルの内容を直接読む
-                if (CommonManager.Instance.NW.IsConnected == false || IniFileHandler.IsSyncWithServer)
+                if (IniFileHandler.CanReadInifile)
                 {
                     int num = IniFileHandler.GetPrivateProfileInt("SET", "RecFolderNum", 0, SettingPath.CommonIniPath);
                     if (num == 0)

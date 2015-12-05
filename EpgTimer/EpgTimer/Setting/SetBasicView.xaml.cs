@@ -41,47 +41,50 @@ namespace EpgTimer.Setting
         {
             InitializeComponent();
 
-            if (CommonManager.Instance.NWMode == true)
-            {
-                CommonManager.Instance.VUtil.DisableControlChildren(tabItem2);
-                grid_tuner.IsEnabled = true;
-                CommonManager.Instance.VUtil.ChangeChildren(grid_tuner, false);
-                listBox_bon.IsEnabled = IniFileHandler.IsSyncWithServer;
-                if (IniFileHandler.IsSyncWithServer == false)
-                {
-                    CommonManager.Instance.VUtil.DisableControlChildren(tabItem3);
-                }
-                label1.IsEnabled = false;
-                textBox_setPath.IsEnabled = false;
-                button_setPath.IsEnabled = false;
-                label2.IsEnabled = false;
-                textBox_exe.IsEnabled = false;
-                button_exe.IsEnabled = false;
-                listBox_recFolder.IsEnabled = true;
-                button_rec_open.IsEnabled = false;
-                button_rec_add.IsEnabled = IniFileHandler.IsSyncWithServer;
-            }
-
             listBox_Button_Set();
 
             try
             {
-                //tabItem1
-                textBox_setPath.Text = SettingPath.SettingFolderPath;
-                textBox_exe.Text = SettingPath.EdcbExePath;
+                // tabItem1 - 保存フォルダ
+                // 保存できない項目は IsEnabled = false にする
+                if (CommonManager.Instance.NWMode == true)
+                {
+                    label1.IsEnabled = false; // 設定関係保存フォルダ
+                    textBox_setPath.IsEnabled = false;
+                    button_setPath.IsEnabled = false; // 開く
+                    label2.IsEnabled = false; // 録画用アプリのexe
+                    textBox_exe.IsEnabled = false;
+                    button_exe.IsEnabled = false; // 開く
+                }
+                listBox_recFolder.IsEnabled = IniFileHandler.CanUpdateInifile;
+                button_rec_up.IsEnabled = IniFileHandler.CanUpdateInifile; // ↑
+                button_rec_down.IsEnabled = IniFileHandler.CanUpdateInifile; // ↓
+                button_rec_del.IsEnabled = IniFileHandler.CanUpdateInifile; // 削除
+                textBox_recFolder.IsEnabled = IniFileHandler.CanUpdateInifile;
+                button_rec_open.IsEnabled = IniFileHandler.CanUpdateInifile; // 開く
+                button_rec_add.IsEnabled = IniFileHandler.CanUpdateInifile; // 追加
 
-                Settings.GetDefRecFolders().ForEach(folder => listBox_recFolder.Items.Add(new UserCtrlView.BGBarListBoxItem(folder)));
-                bool isEnabled = listBox_recFolder.Items.Count > 0;
-                listBox_recFolder.IsEnabled = isEnabled;
-                button_rec_up.IsEnabled = IsEnabled;
-                button_rec_down.IsEnabled = IsEnabled;
-                button_rec_del.IsEnabled = IsEnabled;
-                textBox_recFolder.IsEnabled = IsEnabled;
-                button_rec_open.IsEnabled = IsEnabled;
-                button_rec_add.IsEnabled = IsEnabled;
+                // 読める設定のみ項目に反映させる
+                if (IniFileHandler.CanReadInifile)
+                {
+                    textBox_setPath.Text = SettingPath.SettingFolderPath;
+                    textBox_exe.Text = SettingPath.EdcbExePath;
 
-                //tabItem2
-                if (listBox_bon.IsEnabled)
+                    Settings.GetDefRecFolders().ForEach(folder => listBox_recFolder.Items.Add(new UserCtrlView.BGBarListBoxItem(folder)));
+                }
+
+                // tabItem2 - チューナー
+                // 保存できない項目は IsEnabled = false にする
+                if (IniFileHandler.CanUpdateInifile == false)
+                {
+                    CommonManager.Instance.VUtil.DisableControlChildren(tabItem2);
+                    grid_tuner.IsEnabled = true;
+                    CommonManager.Instance.VUtil.ChangeChildren(grid_tuner, false);
+                }
+                listBox_bon.IsEnabled = IniFileHandler.CanUpdateInifile;
+
+                // 読める設定のみ項目に反映させる
+                if (IniFileHandler.CanReadInifile)
                 {
                     SortedList<Int32, TunerInfo> tunerInfo = new SortedList<Int32, TunerInfo>();
                     foreach (string fileName in CommonManager.Instance.GetBonFileList())
@@ -121,14 +124,23 @@ namespace EpgTimer.Setting
                     }
                 }
 
-                if (tabItem3.IsEnabled)
+                // tabItem3 - EPG取得
+                // 保存できない項目は IsEnabled = false にする
+                if (IniFileHandler.CanUpdateInifile == false)
+                {
+                    CommonManager.Instance.VUtil.DisableControlChildren(tabItem3);
+                }
+                listView_service.IsEnabled = IniFileHandler.CanUpdateInifile;
+
+                // 読める設定のみ項目に反映させる
+                serviceList = new List<ServiceViewItem>();
+                if (IniFileHandler.CanReadInifile)
                 {
                     comboBox_HH.DataContext = CommonManager.Instance.HourDictionary.Values;
                     comboBox_HH.SelectedIndex = 0;
                     comboBox_MM.DataContext = CommonManager.Instance.MinDictionary.Values;
                     comboBox_MM.SelectedIndex = 0;
 
-                    serviceList = new List<ServiceViewItem>();
                     try
                     {
                         foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
@@ -239,18 +251,15 @@ namespace EpgTimer.Setting
                 {
                     System.IO.Directory.CreateDirectory(textBox_setPath.Text);
 
-                    IniFileHandler.WritePrivateProfileString("SET", "DataSavePath",
-                        string.Compare(textBox_setPath.Text.TrimEnd('\\'), SettingPath.DefSettingFolderPath, true) == 0 ? null : textBox_setPath.Text, SettingPath.CommonIniPath);
+                    IniFileHandler.WritePrivateProfileString("SET", "DataSavePath",textBox_setPath.Text, SettingPath.CommonIniPath);
                 }
                 if (textBox_exe.IsEnabled)
                 {
-                    IniFileHandler.WritePrivateProfileString("SET", "RecExePath",
-                        string.Compare(textBox_exe.Text, SettingPath.ModulePath.TrimEnd('\\') + "\\EpgDataCap_Bon.exe", true) == 0 ? null : textBox_exe.Text, SettingPath.CommonIniPath);
+                    IniFileHandler.WritePrivateProfileString("SET", "RecExePath", textBox_exe.Text, SettingPath.CommonIniPath);
                 }
                 if (listBox_recFolder.IsEnabled)
                 {
-                    int recFolderCount = listBox_recFolder.Items.Count == 1 &&
-                    string.Compare(listBox_recFolder.Items[0].ToString().TrimEnd('\\'), textBox_setPath.Text.TrimEnd('\\'), true) == 0 ? 0 : listBox_recFolder.Items.Count;
+                    int recFolderCount = listBox_recFolder.Items.Count;
                     IniFileHandler.WritePrivateProfileString("SET", "RecFolderNum", recFolderCount.ToString(), SettingPath.CommonIniPath);
                     for (int i = 0; i < recFolderCount; i++)
                     {

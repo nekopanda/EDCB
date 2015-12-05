@@ -29,23 +29,20 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            if (CommonManager.Instance.NWMode == true)
-            {
-                button_process_del.IsEnabled = false;
-                label2.IsEnabled = false;
-                textBox_process.IsEnabled = false;
-                button_process_add.IsEnabled = false;
-                button_process_open.IsEnabled = false;
-                label3.IsEnabled = false;
-                textBox_ng_min.IsEnabled = false;
-                label4.IsEnabled = false;
-                checkBox_ng_fileStreaming.IsEnabled = false;
-                checkBox_ng_shareFile.IsEnabled = false;
-                textBox_ng_usePC_min.IsEnabled = false;
-                label7.IsEnabled = false;
-                checkBox_ng_usePC.IsEnabled = false;
-                button_OK.IsEnabled = false;
-            }
+            button_process_del.IsEnabled = IniFileHandler.CanUpdateInifile;
+            label2.IsEnabled = IniFileHandler.CanUpdateInifile;
+            textBox_process.IsEnabled = IniFileHandler.CanUpdateInifile;
+            button_process_add.IsEnabled = IniFileHandler.CanUpdateInifile;
+            button_process_open.IsEnabled = IniFileHandler.CanUpdateInifile;
+            label3.IsEnabled = IniFileHandler.CanUpdateInifile;
+            textBox_ng_min.IsEnabled = IniFileHandler.CanUpdateInifile;
+            label4.IsEnabled = IniFileHandler.CanUpdateInifile;
+            checkBox_ng_fileStreaming.IsEnabled = IniFileHandler.CanUpdateInifile;
+            checkBox_ng_shareFile.IsEnabled = IniFileHandler.CanUpdateInifile;
+            textBox_ng_usePC_min.IsEnabled = IniFileHandler.CanUpdateInifile;
+            label7.IsEnabled = IniFileHandler.CanUpdateInifile;
+            checkBox_ng_usePC.IsEnabled = IniFileHandler.CanUpdateInifile;
+            button_OK.IsEnabled = IniFileHandler.CanUpdateInifile;
         }
 
         private void button_process_del_Click(object sender, RoutedEventArgs e)

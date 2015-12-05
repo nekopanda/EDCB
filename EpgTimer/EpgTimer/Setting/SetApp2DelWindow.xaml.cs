@@ -24,18 +24,15 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            if (CommonManager.Instance.NWMode == true)
-            {
-                button_add.IsEnabled = false;
-                textBox_ext.IsEnabled = false;
-                label2.IsEnabled = false;
-                button_del.IsEnabled = false;
-                button_chk_del.IsEnabled = false;
-                button_chk_add.IsEnabled = false;
-                button_chk_open.IsEnabled = false;
-                textBox_chk_folder.IsEnabled = false;
-                button_OK.IsEnabled = false;
-            }
+            button_add.IsEnabled = IniFileHandler.CanUpdateInifile;
+            textBox_ext.IsEnabled = IniFileHandler.CanUpdateInifile;
+            label2.IsEnabled = IniFileHandler.CanUpdateInifile;
+            button_del.IsEnabled = IniFileHandler.CanUpdateInifile;
+            button_chk_del.IsEnabled = IniFileHandler.CanUpdateInifile;
+            button_chk_add.IsEnabled = IniFileHandler.CanUpdateInifile;
+            button_chk_open.IsEnabled = IniFileHandler.CanUpdateInifile;
+            textBox_chk_folder.IsEnabled = IniFileHandler.CanUpdateInifile;
+            button_OK.IsEnabled = IniFileHandler.CanUpdateInifile;
         }
 
         private void button_del_Click(object sender, RoutedEventArgs e)

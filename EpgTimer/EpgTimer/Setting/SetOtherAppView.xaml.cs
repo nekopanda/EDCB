@@ -24,33 +24,29 @@ namespace EpgTimer.Setting
         {
             InitializeComponent();
 
-            if (CommonManager.Instance.NWMode == true)
-            {
-                label3.IsEnabled = false;
-                button_del.IsEnabled = false;
-                button_add.IsEnabled = false;
-            }
-
             try
             {
+                // tabItem_tvtest - TVTest連携
+                label3.IsEnabled = IniFileHandler.CanUpdateInifile; // 視聴に使用するBonDriver
+                listBox_bon.IsEnabled = IniFileHandler.CanUpdateInifile;
+                button_del.IsEnabled = IniFileHandler.CanUpdateInifile; // 削除
+                button_add.IsEnabled = IniFileHandler.CanUpdateInifile; // 追加
+
                 textBox_exe.Text = Settings.Instance.TvTestExe;
                 textBox_cmd.Text = Settings.Instance.TvTestCmd;
-                checkBox_nwTvMode.IsChecked = Settings.Instance.NwTvMode;
-                checkBox_nwUDP.IsChecked = Settings.Instance.NwTvModeUDP;
-                checkBox_nwTCP.IsChecked = Settings.Instance.NwTvModeTCP;
 
-                textBox_playExe.Text = Settings.Instance.FilePlayExe;
-                textBox_playCmd.Text = Settings.Instance.FilePlayCmd;
-                checkBox_playOnAirWithExe.IsChecked = Settings.Instance.FilePlayOnAirWithExe;
-
-                if (comboBox_bon.IsEnabled)
+                comboBox_bon.ItemsSource = CommonManager.Instance.GetBonFileList();
+                if (comboBox_bon.Items.Count > 0)
                 {
-                    comboBox_bon.ItemsSource = CommonManager.Instance.GetBonFileList();
-                    if (comboBox_bon.Items.Count > 0)
-                    {
-                        comboBox_bon.SelectedIndex = 0;
-                    }
+                    comboBox_bon.SelectedIndex = 0;
+                }
+                else
+                {
+                    comboBox_bon.IsEnabled = false;
+                }
 
+                if (IniFileHandler.CanReadInifile)
+                {
                     int num = IniFileHandler.GetPrivateProfileInt("TVTEST", "Num", 0, SettingPath.TimerSrvIniPath);
                     for (uint i = 0; i < num; i++)
                     {
@@ -61,6 +57,14 @@ namespace EpgTimer.Setting
                         }
                     }
                 }
+                checkBox_nwTvMode.IsChecked = Settings.Instance.NwTvMode;
+                checkBox_nwUDP.IsChecked = Settings.Instance.NwTvModeUDP;
+                checkBox_nwTCP.IsChecked = Settings.Instance.NwTvModeTCP;
+
+                // tabItem_play - ファイル再生
+                textBox_playExe.Text = Settings.Instance.FilePlayExe;
+                textBox_playCmd.Text = Settings.Instance.FilePlayCmd;
+                checkBox_playOnAirWithExe.IsChecked = Settings.Instance.FilePlayOnAirWithExe;
             }
             catch (Exception ex)
             {
