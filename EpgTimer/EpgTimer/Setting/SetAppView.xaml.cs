@@ -238,7 +238,7 @@ namespace EpgTimer.Setting
                     delChkFolderList.Add(IniFileHandler.GetPrivateProfileString("DEL_CHK", i.ToString(), "", SettingPath.TimerSrvIniPath));
                 }
 
-                if (CommonManager.Instance.IsConnected)
+                if (CommonManager.Instance.IsConnected == true)
                 {
                     CommonManager.Instance.DB.ReloadPlugInFile();
                 }
