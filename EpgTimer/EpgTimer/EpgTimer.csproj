@@ -101,6 +101,7 @@
     <Compile Include="UserCtrlView\BGBarListBoxItem.xaml.cs">
       <DependentUpon>BGBarListBoxItem.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DefineClass\NWPresetItem.cs" />
     <Compile Include="UserCtrlView\DataViewBase.cs" />
     <Compile Include="UserCtrlView\ListViewController.cs" />
     <Compile Include="Menu\MenuSettingData.cs" />

@@ -186,9 +186,6 @@
     <ClInclude Include="SyoboiCalUtil.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\TCPServerUtil.h">
-      <Filter>ヘッダー ファイル\Common</Filter>
-    </ClInclude>
     <ClInclude Include="civetweb.h">
       <Filter>ヘッダー ファイル\civetweb</Filter>
     </ClInclude>
@@ -332,9 +329,6 @@
     <ClCompile Include="SyoboiCalUtil.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Common\TCPServerUtil.cpp">
-      <Filter>ソース ファイル\Common</Filter>
-    </ClCompile>
     <ClCompile Include="civetweb.c">
       <Filter>ソース ファイル\civetweb</Filter>
     </ClCompile>
@@ -354,6 +348,9 @@
       <Filter>ソース ファイル\Common</Filter>
     </ClCompile>
     <ClCompile Include="NetPathUtil.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="EpgTimerSrvLua.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

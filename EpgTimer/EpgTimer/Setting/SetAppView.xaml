@@ -192,35 +192,42 @@
             <TabItem Name="tabItem4" Header="その他">
                 <StackPanel Margin="8">
                     <WrapPanel>
-                        <CheckBox Name="checkBox_closeMin" Content="×ボタンで最小化する" Margin="6" Width="200" />
-                        <CheckBox Name="checkBox_minWake" Content="最小化で起動する" Margin="6" Width="200" />
-                    </WrapPanel>
-                    <WrapPanel>
-                        <CheckBox Name="checkBox_showTray" Content="タスクトレイアイコンを表示する" Margin="6" Width="200" />
-                        <CheckBox Name="checkBox_minHide" Content="最小化時にタスクトレイに格納する" Margin="6" Width="200" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_showTray, UpdateSourceTrigger=PropertyChanged}" />
+                        <StackPanel>
+                            <CheckBox Name="checkBox_closeMin" Content="×ボタンで最小化する" Margin="6" Width="200" />
+                            <CheckBox Name="checkBox_minWake" Content="最小化で起動する" Margin="6" Width="200" />
+                        </StackPanel>
+                        <StackPanel>
+                            <CheckBox Name="checkBox_showTray" Content="タスクトレイアイコンを表示する" Margin="6" Width="200" />
+                            <CheckBox Name="checkBox_minHide" Content="最小化時にタスクトレイに格納する" Margin="6" Width="200" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_showTray, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
                     </WrapPanel>
                     <WrapPanel>
                         <Button Name="button_recDef" Content="録画プリセットを設定" Margin="6" Width="200" Height="25" Click="button_recDef_Click" />
                         <Button Name="button_searchDef" Content="検索条件のデフォルト値を設定" Margin="6" Width="200" Height="25" Click="button_searchDef_Click" />
                     </WrapPanel>
                     <WrapPanel>
-                        <CheckBox Name="checkBox_tcpServer" Content="ネットワーク接続を許可する" Margin="6" Width="200" />
-                        <StackPanel Orientation="Horizontal">
-                            <Label Name="label41" Content="ポート" Margin="20,0,0,0" Width="70" />
+                        <CheckBox Name="checkBox_tcpServer" Content="ネットワーク接続を許可する" Margin="6,6,-20,6" Width="180" />
+                        <StackPanel Margin="0,0,-20,0" Orientation="Horizontal">
+                            <Label Name="label41" Content="ポート" Margin="20,0,0,0" Width="80" />
                             <TextBox Name="textBox_tcpPort" Width="50" Height="25" VerticalContentAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Name="label_tcpAcl" Content="アクセス制御" Margin="20,0,0,0" Width="80" />
+                            <TextBox Name="textBox_tcpAcl" Width="220" Height="25" VerticalContentAlignment="Center" />
                         </StackPanel>
                     </WrapPanel>
                     <WrapPanel>
-                        <CheckBox Name="checkBox_autoDelRecInfo" Content="録画結果を自動的に削除する" Margin="6" Width="200" />
+                        <CheckBox Name="checkBox_autoDelRecInfo" Content="録画結果を自動的に削除する" Margin="6,6,-20,6" Width="180" />
                         <StackPanel Orientation="Horizontal">
-                            <Label Name="label42" Content="保持件数" Margin="20,0,0,0" Width="70" />
+                            <Label Name="label42" Content="保持件数" Margin="20,0,0,0" Width="80" />
                             <TextBox Name="textBox_autoDelRecInfo" Width="50" Height="25" VerticalContentAlignment="Center" />
                         </StackPanel>
                     </WrapPanel>
                     <WrapPanel>
                         <Grid Margin="6">
-                            <CheckBox Name="checkBox_timeSync" Content="EPG取得時に放送波時間でPC時計を同期する"/>
-                            <Label Name="label43" Content="※EpgTimerSrv.exeが管理者権限で起動している必要があります" Margin="10,10,0,0" />
+                            <CheckBox Name="checkBox_timeSync">
+                                <TextBlock TextWrapping="Wrap">EPG取得時に放送波時間でPC時計を同期する<LineBreak/>※EpgTimerSrv.exeが管理者権限で起動している必要があります</TextBlock>
+                            </CheckBox>
                         </Grid>
                         <WrapPanel>
                             <CheckBox Name="checkBox_noToolTips" Content="ツールチップの表示を抑制する" Margin="6" Width="200" />

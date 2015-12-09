@@ -107,7 +107,8 @@
                                     <ColumnDefinition MinWidth="190"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
-                                    <WrapPanel Margin="4"><!--インデントされた Wrap をするために Margin を使ったトリック-->
+                                    <WrapPanel Margin="4">
+                                        <!--インデントされた Wrap をするために Margin を使ったトリック-->
                                         <Label Content="マウススクロールサイズ" Margin="0,0,-120,0" Width="120" />
                                         <TextBox Name="textBox_mouse_scroll" Margin="120,4,-110,4" Width="55" Height="24" VerticalContentAlignment="Center"/>
                                         <CheckBox Name="checkBox_scrollAuto" Content="自動" Margin="120,4,0,4" VerticalAlignment="Center" />
@@ -133,28 +134,30 @@
                                         <TextBlock Text="番組表の切り替え時にも強調表示をする" TextWrapping="Wrap" />
                                     </CheckBox>
                                 </StackPanel>
-                                <WrapPanel Grid.Column="1">
-                                    <StackPanel Margin="4" Orientation="Horizontal">
-                                        <Label Content="1分あたりの高さ" Width="120" />
-                                        <TextBox Name="textBox_minHeight" Width="55" Height="24" VerticalContentAlignment="Center" />
-                                    </StackPanel>
-                                    <StackPanel Margin="4" Orientation="Horizontal">
-                                        <Label Content="最低表示行数" Width="120" />
-                                        <TextBox Name="textBox_minimumHeight" Width="55" Height="24" VerticalContentAlignment="Center" />
-                                    </StackPanel>
-                                    <StackPanel Margin="4" Orientation="Horizontal">
-                                        <Label Content="ドラッグスクロール倍率" Width="120" />
-                                        <TextBox Name="textBox_dragScroll" Width="55" Height="24" VerticalContentAlignment="Center" />
-                                    </StackPanel>
-                                    <StackPanel Width="400"><!--WrapPanelの連結から強制的に出るためのダミー--></StackPanel>
-                                    <WrapPanel Margin="4"><!--インデントされた Wrap をするために Margin を使ったトリック-->
+                                <StackPanel Grid.Column="1">
+                                    <WrapPanel>
+                                        <StackPanel Margin="4" Orientation="Horizontal">
+                                            <Label Content="1分あたりの高さ" Width="120" />
+                                            <TextBox Name="textBox_minHeight" Width="55" Height="24" VerticalContentAlignment="Center" />
+                                        </StackPanel>
+                                        <StackPanel Margin="4" Orientation="Horizontal">
+                                            <Label Content="最低表示行数" Width="120" />
+                                            <TextBox Name="textBox_minimumHeight" Width="55" Height="24" VerticalContentAlignment="Center" />
+                                        </StackPanel>
+                                        <StackPanel Margin="4" Orientation="Horizontal">
+                                            <Label Content="ドラッグスクロール倍率" Width="120" />
+                                            <TextBox Name="textBox_dragScroll" Width="55" Height="24" VerticalContentAlignment="Center" />
+                                        </StackPanel>
+                                    </WrapPanel>
+                                    <WrapPanel Margin="4">
+                                        <!--インデントされた Wrap をするために Margin を使ったトリック-->
                                         <Label Content="グラデーション表示を行う" Margin="0,0,-130,0" Width="130" />
                                         <CheckBox Name="checkBox_gradation" Content="番組" Margin="130,4,-110,4" VerticalAlignment="Center" />
                                         <CheckBox Name="checkBox_gradationHeader" Margin="130,4,0,4" VerticalAlignment="Center" >
                                             <TextBlock Text="サービス・時刻軸" TextWrapping="Wrap" />
                                         </CheckBox>
                                     </WrapPanel>
-                                </WrapPanel>
+                                </StackPanel>
                             </Grid>
                         </GroupBox>
                     </StackPanel>
@@ -347,7 +350,8 @@
                                     <ColumnDefinition MinWidth="190" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
-                                    <WrapPanel Margin="4"><!--インデントされた Wrap をするために Margin を使ったトリック-->
+                                    <WrapPanel Margin="4">
+                                        <!--インデントされた Wrap をするために Margin を使ったトリック-->
                                         <Label Name="label47" Content="マウススクロールサイズ" Margin="0,0,-120,0" Width="120" />
                                         <TextBox Name="textBox_tuner_mouse_scroll" Margin="120,4,-110,4" Width="55" Height="24" VerticalContentAlignment="Center"/>
                                         <CheckBox Name="checkBox_tuner_scrollAuto" Content="自動" Margin="120,4,0,4" VerticalAlignment="Center" />
@@ -371,22 +375,23 @@
                                     </CheckBox>
                                     <CheckBox Name="checkBox_tuner_service_nowrap" Content="サービス名を改行しない" Margin="4" VerticalAlignment="Center" />
                                 </StackPanel>
-                                <WrapPanel Grid.Column="1">
-                                    <StackPanel Margin="4" Orientation="Horizontal">
-                                        <Label Content="1分あたりの高さ" Width="120" />
-                                        <TextBox Name="textBox_tuner_minHeight" Width="55" Height="24" VerticalContentAlignment="Center" />
-                                    </StackPanel>
-                                    <StackPanel Margin="4" Orientation="Horizontal">
-                                        <Label Name="label39" Content="最低表示行数" Width="120" />
-                                        <TextBox Name="textBox_tunerMinLineHeight" Width="55" Height="24" VerticalContentAlignment="Center" />
-                                    </StackPanel>
-                                    <StackPanel Margin="4" Orientation="Horizontal">
-                                        <Label Name="label38" Content="ドラッグスクロール倍率" Width="120" />
-                                        <TextBox Name="textBox_tunerDdragScroll" Width="55" Height="24" VerticalContentAlignment="Center" />
-                                    </StackPanel>
-                                    <StackPanel Width="400"><!--WrapPanelの連結から強制的に出るためのダミー--></StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <WrapPanel>
+                                        <StackPanel Margin="4" Orientation="Horizontal">
+                                            <Label Content="1分あたりの高さ" Width="120" />
+                                            <TextBox Name="textBox_tuner_minHeight" Width="55" Height="24" VerticalContentAlignment="Center" />
+                                        </StackPanel>
+                                        <StackPanel Margin="4" Orientation="Horizontal">
+                                            <Label Name="label39" Content="最低表示行数" Width="120" />
+                                            <TextBox Name="textBox_tunerMinLineHeight" Width="55" Height="24" VerticalContentAlignment="Center" />
+                                        </StackPanel>
+                                        <StackPanel Margin="4" Orientation="Horizontal">
+                                            <Label Name="label38" Content="ドラッグスクロール倍率" Width="120" />
+                                            <TextBox Name="textBox_tunerDdragScroll" Width="55" Height="24" VerticalContentAlignment="Center" />
+                                        </StackPanel>
+                                    </WrapPanel>
                                     <CheckBox Name="checkBox_tuner_display_offres" Content="無効の予約も表示する" Margin="4" VerticalAlignment="Center" />
-                                </WrapPanel>
+                                </StackPanel>
                             </Grid>
                         </GroupBox>
                     </StackPanel>
