@@ -269,23 +269,28 @@ namespace EpgTimer.Setting
         {
             button_recDef.Content = "録画プリセットを確認";
 
-            checkBox_tcpServer.IsEnabled = false; // ネットワーク接続を許可する
-            label41.IsEnabled = false; // ポート
-            textBox_tcpPort.IsEnabled = false;
+            if (CommonManager.Instance.NWMode == true)
+            {
+                checkBox_tcpServer.IsEnabled = false; // ネットワーク接続を許可する
+                label41.IsEnabled = false; // ポート
+                textBox_tcpPort.IsEnabled = false;
+                label_tcpAcl.IsEnabled = false; // アクセス制御
+                textBox_tcpAcl.IsEnabled = false;
 
-            checkBox_autoDelRecInfo.IsEnabled = IniFileHandler.CanUpdateInifile; // 録画結果を自動的に削除する
-            label42.IsEnabled = IniFileHandler.CanUpdateInifile; // 保持件数
-            textBox_autoDelRecInfo.IsEnabled = IniFileHandler.CanUpdateInifile;
+                checkBox_autoDelRecInfo.IsEnabled = IniFileHandler.CanUpdateInifile; // 録画結果を自動的に削除する
+                label42.IsEnabled = IniFileHandler.CanUpdateInifile; // 保持件数
+                textBox_autoDelRecInfo.IsEnabled = IniFileHandler.CanUpdateInifile;
 
-            checkBox_timeSync.IsEnabled = false; // EPG取得時に放送波時間でPC時計を同期する
-            checkBox_srvResident.IsEnabled = false; // バルーンチップでの動作通知を抑制する
+                checkBox_timeSync.IsEnabled = false; // EPG取得時に放送波時間でPC時計を同期する
+                checkBox_srvResident.IsEnabled = false; // バルーンチップでの動作通知を抑制する
 
-            checkBox_wakeReconnect.IsEnabled = true; // 起動時に前回接続サーバーに接続する
-            checkBox_suspendClose.IsEnabled = true; // 休止／スタンバイ移行時にEpgTimerNWを終了する
-            checkBox_ngAutoEpgLoad.IsEnabled = true; // EPGデータを自動的に読み込まない
-            checkBox_keepTCPConnect.IsEnabled = true; // EpgTimerSrvとの接続維持を試みる
-            textBox_keepTCPConnect.IsEnabled = true;
-            label_keepTCPConnect.IsEnabled = true; // 分間隔
+                checkBox_wakeReconnect.IsEnabled = true; // 起動時に前回接続サーバーに接続する
+                checkBox_suspendClose.IsEnabled = true; // 休止／スタンバイ移行時にEpgTimerNWを終了する
+                checkBox_ngAutoEpgLoad.IsEnabled = true; // EPGデータを自動的に読み込まない
+                checkBox_keepTCPConnect.IsEnabled = true; // EpgTimerSrvとの接続維持を試みる
+                textBox_keepTCPConnect.IsEnabled = true;
+                label_keepTCPConnect.IsEnabled = true; // 分間隔
+            }
 
             if (IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfo", 0, SettingPath.TimerSrvIniPath) == 1)
             {
@@ -326,6 +331,7 @@ namespace EpgTimer.Setting
                 checkBox_tcpServer.IsChecked = true;
             }
             textBox_tcpPort.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath).ToString();
+            textBox_tcpAcl.Text = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessControlList", "+127.0.0.1,+192.168.0.0/16", SettingPath.TimerSrvIniPath);
 
             defSearchKey = Settings.Instance.DefSearchKey.Clone();
         }
@@ -585,6 +591,11 @@ namespace EpgTimer.Setting
                 IniFileHandler.WritePrivateProfileString("SET", "EnableTCPSrv", setValue, SettingPath.TimerSrvIniPath);
 
                 IniFileHandler.WritePrivateProfileString("SET", "TCPPort", textBox_tcpPort.Text, SettingPath.TimerSrvIniPath);
+            }
+
+            if (textBox_tcpAcl.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "TCPAccessControlList", textBox_tcpAcl.Text, SettingPath.TimerSrvIniPath);
             }
 
             Settings.Instance.NoToolTip = (checkBox_noToolTips.IsChecked == true);
