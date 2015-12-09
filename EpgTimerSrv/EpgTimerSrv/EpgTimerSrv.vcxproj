@@ -263,6 +263,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.</AdditionalIncludeDirectories>
     </ClCompile>
+    <ClCompile Include="EpgTimerSrvLua.cpp" />
     <ClCompile Include="LightTsUtils.cpp" />
     <ClCompile Include="NetPathUtil.cpp" />
     <ClCompile Include="RecEventDB.cpp" />

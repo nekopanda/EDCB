@@ -24,6 +24,16 @@ public:
 	//休止／スタンバイに移行して構わない状況かどうか
 	bool IsSuspendOK(); //const;
 private:
+	enum {
+		WM_RESET_SERVER = WM_APP,
+		WM_RELOAD_EPG_CHK,
+		WM_REQUEST_SHUTDOWN,
+		WM_QUERY_SHUTDOWN,
+		WM_RECEIVE_NOTIFY,
+		WM_TRAY_PUSHICON,
+		WM_SHOW_TRAY,
+	};
+
 	//メインウィンドウ
 	static LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//シャットダウン問い合わせダイアログ

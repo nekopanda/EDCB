@@ -356,6 +356,9 @@
     <ClCompile Include="NetPathUtil.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="EpgTimerSrvLua.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="EpgTimerSrv.rc">
