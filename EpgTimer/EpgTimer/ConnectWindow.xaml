@@ -1,55 +1,73 @@
 ﻿<Window x:Class="EpgTimer.ConnectWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="ネットワーク接続" Height="260" Width="446" WindowStartupLocation="CenterOwner" ResizeMode="NoResize" Loaded="Window_Loaded">
+        Title="ネットワーク接続" Width="450" MinWidth="380" Height="320" MinHeight="190" WindowStartupLocation="CenterOwner" Loaded="Window_Loaded" Closing="Window_Closing">
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="*" MinHeight="80" />
+            <RowDefinition Height="auto" MinHeight="80" />
         </Grid.RowDefinitions>
-        <Grid Grid.Row="0" Margin="10,0" VerticalAlignment="Top" >
-            <RadioButton Content="ローカル接続" Name="radioButton_pipe" Margin="0,0,0,0" Height="18" Click="radioButton_pipe_Click" VerticalAlignment="Top" />
-            <RadioButton Content="リモート接続" Name="radioButton_tcp"  Margin="0,20,0,0" Height="18" Click="radioButton_tcp_Click" VerticalAlignment="Top"/>
+        <Grid Grid.Row="0" Name="grid_List">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="auto" />
+            </Grid.ColumnDefinitions>
+            <ListView Grid.Column="0" Name="listView_List" Margin="8,8,0,8" SelectionChanged="listView_List_SelectionChanged" MouseDoubleClick="listView_List_MouseDoubleClick">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="登録名" DisplayMemberBinding="{Binding Path=Name}" />
+                        <GridViewColumn Header="IP アドレス" DisplayMemberBinding="{Binding Path=NWServerIP}" />
+                        <GridViewColumn Header="ポート" DisplayMemberBinding="{Binding Path=NWServerPort}" />
+                        <GridViewColumn Header="待ち受けポート" DisplayMemberBinding="{Binding Path=NWWaitPort}" />
+                        <GridViewColumn Header="MAC アドレス" DisplayMemberBinding="{Binding Path=NWMacAdd}" />
+                    </GridView>
+                </ListView.View>
+            </ListView>
+            <StackPanel Grid.Column="1" Margin="8">
+                <Button Name="button_connect" Content="接続" Margin="10,4" Width="100" Height="30" Click="button_connect_Click" />
+                <Button Name="button_wake" Content="マジックパケット送信" Margin="10,4" Width="100" Click="button_wake_Click" />
+            </StackPanel>
         </Grid>
-        <Grid Grid.Row="1" Margin="20,-14,0,0" Name="grid_tcp" VerticalAlignment="Top">
-            <Label Content="接続サーバー　IP" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" />
-            <TextBox Height="24" HorizontalAlignment="Left" Margin="124,14,0,0" Name="textBox_srvIP" VerticalAlignment="Top" Width="120">
-                <TextBox.Resources>
-                    <Style TargetType="{x:Type TextBox}">
-                        <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-                    </Style>
-                </TextBox.Resources>
-            </TextBox>
-            <Label Content="ポート" Height="28" HorizontalAlignment="Left" Margin="250,12,0,0" Name="label2" VerticalAlignment="Top" />
-            <TextBox Height="24" HorizontalAlignment="Left" Margin="302,14,0,0" Name="textBox_srvPort" VerticalAlignment="Top" Width="86">
-                <TextBox.Resources>
-                    <Style TargetType="{x:Type TextBox}">
-                        <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-                    </Style>
-                </TextBox.Resources>
-            </TextBox>
-            <Label Content="クライアント側 待ち受けポート" Height="28" HorizontalAlignment="Left" Margin="12,46,0,0" Name="label3" VerticalAlignment="Top" />
-            <TextBox Height="24" HorizontalAlignment="Left" Margin="200,48,0,0" Name="textBox_clientPort" VerticalAlignment="Top" Width="86">
-                <TextBox.Resources>
-                    <Style TargetType="{x:Type TextBox}">
-                        <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-                    </Style>
-                </TextBox.Resources>
-            </TextBox>
-        </Grid>
-        <Grid Grid.Row="1" Margin="20,-14,0,0" VerticalAlignment="Top">
-            <Button Content="接続" Height="23" HorizontalAlignment="Left" Margin="12,80,0,0" Name="button_connect" VerticalAlignment="Top" Width="75" Click="button_connect_Click" />
-            <Button Content="マジックパケット送信" Height="23" HorizontalAlignment="Left" Margin="12,158,0,0" Name="button_wake" VerticalAlignment="Top" Width="146" Click="button_wake_Click" />
-            <Label Content="MACアドレス" Height="28" HorizontalAlignment="Left" Margin="12,124,0,0" Name="label4" VerticalAlignment="Top" />
-            <TextBox Height="24" HorizontalAlignment="Left" Margin="102,126,0,0" Name="textBox_mac" VerticalAlignment="Top" Width="170">
-                <TextBox.Resources>
-                    <Style TargetType="{x:Type TextBox}">
-                        <Setter Property="InputMethod.PreferredImeState" Value="Off" />
-                    </Style>
-                </TextBox.Resources>
-            </TextBox>
-            <Label Content="（xx-xx-xx-xx-xx-xx）" Height="28" HorizontalAlignment="Left" Margin="283,124,0,0" Name="label5" VerticalAlignment="Top" />
+        <Rectangle Grid.Row="1" Height="1" Margin="12,0,12,0" VerticalAlignment="Top" Fill="LightGray" />
+        <Grid Grid.Row="1" Name="grid_Edit">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition MinWidth="260" />
+                <ColumnDefinition Width="auto" />
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="0" Name="grid_tcp" Margin="8,8,0,8">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Name="label5" Content="登録名" Margin="2" />
+                        <TextBox x:Name="textBox_Name" Margin="2" Width="150" Height="24" VerticalContentAlignment="Center" />
+                    </StackPanel>
+                    <WrapPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Name="label1" Content="接続サーバー IP" Margin="2" />
+                            <TextBox Name="textBox_srvIP" Margin="2,2,-48,2" Width="100" Height="24" VerticalContentAlignment="Center" InputMethod.PreferredImeState="Off" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Name="label2" Content="ポート" Margin="50,2,2,2" />
+                            <TextBox Name="textBox_srvPort" Margin="2" Width="60" Height="24" VerticalContentAlignment="Center" InputMethod.PreferredImeState="Off" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Name="label3" Content="クライアント側 待ち受けポート" Margin="2" />
+                            <TextBox Name="textBox_clientPort" Margin="2" Width="60" Height="24" VerticalContentAlignment="Center" InputMethod.PreferredImeState="Off" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Name="label4" Padding="7,0">
+                                <TextBlock >MACアドレス<LineBreak/>（xx-xx-xx-xx-xx-xx）</TextBlock>
+                            </Label>
+                            <TextBox Name="textBox_mac" Margin="2" Width="120" Height="24" VerticalContentAlignment="Center" InputMethod.PreferredImeState="Off" />
+                        </StackPanel>
+                    </WrapPanel>
+                </StackPanel>
+            </Grid>
+            <StackPanel Grid.Column="1" Margin="8">
+                <Button Name="btn_add" Content="追加" Margin="10,4" Width="80" Click="btn_add_Click" />
+                <Button Name="btn_edit" Content="変更" Margin="10,4" Width="80" Click="btn_edit_Click" />
+                <Button Name="btn_delete" Content="削除" Margin="10,4" Width="80" Click="btn_delete_Click" />
+            </StackPanel>
         </Grid>
     </Grid>
 </Window>
