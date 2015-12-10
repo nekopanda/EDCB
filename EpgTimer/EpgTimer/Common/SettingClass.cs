@@ -610,6 +610,7 @@ namespace EpgTimer
         private UInt32 nwServerPort;
         private UInt32 nwWaitPort;
         private string nwMacAdd;
+        private string nwPassword;
         private List<NWPresetItem> nwPreset; 
         private bool wakeReconnectNW;
         private bool suspendCloseNW;
@@ -1161,6 +1162,11 @@ namespace EpgTimer
         {
             get { return nwMacAdd; }
             set { nwMacAdd = value; }
+        }
+        public string NWPassword
+        {
+            get { return nwPassword; }
+            set { nwPassword = value; }
         }
         public List<NWPresetItem> NWPerset
         {

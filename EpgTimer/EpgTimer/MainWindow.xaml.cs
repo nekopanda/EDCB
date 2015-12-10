@@ -400,8 +400,6 @@ namespace EpgTimer
 
         bool ConnectCmd(bool showDialog)
         {
-            // 接続先が変わる前に保持している INI データをクリアする。
-            IniSetting.Instance.UpToDate();
             IniSetting.Instance.Clear();
 
             if (showDialog == true)
@@ -1477,6 +1475,7 @@ namespace EpgTimer
                     break;
                 case UpdateNotifyItem.IniFile:
                     {
+                        IniSetting.Instance.Clear();
                         if (CommonManager.Instance.NWMode == true)
                         {
                             IniFileHandler.UpdateSrvProfileIniNW();

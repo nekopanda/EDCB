@@ -31,7 +31,7 @@ namespace EpgTimer
                 btn_edit.Visibility = Visibility.Collapsed;
 
                 ConnectionList = new ObservableCollection<NWPresetItem>(Settings.Instance.NWPerset);
-                var nowSet = new NWPresetItem(DefPresetStr, Settings.Instance.NWServerIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, Settings.Instance.NWMacAdd);
+                var nowSet = new NWPresetItem(DefPresetStr, Settings.Instance.NWServerIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, Settings.Instance.NWMacAdd, Settings.Instance.NWPassword);
                 int pos = ConnectionList.ToList().FindIndex(item => item.EqualsTo(nowSet, true));
                 if (pos == -1)
                 {
@@ -40,10 +40,10 @@ namespace EpgTimer
                 }
                 if (IsAvailableServer == true)
                 {
-                    ConnectionList.Insert(0, new NWPresetItem("ローカル接続", "", 0, 0, ""));
+                    ConnectionList.Insert(0, new NWPresetItem("ローカル接続", "", 0, 0, "", ""));
                     pos++;
                 }
-                ConnectionList.Add(new NWPresetItem("<新規登録>", "", 0, 0, ""));
+                ConnectionList.Add(new NWPresetItem("<新規登録>", "", 0, 0, "", ""));
 
                 listView_List.ItemsSource = ConnectionList;
                 if (IsAvailableServer == false)
@@ -64,6 +64,7 @@ namespace EpgTimer
                 textBox_srvPort.Text = data.NWServerPort.ToString();
                 textBox_clientPort.Text = data.NWWaitPort.ToString();
                 textBox_mac.Text = data.NWMacAdd;
+                textBox_Password.Password = data.NWPassword;
             }
             else
             {
@@ -83,6 +84,7 @@ namespace EpgTimer
             preset.NWServerPort = mutil.MyToNumerical(textBox_srvPort, Convert.ToUInt32, Settings.Instance.NWServerPort);
             preset.NWWaitPort = mutil.MyToNumerical(textBox_clientPort, Convert.ToUInt32, Settings.Instance.NWWaitPort);
             preset.NWMacAdd = textBox_mac.Text.Trim();
+            preset.NWPassword = textBox_Password.Password;
             if (preset.Name.Length == 0)
             {
                 preset.Name = preset.NWServerIP;
@@ -110,6 +112,7 @@ namespace EpgTimer
                 Settings.Instance.NWServerPort = data.NWServerPort;
                 Settings.Instance.NWWaitPort = data.NWWaitPort;
                 Settings.Instance.NWMacAdd = data.NWMacAdd;
+                Settings.Instance.NWPassword = data.NWPassword;
                 Settings.Instance.NWMode = IsAvailableServer == false || listView_List.SelectedIndex > 0;
             }
             catch (Exception ex)
@@ -160,7 +163,7 @@ namespace EpgTimer
                     else
                     {
                         // 新規追加
-                        SetSetting(new NWPresetItem("", "", 4510, 4520, ""));
+                        SetSetting(new NWPresetItem("", "", 4510, 4520, "", ""));
                         btn_add.Visibility = Visibility.Visible;
                         btn_edit.Visibility = Visibility.Collapsed;
                         btn_delete.IsEnabled = false;

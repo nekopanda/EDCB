@@ -171,6 +171,7 @@ namespace EpgTimer
                 Settings.Instance.RecPresetList.Add(preItem);
             }
             IniFileHandler.WritePrivateProfileString("SET", "PresetID", saveID, SettingPath.TimerSrvIniPath);
+            IniSetting.Instance.UpToDate();
             Settings.SaveToXmlFile();
 
             if (CommonManager.Instance.NWMode == false) CommonManager.Instance.CtrlCmd.SendNotifyProfileUpdate();

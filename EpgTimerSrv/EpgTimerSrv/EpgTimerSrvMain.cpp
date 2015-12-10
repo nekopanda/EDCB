@@ -170,6 +170,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			//サーバリセット処理
 			unsigned short tcpPort_;
 			wstring tcpAcl;
+			wstring tcpPasssword;
 			wstring httpPorts_;
 			wstring httpPublicFolder_;
 			wstring httpAcl;
@@ -179,6 +180,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				CBlockLock lock(&ctx->sys->settingLock);
 				tcpPort_ = ctx->sys->tcpPort;
 				tcpAcl = ctx->sys->tcpAccessControlList;
+				tcpPasssword = ctx->sys->tcpPassword;
 				httpPorts_ = ctx->sys->httpPorts;
 				httpPublicFolder_ = ctx->sys->httpPublicFolder;
 				httpAcl = ctx->sys->httpAccessControlList;
@@ -188,7 +190,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			if( tcpPort_ == 0 ){
 				ctx->tcpServer.StopServer();
 			}else{
-				ctx->tcpServer.StartServer(tcpPort_, tcpAcl.c_str(), CtrlCmdTcpCallback, ctx->sys);
+				ctx->tcpServer.StartServer(tcpPort_, tcpAcl.c_str(), tcpPasssword.c_str(), CtrlCmdTcpCallback, ctx->sys);
 			}
 			ctx->upnpServer.Stop();
 			if( httpPorts_.empty() ){
@@ -667,6 +669,8 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 		WCHAR buff[512];
 		GetPrivateProfileString(L"SET", L"TCPAccessControlList", L"+127.0.0.1,+192.168.0.0/16", buff, 512, iniPath.c_str());
 		this->tcpAccessControlList = buff;
+		GetPrivateProfileString(L"SET", L"TCPAccessPassword", L"", buff, 512, iniPath.c_str());
+		this->tcpPassword = buff;
 		this->tcpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"TCPPort", 4510, iniPath.c_str());
 	}
 	this->httpPorts.clear();
@@ -1560,6 +1564,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
 				wstring path;
 				DWORD flags;
+				char *delkey = NULL;
 				if( CompareNoCase(val, L"ChSet5.txt") == 0 ){
 					GetSettingPath(path);
 					path += L"\\ChSet5.txt";
@@ -1570,6 +1575,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 				}else if( CompareNoCase(val, L"EpgTimerSrv.ini") == 0 ){
 					GetEpgTimerSrvIniPath(path);
 					flags = OPEN_ALWAYS;
+					delkey = tcpFlag ? "tcpaccesspassword" : NULL;
 				}else if( CompareNoCase(val, L"EpgDataCap_Bon.ini") == 0 ){
 					GetModuleFolderPath(path);
 					path += L"\\EpgDataCap_Bon.ini";
@@ -1584,6 +1590,20 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 						BYTE* data = new BYTE[dwFileSize];
 						DWORD dwRead;
 						if (ReadFile(hFile, data, dwFileSize, &dwRead, NULL) && dwRead != 0) {
+							if (delkey != NULL) {
+								char *temp = new char[dwRead];
+								for (DWORD i = 0; i < dwRead; i++)
+									temp[i] = tolower(data[i]);
+								char *p = strstr(temp, delkey);
+								if (p != NULL)
+								{
+									char *q = strchr(p, '\n');
+									q = q ? q + 1 : temp + dwRead;
+									memmove(data + (p - temp), data + (q - temp), temp + dwRead - q);
+									dwRead -= (DWORD)(q - p);
+								}
+								delete[] temp;
+							}
 							resParam->dataSize = dwRead;
 							resParam->data = data;
 						}
@@ -1687,7 +1707,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 						HANDLE hFile = CreateFile(path.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 						if (hFile != INVALID_HANDLE_VALUE) {
 							DWORD dwWrite;
-							WriteFile(hFile, text[0].c_str(), text[0].length(), &dwWrite, NULL);
+							WriteFile(hFile, text[0].c_str(), (DWORD)text[0].length(), &dwWrite, NULL);
 							CloseHandle(hFile);
 						}
 					}

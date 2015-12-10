@@ -3,6 +3,9 @@
 #include <process.h>
 #include "ErrDef.h"
 #include "CtrlCmdUtil.h"
+#include "../../Common/PathUtil.h"
+#include <wincrypt.h>
+#pragma comment(lib, "advapi32.lib")
 
 CTCPServer::CTCPServer(void)
 {
@@ -41,7 +44,7 @@ CTCPServer::~CTCPServer(void)
 	WSACleanup();
 }
 
-BOOL CTCPServer::StartServer(DWORD dwPort, LPCWSTR acl, CMD_CALLBACK_PROC pfnCmdProc, void* pParam)
+BOOL CTCPServer::StartServer(DWORD dwPort, LPCWSTR acl, LPCWSTR password, CMD_CALLBACK_PROC pfnCmdProc, void* pParam)
 {
 	if( pfnCmdProc == NULL || pParam == NULL ){
 		return FALSE;
@@ -53,6 +56,7 @@ BOOL CTCPServer::StartServer(DWORD dwPort, LPCWSTR acl, CMD_CALLBACK_PROC pfnCmd
 	m_pParam = pParam;
 	m_dwPort = dwPort;
 	m_acl = acl;
+	WtoUTF8(password, m_password);
 
 	m_sock = socket(AF_INET, SOCK_STREAM, 0);
 	if( m_sock == INVALID_SOCKET ){
@@ -129,6 +133,201 @@ static BOOL TestAcl(struct in_addr addr, wstring acl)
 	}
 }
 
+static BOOL ReceiveData(SOCKET sock, CMD_STREAM& stCmd)
+{
+	DWORD head[2];
+	int iRet = recv(sock, (char*)head, sizeof(DWORD) * 2, 0);
+	if (iRet != sizeof(DWORD) * 2){
+		return FALSE;
+	}
+	stCmd.param = head[0];
+	stCmd.dataSize = head[1];
+	_OutputDebugString(L"Cmd = %d, size = %d\n", stCmd.param, stCmd.dataSize);
+
+	if (stCmd.dataSize > 0) {
+		SAFE_DELETE_ARRAY(stCmd.data);
+		stCmd.data = new BYTE[stCmd.dataSize];
+
+		DWORD dwRead = 0;
+		while (dwRead < stCmd.dataSize) {
+			iRet = recv(sock, (char*)(stCmd.data + dwRead), stCmd.dataSize - dwRead, 0);
+			if (iRet == SOCKET_ERROR) {
+				break;
+			}
+			else if (iRet == 0) {
+				break;
+			}
+			dwRead += iRet;
+		}
+		if (dwRead < stCmd.dataSize) {
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+static BOOL SendData(SOCKET sock, CMD_STREAM& stRes)
+{
+	DWORD head[2] = { stRes.param, stRes.dataSize };
+	int iRet = send(sock, (char*)head, sizeof(DWORD) * 2, 0);
+	if (iRet == SOCKET_ERROR) {
+		return FALSE;
+	}
+	if (stRes.dataSize > 0) {
+		if (stRes.data == NULL) {
+			return FALSE;
+		}
+		iRet = send(sock, (char*)(stRes.data), stRes.dataSize, 0);
+		if (iRet == SOCKET_ERROR) {
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+// HMAC を求める (CryptCreateHash が derived  key からの計算しかできないようなので自家実装)
+BOOL HMAC(ALG_ID id, const BYTE *key, const DWORD sizeKey, const BYTE *data, const DWORD sizeData, BYTE **ppOut, DWORD *pSizeOut)
+{
+	BYTE tmp[64] = { 0 };
+	BYTE opad[64] = { 0 };
+	BYTE ipad[64] = { 0 };
+	DWORD size;
+
+	HCRYPTPROV  hProv = NULL;
+	DWORD ret = CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_AES, CRYPT_VERIFYCONTEXT);
+
+	if (ret) {
+		if (sizeKey > 64) {
+			// key が64バイトを超える場合は key の hash 値を使う
+			HCRYPTHASH  hHash = NULL;
+			size = sizeof(tmp);
+			ret = (CryptCreateHash(hProv, id, 0, 0, &hHash) &&
+				CryptHashData(hHash, key, sizeKey, 0) &&
+				CryptGetHashParam(hHash, HP_HASHVAL, tmp, &size, 0));
+			if (hHash) {
+				CryptDestroyHash(hHash);
+			}
+		}
+		else {
+			// key が64バイト未満の場合は64バイトまで 0 fill した値を使う
+			memcpy(tmp, key, sizeKey);
+		}
+	}
+
+	if (ret) {
+		// ipad & opad を計算する
+		for (int i = 0; i < sizeof(tmp); i++) {
+			ipad[i] = tmp[i] ^ 0x36;
+			opad[i] = tmp[i] ^ 0x5c;
+		}
+
+		// ipad + data の hash を求める
+		HCRYPTHASH  hHash = NULL;
+		ret = (CryptCreateHash(hProv, id, 0, 0, &hHash) &&
+			CryptHashData(hHash, ipad, sizeof(ipad), 0) &&
+			CryptHashData(hHash, data, sizeData, 0) &&
+			CryptGetHashParam(hHash, HP_HASHVAL, tmp, &size, 0));
+		if (hHash) {
+			CryptDestroyHash(hHash);
+		}
+	}
+
+	if (ret) {
+		// opad + (ipad + data の hash) の hash(HMAC) を求める 
+		HCRYPTHASH  hHash = NULL;
+		ret = (CryptCreateHash(hProv, id, 0, 0, &hHash) &&
+			CryptHashData(hHash, opad, sizeof(opad), 0) &&
+			CryptHashData(hHash, tmp, size, 0) &&
+			CryptGetHashParam(hHash, HP_HASHVAL, tmp, &size, 0));
+		if (hHash) {
+			CryptDestroyHash(hHash);
+		}
+	}
+
+	if (ret) {
+		*ppOut = new BYTE[size];
+		*pSizeOut = size;
+		memcpy(*ppOut, tmp, size);
+	}
+	if (hProv) {
+		CryptReleaseContext(hProv, 0);
+	}
+	return ret;
+}
+
+static BOOL Authenticate(SOCKET sock, const char *password)
+{
+	// パスワードが設定されていない場合は認証処理を行わない
+	if (password == nullptr || *password == '\0') {
+		return TRUE;
+	}
+
+#if 1
+	// nonce を生成する (軽量版)
+	DWORD size = sizeof(LARGE_INTEGER);
+	BYTE *msg = new BYTE[size];
+	QueryPerformanceCounter((LARGE_INTEGER*)msg);
+#else
+	// nonce を生成する (CryptGenRandom版)
+	DWORD size = 20;
+	BYTE *msg = new BYTE[size];
+	HCRYPTPROV  hProv = NULL;
+	DWORD ret = (CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_AES, CRYPT_VERIFYCONTEXT) && CryptGenRandom(hProv, size, msg));
+	if (hProv) {
+		CryptReleaseContext(hProv, 0);
+	}
+#endif
+
+	// 認証要求として、nonce をクライアントへ送る
+	CMD_STREAM stAuth;
+	stAuth.param = CMD_AUTH_REQUEST;
+	stAuth.data = msg;
+	stAuth.dataSize = size;
+	if (SendData(sock, stAuth) == FALSE) {
+		return FALSE;
+	}
+
+	// 受信待機
+	fd_set ready;
+	struct timeval to;
+	to.tv_sec = 1;
+	to.tv_usec = 0;
+	FD_ZERO(&ready);
+	FD_SET(sock, &ready);
+	if (select(0, &ready, NULL, NULL, &to) == SOCKET_ERROR) {
+		return FALSE;
+	}
+	if (!FD_ISSET(sock, &ready)) {
+		return FALSE;
+	}
+
+	// レスポンスを受け取る
+	CMD_STREAM stRes;
+	ReceiveData(sock, stRes);
+	if (stRes.param != CMD2_EPG_SRV_AUTH_REPLY) {
+		return FALSE;
+	}
+
+	BYTE *hmacOut = NULL;
+	DWORD szOut = 0;
+	BOOL ret = FALSE;
+	switch (stRes.dataSize)
+	{
+	case 128 / 8:  // HMAC-MD5
+		ret = HMAC(CALG_MD5, (BYTE*)password, (DWORD)strlen(password), msg, size, &hmacOut, &szOut);
+		break;
+	case 160 / 8: // HMAC-SHA1
+		ret = HMAC(CALG_SHA1, (BYTE*)password, (DWORD)strlen(password), msg, size, &hmacOut, &szOut);
+		break;
+	case 256 / 8: // HMAC-SHA256
+		ret = HMAC(CALG_SHA_256, (BYTE*)password, (DWORD)strlen(password), msg, size, &hmacOut, &szOut);
+		break;
+	}
+	ret = ret && (szOut == stRes.dataSize && memcmp(hmacOut, stRes.data, szOut) == 0);
+	delete[] hmacOut;
+	return ret;
+}
+
 UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 {
 	CTCPServer* pSys = (CTCPServer*)pParam;
@@ -186,32 +385,14 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 			if ( FD_ISSET(sock, &ready) ){
 				CMD_STREAM stCmd;
 				CMD_STREAM stRes;
-				DWORD head[2];
 				do{
-					int iRet = 1;
-					iRet = recv(sock, (char*)head, sizeof(DWORD)*2, 0);
-					if( iRet != sizeof(DWORD)*2 ){
+					if (ReceiveData(sock, stCmd) == FALSE) {
 						break;
 					}
-					stCmd.param = head[0];
-					stCmd.dataSize = head[1];
 
-					if( stCmd.dataSize > 0 ){
-						stCmd.data = new BYTE[stCmd.dataSize];
-
-						DWORD dwRead = 0;
-						while( dwRead < stCmd.dataSize ){
-							iRet = recv(sock, (char*)(stCmd.data+dwRead), stCmd.dataSize-dwRead, 0);
-							if( iRet == SOCKET_ERROR ){
-								break;
-							}else if( iRet == 0 ){
-								break;
-							}
-							dwRead+=iRet;
-						}
-						if( dwRead < stCmd.dataSize ){
-							break;
-						}
+					if (Authenticate(sock, pSys->m_password.c_str()) == FALSE) {
+						_OutputDebugString(L"Authentication error from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
+						break;
 					}
 
 					if( stCmd.param == CMD2_EPG_SRV_REGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_UNREGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_ISREGIST_GUI_TCP ){
@@ -229,21 +410,9 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					if( stRes.param == CMD_NO_RES ){
 						break;
 					}
-					head[0] = stRes.param;
-					head[1] = stRes.dataSize;
 
-					iRet = send(sock, (char*)head, sizeof(DWORD)*2, 0);
-					if( iRet == SOCKET_ERROR ){
+					if (SendData(sock, stRes) == FALSE) {
 						break;
-					}
-					if( stRes.dataSize > 0 ){
-						if( stRes.data == NULL ){
-							break;
-						}
-						iRet = send(sock, (char*)(stRes.data), stRes.dataSize, 0);
-						if( iRet == SOCKET_ERROR ){
-							break;
-						}
 					}
 
 					SAFE_DELETE_ARRAY(stCmd.data);
