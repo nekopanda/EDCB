@@ -19,6 +19,7 @@ public:
 	BOOL StartServer(
 		DWORD dwPort, 
 		LPCWSTR acl,
+		LPCWSTR password,
 		CMD_CALLBACK_PROC pfnCmdProc, 
 		void* pParam
 		);
@@ -29,6 +30,7 @@ protected:
 	void* m_pParam;
 	DWORD m_dwPort;
 	wstring m_acl;
+	string m_password;
 
 	HANDLE m_hStopEvent;
 	HANDLE m_hThread;
