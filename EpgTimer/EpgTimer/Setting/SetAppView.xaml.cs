@@ -267,10 +267,10 @@ namespace EpgTimer.Setting
 
         private void SetAppView_tabItem4()
         {
-            button_recDef.Content = "録画プリセットを確認";
-
             if (CommonManager.Instance.NWMode == true)
             {
+                button_recDef.Content = "録画プリセットを確認";
+
                 checkBox_tcpServer.IsEnabled = false; // ネットワーク接続を許可する
                 label41.IsEnabled = false; // ポート
                 textBox_tcpPort.IsEnabled = false;
@@ -294,15 +294,19 @@ namespace EpgTimer.Setting
                 label_keepTCPConnect.IsEnabled = true; // 分間隔
             }
 
-            if (IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfo", 0, SettingPath.TimerSrvIniPath) == 1)
+            // 読める設定のみ項目に反映させる
+            if (IniFileHandler.CanReadInifile)
             {
-                checkBox_autoDelRecInfo.IsChecked = true;
-            }
-            textBox_autoDelRecInfo.Text = IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfoNum", 100, SettingPath.TimerSrvIniPath).ToString();
+                if (IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfo", 0, SettingPath.TimerSrvIniPath) == 1)
+                {
+                    checkBox_autoDelRecInfo.IsChecked = true;
+                }
+                textBox_autoDelRecInfo.Text = IniFileHandler.GetPrivateProfileInt("SET", "AutoDelRecInfoNum", 100, SettingPath.TimerSrvIniPath).ToString();
 
-            if (IniFileHandler.GetPrivateProfileInt("SET", "TimeSync", 0, SettingPath.TimerSrvIniPath) == 1)
-            {
-                checkBox_timeSync.IsChecked = true;
+                if (IniFileHandler.GetPrivateProfileInt("SET", "TimeSync", 0, SettingPath.TimerSrvIniPath) == 1)
+                {
+                    checkBox_timeSync.IsChecked = true;
+                }
             }
 
             checkBox_closeMin.IsChecked = Settings.Instance.CloseMin;
@@ -320,21 +324,25 @@ namespace EpgTimer.Setting
             checkBox_suspendClose.IsChecked = Settings.Instance.SuspendCloseNW;
             checkBox_ngAutoEpgLoad.IsChecked = Settings.Instance.NgAutoEpgLoadNW;
 
-            if (checkBox_srvResident.IsEnabled)
+            // 読める設定のみ項目に反映させる
+            if (IniFileHandler.CanReadInifile)
             {
-                int residentMode = IniFileHandler.GetPrivateProfileInt("SET", "ResidentMode", 0, SettingPath.TimerSrvIniPath);
-                checkBox_srvResident.IsChecked = residentMode >= 1;
-                checkBox_srvShowTray.IsChecked = residentMode >= 2;
-                checkBox_srvNoBalloonTip.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "NoBalloonTip", 0, SettingPath.TimerSrvIniPath) != 0;
-            }
+                if (checkBox_srvResident.IsEnabled)
+                {
+                    int residentMode = IniFileHandler.GetPrivateProfileInt("SET", "ResidentMode", 0, SettingPath.TimerSrvIniPath);
+                    checkBox_srvResident.IsChecked = residentMode >= 1;
+                    checkBox_srvShowTray.IsChecked = residentMode >= 2;
+                    checkBox_srvNoBalloonTip.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "NoBalloonTip", 0, SettingPath.TimerSrvIniPath) != 0;
+                }
 
-            if (IniFileHandler.GetPrivateProfileInt("SET", "EnableTCPSrv", 0, SettingPath.TimerSrvIniPath) == 1)
-            {
-                checkBox_tcpServer.IsChecked = true;
+                if (IniFileHandler.GetPrivateProfileInt("SET", "EnableTCPSrv", 0, SettingPath.TimerSrvIniPath) == 1)
+                {
+                    checkBox_tcpServer.IsChecked = true;
+                }
+                textBox_tcpPort.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath).ToString();
+                textBox_tcpAcl.Text = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessControlList", "+127.0.0.1,+192.168.0.0/16", SettingPath.TimerSrvIniPath);
+                passwordBox_tcpPassword.Password = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessPassword", "", SettingPath.TimerSrvIniPath);
             }
-            textBox_tcpPort.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath).ToString();
-            textBox_tcpAcl.Text = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessControlList", "+127.0.0.1,+192.168.0.0/16", SettingPath.TimerSrvIniPath);
-            passwordBox_tcpPassword.Password = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessPassword", "", SettingPath.TimerSrvIniPath);
 
             defSearchKey = Settings.Instance.DefSearchKey.Clone();
         }

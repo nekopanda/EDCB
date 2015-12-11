@@ -80,6 +80,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                             double widthEllipsis = itemFont.GlyphType.AdvanceWidths[glyphIndex] * fontSize;
                             while (totalWidth - advanceWidths.Last() + widthEllipsis > maxWidth)
                             {
+                                totalWidth -= advanceWidths.Last();
                                 glyphIndexes.RemoveAt(glyphIndexes.Count-1);
                                 advanceWidths.RemoveAt(advanceWidths.Count - 1);
                             }

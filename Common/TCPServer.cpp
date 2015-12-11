@@ -188,10 +188,10 @@ static BOOL SendData(SOCKET sock, CMD_STREAM& stRes)
 // HMAC を求める (CryptCreateHash が derived  key からの計算しかできないようなので自家実装)
 BOOL HMAC(ALG_ID id, const BYTE *key, const DWORD sizeKey, const BYTE *data, const DWORD sizeData, BYTE **ppOut, DWORD *pSizeOut)
 {
-	BYTE tmp[64] = { 0 };
+	BYTE tmp[64] = { 0 }; // SHA512(64バイト)まで対応
 	BYTE opad[64] = { 0 };
 	BYTE ipad[64] = { 0 };
-	DWORD size;
+	DWORD size = sizeof(tmp);
 
 	HCRYPTPROV  hProv = NULL;
 	DWORD ret = CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_AES, CRYPT_VERIFYCONTEXT);
@@ -200,7 +200,6 @@ BOOL HMAC(ALG_ID id, const BYTE *key, const DWORD sizeKey, const BYTE *data, con
 		if (sizeKey > 64) {
 			// key が64バイトを超える場合は key の hash 値を使う
 			HCRYPTHASH  hHash = NULL;
-			size = sizeof(tmp);
 			ret = (CryptCreateHash(hProv, id, 0, 0, &hHash) &&
 				CryptHashData(hHash, key, sizeKey, 0) &&
 				CryptGetHashParam(hHash, HP_HASHVAL, tmp, &size, 0));
