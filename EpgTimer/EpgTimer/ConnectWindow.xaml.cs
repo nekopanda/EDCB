@@ -73,6 +73,7 @@ namespace EpgTimer
                 textBox_srvPort.Text = "";
                 textBox_clientPort.Text = "";
                 textBox_mac.Text = "";
+                textBox_Password.Password = "";
             }
         }
 
@@ -107,13 +108,16 @@ namespace EpgTimer
         {
             try
             {
-                NWPresetItem data = GetSetting();
-                Settings.Instance.NWServerIP = data.NWServerIP;
-                Settings.Instance.NWServerPort = data.NWServerPort;
-                Settings.Instance.NWWaitPort = data.NWWaitPort;
-                Settings.Instance.NWMacAdd = data.NWMacAdd;
-                Settings.Instance.NWPassword = data.NWPassword;
                 Settings.Instance.NWMode = IsAvailableServer == false || listView_List.SelectedIndex > 0;
+                if (Settings.Instance.NWMode == true)
+                {
+                    NWPresetItem data = GetSetting();
+                    Settings.Instance.NWServerIP = data.NWServerIP;
+                    Settings.Instance.NWServerPort = data.NWServerPort;
+                    Settings.Instance.NWWaitPort = data.NWWaitPort;
+                    Settings.Instance.NWMacAdd = data.NWMacAdd;
+                    Settings.Instance.NWPassword = data.NWPassword;
+                }
             }
             catch (Exception ex)
             {
