@@ -11,6 +11,7 @@ namespace EpgTimer
     {
         CMD_SUCCESS = 1, //成功
         CMD_ERR = 0, //汎用エラー
+        CMD_AUTH_REQUEST = 201, //認証要求
         CMD_NEXT = 202, //Enumコマンド用、続きあり
         CMD_NON_SUPPORT = 203, //未サポートのコマンド
         CMD_ERR_INVALID_ARG = 204, //引数エラー

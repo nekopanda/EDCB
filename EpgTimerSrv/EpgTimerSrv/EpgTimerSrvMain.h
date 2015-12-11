@@ -146,6 +146,7 @@ private:
 	DWORD wakeMarginSec;
 	unsigned short tcpPort;
 	wstring tcpAccessControlList;
+	wstring tcpPassword;
 	wstring httpPorts;
 	wstring httpPublicFolder;
 	wstring httpAccessControlList;

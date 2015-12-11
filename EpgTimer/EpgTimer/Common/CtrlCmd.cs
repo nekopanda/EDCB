@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace EpgTimer
@@ -251,6 +252,8 @@ namespace EpgTimer
         CMD_EPG_SRV_UNREGIST_GUI_TCP = 8,
         /// <summary>TCP接続のGUIアプリケーションのIPとポートの登録状況確認</summary>
         CMD_EPG_SRV_ISREGIST_GUI_TCP = 9,
+        /// <summary>接続認証応答</summary>
+        CMD2_EPG_SRV_AUTH_REPLY = 50,
         /// <summary>予約一覧取得</summary>
         CMD_EPG_SRV_ENUM_RESERVE = 1011,
         /// <summary>予約情報取得</summary>
@@ -750,6 +753,41 @@ namespace EpgTimer
                             }
                             n += m;
                         }
+
+                        // 認証
+                        if ((ErrCode)resParam == ErrCode.CMD_AUTH_REQUEST)
+                        {
+                            if (Settings.Instance.NWPassword == null)
+                            {
+                                return ErrCode.CMD_ERR;
+                            }
+
+                            //サーバー応答の nonce とパスワードから HMAC を作って返信する
+                            HMAC hmac = new HMACMD5(Encoding.UTF8.GetBytes(Settings.Instance.NWPassword));
+                            byte[] data = hmac.ComputeHash(resData);
+                            BitConverter.GetBytes((uint)CtrlCmd.CMD2_EPG_SRV_AUTH_REPLY).CopyTo(head, 0);
+                            BitConverter.GetBytes((uint)data.Length).CopyTo(head, 4);
+                            ns.Write(head, 0, 8);
+                            ns.Write(data, 0, data.Length);
+
+                            //認証にパスすると前回送信したコマンドの応答が返ってくる
+                            if (ns.Read(head, 0, 8) != 8)
+                            {
+                                return ErrCode.CMD_ERR;
+                            }
+                            resParam = BitConverter.ToUInt32(head, 0);
+                            resData = new byte[BitConverter.ToUInt32(head, 4)];
+                            for (int n = 0; n < resData.Length;)
+                            {
+                                int m = ns.Read(resData, n, resData.Length - n);
+                                if (m <= 0)
+                                {
+                                    return ErrCode.CMD_ERR;
+                                }
+                                n += m;
+                            }
+                        }
+
                         res = new MemoryStream(resData, false);
                         return Enum.IsDefined(typeof(ErrCode), resParam) ? (ErrCode)resParam : ErrCode.CMD_ERR;
                     }
