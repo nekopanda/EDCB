@@ -276,6 +276,8 @@ namespace EpgTimer.Setting
                 textBox_tcpPort.IsEnabled = false;
                 label_tcpAcl.IsEnabled = false; // アクセス制御
                 textBox_tcpAcl.IsEnabled = false;
+                label_tcpPassword.IsEnabled = false; // パスワード
+                passwordBox_tcpPassword.IsEnabled = false;
 
                 checkBox_autoDelRecInfo.IsEnabled = IniFileHandler.CanUpdateInifile; // 録画結果を自動的に削除する
                 label42.IsEnabled = IniFileHandler.CanUpdateInifile; // 保持件数
@@ -332,6 +334,7 @@ namespace EpgTimer.Setting
             }
             textBox_tcpPort.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath).ToString();
             textBox_tcpAcl.Text = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessControlList", "+127.0.0.1,+192.168.0.0/16", SettingPath.TimerSrvIniPath);
+            passwordBox_tcpPassword.Password = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessPassword", "", SettingPath.TimerSrvIniPath);
 
             defSearchKey = Settings.Instance.DefSearchKey.Clone();
         }
@@ -596,6 +599,10 @@ namespace EpgTimer.Setting
             if (textBox_tcpAcl.IsEnabled)
             {
                 IniFileHandler.WritePrivateProfileString("SET", "TCPAccessControlList", textBox_tcpAcl.Text, SettingPath.TimerSrvIniPath);
+            }
+            if (passwordBox_tcpPassword.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "TCPAccessPassword", passwordBox_tcpPassword.Password, SettingPath.TimerSrvIniPath);
             }
 
             Settings.Instance.NoToolTip = (checkBox_noToolTips.IsChecked == true);

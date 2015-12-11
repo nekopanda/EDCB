@@ -211,9 +211,13 @@
                             <Label Name="label41" Content="ポート" Margin="20,0,0,0" Width="80" />
                             <TextBox Name="textBox_tcpPort" Width="50" Height="25" VerticalContentAlignment="Center"/>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal">
+                        <StackPanel Margin="0,0,-20,0" Orientation="Horizontal">
                             <Label Name="label_tcpAcl" Content="アクセス制御" Margin="20,0,0,0" Width="80" />
-                            <TextBox Name="textBox_tcpAcl" Width="220" Height="25" VerticalContentAlignment="Center" />
+                            <TextBox Name="textBox_tcpAcl" Width="215" Height="25" VerticalContentAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,-20,0" Orientation="Horizontal">
+                            <Label Name="label_tcpPassword" Content="パスワード" Margin="20,0,0,0" Width="80" />
+                            <PasswordBox Name="passwordBox_tcpPassword" Width="215" Height="25" VerticalContentAlignment="Center" />
                         </StackPanel>
                     </WrapPanel>
                     <WrapPanel>
