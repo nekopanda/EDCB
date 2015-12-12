@@ -133,24 +133,28 @@ static BOOL TestAcl(struct in_addr addr, wstring acl)
 	}
 }
 
-static BOOL ReceiveData(SOCKET sock, CMD_STREAM& stCmd)
+static BOOL ReceiveHeader(SOCKET sock, CMD_STREAM& stCmd)
 {
 	DWORD head[2];
 	int iRet = recv(sock, (char*)head, sizeof(DWORD) * 2, 0);
-	if (iRet != sizeof(DWORD) * 2){
+	if (iRet != sizeof(DWORD) * 2) {
 		return FALSE;
 	}
 	stCmd.param = head[0];
 	stCmd.dataSize = head[1];
-	_OutputDebugString(L"Cmd = %d, size = %d\n", stCmd.param, stCmd.dataSize);
+	//_OutputDebugString(L"Cmd = %d, size = %d\n", stCmd.param, stCmd.dataSize);
+	return TRUE;
+}
 
+static BOOL ReceiveData(SOCKET sock, CMD_STREAM& stCmd)
+{
 	if (stCmd.dataSize > 0) {
 		SAFE_DELETE_ARRAY(stCmd.data);
 		stCmd.data = new BYTE[stCmd.dataSize];
 
 		DWORD dwRead = 0;
 		while (dwRead < stCmd.dataSize) {
-			iRet = recv(sock, (char*)(stCmd.data + dwRead), stCmd.dataSize - dwRead, 0);
+			int iRet = recv(sock, (char*)(stCmd.data + dwRead), stCmd.dataSize - dwRead, 0);
 			if (iRet == SOCKET_ERROR) {
 				break;
 			}
@@ -185,7 +189,7 @@ static BOOL SendData(SOCKET sock, CMD_STREAM& stRes)
 	return TRUE;
 }
 
-// HMAC を求める (CryptCreateHash が derived  key からの計算しかできないようなので自家実装)
+// HMAC を求める (CryptCreateHash が derived key からの計算しかできないようなので自家実装)
 BOOL HMAC(ALG_ID id, const BYTE *key, const DWORD sizeKey, const BYTE *data, const DWORD sizeData, BYTE **ppOut, DWORD *pSizeOut)
 {
 	BYTE tmp[64] = { 0 }; // SHA512(64バイト)まで対応
@@ -254,21 +258,31 @@ BOOL HMAC(ALG_ID id, const BYTE *key, const DWORD sizeKey, const BYTE *data, con
 	return ret;
 }
 
-static BOOL Authenticate(SOCKET sock, const char *password)
+ BOOL Authenticate(SOCKET sock, const char *password)
 {
 	// パスワードが設定されていない場合は認証処理を行わない
 	if (password == nullptr || *password == '\0') {
 		return TRUE;
 	}
 
+	CMD_STREAM stCmd;
+	if (ReceiveHeader(sock, stCmd) == FALSE ||
+		stCmd.param != CMD2_EPG_SRV_AUTH_REQUEST ||
+		stCmd.dataSize != 0) {
+		return FALSE;
+	}
+
 #if 1
 	// nonce を生成する (軽量版)
+	// 普通、現在時刻とランダム値を繋げたりするが、
+	// QueryPerformanceCounter が進む前に nonce を再生成することはなく 64bit が1周するまでは完全にユニーク
+	// であることから、ここでは QueryPerformanceCounter を採用してみる。
 	DWORD size = sizeof(LARGE_INTEGER);
 	BYTE *msg = new BYTE[size];
 	QueryPerformanceCounter((LARGE_INTEGER*)msg);
 #else
 	// nonce を生成する (CryptGenRandom版)
-	DWORD size = 20;
+	DWORD size = 20; // 何バイトでもいいけど長さにあまり意味はない (ユニークであれば十分)
 	BYTE *msg = new BYTE[size];
 	HCRYPTPROV  hProv = NULL;
 	DWORD ret = (CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_AES, CRYPT_VERIFYCONTEXT) && CryptGenRandom(hProv, size, msg));
@@ -302,17 +316,19 @@ static BOOL Authenticate(SOCKET sock, const char *password)
 
 	// レスポンスを受け取る
 	CMD_STREAM stRes;
-	ReceiveData(sock, stRes);
-	if (stRes.param != CMD2_EPG_SRV_AUTH_REPLY) {
+	if (ReceiveHeader(sock, stRes) == FALSE ||
+		stRes.param != CMD2_EPG_SRV_AUTH_REPLY ||
+		stRes.dataSize > 64) { // HMAC-SHA512 以上のサイズの応答は受け付けない
 		return FALSE;
 	}
+	ReceiveData(sock, stRes);
 
 	BYTE *hmacOut = NULL;
 	DWORD szOut = 0;
 	BOOL ret = FALSE;
 	switch (stRes.dataSize)
 	{
-	case 128 / 8:  // HMAC-MD5
+	case 128 / 8:  // HMAC-MD5 (今現在 HMAC-MD5 で十分な強度があることが知られている)
 		ret = HMAC(CALG_MD5, (BYTE*)password, (DWORD)strlen(password), msg, size, &hmacOut, &szOut);
 		break;
 	case 160 / 8: // HMAC-SHA1
@@ -321,10 +337,24 @@ static BOOL Authenticate(SOCKET sock, const char *password)
 	case 256 / 8: // HMAC-SHA256
 		ret = HMAC(CALG_SHA_256, (BYTE*)password, (DWORD)strlen(password), msg, size, &hmacOut, &szOut);
 		break;
+	case 384 / 8: // HMAC-SHA384
+		ret = HMAC(CALG_SHA_384, (BYTE*)password, (DWORD)strlen(password), msg, size, &hmacOut, &szOut);
+		break;
+	case 512 / 8: // HMAC-SHA512
+		ret = HMAC(CALG_SHA_512, (BYTE*)password, (DWORD)strlen(password), msg, size, &hmacOut, &szOut);
+		break;
 	}
 	ret = ret && (szOut == stRes.dataSize && memcmp(hmacOut, stRes.data, szOut) == 0);
 	delete[] hmacOut;
 	return ret;
+}
+
+BOOL CheckkCmd(DWORD cmd, DWORD size)
+{
+	// size が cmd に対し適正か確認
+
+	// とりあえず 64KB 未満のみ受けつけるようにしておく
+	return size < 64*1024 ? TRUE : FALSE;
 }
 
 UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
@@ -336,6 +366,13 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 	
 	fd_set ready;
 	struct timeval to;
+
+	struct ERR_COUNT {
+		DWORD dwCount;
+		DWORD dwTick;
+	};
+	std::map<ULONG, ERR_COUNT> blacklist;
+	std::map<ULONG, ERR_COUNT>::iterator itr_bl;
 
 	while(1){
 		if( WaitForSingleObject( pSys->m_hStopEvent, 0 ) != WAIT_TIMEOUT ){
@@ -363,6 +400,18 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					_OutputDebugString(L"Deny from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
 					closesocket(sock);
 					sock = INVALID_SOCKET;
+				} else if ((itr_bl = blacklist.find(client.sin_addr.S_un.S_addr)) != blacklist.end()){
+					if (itr_bl->second.dwCount >= 5) {
+						_OutputDebugString(L"Delay access from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
+						if (GetTickCount() - itr_bl->second.dwTick < 30*1000) {
+							itr_bl->second.dwTick = GetTickCount();
+							closesocket(sock);
+							sock = INVALID_SOCKET;
+						}
+						else {
+							blacklist.erase(itr_bl->first);
+						}
+					}
 				}
 			}
 		}
@@ -385,12 +434,16 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 				CMD_STREAM stCmd;
 				CMD_STREAM stRes;
 				do{
-					if (ReceiveData(sock, stCmd) == FALSE) {
+					if (Authenticate(sock, pSys->m_password.c_str()) == FALSE) {
+						_OutputDebugString(L"Authentication error from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
+						blacklist[client.sin_addr.S_un.S_addr].dwCount++;
+						blacklist[client.sin_addr.S_un.S_addr].dwTick = GetTickCount();
 						break;
 					}
 
-					if (Authenticate(sock, pSys->m_password.c_str()) == FALSE) {
-						_OutputDebugString(L"Authentication error from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
+					if (ReceiveHeader(sock, stCmd) == FALSE || 
+						CheckkCmd(stCmd.param, stCmd.dataSize) == FALSE ||
+						ReceiveData(sock, stCmd) == FALSE) {
 						break;
 					}
 
