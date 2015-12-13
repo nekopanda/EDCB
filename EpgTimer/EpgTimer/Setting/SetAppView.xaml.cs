@@ -311,6 +311,7 @@ namespace EpgTimer.Setting
 
             checkBox_closeMin.IsChecked = Settings.Instance.CloseMin;
             checkBox_minWake.IsChecked = Settings.Instance.WakeMin;
+            checkBox_applyMulti.IsChecked = Settings.Instance.ApplyMultiInstance;
             checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
             checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
             checkBox_showTray.IsChecked = Settings.Instance.ShowTray;
@@ -586,6 +587,7 @@ namespace EpgTimer.Setting
 
             Settings.Instance.CloseMin = (bool)checkBox_closeMin.IsChecked;
             Settings.Instance.WakeMin = (bool)checkBox_minWake.IsChecked;
+            Settings.Instance.ApplyMultiInstance = (bool)checkBox_applyMulti.IsChecked;
             Settings.Instance.ShowTray = (bool)checkBox_showTray.IsChecked;
             Settings.Instance.MinHide = (bool)checkBox_minHide.IsChecked;
 

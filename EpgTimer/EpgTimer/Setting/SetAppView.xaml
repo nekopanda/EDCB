@@ -195,6 +195,7 @@
                         <StackPanel>
                             <CheckBox Name="checkBox_closeMin" Content="×ボタンで最小化する" Margin="6" Width="200" />
                             <CheckBox Name="checkBox_minWake" Content="最小化で起動する" Margin="6" Width="200" />
+                            <CheckBox Name="checkBox_applyMulti" Content="多重起動を許す" Margin="6" Width="200" />
                         </StackPanel>
                         <StackPanel>
                             <CheckBox Name="checkBox_showTray" Content="タスクトレイアイコンを表示する" Margin="6" Width="200" />
