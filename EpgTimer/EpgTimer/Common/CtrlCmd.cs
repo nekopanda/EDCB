@@ -252,6 +252,8 @@ namespace EpgTimer
         CMD_EPG_SRV_UNREGIST_GUI_TCP = 8,
         /// <summary>TCP接続のGUIアプリケーションのIPとポートの登録状況確認</summary>
         CMD_EPG_SRV_ISREGIST_GUI_TCP = 9,
+        /// <summary>接続認証要求</summary>
+        CMD2_EPG_SRV_AUTH_REQUEST = 49,
         /// <summary>接続認証応答</summary>
         CMD2_EPG_SRV_AUTH_REPLY = 50,
         /// <summary>予約一覧取得</summary>
@@ -726,51 +728,73 @@ namespace EpgTimer
                     }
                     using (System.Net.Sockets.NetworkStream ns = tcp.GetStream())
                     {
-                        // 送信
-                        var head = new byte[8];
-                        BitConverter.GetBytes((uint)param).CopyTo(head, 0);
-                        BitConverter.GetBytes((uint)(send == null ? 0 : send.Length)).CopyTo(head, 4);
-                        ns.Write(head, 0, 8);
-                        if (send != null && send.Length != 0)
+                        HMAC hmac = null;
+                        byte[] head = new byte[8];
+                        uint resParam;
+                        byte[] resData;
+
+                        int sizeAuthPacket = 0;
+
+                        // 接続パスワードが設定されていれば認証を行う
+                        if (Settings.Instance.NWPassword != null && Settings.Instance.NWPassword.Length > 0)
+                        {
+                            // 認証応答用の準備
+                            hmac = new HMACMD5(Encoding.UTF8.GetBytes(Settings.Instance.NWPassword));
+                            sizeAuthPacket = 8 + hmac.HashSize / 8;
+                        }
+
+                        // 送信パケット生成
+                        uint sizeData = send == null ? 0 : (uint)send.Length;
+                        byte[] data = new byte[sizeAuthPacket + 8 + sizeData];
+                        BitConverter.GetBytes((uint)param).CopyTo(data, sizeAuthPacket);
+                        BitConverter.GetBytes(sizeData).CopyTo(data, sizeAuthPacket + 4);
+                        if (sizeData > 0)
                         {
                             send.Close();
-                            byte[] data = send.ToArray();
-                            ns.Write(data, 0, data.Length);
-                        }
-                        // 受信
-                        if (ns.Read(head, 0, 8) != 8)
-                        {
-                            return ErrCode.CMD_ERR;
-                        }
-                        uint resParam = BitConverter.ToUInt32(head, 0);
-                        var resData = new byte[BitConverter.ToUInt32(head, 4)];
-                        for (int n = 0; n < resData.Length; )
-                        {
-                            int m = ns.Read(resData, n, resData.Length - n);
-                            if (m <= 0)
-                            {
-                                return ErrCode.CMD_ERR;
-                            }
-                            n += m;
+                            send.ToArray().CopyTo(data, sizeAuthPacket + 8);
                         }
 
                         // 認証
-                        if ((ErrCode)resParam == ErrCode.CMD_AUTH_REQUEST)
+                        if (sizeAuthPacket > 0 && hmac != null)
                         {
-                            if (Settings.Instance.NWPassword == null)
+                            // nonce要求
+                            BitConverter.GetBytes((uint)CtrlCmd.CMD2_EPG_SRV_AUTH_REQUEST).CopyTo(head, 0);
+                            BitConverter.GetBytes(0).CopyTo(head, 4);
+                            ns.Write(head, 0, 8);
+
+                            // nonce を受け取る
+                            if (ns.Read(head, 0, 8) != 8)
                             {
                                 return ErrCode.CMD_ERR;
                             }
+                            resParam = BitConverter.ToUInt32(head, 0);
+                            if ((ErrCode)resParam != ErrCode.CMD_AUTH_REQUEST)
+                            {
+                                return ErrCode.CMD_ERR;
+                            }
+                            resData = new byte[BitConverter.ToUInt32(head, 4)];
+                            for (int n = 0; n < resData.Length;)
+                            {
+                                int m = ns.Read(resData, n, resData.Length - n);
+                                if (m <= 0)
+                                {
+                                    return ErrCode.CMD_ERR;
+                                }
+                                n += m;
+                            }
 
-                            //サーバー応答の nonce とパスワードから HMAC を作って返信する
-                            HMAC hmac = new HMACMD5(Encoding.UTF8.GetBytes(Settings.Instance.NWPassword));
-                            byte[] data = hmac.ComputeHash(resData);
-                            BitConverter.GetBytes((uint)CtrlCmd.CMD2_EPG_SRV_AUTH_REPLY).CopyTo(head, 0);
-                            BitConverter.GetBytes((uint)data.Length).CopyTo(head, 4);
-                            ns.Write(head, 0, 8);
-                            ns.Write(data, 0, data.Length);
+                            //サーバー応答の nonce とパスワードから HMAC を作る
+                            hmac.ComputeHash(resData).CopyTo(data, 8);
+                            BitConverter.GetBytes((uint)CtrlCmd.CMD2_EPG_SRV_AUTH_REPLY).CopyTo(data, 0);
+                            BitConverter.GetBytes(hmac.HashSize / 8).CopyTo(data, 4);
+                        }
 
-                            //認証にパスすると前回送信したコマンドの応答が返ってくる
+                        // 送信: 認証応答パケットとコマンドパケットをまとめて送る
+                        ns.Write(data, 0, data.Length);
+
+                        // 受信
+                        try
+                        {
                             if (ns.Read(head, 0, 8) != 8)
                             {
                                 return ErrCode.CMD_ERR;
@@ -786,10 +810,14 @@ namespace EpgTimer
                                 }
                                 n += m;
                             }
+                            res = new MemoryStream(resData, false);
+                            return Enum.IsDefined(typeof(ErrCode), resParam) ? (ErrCode)resParam : ErrCode.CMD_ERR;
                         }
-
-                        res = new MemoryStream(resData, false);
-                        return Enum.IsDefined(typeof(ErrCode), resParam) ? (ErrCode)resParam : ErrCode.CMD_ERR;
+                        catch (IOException e)
+                        {
+                            // 認証に失敗するとサーバーから切断されるため Read 中に IOException が発生する
+                            return ErrCode.CMD_ERR;
+                        }
                     }
                 }
             }
