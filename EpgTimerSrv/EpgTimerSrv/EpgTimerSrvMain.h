@@ -49,7 +49,9 @@ private:
 	bool AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data);
 	bool AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data);
 	//外部制御コマンド関係
-	static int CALLBACK CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
+	static int CALLBACK CtrlCmdPipeCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
+	static int CALLBACK CtrlCmdTcpCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
+	static int CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam, bool tcpFlag);
 	static int InitLuaCallback(lua_State* L);
 	//Lua-edcb空間のコールバック
 	class CLuaWorkspace
@@ -121,6 +123,8 @@ private:
 	bool saveNotifyLog;
 	DWORD wakeMarginSec;
 	unsigned short tcpPort;
+	DWORD tcpResponseTimeoutSec;
+	wstring tcpAccessControlList;
 	wstring httpPorts;
 	wstring httpPublicFolder;
 	wstring httpAccessControlList;
@@ -142,5 +146,5 @@ private:
 	bool nwtvTcp;
 	DWORD notifyUpdateCount[6];
 
-	vector<OLD_EVENT_INFO_DATA3> oldSearchList;
+	vector<EPGDB_EVENT_INFO> oldSearchList[2];
 };
