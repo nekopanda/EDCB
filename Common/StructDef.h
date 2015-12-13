@@ -1,6 +1,20 @@
 #ifndef __STRUCT_DEF_H__
 #define __STRUCT_DEF_H__
 
+//転送ファイルデータ
+typedef struct _FILE_DATA{
+	wstring Name;				//ファイル名
+	DWORD Size;					//ファイルサイズ
+	DWORD Status;				//ファイルステータス(とりあえず未使用)
+	BYTE* Data;					//ファイルデータ
+	_FILE_DATA(void){
+		Name = L"";
+		Size = 0;
+		Status = 0;
+		Data = NULL;
+	};
+} FILE_DATA;
+
 //録画フォルダ情報
 typedef struct _REC_FILE_SET_INFO{
 	wstring recFolder;			//録画フォルダ
