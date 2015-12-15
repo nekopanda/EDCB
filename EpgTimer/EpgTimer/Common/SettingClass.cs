@@ -610,8 +610,8 @@ namespace EpgTimer
         private UInt32 nwServerPort;
         private UInt32 nwWaitPort;
         private string nwMacAdd;
-        private string nwPassword;
-        private List<NWPresetItem> nwPreset; 
+        private SerializableSecureString nwPassword;
+        private List<NWPresetItem> nwPreset;
         private bool wakeReconnectNW;
         private bool suspendCloseNW;
         private bool ngAutoEpgLoadNW;
@@ -742,7 +742,7 @@ namespace EpgTimer
         {
             get { return recinfoErrCriticalDrops; }
             set { recinfoErrCriticalDrops = value; }
-        }        
+        }
         public double DragScroll
         {
             get { return dragScroll; }
@@ -1163,7 +1163,7 @@ namespace EpgTimer
             get { return nwMacAdd; }
             set { nwMacAdd = value; }
         }
-        public string NWPassword
+        public SerializableSecureString NWPassword
         {
             get { return nwPassword; }
             set { nwPassword = value; }
@@ -1387,7 +1387,7 @@ namespace EpgTimer
         {
             get { return keyDeleteDisplayItemNum; }
             set { keyDeleteDisplayItemNum = value; }
-        }        
+        }
         public bool DisplayNotifyEpgChange
         {
             get { return displayNotifyEpgChange; }
@@ -1423,7 +1423,7 @@ namespace EpgTimer
             get { return tryEpgSetting; }
             set { tryEpgSetting = value; }
         }
-        
+
         public Settings()
         {
             useCustomEpgView = false;
@@ -1523,6 +1523,7 @@ namespace EpgTimer
             nwServerPort = 4510;
             nwWaitPort = 4520;
             nwMacAdd = "";
+            nwPassword = new SerializableSecureString();
             nwPreset = new List<NWPresetItem>();
             wakeReconnectNW = false;
             suspendCloseNW = false;
@@ -1828,7 +1829,7 @@ namespace EpgTimer
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
- 
+
         public static void SaveToXmlFile()
         {
             try
@@ -2012,3 +2013,4 @@ namespace EpgTimer
         }
     }
 }
+

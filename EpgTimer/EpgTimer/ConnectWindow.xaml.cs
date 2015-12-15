@@ -40,10 +40,10 @@ namespace EpgTimer
                 }
                 if (IsAvailableServer == true)
                 {
-                    ConnectionList.Insert(0, new NWPresetItem("ローカル接続", "", 0, 0, "", ""));
+                    ConnectionList.Insert(0, new NWPresetItem("ローカル接続", "", 0, 0, "", new SerializableSecureString()));
                     pos++;
                 }
-                ConnectionList.Add(new NWPresetItem("<新規登録>", "", 0, 0, "", ""));
+                ConnectionList.Add(new NWPresetItem("<新規登録>", "", 0, 0, "", new SerializableSecureString()));
 
                 listView_List.ItemsSource = ConnectionList;
                 if (IsAvailableServer == false)
@@ -64,7 +64,7 @@ namespace EpgTimer
                 textBox_srvPort.Text = data.NWServerPort.ToString();
                 textBox_clientPort.Text = data.NWWaitPort.ToString();
                 textBox_mac.Text = data.NWMacAdd;
-                textBox_Password.Password = data.NWPassword;
+                textBox_Password.Password = new System.Net.NetworkCredential(string.Empty, data.NWPassword.SecureString).Password; // セキュアなコピーではない
             }
             else
             {
@@ -85,7 +85,7 @@ namespace EpgTimer
             preset.NWServerPort = mutil.MyToNumerical(textBox_srvPort, Convert.ToUInt32, Settings.Instance.NWServerPort);
             preset.NWWaitPort = mutil.MyToNumerical(textBox_clientPort, Convert.ToUInt32, Settings.Instance.NWWaitPort);
             preset.NWMacAdd = textBox_mac.Text.Trim();
-            preset.NWPassword = textBox_Password.Password;
+            preset.NWPassword = new SerializableSecureString(textBox_Password.SecurePassword);
             if (preset.Name.Length == 0)
             {
                 preset.Name = preset.NWServerIP;
@@ -167,7 +167,7 @@ namespace EpgTimer
                     else
                     {
                         // 新規追加
-                        SetSetting(new NWPresetItem("", "", 4510, 4520, "", ""));
+                        SetSetting(new NWPresetItem("", "", 4510, 4520, "", new SerializableSecureString()));
                         btn_add.Visibility = Visibility.Visible;
                         btn_edit.Visibility = Visibility.Collapsed;
                         btn_delete.IsEnabled = false;

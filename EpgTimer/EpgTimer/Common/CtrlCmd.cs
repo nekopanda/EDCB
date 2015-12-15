@@ -739,7 +739,7 @@ namespace EpgTimer
                         if (Settings.Instance.NWPassword != null && Settings.Instance.NWPassword.Length > 0)
                         {
                             // 認証応答用の準備
-                            hmac = new HMACMD5(Encoding.UTF8.GetBytes(Settings.Instance.NWPassword));
+                            hmac = Settings.Instance.NWPassword.HMAC;
                             sizeAuthPacket = 8 + hmac.HashSize / 8;
                         }
 

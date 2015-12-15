@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security;
 
 namespace EpgTimer
 {
@@ -9,11 +10,14 @@ namespace EpgTimer
         public UInt32 NWServerPort { get; set; }
         public UInt32 NWWaitPort { get; set; }
         public string NWMacAdd { get; set; }
-        public string NWPassword { get; set; }
+        public SerializableSecureString NWPassword { get; set; }
         public override string ToString() { return Name; }
 
-        public NWPresetItem() { }
-        public NWPresetItem(string name, string ip, UInt32 sport, UInt32 wport, string mac, string password)
+        public NWPresetItem()
+        {
+            NWPassword = new SerializableSecureString();
+        }
+        public NWPresetItem(string name, string ip, UInt32 sport, UInt32 wport, string mac, SerializableSecureString password)
         {
             Name = name;
             NWServerIP = ip;

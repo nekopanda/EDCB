@@ -62,6 +62,7 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Security" />
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
@@ -94,6 +95,7 @@
     <Compile Include="Common\BoxExchangeEditor.cs" />
     <Compile Include="DefineClass\InfoWindowViewModel.cs" />
     <Compile Include="DefineClass\SerializableDictionary.cs" />
+    <Compile Include="DefineClass\SerializableSecureString.cs" />
     <Compile Include="InfoWindow.xaml.cs">
       <DependentUpon>InfoWindow.xaml</DependentUpon>
     </Compile>
