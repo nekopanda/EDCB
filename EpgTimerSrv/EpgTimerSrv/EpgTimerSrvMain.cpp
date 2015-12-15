@@ -10,6 +10,7 @@
 #include "../../Common/PathUtil.h"
 #include "../../Common/TimeUtil.h"
 #include "../../Common/BlockLock.h"
+#include "../../Common/CryptUtil.h"
 #include "resource.h"
 #include <shellapi.h>
 #include <tlhelp32.h>
@@ -670,7 +671,11 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 		GetPrivateProfileString(L"SET", L"TCPAccessControlList", L"+127.0.0.1,+192.168.0.0/16", buff, 512, iniPath.c_str());
 		this->tcpAccessControlList = buff;
 		GetPrivateProfileString(L"SET", L"TCPAccessPassword", L"", buff, 512, iniPath.c_str());
-		this->tcpPassword = buff;
+		wstring decrypt;
+		Decrypt(buff, decrypt);
+		if (Encrypt(decrypt, this->tcpPassword)) {
+			WritePrivateProfileString(L"SET", L"TCPAccessPassword", this->tcpPassword.c_str(), iniPath.c_str());
+		}
 		this->tcpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"TCPPort", 4510, iniPath.c_str());
 	}
 	this->httpPorts.clear();
@@ -1564,7 +1569,6 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
 				wstring path;
 				DWORD flags;
-				char *delkey = NULL;
 				if( CompareNoCase(val, L"ChSet5.txt") == 0 ){
 					GetSettingPath(path);
 					path += L"\\ChSet5.txt";
@@ -1575,7 +1579,6 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 				}else if( CompareNoCase(val, L"EpgTimerSrv.ini") == 0 ){
 					GetEpgTimerSrvIniPath(path);
 					flags = OPEN_ALWAYS;
-					delkey = tcpFlag ? "tcpaccesspassword" : NULL;
 				}else if( CompareNoCase(val, L"EpgDataCap_Bon.ini") == 0 ){
 					GetModuleFolderPath(path);
 					path += L"\\EpgDataCap_Bon.ini";
@@ -1590,20 +1593,6 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 						BYTE* data = new BYTE[dwFileSize];
 						DWORD dwRead;
 						if (ReadFile(hFile, data, dwFileSize, &dwRead, NULL) && dwRead != 0) {
-							if (delkey != NULL) {
-								char *temp = new char[dwRead];
-								for (DWORD i = 0; i < dwRead; i++)
-									temp[i] = tolower(data[i]);
-								char *p = strstr(temp, delkey);
-								if (p != NULL)
-								{
-									char *q = strchr(p, '\n');
-									q = q ? q + 1 : temp + dwRead;
-									memmove(data + (p - temp), data + (q - temp), temp + dwRead - q);
-									dwRead -= (DWORD)(q - p);
-								}
-								delete[] temp;
-							}
 							resParam->dataSize = dwRead;
 							resParam->data = data;
 						}
@@ -1626,6 +1615,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 				wstring path;
 				wstring section;
 				string text[1];	// 0:ChSet5.txt
+				wstring delkey = L"";
 				int indexText = -1;
 				size_t pos = 0, found;
 				while ((found = val.find_first_of(L'\n', pos)) != wstring::npos) {
@@ -1638,6 +1628,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 					if (line.length() > 3 && line[0] == L';' && line[1] == L'<' && line.find_first_of(L'>') == line.length() - 1) {
 						wstring filename = wstring(line, 2, line.length() - 3);
 						section.clear();
+						delkey.clear();
 						if (CompareNoCase(filename, L"ChSet5.txt") == 0) {
 							indexText = 0;
 						}
@@ -1647,6 +1638,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 						}
 						else if (CompareNoCase(filename, L"EpgTimerSrv.ini") == 0) {
 							GetEpgTimerSrvIniPath(path);
+							if(tcpFlag) delkey = L"tcpaccesspassword";
 							indexText = -1;
 						}
 						else if (CompareNoCase(val, L"EpgDataCap_Bon.ini") == 0) {
@@ -1680,6 +1672,8 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 								break;
 							wstring key = wstring(line, 0, delim);
 							wstring value = wstring(line, delim + 1);
+							if (delkey.length() > 0 && _wcsicmp(key.c_str(), delkey.c_str()) == 0)
+								continue;
 							if (key.at(0) == L';') {
 								// ";key=" ‚Ì‘Ž®‚Ì‚Æ‚«AƒL[‚Ìíœ‚ð‚·‚é
 								if (value.length() > 0)

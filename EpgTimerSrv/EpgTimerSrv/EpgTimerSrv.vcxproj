@@ -173,6 +173,7 @@
     <ClInclude Include="..\..\BonCtrl\SendTCP.h" />
     <ClInclude Include="..\..\BonCtrl\SendUDP.h" />
     <ClInclude Include="..\..\Common\CommonDef.h" />
+    <ClInclude Include="..\..\Common\CryptUtil.h" />
     <ClInclude Include="..\..\Common\CtrlCmdDef.h" />
     <ClInclude Include="..\..\Common\CtrlCmdUtil.h" />
     <ClInclude Include="..\..\Common\EpgDataCap3Def.h" />
@@ -231,6 +232,7 @@
     <ClCompile Include="..\..\BonCtrl\PMTUtil.cpp" />
     <ClCompile Include="..\..\BonCtrl\SendTCP.cpp" />
     <ClCompile Include="..\..\BonCtrl\SendUDP.cpp" />
+    <ClCompile Include="..\..\Common\CryptUtil.cpp" />
     <ClCompile Include="..\..\Common\CtrlCmdUtil.cpp" />
     <ClCompile Include="..\..\Common\EpgDataCap3Util.cpp" />
     <ClCompile Include="..\..\Common\EpgTimerUtil.cpp" />

@@ -3,9 +3,7 @@
 #include <process.h>
 #include "ErrDef.h"
 #include "CtrlCmdUtil.h"
-#include "../../Common/PathUtil.h"
-#include <wincrypt.h>
-#pragma comment(lib, "advapi32.lib")
+#include "CryptUtil.h"
 
 CTCPServer::CTCPServer(void)
 {
@@ -56,7 +54,10 @@ BOOL CTCPServer::StartServer(DWORD dwPort, LPCWSTR acl, LPCWSTR password, CMD_CA
 	m_pParam = pParam;
 	m_dwPort = dwPort;
 	m_acl = acl;
-	WtoUTF8(password, m_password);
+
+	wstring wstr;
+	Decrypt(password, wstr);
+	WtoUTF8(wstr, m_password);
 
 	m_sock = socket(AF_INET, SOCK_STREAM, 0);
 	if( m_sock == INVALID_SOCKET ){
@@ -189,79 +190,10 @@ static BOOL SendData(SOCKET sock, CMD_STREAM& stRes)
 	return TRUE;
 }
 
-// HMAC を求める (CryptCreateHash が derived key からの計算しかできないようなので自家実装)
-BOOL HMAC(ALG_ID id, const BYTE *key, const DWORD sizeKey, const BYTE *data, const DWORD sizeData, BYTE **ppOut, DWORD *pSizeOut)
-{
-	BYTE tmp[64] = { 0 }; // SHA512(64バイト)まで対応
-	BYTE opad[64] = { 0 };
-	BYTE ipad[64] = { 0 };
-	DWORD size = sizeof(tmp);
-
-	HCRYPTPROV  hProv = NULL;
-	DWORD ret = CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_AES, CRYPT_VERIFYCONTEXT);
-
-	if (ret) {
-		if (sizeKey > 64) {
-			// key が64バイトを超える場合は key の hash 値を使う
-			HCRYPTHASH  hHash = NULL;
-			ret = (CryptCreateHash(hProv, id, 0, 0, &hHash) &&
-				CryptHashData(hHash, key, sizeKey, 0) &&
-				CryptGetHashParam(hHash, HP_HASHVAL, tmp, &size, 0));
-			if (hHash) {
-				CryptDestroyHash(hHash);
-			}
-		}
-		else {
-			// key が64バイト未満の場合は64バイトまで 0 fill した値を使う
-			memcpy(tmp, key, sizeKey);
-		}
-	}
-
-	if (ret) {
-		// ipad & opad を計算する
-		for (int i = 0; i < sizeof(tmp); i++) {
-			ipad[i] = tmp[i] ^ 0x36;
-			opad[i] = tmp[i] ^ 0x5c;
-		}
-
-		// ipad + data の hash を求める
-		HCRYPTHASH  hHash = NULL;
-		ret = (CryptCreateHash(hProv, id, 0, 0, &hHash) &&
-			CryptHashData(hHash, ipad, sizeof(ipad), 0) &&
-			CryptHashData(hHash, data, sizeData, 0) &&
-			CryptGetHashParam(hHash, HP_HASHVAL, tmp, &size, 0));
-		if (hHash) {
-			CryptDestroyHash(hHash);
-		}
-	}
-
-	if (ret) {
-		// opad + (ipad + data の hash) の hash(HMAC) を求める 
-		HCRYPTHASH  hHash = NULL;
-		ret = (CryptCreateHash(hProv, id, 0, 0, &hHash) &&
-			CryptHashData(hHash, opad, sizeof(opad), 0) &&
-			CryptHashData(hHash, tmp, size, 0) &&
-			CryptGetHashParam(hHash, HP_HASHVAL, tmp, &size, 0));
-		if (hHash) {
-			CryptDestroyHash(hHash);
-		}
-	}
-
-	if (ret) {
-		*ppOut = new BYTE[size];
-		*pSizeOut = size;
-		memcpy(*ppOut, tmp, size);
-	}
-	if (hProv) {
-		CryptReleaseContext(hProv, 0);
-	}
-	return ret;
-}
-
- BOOL Authenticate(SOCKET sock, const char *password)
+ BOOL Authenticate(SOCKET sock, const string& password)
 {
 	// パスワードが設定されていない場合は認証処理を行わない
-	if (password == nullptr || *password == '\0') {
+	if (password.empty()) {
 		return TRUE;
 	}
 
@@ -284,11 +216,7 @@ BOOL HMAC(ALG_ID id, const BYTE *key, const DWORD sizeKey, const BYTE *data, con
 	// nonce を生成する (CryptGenRandom版)
 	DWORD size = 20; // 何バイトでもいいけど長さにあまり意味はない (ユニークであれば十分)
 	BYTE *msg = new BYTE[size];
-	HCRYPTPROV  hProv = NULL;
-	DWORD ret = (CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_AES, CRYPT_VERIFYCONTEXT) && CryptGenRandom(hProv, size, msg));
-	if (hProv) {
-		CryptReleaseContext(hProv, 0);
-	}
+	GetRandom(msg, size);
 #endif
 
 	// 認証要求として、nonce をクライアントへ送る
@@ -329,19 +257,19 @@ BOOL HMAC(ALG_ID id, const BYTE *key, const DWORD sizeKey, const BYTE *data, con
 	switch (stRes.dataSize)
 	{
 	case 128 / 8:  // HMAC-MD5 (今現在 HMAC-MD5 で十分な強度があることが知られている)
-		ret = HMAC(CALG_MD5, (BYTE*)password, (DWORD)strlen(password), msg, size, &hmacOut, &szOut);
+		ret = HMAC(CALG_MD5, (BYTE*)password.data(), (DWORD)password.size(), msg, size, &hmacOut, &szOut);
 		break;
 	case 160 / 8: // HMAC-SHA1
-		ret = HMAC(CALG_SHA1, (BYTE*)password, (DWORD)strlen(password), msg, size, &hmacOut, &szOut);
+		ret = HMAC(CALG_SHA1, (BYTE*)password.data(), (DWORD)password.size(), msg, size, &hmacOut, &szOut);
 		break;
 	case 256 / 8: // HMAC-SHA256
-		ret = HMAC(CALG_SHA_256, (BYTE*)password, (DWORD)strlen(password), msg, size, &hmacOut, &szOut);
+		ret = HMAC(CALG_SHA_256, (BYTE*)password.data(), (DWORD)password.size(), msg, size, &hmacOut, &szOut);
 		break;
 	case 384 / 8: // HMAC-SHA384
-		ret = HMAC(CALG_SHA_384, (BYTE*)password, (DWORD)strlen(password), msg, size, &hmacOut, &szOut);
+		ret = HMAC(CALG_SHA_384, (BYTE*)password.data(), (DWORD)password.size(), msg, size, &hmacOut, &szOut);
 		break;
 	case 512 / 8: // HMAC-SHA512
-		ret = HMAC(CALG_SHA_512, (BYTE*)password, (DWORD)strlen(password), msg, size, &hmacOut, &szOut);
+		ret = HMAC(CALG_SHA_512, (BYTE*)password.data(), (DWORD)password.size(), msg, size, &hmacOut, &szOut);
 		break;
 	}
 	ret = ret && (szOut == stRes.dataSize && memcmp(hmacOut, stRes.data, szOut) == 0);
@@ -434,7 +362,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 				CMD_STREAM stCmd;
 				CMD_STREAM stRes;
 				do{
-					if (Authenticate(sock, pSys->m_password.c_str()) == FALSE) {
+					if (Authenticate(sock, pSys->m_password) == FALSE) {
 						_OutputDebugString(L"Authentication error from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
 						blacklist[client.sin_addr.S_un.S_addr].dwCount++;
 						blacklist[client.sin_addr.S_un.S_addr].dwTick = GetTickCount();
