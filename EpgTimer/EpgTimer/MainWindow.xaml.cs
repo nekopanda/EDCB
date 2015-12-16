@@ -35,6 +35,7 @@ namespace EpgTimer
         private string pipeName = "\\\\.\\pipe\\EpgTimerGUI_Ctrl_BonPipe_" + System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
         private string pipeEventName = "Global\\EpgTimerGUI_Ctrl_BonConnect_" + System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
 
+        private bool firstInstance = false;
         private bool closeFlag = false;
         private bool initExe = false;
 
@@ -73,22 +74,27 @@ namespace EpgTimer
             }
 
             mutex = new System.Threading.Mutex(false, "Global\\EpgTimer_Bon2");
-            if (!mutex.WaitOne(0, false))
+            firstInstance = mutex.WaitOne(0, false);
+            if (!firstInstance)
             {
                 CheckCmdLine();
 
-                mutex.Close();
-                mutex = null;
+                if (Settings.Instance.ApplyMultiInstance == false)
+                {
+                    mutex.Close();
+                    mutex = null;
 
-                CloseCmd();
-                return;
+                    CloseCmd();
+                    return;
+                }
             }
 
             InitializeComponent();
 
             // Icon化起動すると Windows_Loaded イベントが来ないので
             // InitializeComponent 後に ConnectCmd しておく。
-            if (Settings.Instance.NWMode == false || Settings.Instance.WakeReconnectNW == true)
+            // 多重起動時は自動接続しない
+            if (firstInstance && (Settings.Instance.NWMode == false || Settings.Instance.WakeReconnectNW == true))
             {
                 ConnectCmd(false);
             }
@@ -97,7 +103,8 @@ namespace EpgTimer
 
             try
             {
-                if (Settings.Instance.WakeMin == true)
+                // 多重起動時は最小化しない
+                if (firstInstance && Settings.Instance.WakeMin == true)
                 {
                     if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
                     {
@@ -635,7 +642,10 @@ namespace EpgTimer
                     {
                         cmd.SendClose();
                     }
-                    mutex.ReleaseMutex();
+                    if (firstInstance)
+                    {
+                        mutex.ReleaseMutex();
+                    }
                     mutex.Close();
                 }
                 if (taskTray != null)

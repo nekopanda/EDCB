@@ -13,34 +13,82 @@
     <Grid>
         <TabControl Name="tabControl">
             <TabItem Header="TVTest連携" Name="tabItem_tvtest">
-                <Grid>
-                    <Label Content="※利用にはTVtestのPlugInに EpgTimerPlugIn.tvtp を追加しておく必要があります。" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" Foreground="Red" />
-                    <Label Content="TVTest.exeパス" Height="28" HorizontalAlignment="Left" Margin="12,46,0,0" Name="label2" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="134,48,0,0" Name="textBox_exe" VerticalAlignment="Top" Width="456" />
-                    <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="596,48,0,0" Name="button_exe" VerticalAlignment="Top" Width="56" Click="button_exe_Click" />
-                    <Label Content="コマンドライン引数" Height="28" HorizontalAlignment="Left" Margin="12,80,0,0" Name="label4" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="134,80,0,0" Name="textBox_cmd" VerticalAlignment="Top" Width="456" />
-                    <Label Content="視聴に使用するBonDriver" Height="28" HorizontalAlignment="Left" Margin="12,144,0,0" Name="label3" VerticalAlignment="Top" />
-                    <ListBox Height="64" HorizontalAlignment="Left" Margin="44,178,0,0" Name="listBox_bon" VerticalAlignment="Top" Width="247" />
-                    <Button Content="削除" Height="23" HorizontalAlignment="Left" Margin="297,178,0,0" Name="button_del" VerticalAlignment="Top" Width="56" Click="button_del_Click" />
-                    <Button Content="追加" Height="23" HorizontalAlignment="Left" Margin="297,248,0,0" Name="button_add" VerticalAlignment="Top" Width="56" Click="button_add_Click" />
-                    <ComboBox Height="24" HorizontalAlignment="Left" Margin="44,248,0,0" Name="comboBox_bon" VerticalAlignment="Top" Width="247" />
-                    <CheckBox Content="NetworkTVモード(EpgDataCap__BonからのUDP、TCP送信で行う)" Height="16" HorizontalAlignment="Left" Margin="12,277,0,0" Name="checkBox_nwTvMode" VerticalAlignment="Top" />
-                    <CheckBox Content="UDP有効" Height="16" HorizontalAlignment="Left" Margin="44,299,0,0" Name="checkBox_nwUDP" VerticalAlignment="Top" />
-                    <CheckBox Content="TCP有効" Height="16" HorizontalAlignment="Left" Margin="134,299,0,0" Name="checkBox_nwTCP" VerticalAlignment="Top" />
-                    <Label Content="(BonDriverに関するオプションは自動的に付加されます)" Height="28" HorizontalAlignment="Left" Margin="134,110,0,0" Name="label5" VerticalAlignment="Top" />
-                    <Label Content="(追っかけ再生はNetworkモードでの動作になります。使用する場合はUDPかTCPにチェックを入れておいてください。)" Height="28" HorizontalAlignment="Left" Margin="44,321,0,0" Name="label9" VerticalAlignment="Top" />
+                <Grid Margin="20,8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition MinHeight="150" />
+                        <RowDefinition Height="auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Name="label1" Text="※利用にはTVtestのPlugInに EpgTimerPlugIn.tvtp を追加しておく必要があります。" Margin="4,8" Foreground="Red" TextWrapping="Wrap" />
+                    <Grid Grid.Row="1" Margin="0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="auto" />
+                        </Grid.RowDefinitions>
+                        <Label Grid.Column="0" Grid.Row="0" Name="label2" Content="TVTest.exeパス" Margin="4" />
+                        <TextBox Grid.Column="1" Grid.Row="0" Name="textBox_exe" Margin="4" VerticalContentAlignment="Center" />
+                        <Button Grid.Column="2" Grid.Row="0" Name="button_exe" Content="開く" Margin="20,4" Width="56" Click="button_exe_Click" />
+                        <Label Grid.Column="0" Grid.Row="1" Name="label4" Content="コマンドライン引数" Margin="4" />
+                        <TextBox Grid.Column="1" Grid.Row="1" Name="textBox_cmd" VerticalContentAlignment="Center" Margin="4"/>
+                        <TextBlock Grid.Column="1" Grid.Row="2" Name="label5" Text="(BonDriverに関するオプションは自動的に付加されます)" Margin="4,0,4,4" TextWrapping="Wrap" />
+                    </Grid>
+                    <Grid Grid.Row="2" Margin="0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto" />
+                            <RowDefinition />
+                            <RowDefinition Height="auto" />
+                        </Grid.RowDefinitions>
+                        <Label Grid.Column="0" Grid.Row="0" Name="label3" Content="視聴に使用するBonDriver" Margin="4" />
+                        <ListBox Grid.Column="0" Grid.Row="1" Name="listBox_bon" Margin="40,4,0,4" />
+                        <Button Grid.Column="1" Grid.Row="1" Name="button_del" Content="削除" Margin="20,4" Width="56" Height="25" Click="button_del_Click" VerticalAlignment="Top" />
+                        <ComboBox Grid.Column="0" Grid.Row="2" Name="comboBox_bon" Margin="40,4,0,4" />
+                        <Button Grid.Column="1" Grid.Row="2" Name="button_add" Content="追加" Margin="20,4" Width="56" Height="25" Click="button_add_Click" />
+                    </Grid>
+                    <StackPanel Grid.Row="3" Margin="4,8">
+                        <CheckBox Name="checkBox_nwTvMode" Margin="0,4">
+                            <TextBlock Text="NetworkTVモード(EpgDataCap__BonからのUDP、TCP送信で行う)" TextWrapping="Wrap" />
+                        </CheckBox>
+                        <WrapPanel Margin="40,0">
+                            <CheckBox Content="UDP有効" Name="checkBox_nwUDP" Width="100" />
+                            <CheckBox Content="TCP有効" Name="checkBox_nwTCP" Width="100" />
+                        </WrapPanel>
+                        <TextBlock Name="label9" Text="(追っかけ再生はNetworkモードでの動作になります。使用する場合はUDPかTCPにチェックを入れておいてください。)" Margin="40,4" TextWrapping="Wrap" />
+                    </StackPanel>
                 </Grid>
             </TabItem>
             <TabItem Header="ファイル再生" Name="tabItem_play">
-                <Grid>
-                    <Label Content="再生アプリのexeパス" Height="28" HorizontalAlignment="Left" Margin="6,6,0,0" Name="label6" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="138,8,0,0" Name="textBox_playExe" VerticalAlignment="Top" Width="456" />
-                    <Button Content="開く" Height="23" HorizontalAlignment="Left" Margin="600,8,0,0" Name="button_playExe" VerticalAlignment="Top" Width="56" Click="button_playExe_Click" />
-                    <Label Content="コマンドライン引数" Height="28" HorizontalAlignment="Left" Margin="16,38,0,0" Name="label7" VerticalAlignment="Top" />
-                    <TextBox Height="24" HorizontalAlignment="Left" Margin="138,38,0,0" Name="textBox_playCmd" VerticalAlignment="Top" Width="456" />
-                    <Label Content="($FilePath$マクロでファイルパスを指定できます)" Height="28" HorizontalAlignment="Left" Margin="138,68,0,0" Name="label8" VerticalAlignment="Top" />
-                    <CheckBox Content="追っかけ再生にも使用する(EpgTimerNWでは無効)" Height="16" HorizontalAlignment="Left" Margin="138,102,0,0" Name="checkBox_playOnAirWithExe" VerticalAlignment="Top" />
+                <Grid Margin="20,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition  />
+                        <ColumnDefinition Width="auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                    </Grid.RowDefinitions>
+                    <Label Grid.Column="0" Grid.Row="0" Name="label6" Content="再生アプリのexeパス" Margin="4" />
+                    <TextBox Grid.Column="1" Grid.Row="0" Name="textBox_playExe" Margin="4" VerticalContentAlignment="Center" />
+                    <Button Grid.Column="2" Grid.Row="0" Name="button_playExe" Content="開く" Margin="10,4" Width="56" Click="button_playExe_Click" />
+                    <Label Grid.Column="0" Grid.Row="1" Name="label7" Content="コマンドライン引数" Margin="4" />
+                    <TextBox Grid.Column="1" Grid.Row="1" Name="textBox_playCmd" Margin="4" />
+                    <TextBlock Grid.Column="1" Grid.Row="2" Name="label8" Text="($FilePath$マクロでファイルパスを指定できます)" Margin="4" TextWrapping="Wrap" />
+                    <CheckBox Grid.Column="1" Grid.Row="3" Name="checkBox_playOnAirWithExe" Margin="4">
+                        <TextBlock Text="追っかけ再生にも使用する(EpgTimerNWでは無効)" TextWrapping="Wrap" />
+                    </CheckBox>
                 </Grid>
             </TabItem>
         </TabControl>

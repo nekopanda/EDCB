@@ -575,6 +575,7 @@ namespace EpgTimer
         private double mainWndHeight;
         private bool closeMin;
         private bool wakeMin;
+        private bool applyMultiInstance;
         private bool viewButtonShowAsTab;
         private List<string> viewButtonList;
         private List<string> taskMenuList;
@@ -987,6 +988,11 @@ namespace EpgTimer
         {
             get { return wakeMin; }
             set { wakeMin = value; }
+        }
+        public bool ApplyMultiInstance
+        {
+            get { return applyMultiInstance; }
+            set { applyMultiInstance = value; }
         }
         public bool ViewButtonShowAsTab
         {
@@ -1489,6 +1495,7 @@ namespace EpgTimer
             mainWndHeight = -100;
             closeMin = false;
             wakeMin = false;
+            applyMultiInstance = false;
             viewButtonShowAsTab = false;
             viewButtonList = new List<string>();
             taskMenuList = new List<string>();

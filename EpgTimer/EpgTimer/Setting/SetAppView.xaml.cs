@@ -276,6 +276,8 @@ namespace EpgTimer.Setting
                 textBox_tcpPort.IsEnabled = false;
                 label_tcpAcl.IsEnabled = false; // アクセス制御
                 textBox_tcpAcl.IsEnabled = false;
+                label_tcpPassword.IsEnabled = false; // パスワード
+                passwordBox_tcpPassword.IsEnabled = false;
                 label_tcpResTo.IsEnabled = false; // 無通信タイムアウト(秒)
                 textBox_tcpResTo.IsEnabled = false;
 
@@ -311,6 +313,7 @@ namespace EpgTimer.Setting
 
             checkBox_closeMin.IsChecked = Settings.Instance.CloseMin;
             checkBox_minWake.IsChecked = Settings.Instance.WakeMin;
+            checkBox_applyMulti.IsChecked = Settings.Instance.ApplyMultiInstance;
             checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
             checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
             checkBox_showTray.IsChecked = Settings.Instance.ShowTray;
@@ -341,6 +344,7 @@ namespace EpgTimer.Setting
                 }
                 textBox_tcpPort.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath).ToString();
                 textBox_tcpAcl.Text = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessControlList", "+127.0.0.1,+192.168.0.0/16", SettingPath.TimerSrvIniPath);
+                passwordBox_tcpPassword.Password = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessPassword", "", SettingPath.TimerSrvIniPath);
                 textBox_tcpResTo.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPResponseTimeoutSec", 120, SettingPath.TimerSrvIniPath).ToString();
             }
 
@@ -586,6 +590,7 @@ namespace EpgTimer.Setting
 
             Settings.Instance.CloseMin = (bool)checkBox_closeMin.IsChecked;
             Settings.Instance.WakeMin = (bool)checkBox_minWake.IsChecked;
+            Settings.Instance.ApplyMultiInstance = (bool)checkBox_applyMulti.IsChecked;
             Settings.Instance.ShowTray = (bool)checkBox_showTray.IsChecked;
             Settings.Instance.MinHide = (bool)checkBox_minHide.IsChecked;
 
@@ -607,6 +612,10 @@ namespace EpgTimer.Setting
             if (textBox_tcpAcl.IsEnabled)
             {
                 IniFileHandler.WritePrivateProfileString("SET", "TCPAccessControlList", textBox_tcpAcl.Text, SettingPath.TimerSrvIniPath);
+            }
+            if (passwordBox_tcpPassword.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "TCPAccessPassword", passwordBox_tcpPassword.Password, SettingPath.TimerSrvIniPath);
             }
 
             if (textBox_tcpResTo.IsEnabled)

@@ -1,7 +1,7 @@
 ﻿<Window x:Class="EpgTimer.ColorSetWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="色指定" Height="189" Width="370" WindowStartupLocation="CenterOwner">
+        Title="色指定" Height="189" Width="370" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
 
     <Grid>
         <Label Content="R" Height="28" HorizontalAlignment="Left" Margin="12,12,0,0" Name="label1" VerticalAlignment="Top" />
