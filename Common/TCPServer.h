@@ -18,6 +18,7 @@ public:
 
 	BOOL StartServer(
 		DWORD dwPort, 
+		DWORD dwResponseTimeout,
 		LPCWSTR acl,
 		LPCWSTR password,
 		CMD_CALLBACK_PROC pfnCmdProc, 
@@ -29,14 +30,14 @@ protected:
 	CMD_CALLBACK_PROC m_pCmdProc;
 	void* m_pParam;
 	DWORD m_dwPort;
+	DWORD m_dwResponseTimeout;
 	wstring m_acl;
 	string m_password;
 
-	HANDLE m_hStopEvent;
+	BOOL m_stopFlag;
 	HANDLE m_hThread;
 
 	SOCKET m_sock;
-	struct sockaddr_in m_addr;
 	
 protected:
 	static UINT WINAPI ServerThread(LPVOID pParam);

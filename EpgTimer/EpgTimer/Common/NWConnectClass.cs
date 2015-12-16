@@ -17,6 +17,7 @@ namespace EpgTimer
         private bool connectFlag;
         private UInt32 serverPort;
         private TcpListener server = null;
+        private TcpClient pollingClient = null;
 
         private String connectedIP;
         private UInt32 connectedPort = 0;
@@ -76,53 +77,41 @@ namespace EpgTimer
             client.Send(stream.ToArray(), (int)stream.Position, new IPEndPoint(broad, 0));
         }
 
-        public bool ConnectServer(String srvIP, UInt32 srvPort, UInt32 waitPort, Action<CMD_STREAM, CMD_STREAM> pfnCmdProc)
+        public bool ConnectServer(IPAddress srvIP, UInt32 srvPort, UInt32 waitPort, Action<CMD_STREAM, CMD_STREAM> pfnCmdProc)
         {
-            if (srvIP.Length == 0)
-            {
-                return false;
-            }
             connectFlag = false;
 
             cmdProc = pfnCmdProc;
             StartTCPServer(waitPort);
+            pollingClient = null;
 
             cmd.SetSendMode(true);
 
-            String wIPAddress = srvIP;
-            IPAddress[] IpAddress = Dns.GetHostAddresses(srvIP);
+            cmd.SetNWSetting(srvIP.ToString(), srvPort);
 
-            foreach (IPAddress wIP in IpAddress)
+            var status = new NotifySrvInfo();
+            if (waitPort == 0 && cmd.SendGetNotifySrvStatus(ref status) != ErrCode.CMD_SUCCESS ||
+                waitPort != 0 && cmd.SendRegistTCP(waitPort) != ErrCode.CMD_SUCCESS)
             {
-                if (!wIP.IsIPv6LinkLocal)
-                {
-                    wIPAddress = wIP.ToString();
-                    break;
-                }
-            }
-
-            cmd.SetNWSetting(wIPAddress, srvPort);
-
-            //cmd.SetNWSetting(srvIP, srvPort);
-            if (cmd.SendRegistTCP(waitPort) != ErrCode.CMD_SUCCESS)
-            {
+                //サーバが存在しないかロングポーリングに未対応
                 return false;
             }
             else
             {
                 connectFlag = true;
-                connectedIP = srvIP;
+                connectedIP = srvIP.ToString();
                 connectedPort = srvPort;
+                serverPort = waitPort;
+                if (waitPort == 0)
+                {
+                    pollingClient = new TcpClient();
+                    StartPolling(pollingClient, srvIP, srvPort, 0);
+                }
                 return true;
             }
         }
         public bool DisconnectServer()
         {
-            if (connectFlag)
-            {
-                cmd.SendUnRegistTCP(connectedPort);
-                connectFlag = false;
-            }
             return StopTCPServer();
         }
 
@@ -132,15 +121,14 @@ namespace EpgTimer
             {
                 return true;
             }
-            if (server != null)
-            {
-                server.Stop();
-                server = null;
-            }
+            StopTCPServer();
             serverPort = port;
-            server = new TcpListener(IPAddress.Any, (int)port);
-            server.Start();
-            server.BeginAcceptTcpClient(new AsyncCallback(DoAcceptTcpClientCallback), server);
+            if (port != 0)
+            {
+                server = new TcpListener(IPAddress.Any, (int)port);
+                server.Start();
+                server.BeginAcceptTcpClient(new AsyncCallback(DoAcceptTcpClientCallback), server);
+            }
 
             return true;
         }
@@ -149,10 +137,96 @@ namespace EpgTimer
         {
             if (server != null)
             {
+                if (connectFlag && serverPort != 0)
+                {
+                    cmd.SendUnRegistTCP(serverPort);
+                    connectFlag = false;
+                }
                 server.Stop();
                 server = null;
-            } 
+            }
             return true;
+        }
+
+        private void StartPolling(TcpClient client, IPAddress srvIP, uint srvPort, uint targetCount)
+        {
+            //巡回カウンタがtargetCountよりも大きくなる新しい通知を待ち受ける
+            var w = new CtrlCmdWriter(new MemoryStream());
+            w.Write((ushort)0);
+            w.Write(targetCount);
+            byte[] bData = new byte[8 + w.Stream.Length];
+            byte[] bHead = new byte[8];
+
+            // 送信パケット生成
+            BitConverter.GetBytes((uint)CtrlCmd.CMD_EPG_SRV_GET_STATUS_NOTIFY2).CopyTo(bData, 0);
+            BitConverter.GetBytes((uint)w.Stream.Length).CopyTo(bData, 4);
+            w.Stream.ToArray().CopyTo(bData, 8);
+
+            try
+            {
+                client.Connect(srvIP, (int)srvPort);
+            }
+            catch (SocketException ex)
+            {
+                System.Diagnostics.Trace.WriteLine(ex);
+                Interlocked.CompareExchange(ref pollingClient, null, client);
+                return;
+            }
+            NetworkStream stream = client.GetStream();
+
+            if (CommonManager.Instance.CtrlCmd.Authenticate(stream, ref bData) != ErrCode.CMD_SUCCESS)
+            {
+                // 認証エラー
+                Interlocked.CompareExchange(ref pollingClient, null, client);
+                return;
+            }
+
+            // 送信: 認証応答パケットとコマンドパケットをまとめて送る
+            stream.Write(bData, 0, bData.Length);
+
+            stream.BeginRead(bHead, 0, 8, (IAsyncResult ar) =>
+            {
+                using (client)
+                {
+                    int readSize = 0;
+                    try
+                    {
+                        readSize = stream.EndRead(ar);
+                    }
+                    catch (IOException ex)
+                    {
+                        System.Diagnostics.Trace.WriteLine(ex);
+                    }
+                    if (readSize == 8)
+                    {
+                        CMD_STREAM stCmd = new CMD_STREAM();
+                        stCmd.uiParam = BitConverter.ToUInt32(bHead, 0);
+                        stCmd.uiSize = BitConverter.ToUInt32(bHead, 4);
+                        if (stCmd.uiSize > 0)
+                        {
+                            stCmd.bData = new byte[stCmd.uiSize];
+                            for (stCmd.uiSize = 0; stCmd.uiSize != stCmd.bData.Length; stCmd.uiSize += (uint)readSize)
+                            {
+                                readSize = stream.Read(stCmd.bData, (int)stCmd.uiSize, stCmd.bData.Length - (int)stCmd.uiSize);
+                                if (readSize == 0) break;
+                            }
+                            if (stCmd.uiSize == stCmd.bData.Length && stCmd.uiParam == (uint)ErrCode.CMD_SUCCESS)
+                            {
+                                //通常の通知コマンドに変換
+                                stCmd.uiParam = (uint)CtrlCmd.CMD_TIMER_GUI_SRV_STATUS_NOTIFY2;
+                                cmdProc.Invoke(stCmd, new CMD_STREAM());
+                                targetCount = stCmd.uiSize;
+                            }
+                        }
+                    }
+                }
+                //pollingClientが置きかわっていなければ引き続き待ち受ける
+                var nextClient = new TcpClient();
+                if (Interlocked.CompareExchange(ref pollingClient, nextClient, client) == client)
+                {
+                    StartPolling(nextClient, srvIP, srvPort, targetCount);
+                }
+            }, null);
         }
 
         public void DoAcceptTcpClientCallback(IAsyncResult ar)

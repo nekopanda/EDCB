@@ -276,6 +276,8 @@ namespace EpgTimer.Setting
                 textBox_tcpPort.IsEnabled = false;
                 label_tcpAcl.IsEnabled = false; // アクセス制御
                 textBox_tcpAcl.IsEnabled = false;
+                label_tcpResTo.IsEnabled = false; // 無通信タイムアウト(秒)
+                textBox_tcpResTo.IsEnabled = false;
 
                 checkBox_autoDelRecInfo.IsEnabled = IniFileHandler.CanUpdateInifile; // 録画結果を自動的に削除する
                 label42.IsEnabled = IniFileHandler.CanUpdateInifile; // 保持件数
@@ -339,6 +341,7 @@ namespace EpgTimer.Setting
                 }
                 textBox_tcpPort.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath).ToString();
                 textBox_tcpAcl.Text = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessControlList", "+127.0.0.1,+192.168.0.0/16", SettingPath.TimerSrvIniPath);
+                textBox_tcpResTo.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPResponseTimeoutSec", 120, SettingPath.TimerSrvIniPath).ToString();
             }
 
             defSearchKey = Settings.Instance.DefSearchKey.Clone();
@@ -604,6 +607,11 @@ namespace EpgTimer.Setting
             if (textBox_tcpAcl.IsEnabled)
             {
                 IniFileHandler.WritePrivateProfileString("SET", "TCPAccessControlList", textBox_tcpAcl.Text, SettingPath.TimerSrvIniPath);
+            }
+
+            if (textBox_tcpResTo.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "TCPResponseTimeoutSec", textBox_tcpResTo.Text, SettingPath.TimerSrvIniPath);
             }
 
             Settings.Instance.NoToolTip = (checkBox_noToolTips.IsChecked == true);

@@ -395,7 +395,8 @@ namespace EpgTimer
 
             CommonManager.Instance.NWMode = Settings.Instance.NWMode;
             cmd.SetSendMode(CommonManager.Instance.NWMode);
-            cmd.SetNWSetting("", Settings.Instance.NWServerPort);
+            cmd.SetNWSetting("", 0);
+            CommonManager.Instance.IsConnected = false;
         }
 
         bool ConnectCmd(bool showDialog)
@@ -502,19 +503,14 @@ namespace EpgTimer
             }
             else
             {
-                String srvIP = Settings.Instance.NWServerIP;
                 try
                 {
-                    foreach (var address in System.Net.Dns.GetHostAddresses(srvIP))
+                    foreach (var address in System.Net.Dns.GetHostAddresses(Settings.Instance.NWServerIP))
                     {
-                        srvIP = address.ToString();
-                        if (CommonManager.Instance.NW.ConnectServer(srvIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, (c, r) => OutsideCmdCallback(c, r, true)) == true)
+                        if (address.IsIPv6LinkLocal == false &&
+                            CommonManager.Instance.NW.ConnectServer(address, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, (c, r) => OutsideCmdCallback(c, r, true)) == true)
                         {
                             CommonManager.Instance.IsConnected = CommonManager.Instance.NW.IsConnected;
-                            if (Settings.Instance.NWServerIP == "")
-                            {
-                                Settings.Instance.NWServerIP = srvIP;
-                            }
                             break;
                         }
                     }
@@ -1002,7 +998,7 @@ namespace EpgTimer
                 {
                     if (CommonManager.Instance.NW.IsConnected == true)
                     {
-                        if (cmd.SendUnRegistTCP(Settings.Instance.NWServerPort) == ErrCode.CMD_ERR_CONNECT)
+                        if (cmd.SendUnRegistTCP(Settings.Instance.NWWaitPort) == ErrCode.CMD_ERR_CONNECT)
                         { }
 
                         cmd.SendSuspend(cmdVal);
@@ -1088,45 +1084,6 @@ namespace EpgTimer
                     {
                         pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
                         this.Visibility = System.Windows.Visibility.Visible;
-                    }
-                    break;
-                case CtrlCmd.CMD_TIMER_GUI_UPDATE_RESERVE:
-                    {
-                        DispatcherCheckAction(new Action(() =>
-                        {
-                            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
-                            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
-                            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
-                            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
-                            CommonManager.Instance.DB.ReloadReserveInfo();
-                            reserveView.UpdateInfo();
-                            infoWindowViewModel.UpdateInfo();
-                            tunerReserveView.UpdateInfo();
-                            recInfoView.UpdateInfo();
-                            autoAddView.UpdateAutoAddInfo();
-                            epgView.UpdateReserveData();
-                            SearchWindow.UpdateInfo(this, true);
-
-                            taskTray.Text = GetTaskTrayReserveInfoText();
-                        }));
-                    }
-                    break;
-                case CtrlCmd.CMD_TIMER_GUI_UPDATE_EPGDATA:
-                    {
-                        DispatcherCheckAction(new Action(() =>
-                        {
-                            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
-                            CommonManager.Instance.DB.ReloadEpgData();
-                            reserveView.UpdateInfo();
-                            infoWindowViewModel.UpdateInfo();
-                            if (Settings.Instance.DisplayReserveAutoAddMissing == true)
-                            {
-                                tunerReserveView.UpdateInfo();
-                            }
-                            autoAddView.epgAutoAddView.UpdateInfo();//検索数の更新
-                            epgView.UpdateEpgData();
-                            SearchWindow.UpdateInfo(this);
-                        }));
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_VIEW_EXECUTE:
@@ -1217,13 +1174,6 @@ namespace EpgTimer
                         }));
                     }
                     break;
-                case CtrlCmd.CMD_TIMER_GUI_SRV_STATUS_CHG:
-                    {
-                        UInt16 status = 0;
-                        (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref status);
-                        DispatcherCheckAction(new Action(() => taskTray.Icon = GetTaskTrayIcon(status)));
-                    }
-                    break;
                 case CtrlCmd.CMD_TIMER_GUI_SRV_STATUS_NOTIFY2:
                     {
                         NotifySrvInfo status = new NotifySrvInfo();
@@ -1232,6 +1182,8 @@ namespace EpgTimer
                         r.Read(ref version);
                         r.Version = version;
                         r.Read(ref status);
+                        //通知の巡回カウンタをuiSizeを利用して返す(やや汚い)
+                        pCmdParam.uiSize = status.param3;
                         DispatcherCheckAction(new Action(() => NotifyStatus(status)));
                     }
                     break;

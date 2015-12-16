@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Net.Sockets;
 
 namespace EpgTimer
 {
@@ -306,6 +307,8 @@ namespace EpgTimer
         CMD_EPG_SRV_ADD_MANU_ADD2 = 2142,
         /// <summary>プログラム予約自動登録の条件変更</summary>
         CMD_EPG_SRV_CHG_MANU_ADD2 = 2144,
+        /// <summary>サーバーの情報変更通知を取得（ロングポーリング）</summary>
+        CMD_EPG_SRV_GET_STATUS_NOTIFY2 = 2200,
         /// <summary>読み込まれたEPGデータのサービスの一覧取得</summary>
         CMD_EPG_SRV_ENUM_SERVICE = 1021,
         /// <summary>サービス指定で番組情報一覧を取得する</summary>
@@ -617,6 +620,8 @@ namespace EpgTimer
 
             return retv;
         }
+        /// <summary>現在のNOTIFY_UPDATE_SRV_STATUSを取得する</summary>
+        public ErrCode SendGetNotifySrvStatus(ref NotifySrvInfo val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_GET_STATUS_NOTIFY2, 0, ref o); }
         #endregion
         /// <summary>BonDriverの切り替え</summary>
         public ErrCode SendViewSetBonDrivere(string val) { return SendCmdData(CtrlCmd.CMD_VIEW_APP_SET_BONDRIVER, val); }
@@ -706,6 +711,72 @@ namespace EpgTimer
             }
         }
 
+        /// <summary>
+        /// 接続パスワードが設定されていれば認証を行う
+        /// </summary>
+        /// <param name="ns">送受信用ネットワークストリーム</param>
+        /// <param name="cmd">認証後に送る予定のコマンドパケット</param>
+        /// <returns>コマンドパケットに認証応答パケットが挿入される</returns>
+        public ErrCode Authenticate(NetworkStream ns, ref byte[] cmd)
+        {
+            if (Settings.Instance.NWPassword != null && Settings.Instance.NWPassword.Length > 0)
+            {
+                // nonce要求
+                byte[] nonce = new byte[8];
+                BitConverter.GetBytes((uint)CtrlCmd.CMD2_EPG_SRV_AUTH_REQUEST).CopyTo(nonce, 0);
+                BitConverter.GetBytes(0).CopyTo(nonce, 4);
+                ns.Write(nonce, 0, 8);
+
+                try
+                {
+                    // nonce を受け取る
+                    ns.ReadTimeout = 1000;
+                    if (ns.Read(nonce, 0, 8) != 8)
+                    {
+                        return ErrCode.CMD_ERR;
+                    }
+                    if ((ErrCode)BitConverter.ToUInt32(nonce, 0) != ErrCode.CMD_AUTH_REQUEST)
+                    {
+                        return ErrCode.CMD_ERR;
+                    }
+                    byte[] nonceData = new byte[BitConverter.ToUInt32(nonce, 4)];
+                    for (int n = 0; n < nonceData.Length;)
+                    {
+                        int m = ns.Read(nonceData, n, nonceData.Length - n);
+                        if (m <= 0)
+                        {
+                            return ErrCode.CMD_ERR;
+                        }
+                        n += m;
+                    }
+
+                    //サーバー応答の nonce とパスワードから応答パケットを作る
+                    HMAC hmac = Settings.Instance.NWPassword.HMAC;
+                    int sizeAuthPacket = 8 + hmac.HashSize / 8;
+                    byte[] origCmd = cmd;
+                    cmd = new byte[sizeAuthPacket + origCmd.Length];
+
+                    // 認証応答パケット
+                    //   cmd[ 0～ 4] : CMD2_EPG_SRV_AUTH_REPLY
+                    //   cmd[ 4～ 8] : HMAC size (16 bytes)
+                    //   cmd[ 9～23] : HMAC (16 bytes)
+                    BitConverter.GetBytes((uint)CtrlCmd.CMD2_EPG_SRV_AUTH_REPLY).CopyTo(cmd, 0);
+                    BitConverter.GetBytes(hmac.HashSize / 8).CopyTo(cmd, 4);
+                    hmac.ComputeHash(nonceData).CopyTo(cmd, 8);
+
+                    // オリジナルのコマンドパケットを認証応答パケットの後ろに追加する
+                    origCmd.CopyTo(cmd, sizeAuthPacket);
+                }
+#pragma warning disable CS0168 // 変数は宣言されていますが、使用されていません
+                catch (IOException e)
+#pragma warning restore CS0168 // 変数は宣言されていますが、使用されていません
+                {
+                    return ErrCode.CMD_ERR;
+                }
+            }
+            return ErrCode.CMD_SUCCESS;
+        }
+
         private ErrCode SendTCP(CtrlCmd param, MemoryStream send, ref MemoryStream res)
         {
             lock (thisLock)
@@ -728,69 +799,28 @@ namespace EpgTimer
                     }
                     using (System.Net.Sockets.NetworkStream ns = tcp.GetStream())
                     {
-                        HMAC hmac = null;
-                        byte[] head = new byte[8];
-                        uint resParam;
-                        byte[] resData;
-
-                        int sizeAuthPacket = 0;
-
-                        // 接続パスワードが設定されていれば認証を行う
-                        if (Settings.Instance.NWPassword != null && Settings.Instance.NWPassword.Length > 0)
-                        {
-                            // 認証応答用の準備
-                            hmac = Settings.Instance.NWPassword.HMAC;
-                            sizeAuthPacket = 8 + hmac.HashSize / 8;
-                        }
-
                         // 送信パケット生成
                         uint sizeData = send == null ? 0 : (uint)send.Length;
-                        byte[] data = new byte[sizeAuthPacket + 8 + sizeData];
-                        BitConverter.GetBytes((uint)param).CopyTo(data, sizeAuthPacket);
-                        BitConverter.GetBytes(sizeData).CopyTo(data, sizeAuthPacket + 4);
+                        byte[] data = new byte[8 + sizeData];
+                        BitConverter.GetBytes((uint)param).CopyTo(data, 0);
+                        BitConverter.GetBytes(sizeData).CopyTo(data, 4);
                         if (sizeData > 0)
                         {
                             send.Close();
-                            send.ToArray().CopyTo(data, sizeAuthPacket + 8);
+                            send.ToArray().CopyTo(data, 8);
                         }
 
-                        // 認証
-                        if (sizeAuthPacket > 0 && hmac != null)
+                        if (Authenticate(ns, ref data) != ErrCode.CMD_SUCCESS)
                         {
-                            // nonce要求
-                            BitConverter.GetBytes((uint)CtrlCmd.CMD2_EPG_SRV_AUTH_REQUEST).CopyTo(head, 0);
-                            BitConverter.GetBytes(0).CopyTo(head, 4);
-                            ns.Write(head, 0, 8);
-
-                            // nonce を受け取る
-                            if (ns.Read(head, 0, 8) != 8)
-                            {
-                                return ErrCode.CMD_ERR;
-                            }
-                            resParam = BitConverter.ToUInt32(head, 0);
-                            if ((ErrCode)resParam != ErrCode.CMD_AUTH_REQUEST)
-                            {
-                                return ErrCode.CMD_ERR;
-                            }
-                            resData = new byte[BitConverter.ToUInt32(head, 4)];
-                            for (int n = 0; n < resData.Length;)
-                            {
-                                int m = ns.Read(resData, n, resData.Length - n);
-                                if (m <= 0)
-                                {
-                                    return ErrCode.CMD_ERR;
-                                }
-                                n += m;
-                            }
-
-                            //サーバー応答の nonce とパスワードから HMAC を作る
-                            hmac.ComputeHash(resData).CopyTo(data, 8);
-                            BitConverter.GetBytes((uint)CtrlCmd.CMD2_EPG_SRV_AUTH_REPLY).CopyTo(data, 0);
-                            BitConverter.GetBytes(hmac.HashSize / 8).CopyTo(data, 4);
+                            return ErrCode.CMD_ERR;
                         }
 
                         // 送信: 認証応答パケットとコマンドパケットをまとめて送る
                         ns.Write(data, 0, data.Length);
+
+                        byte[] head = new byte[8];
+                        uint resParam;
+                        byte[] resData;
 
                         // 受信
                         try

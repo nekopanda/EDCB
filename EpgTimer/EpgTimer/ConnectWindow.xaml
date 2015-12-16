@@ -52,11 +52,11 @@
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Label Name="labelPassword" Content="パスワード" Margin="30,2,2,2" />
-                            <PasswordBox Name="textBox_Password" Margin="2" Width="100" Height="24" VerticalContentAlignment="Center" />
+                            <PasswordBox Name="textBox_Password" Margin="2,2,-28,2" Width="100" Height="24" VerticalContentAlignment="Center" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
-                            <Label Name="label3" Content="クライアント側 待ち受けポート" Margin="2" />
-                            <TextBox Name="textBox_clientPort" Margin="2" Width="60" Height="24" VerticalContentAlignment="Center" InputMethod.PreferredImeState="Off" />
+                            <CheckBox Name="checkBox_clientPort" Content="クライアント側に待ち受けポートを作る" Margin="30,2,2,2" VerticalAlignment="Center" />
+                            <TextBox Name="textBox_clientPort" Margin="2,2,-28,2" Width="60" Height="24" VerticalContentAlignment="Center" InputMethod.PreferredImeState="Off" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_clientPort, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Label Name="label4" Padding="7,0,0,0">

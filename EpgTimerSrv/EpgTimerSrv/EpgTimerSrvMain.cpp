@@ -170,6 +170,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		{
 			//サーバリセット処理
 			unsigned short tcpPort_;
+			DWORD tcpResTo;
 			wstring tcpAcl;
 			wstring tcpPasssword;
 			wstring httpPorts_;
@@ -180,6 +181,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			{
 				CBlockLock lock(&ctx->sys->settingLock);
 				tcpPort_ = ctx->sys->tcpPort;
+				tcpResTo = ctx->sys->tcpResponseTimeoutSec * 1000;
 				tcpAcl = ctx->sys->tcpAccessControlList;
 				tcpPasssword = ctx->sys->tcpPassword;
 				httpPorts_ = ctx->sys->httpPorts;
@@ -191,7 +193,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			if( tcpPort_ == 0 ){
 				ctx->tcpServer.StopServer();
 			}else{
-				ctx->tcpServer.StartServer(tcpPort_, tcpAcl.c_str(), tcpPasssword.c_str(), CtrlCmdTcpCallback, ctx->sys);
+				ctx->tcpServer.StartServer(tcpPort_, tcpResTo ? tcpResTo : MAXDWORD, tcpAcl.c_str(), tcpPasssword.c_str(), CtrlCmdTcpCallback, ctx->sys);
 			}
 			ctx->upnpServer.Stop();
 			if( httpPorts_.empty() ){
@@ -676,6 +678,7 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 		if (Encrypt(decrypt, this->tcpPassword)) {
 			WritePrivateProfileString(L"SET", L"TCPAccessPassword", this->tcpPassword.c_str(), iniPath.c_str());
 		}
+		this->tcpResponseTimeoutSec = GetPrivateProfileInt(L"SET", L"TCPResponseTimeoutSec", 120, iniPath.c_str());
 		this->tcpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"TCPPort", 4510, iniPath.c_str());
 	}
 	this->httpPorts.clear();
@@ -2193,6 +2196,24 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 					sys->reserveManager.ChgProtectRecFileInfo(list);
 					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
+				}
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_GET_STATUS_NOTIFY2:
+		{
+			WORD ver;
+			DWORD readSize;
+			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
+				DWORD count;
+				if( ReadVALUE2(ver, &count, cmdParam->data + readSize, cmdParam->dataSize - readSize, NULL) ){
+					NOTIFY_SRV_INFO info;
+					if( sys->notifyManager.GetNotify(&info, count) ){
+						resParam->data = NewWriteVALUE2WithVersion(ver, info, resParam->dataSize);
+						resParam->param = CMD_SUCCESS;
+					}else{
+						resParam->param = CMD_NO_RES;
+					}
 				}
 			}
 		}

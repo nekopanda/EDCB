@@ -11,7 +11,7 @@ CTCPServer::CTCPServer(void)
 	m_pParam = NULL;
 	m_dwPort = 8081;
 
-	m_hStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	m_stopFlag = FALSE;
 	m_hThread = NULL;
 
 	m_sock = INVALID_SOCKET;
@@ -22,27 +22,11 @@ CTCPServer::CTCPServer(void)
 
 CTCPServer::~CTCPServer(void)
 {
-	if( m_hThread != NULL ){
-		::SetEvent(m_hStopEvent);
-		// スレッド終了待ち
-		if ( ::WaitForSingleObject(m_hThread, 2000) == WAIT_TIMEOUT ){
-			::TerminateThread(m_hThread, 0xffffffff);
-		}
-		CloseHandle(m_hThread);
-		m_hThread = NULL;
-	}
-	::CloseHandle(m_hStopEvent);
-	m_hStopEvent = NULL;
-	
-	if( m_sock != INVALID_SOCKET ){
-		shutdown(m_sock,SD_RECEIVE);
-		closesocket(m_sock);
-		m_sock = INVALID_SOCKET;
-	}
+	StopServer();
 	WSACleanup();
 }
 
-BOOL CTCPServer::StartServer(DWORD dwPort, LPCWSTR acl, LPCWSTR password, CMD_CALLBACK_PROC pfnCmdProc, void* pParam)
+BOOL CTCPServer::StartServer(DWORD dwPort, DWORD dwResponseTimeout, LPCWSTR acl, LPCWSTR password, CMD_CALLBACK_PROC pfnCmdProc, void* pParam)
 {
 	if( pfnCmdProc == NULL || pParam == NULL ){
 		return FALSE;
@@ -53,6 +37,7 @@ BOOL CTCPServer::StartServer(DWORD dwPort, LPCWSTR acl, LPCWSTR password, CMD_CA
 	m_pCmdProc = pfnCmdProc;
 	m_pParam = pParam;
 	m_dwPort = dwPort;
+	m_dwResponseTimeout = dwResponseTimeout;
 	m_acl = acl;
 
 	wstring wstr;
@@ -63,9 +48,10 @@ BOOL CTCPServer::StartServer(DWORD dwPort, LPCWSTR acl, LPCWSTR password, CMD_CA
 	if( m_sock == INVALID_SOCKET ){
 		return FALSE;
 	}
-	m_addr.sin_family = AF_INET;
-	m_addr.sin_port = htons((WORD)dwPort);
-	m_addr.sin_addr.S_un.S_addr = INADDR_ANY;
+	struct sockaddr_in addr;
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons((WORD)dwPort);
+	addr.sin_addr.S_un.S_addr = INADDR_ANY;
 	BOOL b=1;
 
 	setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&b, sizeof(b));
@@ -73,11 +59,11 @@ BOOL CTCPServer::StartServer(DWORD dwPort, LPCWSTR acl, LPCWSTR password, CMD_CA
 	setsockopt(m_sock, SOL_SOCKET, SO_SNDBUF, (const char*)&socketBuffSize, sizeof(socketBuffSize));
 	setsockopt(m_sock, SOL_SOCKET, SO_SNDBUF, (const char*)&socketBuffSize, sizeof(socketBuffSize));
 
-	bind(m_sock, (struct sockaddr *)&m_addr, sizeof(m_addr));
+	bind(m_sock, (struct sockaddr *)&addr, sizeof(addr));
 
 	listen(m_sock, 1);
 
-	ResetEvent(m_hStopEvent);
+	m_stopFlag = FALSE;
 	m_hThread = (HANDLE)_beginthreadex(NULL, 0, ServerThread, (LPVOID)this, CREATE_SUSPENDED, NULL);
 	ResumeThread(m_hThread);
 
@@ -87,7 +73,7 @@ BOOL CTCPServer::StartServer(DWORD dwPort, LPCWSTR acl, LPCWSTR password, CMD_CA
 void CTCPServer::StopServer()
 {
 	if( m_hThread != NULL ){
-		::SetEvent(m_hStopEvent);
+		m_stopFlag = TRUE;
 		// スレッド終了待ち
 		if ( ::WaitForSingleObject(m_hThread, 15000) == WAIT_TIMEOUT ){
 			::TerminateThread(m_hThread, 0xffffffff);
@@ -97,7 +83,6 @@ void CTCPServer::StopServer()
 	}
 	
 	if( m_sock != INVALID_SOCKET ){
-		shutdown(m_sock,SD_RECEIVE);
 		closesocket(m_sock);
 		m_sock = INVALID_SOCKET;
 	}
@@ -289,11 +274,12 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 {
 	CTCPServer* pSys = (CTCPServer*)pParam;
 
-	SOCKET sock = INVALID_SOCKET;
-	struct sockaddr_in client;
-	
-	fd_set ready;
-	struct timeval to;
+	struct WAIT_INFO {
+		SOCKET sock;
+		CMD_STREAM* cmd;
+		DWORD tick;
+	};
+	vector<WAIT_INFO> waitList;
 
 	struct ERR_COUNT {
 		DWORD dwCount;
@@ -302,76 +288,86 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 	std::map<ULONG, ERR_COUNT> blacklist;
 	std::map<ULONG, ERR_COUNT>::iterator itr_bl;
 
-	while(1){
-		if( WaitForSingleObject( pSys->m_hStopEvent, 0 ) != WAIT_TIMEOUT ){
-			//中止
-			break;
+	while( pSys->m_stopFlag == FALSE ){
+		fd_set ready;
+		struct timeval to;
+		if( waitList.empty() ){
+			//StopServer()が固まらない程度
+			to.tv_sec = 1;
+			to.tv_usec = 0;
+		}else{
+			//適度に迅速
+			to.tv_sec = 0;
+			to.tv_usec = 200000;
 		}
-
-		to.tv_sec = 1;
-		to.tv_usec = 0;
 		FD_ZERO(&ready);
 		FD_SET(pSys->m_sock, &ready);
+		for( size_t i = 0; i < waitList.size(); i++ ){
+			FD_SET(waitList[i].sock, &ready);
+		}
 
 		if( select(0, &ready, NULL, NULL, &to ) == SOCKET_ERROR ){
 			break;
 		}
-		if( sock == INVALID_SOCKET ){
-			if ( FD_ISSET(pSys->m_sock, &ready) ){
-				int len = sizeof(client);
-				sock = accept(pSys->m_sock, (struct sockaddr *)&client, &len);
-				if (sock == INVALID_SOCKET) {
-					closesocket(pSys->m_sock);
-					pSys->m_sock = INVALID_SOCKET;
-					break;
-				} else if (TestAcl(client.sin_addr, pSys->m_acl) == FALSE) {
-					_OutputDebugString(L"Deny from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
-					closesocket(sock);
-					sock = INVALID_SOCKET;
-				} else if ((itr_bl = blacklist.find(client.sin_addr.S_un.S_addr)) != blacklist.end()){
-					if (itr_bl->second.dwCount >= 5) {
-						_OutputDebugString(L"Delay access from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
-						if (GetTickCount() - itr_bl->second.dwTick < 30*1000) {
-							itr_bl->second.dwTick = GetTickCount();
-							closesocket(sock);
-							sock = INVALID_SOCKET;
-						}
-						else {
-							blacklist.erase(itr_bl->first);
+		for( size_t i = 0; i < waitList.size(); i++ ){
+			if( FD_ISSET(waitList[i].sock, &ready) == 0 ){
+				CMD_STREAM stRes;
+				pSys->m_pCmdProc(pSys->m_pParam, waitList[i].cmd, &stRes);
+				if( stRes.param == CMD_NO_RES ){
+					//応答は保留された
+					if( GetTickCount() - waitList[i].tick <= pSys->m_dwResponseTimeout ){
+						continue;
+					}
+				}else{
+					DWORD head[2] = { stRes.param, stRes.dataSize };
+					if( send(waitList[i].sock, (const char*)head, sizeof(head), 0) != SOCKET_ERROR ){
+						if( stRes.dataSize > 0 && stRes.data != NULL ){
+							send(waitList[i].sock, (const char*)stRes.data, stRes.dataSize, 0);
 						}
 					}
 				}
+				shutdown(waitList[i].sock, SD_BOTH);
 			}
+			//応答待ちソケットは応答済みかタイムアウトか切断を含むなんらかの受信があれば閉じる
+			closesocket(waitList[i].sock);
+			delete waitList[i].cmd;
+			waitList.erase(waitList.begin() + i--);
 		}
-		if( sock != INVALID_SOCKET ){
-			DWORD socketBuffSize = 1024*1024;
-			setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (const char*)&socketBuffSize, sizeof(socketBuffSize));
-			setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (const char*)&socketBuffSize, sizeof(socketBuffSize));
-			
-			to.tv_sec = 1;
-			to.tv_usec = 0;
-			FD_ZERO(&ready);
-			FD_SET(sock, &ready);
-			if( select(0, &ready, NULL, NULL, &to ) == SOCKET_ERROR ){
-				shutdown(sock,SD_RECEIVE);
+
+		if( FD_ISSET(pSys->m_sock, &ready) ){
+			struct sockaddr_in client;
+			int len = sizeof(client);
+			SOCKET sock = accept(pSys->m_sock, (struct sockaddr *)&client, &len);
+			if( sock == INVALID_SOCKET ){
+				closesocket(pSys->m_sock);
+				pSys->m_sock = INVALID_SOCKET;
+				break;
+			}else if( TestAcl(client.sin_addr, pSys->m_acl) == FALSE ){
+				_OutputDebugString(L"Deny from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
 				closesocket(sock);
-				sock = INVALID_SOCKET;
-				continue;
-			}
-			if ( FD_ISSET(sock, &ready) ){
-				CMD_STREAM stCmd;
-				CMD_STREAM stRes;
-				do{
-					if (Authenticate(sock, pSys->m_password) == FALSE) {
+			}else if( (itr_bl = blacklist.find(client.sin_addr.S_un.S_addr)) != blacklist.end() && itr_bl->second.dwCount >= 5 ){
+				_OutputDebugString(L"Delay access from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
+				if( GetTickCount() - itr_bl->second.dwTick < 30*1000 ){
+					itr_bl->second.dwTick = GetTickCount();
+					closesocket(sock);
+				}else{
+					blacklist.erase(itr_bl->first);
+				}
+			}else{
+				for(;;){
+					CMD_STREAM stCmd;
+					CMD_STREAM stRes;
+
+					if( Authenticate(sock, pSys->m_password) == FALSE ){
 						_OutputDebugString(L"Authentication error from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
 						blacklist[client.sin_addr.S_un.S_addr].dwCount++;
 						blacklist[client.sin_addr.S_un.S_addr].dwTick = GetTickCount();
 						break;
 					}
 
-					if (ReceiveHeader(sock, stCmd) == FALSE || 
+					if( ReceiveHeader(sock, stCmd) == FALSE || 
 						CheckkCmd(stCmd.param, stCmd.dataSize) == FALSE ||
-						ReceiveData(sock, stCmd) == FALSE) {
+						ReceiveData(sock, stCmd) == FALSE ){
 						break;
 					}
 
@@ -388,29 +384,46 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 
 					pSys->m_pCmdProc(pSys->m_pParam, &stCmd, &stRes);
 					if( stRes.param == CMD_NO_RES ){
+						if( stCmd.param == CMD2_EPG_SRV_GET_STATUS_NOTIFY2 ){
+							//保留可能なコマンドは応答待ちリストに移動
+							if( waitList.size() < FD_SETSIZE - 1 ){
+								WAIT_INFO waitInfo;
+								waitInfo.sock = sock;
+								waitInfo.cmd = new CMD_STREAM;
+								waitInfo.cmd->param = stCmd.param;
+								waitInfo.cmd->dataSize = stCmd.dataSize;
+								waitInfo.cmd->data = stCmd.data;
+								waitInfo.tick = GetTickCount();
+								waitList.push_back(waitInfo);
+								sock = INVALID_SOCKET;
+								stCmd.data = NULL;
+							}
+						}
 						break;
 					}
 
-					if (SendData(sock, stRes) == FALSE) {
+					if( SendData(sock, stRes) == FALSE ){
 						break;
 					}
 
-					SAFE_DELETE_ARRAY(stCmd.data);
-					SAFE_DELETE_ARRAY(stRes.data);
-					stCmd.dataSize = 0;
-					stRes.dataSize = 0;
-				}while(stRes.param == CMD_NEXT || stRes.param == OLD_CMD_NEXT); //Emun用の繰り返し
+					if( stRes.param != CMD_NEXT && stRes.param != OLD_CMD_NEXT ){
+						//Enum用の繰り返しではない
+						break;
+					}
+				}
+				if( sock != INVALID_SOCKET ){
+					shutdown(sock, SD_BOTH);
+					closesocket(sock);
+				}
 			}
-			shutdown(sock,SD_RECEIVE);
-			closesocket(sock);
-			sock = INVALID_SOCKET;
 		}
 	}
 
-	if( sock != INVALID_SOCKET ){
-		shutdown(sock,SD_RECEIVE);
-		closesocket(sock);
+	while( waitList.empty() == false ){
+		closesocket(waitList.back().sock);
+		delete waitList.back().cmd;
+		waitList.pop_back();
 	}
-	
+
 	return 0;
 }

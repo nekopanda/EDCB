@@ -62,7 +62,8 @@ namespace EpgTimer
                 textBox_Name.Text = data.Name == DefPresetStr ? "" : data.Name;
                 textBox_srvIP.Text = data.NWServerIP;
                 textBox_srvPort.Text = data.NWServerPort.ToString();
-                textBox_clientPort.Text = data.NWWaitPort.ToString();
+                checkBox_clientPort.IsChecked = data.NWWaitPort != 0;
+                textBox_clientPort.Text = data.NWWaitPort == 0 ? "4520" : data.NWWaitPort.ToString();
                 textBox_mac.Text = data.NWMacAdd;
                 textBox_Password.Password = new System.Net.NetworkCredential(string.Empty, data.NWPassword.SecureString).Password; // セキュアなコピーではない
             }
@@ -71,6 +72,7 @@ namespace EpgTimer
                 textBox_Name.Text = "";
                 textBox_srvIP.Text = "";
                 textBox_srvPort.Text = "";
+                checkBox_clientPort.IsChecked = false;
                 textBox_clientPort.Text = "";
                 textBox_mac.Text = "";
                 textBox_Password.Password = "";
@@ -83,7 +85,7 @@ namespace EpgTimer
             preset.Name = textBox_Name.Text.Trim();
             preset.NWServerIP = textBox_srvIP.Text.Trim();
             preset.NWServerPort = mutil.MyToNumerical(textBox_srvPort, Convert.ToUInt32, Settings.Instance.NWServerPort);
-            preset.NWWaitPort = mutil.MyToNumerical(textBox_clientPort, Convert.ToUInt32, Settings.Instance.NWWaitPort);
+            preset.NWWaitPort = checkBox_clientPort.IsChecked == false ? 0 : mutil.MyToNumerical(textBox_clientPort, Convert.ToUInt32, Settings.Instance.NWWaitPort);
             preset.NWMacAdd = textBox_mac.Text.Trim();
             preset.NWPassword = new SerializableSecureString(textBox_Password.SecurePassword);
             if (preset.Name.Length == 0)

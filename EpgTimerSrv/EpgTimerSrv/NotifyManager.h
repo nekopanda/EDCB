@@ -16,6 +16,7 @@ public:
 	BOOL IsRegistTCP(const REGIST_TCP_INFO& info) const;
 	void SetNotifyWindow(HWND hwnd, UINT msgID);
 	vector<NOTIFY_SRV_INFO> RemoveSentList();
+	BOOL GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount);
 
 	void GetRegistGUI(map<DWORD, DWORD>* registGUI) const;
 	void GetRegistTCP(map<wstring, REGIST_TCP_INFO>* registTCP) const;
@@ -31,6 +32,8 @@ protected:
 	HANDLE notifyThread;
 	BOOL notifyStopFlag;
 	DWORD srvStatus;
+	DWORD notifyCount;
+	size_t notifyRemovePos;
 
 	map<DWORD, DWORD> registGUIMap;
 	map<wstring, REGIST_TCP_INFO> registTCPMap;
