@@ -674,8 +674,9 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 		this->tcpAccessControlList = buff;
 		GetPrivateProfileString(L"SET", L"TCPAccessPassword", L"", buff, 512, iniPath.c_str());
 		wstring decrypt;
-		Decrypt(buff, decrypt);
-		if (Encrypt(decrypt, this->tcpPassword)) {
+		if( Decrypt(buff, decrypt) ){
+			this->tcpPassword = buff;
+		}else if (Encrypt(buff, this->tcpPassword)) {
 			WritePrivateProfileString(L"SET", L"TCPAccessPassword", this->tcpPassword.c_str(), iniPath.c_str());
 		}
 		this->tcpResponseTimeoutSec = GetPrivateProfileInt(L"SET", L"TCPResponseTimeoutSec", 120, iniPath.c_str());
