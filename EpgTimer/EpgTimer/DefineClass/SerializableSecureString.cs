@@ -33,6 +33,7 @@ namespace EpgTimer
         }
         public SerializableSecureString(string s)
         {
+            secureString = new SecureString();
             Base64String = s;
         }
 
