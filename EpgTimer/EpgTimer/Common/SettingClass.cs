@@ -153,7 +153,13 @@ namespace EpgTimer
                     {
                         return _updates.ContainsKey(key) ? _updates[key] : _items.ContainsKey(key) ? _items[key] : null;
                     }
-                    set { _updates[key] = value; }
+                    set
+                    {
+                        if (!_items.ContainsKey(key) || _items[key] != value)
+                        {
+                            _updates[key] = value;
+                        }
+                    }
                 }
                 public Dictionary<string, string>.KeyCollection UpdatedKeys
                 {
@@ -175,11 +181,9 @@ namespace EpgTimer
             }
 
             private string _file;
-            private DateTime _lastAccess;
             public SectionList(string file)
             {
                 _file = file;
-                _lastAccess = DateTime.MinValue;
             }
 
             private Dictionary<string, PairList> _sections;
@@ -212,10 +216,6 @@ namespace EpgTimer
             {
                 try
                 {
-                    // 前回取得から5分以内は再取得しない
-                    if ((DateTime.Now - _lastAccess).TotalSeconds < 300)
-                        return;
-
                     string filename = _file.Substring(_file.LastIndexOf('\\') + 1);
                     byte[] binData;
                     if (CommonManager.Instance.CtrlCmd.SendFileCopy(filename, out binData) == ErrCode.CMD_SUCCESS)
@@ -258,17 +258,16 @@ namespace EpgTimer
                             }
                             else if (section.Length > 0)
                             {
-                                string[] list = buff.Split('=');
+                                string[] list = buff.Split(new char[] { '=' }, 2);
                                 this[section].addPair(list[0], list[1]);
                             }
                         }
                         reader.Close();
                     }
-                    _lastAccess = DateTime.Now;
                 }
-                catch
+                catch(Exception ex)
                 {
-                    _lastAccess = DateTime.MinValue;
+                    System.Diagnostics.Trace.WriteLine(ex);
                 }
             }
 
@@ -309,15 +308,6 @@ namespace EpgTimer
                     }
                 }
                 return ini;
-            }
-
-            public void Flush()
-            {
-                if (_sections != null)
-                {
-                    _sections.Clear();
-                }
-                _lastAccess = DateTime.MinValue;
             }
         }
 
@@ -379,9 +369,8 @@ namespace EpgTimer
                 if (_files.ContainsKey(file) == false)
                 {
                     _files.Add(file, new SectionList(file));
+                    _files[file].loadFile();
                 }
-
-                _files[file].loadFile();
                 return _files[file];
             }
         }
@@ -398,19 +387,10 @@ namespace EpgTimer
                 if (output.Length > 0)
                 {
                     // 更新が必要な差分だけサーバーに送信。 
-                    if (CommonManager.Instance.CtrlCmd.SendUpdateSetting(output) == ErrCode.CMD_SUCCESS)
-                    {
-                        CanUpdateInifile = true;
-                        // サーバーに送信できたので、更新履歴を消しておく
-                        foreach (string f in _files.Keys)
-                        {
-                            _files[f].Flush();
-                        }
-                    }
-                    else
+                    if (CommonManager.Instance.CtrlCmd.SendUpdateSetting(output) != ErrCode.CMD_SUCCESS)
                     {
                         //tkntrec版 EpgTimerSrv.exe はここに来る
-                        if (CommonManager.Instance.NW.IsConnected == false)
+                        if (CommonManager.Instance.NWMode == false)
                         {
                             //サーバー側更新ができないので、直接更新する。
                             foreach (string lpFileName in _files.Keys)
@@ -423,7 +403,6 @@ namespace EpgTimer
                                         IniFileHandler.WritePrivateProfileStringW(lpAppName, lpKeyName, lpString, lpFileName);
                                     }
                                 }
-                                _files[lpFileName].Flush();
                             }
                         }
                         else
@@ -432,6 +411,7 @@ namespace EpgTimer
                         }
                     }
                 }
+                _files.Clear();
             }
         }
 
