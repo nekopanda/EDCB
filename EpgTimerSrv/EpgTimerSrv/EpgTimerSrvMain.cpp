@@ -676,7 +676,7 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 		wstring decrypt;
 		if( Decrypt(buff, decrypt) ){
 			this->tcpPassword = buff;
-		}else if (Encrypt(buff, this->tcpPassword)) {
+		}else if( wcslen(buff) <= MAX_PASSWORD_LENGTH && Encrypt(buff, this->tcpPassword) ){
 			WritePrivateProfileString(L"SET", L"TCPAccessPassword", this->tcpPassword.c_str(), iniPath.c_str());
 		}
 		this->tcpResponseTimeoutSec = GetPrivateProfileInt(L"SET", L"TCPResponseTimeoutSec", 120, iniPath.c_str());
@@ -1618,8 +1618,13 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL)) {
 				wstring path;
 				wstring section;
+				wstring key;
+				wstring value;
 				string text[1];	// 0:ChSet5.txt
-				wstring delkey = L"";
+				struct ignorecase_compare {
+					bool operator()(const wstring& a, const wstring& b) const { return CompareNoCase(a, b) < 0; }
+				};
+				map<wstring, std::function<bool()>, ignorecase_compare> specialKey;
 				int indexText = -1;
 				size_t pos = 0, found;
 				while ((found = val.find_first_of(L'\n', pos)) != wstring::npos) {
@@ -1632,23 +1637,26 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 					if (line.length() > 3 && line[0] == L';' && line[1] == L'<' && line.find_first_of(L'>') == line.length() - 1) {
 						wstring filename = wstring(line, 2, line.length() - 3);
 						section.clear();
-						delkey.clear();
+						specialKey.clear();
+						indexText = -1;
 						if (CompareNoCase(filename, L"ChSet5.txt") == 0) {
 							indexText = 0;
 						}
 						else if (CompareNoCase(filename, L"Common.ini") == 0) {
 							GetCommonIniPath(path);
-							indexText = -1;
 						}
 						else if (CompareNoCase(filename, L"EpgTimerSrv.ini") == 0) {
 							GetEpgTimerSrvIniPath(path);
-							if(tcpFlag) delkey = L"tcpaccesspassword";
-							indexText = -1;
+							specialKey.insert(pair<wstring, std::function<bool()>>(L"TCPAccessPassword", [&](){
+								wstring temp;
+								if (tcpFlag) return false;
+								if (Decrypt(value, temp)) return true;
+								return value.length() <= MAX_PASSWORD_LENGTH && Encrypt(value, value);
+							}));
 						}
 						else if (CompareNoCase(val, L"EpgDataCap_Bon.ini") == 0) {
 							GetModuleFolderPath(path);
 							path += L"\\EpgDataCap_Bon.ini";
-							indexText = -1;
 						}
 						else {
 							break;
@@ -1674,13 +1682,15 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 							size_t delim = line.find_first_of(L'=');
 							if (delim == 0 || delim == wstring::npos)
 								break;
-							wstring key = wstring(line, 0, delim);
-							wstring value = wstring(line, delim + 1);
-							if (delkey.length() > 0 && _wcsicmp(key.c_str(), delkey.c_str()) == 0)
+							key = wstring(line, 0, delim);
+							value = wstring(line, delim + 1);
+							int nOffset = key.at(0) == L';' ? 1 : 0;
+							auto itr = specialKey.find(key.c_str() + nOffset);
+							if (itr != specialKey.end() && !itr->second())
 								continue;
-							if (key.at(0) == L';') {
+							if (nOffset == 1) {
 								// ";key=" ‚Ì‘Ž®‚Ì‚Æ‚«AƒL[‚Ìíœ‚ð‚·‚é
-								if (value.length() > 0)
+								if (!value.empty())
 									break;
 								WritePrivateProfileStringW(section.c_str(), key.c_str()+1, NULL, path.c_str());
 							}

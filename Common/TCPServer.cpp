@@ -31,9 +31,9 @@ BOOL CTCPServer::StartServer(DWORD dwPort, DWORD dwResponseTimeout, LPCWSTR acl,
 	if( pfnCmdProc == NULL || pParam == NULL ){
 		return FALSE;
 	}
-	if( m_hThread != NULL ){
-		return FALSE;
-	}
+
+	StopServer();
+
 	m_pCmdProc = pfnCmdProc;
 	m_pParam = pParam;
 	m_dwPort = dwPort;

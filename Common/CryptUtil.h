@@ -2,6 +2,8 @@
 
 #include <wincrypt.h>
 
+#define MAX_PASSWORD_LENGTH  64 
+
 extern const int base64_encode[66];
 extern const int base64_decode[256];
 
