@@ -344,7 +344,19 @@ namespace EpgTimer.Setting
                 }
                 textBox_tcpPort.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath).ToString();
                 textBox_tcpAcl.Text = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessControlList", "+127.0.0.1,+192.168.0.0/16", SettingPath.TimerSrvIniPath);
-                passwordBox_tcpPassword.Password = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessPassword", "", SettingPath.TimerSrvIniPath);
+                string base64string = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessPassword", "", SettingPath.TimerSrvIniPath);
+                System.Security.SecureString password = new SerializableSecureString(base64string).SecureString;
+                if (base64string.Length == password.Length)
+                {
+                    // decrypt 出来なかったので disable にする
+                    passwordBox_tcpPassword.IsEnabled = false;
+                }
+                else
+                {
+                    // セキュアなコピーではないが PasswordBox.SecurePassword の setter がないため...
+                    passwordBox_tcpPassword.Password = new System.Net.NetworkCredential(string.Empty, password).Password;
+                }
+
                 textBox_tcpResTo.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPResponseTimeoutSec", 120, SettingPath.TimerSrvIniPath).ToString();
             }
 
@@ -615,7 +627,8 @@ namespace EpgTimer.Setting
             }
             if (passwordBox_tcpPassword.IsEnabled)
             {
-                IniFileHandler.WritePrivateProfileString("SET", "TCPAccessPassword", passwordBox_tcpPassword.Password, SettingPath.TimerSrvIniPath);
+                string base64string = new SerializableSecureString(passwordBox_tcpPassword.SecurePassword).Base64String;
+                IniFileHandler.WritePrivateProfileString("SET", "TCPAccessPassword", base64string, SettingPath.TimerSrvIniPath);
             }
 
             if (textBox_tcpResTo.IsEnabled)
