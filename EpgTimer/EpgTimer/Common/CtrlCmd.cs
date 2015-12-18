@@ -730,7 +730,6 @@ namespace EpgTimer
                 try
                 {
                     // nonce を受け取る
-                    ns.ReadTimeout = 1000;
                     if (ns.Read(nonce, 0, 8) != 8)
                     {
                         return ErrCode.CMD_ERR;
