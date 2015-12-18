@@ -43,6 +43,8 @@ namespace EpgTimer.Setting
 
         public bool ServiceStop = false;
 
+        private SerializableSecureString password;
+
         public SetAppView()
         {
             InitializeComponent();
@@ -345,7 +347,7 @@ namespace EpgTimer.Setting
                 textBox_tcpPort.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPPort", 4510, SettingPath.TimerSrvIniPath).ToString();
                 textBox_tcpAcl.Text = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessControlList", "+127.0.0.1,+192.168.0.0/16", SettingPath.TimerSrvIniPath);
                 string base64string = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessPassword", "", SettingPath.TimerSrvIniPath);
-                System.Security.SecureString password = new SerializableSecureString(base64string).SecureString;
+                password = new SerializableSecureString(base64string);
                 if (base64string.Length == password.Length)
                 {
                     // decrypt 出来なかったので disable にする
@@ -354,7 +356,7 @@ namespace EpgTimer.Setting
                 else
                 {
                     // セキュアなコピーではないが PasswordBox.SecurePassword の setter がないため...
-                    passwordBox_tcpPassword.Password = new System.Net.NetworkCredential(string.Empty, password).Password;
+                    passwordBox_tcpPassword.Password = new System.Net.NetworkCredential(string.Empty, password.SecureString).Password;
                 }
 
                 textBox_tcpResTo.Text = IniFileHandler.GetPrivateProfileInt("SET", "TCPResponseTimeoutSec", 120, SettingPath.TimerSrvIniPath).ToString();
@@ -627,8 +629,11 @@ namespace EpgTimer.Setting
             }
             if (passwordBox_tcpPassword.IsEnabled)
             {
-                string base64string = new SerializableSecureString(passwordBox_tcpPassword.SecurePassword).Base64String;
-                IniFileHandler.WritePrivateProfileString("SET", "TCPAccessPassword", base64string, SettingPath.TimerSrvIniPath);
+                SerializableSecureString newPassword = new SerializableSecureString(passwordBox_tcpPassword.SecurePassword, System.Security.Cryptography.DataProtectionScope.LocalMachine);
+                if (password.Compare(newPassword) == false)
+                {
+                    IniFileHandler.WritePrivateProfileString("SET", "TCPAccessPassword", newPassword.Base64String, SettingPath.TimerSrvIniPath);
+                }
             }
 
             if (textBox_tcpResTo.IsEnabled)

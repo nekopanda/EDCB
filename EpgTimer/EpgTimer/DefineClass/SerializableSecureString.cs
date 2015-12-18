@@ -21,19 +21,23 @@ namespace EpgTimer
         /// </summary>
         private SecureString secureString;
         private string cryptString;
+        private DataProtectionScope scope;
 
         public SerializableSecureString()
         {
             secureString = new SecureString();
             cryptString = "";
+            scope = DataProtectionScope.CurrentUser;
         }
-        public SerializableSecureString(SecureString s)
+        public SerializableSecureString(SecureString s, DataProtectionScope dps = DataProtectionScope.CurrentUser)
         {
+            scope = dps;
             SecureString = s;
         }
-        public SerializableSecureString(string s)
+        public SerializableSecureString(string s, DataProtectionScope dps = DataProtectionScope.CurrentUser)
         {
             secureString = new SecureString();
+            scope = dps;
             Base64String = s;
         }
 
@@ -58,7 +62,7 @@ namespace EpgTimer
                                 Encoding.UTF8.GetBytes(
                                     new NetworkCredential(string.Empty, secureString).Password), 
                                 null, 
-                                DataProtectionScope.CurrentUser)) : "";
+                                scope)) : "";
                 }
                 catch
                 {
@@ -81,7 +85,7 @@ namespace EpgTimer
                     // 気休めでしかないが一括で char[] を作り、SecureString に登録する。
                     cryptString = value;
                     secureString.Clear();
-                    foreach (char c in Encoding.UTF8.GetChars(ProtectedData.Unprotect(Convert.FromBase64String(cryptString), null, DataProtectionScope.CurrentUser)))
+                    foreach (char c in Encoding.UTF8.GetChars(ProtectedData.Unprotect(Convert.FromBase64String(cryptString), null, scope)))
                     {
                         secureString.AppendChar(c);
                     }
@@ -100,6 +104,15 @@ namespace EpgTimer
             }
         }
         public int Length { get { return secureString.Length; } }
+
+        public bool Compare(SerializableSecureString s)
+        {
+            if (Length != s.Length)
+                return false;
+            // 本来はマーシャリングして中身を取り出して Compare するべき
+            return new NetworkCredential(string.Empty, secureString).Password == new NetworkCredential(string.Empty, s.SecureString).Password;
+        }
+
         public HMAC HMAC { get { return new HMACMD5(Encoding.UTF8.GetBytes(new NetworkCredential(string.Empty, secureString).Password)); } }
 
         public XmlSchema GetSchema()
