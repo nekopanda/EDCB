@@ -766,9 +766,7 @@ namespace EpgTimer
                     // オリジナルのコマンドパケットを認証応答パケットの後ろに追加する
                     origCmd.CopyTo(cmd, sizeAuthPacket);
                 }
-#pragma warning disable CS0168 // 変数は宣言されていますが、使用されていません
-                catch (IOException e)
-#pragma warning restore CS0168 // 変数は宣言されていますが、使用されていません
+                catch (IOException)
                 {
                     return ErrCode.CMD_ERR;
                 }
@@ -842,9 +840,7 @@ namespace EpgTimer
                             res = new MemoryStream(resData, false);
                             return Enum.IsDefined(typeof(ErrCode), resParam) ? (ErrCode)resParam : ErrCode.CMD_ERR;
                         }
-#pragma warning disable CS0168 // 変数は宣言されていますが、使用されていません
-                        catch (IOException e)
-#pragma warning restore CS0168 // 変数は宣言されていますが、使用されていません
+                        catch (IOException)
                         {
                             // 認証に失敗するとサーバーから切断されるため Read 中に IOException が発生する
                             return ErrCode.CMD_ERR;
