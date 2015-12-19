@@ -48,6 +48,8 @@ namespace EpgTimer
             }
         }
 
+        public bool StopFlag { get; private set; }
+
         public NWConnect(CtrlCmdUtil ctrlCmd)
         {
             connectFlag = false;
@@ -125,6 +127,7 @@ namespace EpgTimer
             serverPort = port;
             if (port != 0)
             {
+                StopFlag = false;
                 server = new TcpListener(IPAddress.Any, (int)port);
                 server.Start();
                 server.BeginAcceptTcpClient(new AsyncCallback(DoAcceptTcpClientCallback), server);
@@ -142,7 +145,9 @@ namespace EpgTimer
                     cmd.SendUnRegistTCP(serverPort);
                     connectFlag = false;
                 }
+                StopFlag = true;
                 server.Stop();
+                
                 server = null;
             }
             return true;
@@ -234,6 +239,10 @@ namespace EpgTimer
             try
             {
                 TcpListener listener = (TcpListener)ar.AsyncState;
+                if (StopFlag)
+                {
+                    return;
+                }
 
                 TcpClient client = listener.EndAcceptTcpClient(ar);
                 client.ReceiveBufferSize = 1024 * 1024;

@@ -47,8 +47,11 @@ namespace EpgTimer
                         {
                             try
                             {
-                                pipe.EndWaitForConnection(asyncResult);
-                                m_PulseEvent.Set();
+                                if (m_StopFlag == false)
+                                {
+                                    pipe.EndWaitForConnection(asyncResult);
+                                    m_PulseEvent.Set();
+                                }
                             }
                             catch (ObjectDisposedException)
                             {
@@ -58,36 +61,43 @@ namespace EpgTimer
                         m_PulseEvent.WaitOne();
                         if (pipe.IsConnected)
                         {
-                            byte[] bHead = new byte[8];
-                            if (pipe.Read(bHead, 0, 8) == 8)
+                            try
                             {
-                                CMD_STREAM stCmd = new CMD_STREAM();
-                                stCmd.uiParam = BitConverter.ToUInt32(bHead, 0);
-                                stCmd.uiSize = BitConverter.ToUInt32(bHead, 4);
-                                stCmd.bData = stCmd.uiSize == 0 ? null : new byte[stCmd.uiSize];
-                                if (stCmd.uiSize == 0 || pipe.Read(stCmd.bData, 0, stCmd.bData.Length) == stCmd.bData.Length)
+                                byte[] bHead = new byte[8];
+                                if (pipe.Read(bHead, 0, 8) == 8)
                                 {
-                                    CMD_STREAM stRes = new CMD_STREAM();
-                                    pfnCmdProc.Invoke(stCmd, stRes);
-                                    if (stRes.uiParam == (uint)ErrCode.CMD_NEXT)
+                                    CMD_STREAM stCmd = new CMD_STREAM();
+                                    stCmd.uiParam = BitConverter.ToUInt32(bHead, 0);
+                                    stCmd.uiSize = BitConverter.ToUInt32(bHead, 4);
+                                    stCmd.bData = stCmd.uiSize == 0 ? null : new byte[stCmd.uiSize];
+                                    if (stCmd.uiSize == 0 || pipe.Read(stCmd.bData, 0, stCmd.bData.Length) == stCmd.bData.Length)
                                     {
-                                        // Emun用の繰り返しは対応しない
-                                        throw new InvalidOperationException();
-                                    }
-                                    else if (stRes.uiParam != (uint)ErrCode.CMD_NO_RES)
-                                    {
-                                        BitConverter.GetBytes(stRes.uiParam).CopyTo(bHead, 0);
-                                        BitConverter.GetBytes(stRes.uiSize).CopyTo(bHead, 4);
-                                        pipe.Write(bHead, 0, 8);
-                                        if (stRes.uiSize != 0 && stRes.bData != null && stRes.bData.Length >= stRes.uiSize)
+                                        CMD_STREAM stRes = new CMD_STREAM();
+                                        pfnCmdProc.Invoke(stCmd, stRes);
+                                        if (stRes.uiParam == (uint)ErrCode.CMD_NEXT)
                                         {
-                                            pipe.Write(stRes.bData, 0, (int)stRes.uiSize);
+                                            // Emun用の繰り返しは対応しない
+                                            throw new InvalidOperationException();
+                                        }
+                                        else if (stRes.uiParam != (uint)ErrCode.CMD_NO_RES)
+                                        {
+                                            BitConverter.GetBytes(stRes.uiParam).CopyTo(bHead, 0);
+                                            BitConverter.GetBytes(stRes.uiSize).CopyTo(bHead, 4);
+                                            pipe.Write(bHead, 0, 8);
+                                            if (stRes.uiSize != 0 && stRes.bData != null && stRes.bData.Length >= stRes.uiSize)
+                                            {
+                                                pipe.Write(stRes.bData, 0, (int)stRes.uiSize);
+                                            }
                                         }
                                     }
                                 }
+                                pipe.WaitForPipeDrain();
+                                pipe.Disconnect();
                             }
-                            pipe.WaitForPipeDrain();
-                            pipe.Disconnect();
+                            catch
+                            {
+                                // Read & Write 中に切断されると例外が起きるはずなので一応 catch しておく
+                            }
                         }
                     }
                 }
