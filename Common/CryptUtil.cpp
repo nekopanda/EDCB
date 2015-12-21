@@ -8,7 +8,7 @@
 #pragma comment(lib, "crypt32.lib")
 
 // template<class T>Base64Encode用テーブル
-const int base64_encode[66] = {
+const int CCryptUtil::base64_encode[66] = {
 	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
 	'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
 	'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd',
@@ -19,7 +19,7 @@ const int base64_encode[66] = {
 };
 
 // template<class T>Base64Decode用テーブル
-const int base64_decode[256] = {
+const int CCryptUtil::base64_decode[256] = {
 	-1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
 	-1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
 	-1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,62,-1,-1,-1,63,		// +, /
@@ -38,166 +38,187 @@ const int base64_decode[256] = {
 	-1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1
 };
 
-// HMAC を求める (CryptCreateHash が derived key からの計算しかできないようなので自家実装)
-BOOL HMAC(ALG_ID id, const BYTE *pKey, const DWORD cbKey, const BYTE *pData, const DWORD cbData, BYTE **ppOut, DWORD *pcbOut)
+BOOL CCryptUtil::Create(const wstring& base64string)
+{
+	string utf8;
+	WtoUTF8(base64string, utf8);
+	return Create(utf8);
+}
+
+BOOL CCryptUtil::Create(const string& base64string)
+{
+	if (base64string.empty())
+		return FALSE;
+
+	BOOL ret = CryptAcquireContext(&m_hProv, NULL, NULL, PROV_RSA_AES, CRYPT_VERIFYCONTEXT);
+	if (ret) {
+		// パスワード長が64バイトを超えると HMAC の初期値の事前計算が出来なくなるので、
+		// SHA-256 でハッシュした32バイトを使うことにする。
+		// ipad & opad にパスワードが保存されるのを防ぐ効果もある。
+		HCRYPTHASH  hHash = NULL;
+		string password;
+		BYTE tmp[32] = { 0 };
+		DWORD size = sizeof(tmp);
+		ret = CryptCreateHash(m_hProv, CALG_SHA_256, 0, 0, &hHash) &&
+			Decrypt(base64string, password) &&
+			CryptHashData(hHash, (const BYTE*)password.data(), (DWORD)password.size(), 0) &&
+			CryptGetHashParam(hHash, HP_HASHVAL, tmp, &size, 0);
+		if (hHash) {
+			CryptDestroyHash(hHash);
+		}
+		ret = ret && CreateHmac(tmp, size);
+	}
+	return ret;
+}
+
+BOOL CCryptUtil::CreateHmac(const BYTE *pKey, const DWORD cbKey)
 {
 	BYTE tmp[64] = { 0 }; // SHA512(64バイト)まで対応
-	BYTE opad[64] = { 0 };
-	BYTE ipad[64] = { 0 };
 	DWORD size = sizeof(tmp);
 
-	HCRYPTPROV  hProv = NULL;
-	DWORD ret = CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_AES, CRYPT_VERIFYCONTEXT);
+	BOOL ret = FALSE;
 
-	if (ret) {
+	if (m_hProv != NULL && pKey != NULL && cbKey != 0) {
 		if (cbKey > 64) {
 			// key が64バイトを超える場合は key の hash 値を使う
+			// hash 値を計算するために SelectHash しておく必要がある。
 			HCRYPTHASH  hHash = NULL;
-			ret = (CryptCreateHash(hProv, id, 0, 0, &hHash) &&
+			ret = (CryptCreateHash(m_hProv, m_algid, 0, 0, &hHash) &&
 				CryptHashData(hHash, pKey, cbKey, 0) &&
 				CryptGetHashParam(hHash, HP_HASHVAL, tmp, &size, 0));
 			if (hHash) {
 				CryptDestroyHash(hHash);
 			}
 		}
-		else {
+		else
+		{
 			// key が64バイト未満の場合は64バイトまで 0 fill した値を使う
 			memcpy(tmp, pKey, cbKey);
+			ret = TRUE;
 		}
 	}
-
 	if (ret) {
 		// ipad & opad を計算する
+		C_ASSERT(_countof(m_ipad) == _countof(tmp));
+		C_ASSERT(_countof(m_opad) == _countof(tmp));
 		for (int i = 0; i < sizeof(tmp); i++) {
-			ipad[i] = tmp[i] ^ 0x36;
-			opad[i] = tmp[i] ^ 0x5c;
+			m_ipad[i] = tmp[i] ^ 0x36;
+			m_opad[i] = tmp[i] ^ 0x5c;
 		}
-
-		// ipad + data の hash を求める
-		HCRYPTHASH  hHash = NULL;
-		ret = (CryptCreateHash(hProv, id, 0, 0, &hHash) &&
-			CryptHashData(hHash, ipad, sizeof(ipad), 0) &&
-			CryptHashData(hHash, pData, cbData, 0) &&
-			CryptGetHashParam(hHash, HP_HASHVAL, tmp, &size, 0));
-		if (hHash) {
-			CryptDestroyHash(hHash);
-		}
-	}
-
-	if (ret) {
-		// opad + (ipad + data の hash) の hash(HMAC) を求める 
-		HCRYPTHASH  hHash = NULL;
-		ret = (CryptCreateHash(hProv, id, 0, 0, &hHash) &&
-			CryptHashData(hHash, opad, sizeof(opad), 0) &&
-			CryptHashData(hHash, tmp, size, 0) &&
-			CryptGetHashParam(hHash, HP_HASHVAL, tmp, &size, 0));
-		if (hHash) {
-			CryptDestroyHash(hHash);
-		}
-	}
-
-	if (ret) {
-		*ppOut = new BYTE[size];
-		*pcbOut = size;
-		memcpy(*ppOut, tmp, size);
-	}
-	if (hProv) {
-		CryptReleaseContext(hProv, 0);
 	}
 	return ret;
 }
 
-BOOL GetRandom(BYTE *pOut, DWORD cbOut)
+VOID CCryptUtil::Close()
 {
-	HCRYPTPROV  hProv = NULL;
-	BOOL ret = CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_AES, CRYPT_VERIFYCONTEXT) && 
-		CryptGenRandom(hProv, cbOut, pOut);
-	if (hProv) {
-		CryptReleaseContext(hProv, 0);
+	if (m_hHash){
+		CryptDestroyHash(m_hHash);
+		m_hHash = NULL;
+	}
+	if (m_hProv) {
+		CryptReleaseContext(m_hProv, 0);
+		m_hProv = NULL;
+	}
+}
+
+BOOL CCryptUtil::SelectHash(ALG_ID id)
+{
+	m_hashSize = 0;
+	if (m_hHash != NULL)
+		return FALSE;
+
+	switch (id) {
+	case CALG_MD5: m_hashSize = 128 / 8; break;
+	case CALG_SHA1: m_hashSize = 160 / 8; break;
+	case CALG_SHA_256: m_hashSize = 256 / 8; break;
+	case CALG_SHA_384: m_hashSize = 384 / 8; break;
+	case CALG_SHA_512: m_hashSize = 512 / 8; break;
+	default: return FALSE;
+	}
+	m_algid = id;
+	return TRUE;
+}
+
+BOOL CCryptUtil::SelectHash(DWORD hashSize)
+{
+	m_hashSize = 0;
+	if (m_hHash != NULL)
+		return FALSE;
+
+	switch (hashSize) {
+	case 128 / 8: m_algid = CALG_MD5; break;
+	case 160 / 8: m_algid = CALG_SHA1; break;
+	case 256 / 8: m_algid = CALG_SHA_256; break;
+	case 384 / 8: m_algid = CALG_SHA_384; break;
+	case 512 / 8: m_algid = CALG_SHA_512; break;
+	default: return FALSE;
+	}
+	m_hashSize = hashSize;
+	return TRUE;
+}
+
+BOOL CCryptUtil::CalcHmac(const BYTE *pbData, DWORD cbData)
+{
+	if (m_hProv == NULL || m_hashSize == 0)
+		return FALSE;
+
+	BOOL ret = TRUE;
+
+	// ipad + data の hash の計算
+	if (m_hHash == NULL) {
+		ret = CryptCreateHash(m_hProv, m_algid, 0, 0, &m_hHash) &&
+			CryptHashData(m_hHash, m_ipad, sizeof(m_ipad), 0);
+	}
+	if (m_hHash != NULL && ret == TRUE) {
+		ret = CryptHashData(m_hHash, pbData, cbData, 0);
+	}
+	if (m_hHash != NULL && ret == FALSE) {
+		CryptDestroyHash(m_hHash);
+		m_hHash = NULL;
 	}
 	return ret;
 }
 
-BOOL Encrypt(const string& input_string, string& output_string)
+BOOL CCryptUtil::CompareHmac(const BYTE *pbData)
 {
-	BOOL ret;
+	BYTE tmp[64] = { 0 }; // SHA512(64バイト)まで対応
+	DWORD size = sizeof(tmp);
 
-	DATA_BLOB input;
-	DATA_BLOB output;
-	DWORD dwFlags = CRYPTPROTECT_LOCAL_MACHINE | CRYPTPROTECT_UI_FORBIDDEN | CRYPTPROTECT_AUDIT;
-	input.pbData = (BYTE*)input_string.data();
-	input.cbData = (DWORD)input_string.size();
-	ret = CryptProtectData(&input, NULL, NULL, NULL, NULL, dwFlags, &output);
-	if (ret) {
-		ret = Base64Encode(output.pbData, output.cbData, output_string);
-		LocalFree(output.pbData);
+	if (m_hProv == NULL || m_hHash == NULL || m_hashSize == 0 || size < m_hashSize) {
+		return FALSE;
 	}
-	return ret;
+
+	// ipad + data の hash を取得する
+	BOOL ret = CryptGetHashParam(m_hHash, HP_HASHVAL, tmp, &size, 0);
+	CryptDestroyHash(m_hHash);
+	m_hHash = NULL;
+
+	// opad + (ipad + data の hash) の hash(HMAC) を求める 
+	HCRYPTHASH  hHash = NULL;
+	ret = ret && (CryptCreateHash(m_hProv, m_algid, 0, 0, &hHash) &&
+		CryptHashData(hHash, m_opad, sizeof(m_opad), 0) &&
+		CryptHashData(hHash, tmp, size, 0) &&
+		CryptGetHashParam(hHash, HP_HASHVAL, tmp, &size, 0));
+	if (hHash) {
+		CryptDestroyHash(hHash);
+	}
+
+	return ret && size == m_hashSize && memcmp(pbData, tmp, size) == 0;
 }
 
-BOOL Encrypt(const wstring& input_string, wstring& output_string)
+BOOL CCryptUtil::Encrypt(const wstring& input_string, wstring& output_string)
 {
-	BOOL ret;
-
-	DATA_BLOB input;
-	DATA_BLOB output;
-	DWORD dwFlags = CRYPTPROTECT_LOCAL_MACHINE | CRYPTPROTECT_UI_FORBIDDEN | CRYPTPROTECT_AUDIT;
 	string utf8;
 	WtoUTF8(input_string, utf8);
-	input.pbData = (BYTE*)utf8.data();
-	input.cbData = (DWORD)utf8.size();
-	ret = CryptProtectData(&input, NULL, NULL, NULL, NULL, dwFlags, &output);
-	if (ret) {
-		ret = Base64Encode(output.pbData, output.cbData, output_string);
-		LocalFree(output.pbData);
-	}
-	return ret;
+	return Encrypt(utf8, output_string);
 }
 
-BOOL Decrypt(const string& input_string, string& output_string)
+BOOL CCryptUtil::Decrypt(const wstring& input_string, wstring& output_string)
 {
-	BOOL ret;
-
-	BYTE *pData = NULL;
-	DWORD cbData;
-	ret = Base64Decode(input_string, &pData, &cbData);
+	string utf8;
+	BOOL ret = Decrypt(input_string, utf8);
 	if (ret) {
-		DATA_BLOB input;
-		DATA_BLOB output;
-		DWORD dwFlags = CRYPTPROTECT_LOCAL_MACHINE | CRYPTPROTECT_UI_FORBIDDEN | CRYPTPROTECT_AUDIT;
-		input.pbData = pData;
-		input.cbData = cbData;
-		ret = CryptUnprotectData(&input, NULL, NULL, NULL, NULL, dwFlags, &output);
-		if (ret) {
-			output_string.assign((char*)output.pbData, output.cbData);
-			LocalFree(output.pbData);
-		}
-		delete[] pData;
-	}
-	return ret;
-}
-
-BOOL Decrypt(const wstring& input_string, wstring& output_string)
-{
-	BOOL ret;
-
-	BYTE *pData = NULL;
-	DWORD cbData;
-	ret = Base64Decode(input_string, &pData, &cbData);
-	if (ret) {
-		DATA_BLOB input;
-		DATA_BLOB output;
-		DWORD dwFlags = CRYPTPROTECT_LOCAL_MACHINE | CRYPTPROTECT_UI_FORBIDDEN | CRYPTPROTECT_AUDIT;
-		input.pbData = pData;
-		input.cbData = cbData;
-		ret = CryptUnprotectData(&input, NULL, NULL, NULL, NULL, dwFlags, &output);
-		if (ret) {
-			string utf8;
-			utf8.assign((char*)output.pbData, output.cbData);
-			UTF8toW(utf8, output_string);
-			LocalFree(output.pbData);
-		}
-		delete[] pData;
+		UTF8toW(utf8, output_string);
 	}
 	return ret;
 }

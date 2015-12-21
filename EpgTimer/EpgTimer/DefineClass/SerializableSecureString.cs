@@ -113,7 +113,7 @@ namespace EpgTimer
             return new NetworkCredential(string.Empty, secureString).Password == new NetworkCredential(string.Empty, s.SecureString).Password;
         }
 
-        public HMAC HMAC { get { return new HMACMD5(Encoding.UTF8.GetBytes(new NetworkCredential(string.Empty, secureString).Password)); } }
+        public HMAC HMAC { get { return new HMACMD5(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(new NetworkCredential(string.Empty, secureString).Password))); } }
 
         public XmlSchema GetSchema()
         {

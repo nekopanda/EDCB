@@ -674,9 +674,9 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 		this->tcpAccessControlList = buff;
 		GetPrivateProfileString(L"SET", L"TCPAccessPassword", L"", buff, 512, iniPath.c_str());
 		wstring decrypt;
-		if( Decrypt(buff, decrypt) ){
+		if( CCryptUtil::Decrypt(buff, decrypt) ){
 			this->tcpPassword = buff;
-		}else if( wcslen(buff) <= MAX_PASSWORD_LENGTH && Encrypt(buff, this->tcpPassword) ){
+		}else if( wcslen(buff) <= MAX_PASSWORD_LENGTH && CCryptUtil::Encrypt(buff, this->tcpPassword) ){
 			WritePrivateProfileString(L"SET", L"TCPAccessPassword", this->tcpPassword.c_str(), iniPath.c_str());
 		}
 		this->tcpResponseTimeoutSec = GetPrivateProfileInt(L"SET", L"TCPResponseTimeoutSec", 120, iniPath.c_str());
@@ -1650,8 +1650,8 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 							specialKey.insert(pair<wstring, std::function<bool()>>(L"TCPAccessPassword", [&](){
 								wstring temp;
 								if (tcpFlag) return false;
-								if (Decrypt(value, temp)) return true;
-								return value.length() <= MAX_PASSWORD_LENGTH && Encrypt(value, value);
+								if (CCryptUtil::Decrypt(value, temp)) return true;
+								return value.length() <= MAX_PASSWORD_LENGTH && CCryptUtil::Encrypt(value, value);
 							}));
 						}
 						else if (CompareNoCase(val, L"EpgDataCap_Bon.ini") == 0) {

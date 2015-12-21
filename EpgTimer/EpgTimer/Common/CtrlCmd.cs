@@ -654,6 +654,36 @@ namespace EpgTimer
             return SendCmdStream(CtrlCmd.CMD_EPG_SRV_UPDATE_SETTING, w.Stream, ref res);
         }
 
+        private ErrCode ReadCmdResponse(Stream s, ref MemoryStream res)
+        {
+            try
+            {
+                var head = new byte[8];
+                if (s.Read(head, 0, 8) != 8)
+                {
+                    return ErrCode.CMD_ERR;
+                }
+                uint resParam = BitConverter.ToUInt32(head, 0);
+                var resData = new byte[BitConverter.ToUInt32(head, 4)];
+                for (int n = 0; n < resData.Length;)
+                {
+                    int m = s.Read(resData, n, resData.Length - n);
+                    if (m <= 0)
+                    {
+                        return ErrCode.CMD_ERR;
+                    }
+                    n += m;
+                }
+                res = new MemoryStream(resData, false);
+                return Enum.IsDefined(typeof(ErrCode), resParam) ? (ErrCode)resParam : ErrCode.CMD_ERR;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine(ex);
+                return ErrCode.CMD_ERR;
+            }
+        }
+
         private ErrCode SendPipe(CtrlCmd param, MemoryStream send, ref MemoryStream res)
         {
             lock (thisLock)
@@ -690,23 +720,7 @@ namespace EpgTimer
                         pipe.Write(data, 0, data.Length);
                     }
                     // 受信
-                    if (pipe.Read(head, 0, 8) != 8)
-                    {
-                        return ErrCode.CMD_ERR;
-                    }
-                    uint resParam = BitConverter.ToUInt32(head, 0);
-                    var resData = new byte[BitConverter.ToUInt32(head, 4)];
-                    for (int n = 0; n < resData.Length; )
-                    {
-                        int m = pipe.Read(resData, n, resData.Length - n);
-                        if (m <= 0)
-                        {
-                            return ErrCode.CMD_ERR;
-                        }
-                        n += m;
-                    }
-                    res = new MemoryStream(resData, false);
-                    return Enum.IsDefined(typeof(ErrCode), resParam) ? (ErrCode)resParam : ErrCode.CMD_ERR;
+                    return ReadCmdResponse(pipe, ref res);
                 }
             }
         }
@@ -722,26 +736,26 @@ namespace EpgTimer
             if (Settings.Instance.NWPassword != null && Settings.Instance.NWPassword.Length > 0)
             {
                 // nonce要求
-                byte[] nonce = new byte[8];
-                BitConverter.GetBytes((uint)CtrlCmd.CMD2_EPG_SRV_AUTH_REQUEST).CopyTo(nonce, 0);
-                BitConverter.GetBytes(0).CopyTo(nonce, 4);
-                ns.Write(nonce, 0, 8);
+                byte[] header = new byte[8];
+                BitConverter.GetBytes((uint)CtrlCmd.CMD2_EPG_SRV_AUTH_REQUEST).CopyTo(header, 0);
+                BitConverter.GetBytes(0).CopyTo(header, 4);
+                ns.Write(header, 0, 8);
 
                 try
                 {
                     // nonce を受け取る
-                    if (ns.Read(nonce, 0, 8) != 8)
+                    if (ns.Read(header, 0, 8) != 8)
                     {
                         return ErrCode.CMD_ERR;
                     }
-                    if ((ErrCode)BitConverter.ToUInt32(nonce, 0) != ErrCode.CMD_AUTH_REQUEST)
+                    if ((ErrCode)BitConverter.ToUInt32(header, 0) != ErrCode.CMD_AUTH_REQUEST)
                     {
                         return ErrCode.CMD_ERR;
                     }
-                    byte[] nonceData = new byte[BitConverter.ToUInt32(nonce, 4)];
-                    for (int n = 0; n < nonceData.Length;)
+                    byte[] nonce = new byte[BitConverter.ToUInt32(header, 4)];
+                    for (int n = 0; n < nonce.Length;)
                     {
-                        int m = ns.Read(nonceData, n, nonceData.Length - n);
+                        int m = ns.Read(nonce, n, nonce.Length - n);
                         if (m <= 0)
                         {
                             return ErrCode.CMD_ERR;
@@ -749,19 +763,37 @@ namespace EpgTimer
                         n += m;
                     }
 
+                    byte[] origCmd = cmd;
+
                     //サーバー応答の nonce とパスワードから応答パケットを作る
                     HMAC hmac = Settings.Instance.NWPassword.HMAC;
                     int sizeAuthPacket = 8 + hmac.HashSize / 8;
-                    byte[] origCmd = cmd;
+                    if (origCmd.Length > 8)
+                    {
+                        sizeAuthPacket += hmac.HashSize / 8;
+                    }
                     cmd = new byte[sizeAuthPacket + origCmd.Length];
 
                     // 認証応答パケット
-                    //   cmd[ 0～ 4] : CMD2_EPG_SRV_AUTH_REPLY
-                    //   cmd[ 4～ 8] : HMAC size (16 bytes)
-                    //   cmd[ 9～23] : HMAC (16 bytes)
+                    //   cmd[ 0～ 3] : CMD2_EPG_SRV_AUTH_REPLY
+                    //   cmd[ 4～ 7] : HMAC size (= 32 bytes)
+                    //   cmd[ 8～23] : HMAC for header (16 bytes)
+                    //   cmd[24～39] : HMAC for data (16 bytes) if exist;
                     BitConverter.GetBytes((uint)CtrlCmd.CMD2_EPG_SRV_AUTH_REPLY).CopyTo(cmd, 0);
-                    BitConverter.GetBytes(hmac.HashSize / 8).CopyTo(cmd, 4);
-                    hmac.ComputeHash(nonceData).CopyTo(cmd, 8);
+                    BitConverter.GetBytes(sizeAuthPacket - 8).CopyTo(cmd, 4);
+
+                    byte[] nonceHeader = new byte[nonce.Length + 8];
+                    nonce.CopyTo(nonceHeader, 0);
+                    Array.Copy(origCmd, 0, nonceHeader, nonce.Length, 8);                    
+                    hmac.ComputeHash(nonceHeader).CopyTo(cmd, 8);
+
+                    if (origCmd.Length > 8)
+                    {
+                        byte[] nonceData = new byte[nonce.Length + origCmd.Length - 8];
+                        nonce.CopyTo(nonceData, 0);
+                        Array.Copy(origCmd, 8, nonceData, nonce.Length, origCmd.Length - 8);
+                        hmac.ComputeHash(nonceData).CopyTo(cmd, 8 + hmac.HashSize / 8);
+                    }
 
                     // オリジナルのコマンドパケットを認証応答パケットの後ろに追加する
                     origCmd.CopyTo(cmd, sizeAuthPacket);
@@ -815,36 +847,8 @@ namespace EpgTimer
                         // 送信: 認証応答パケットとコマンドパケットをまとめて送る
                         ns.Write(data, 0, data.Length);
 
-                        byte[] head = new byte[8];
-                        uint resParam;
-                        byte[] resData;
-
                         // 受信
-                        try
-                        {
-                            if (ns.Read(head, 0, 8) != 8)
-                            {
-                                return ErrCode.CMD_ERR;
-                            }
-                            resParam = BitConverter.ToUInt32(head, 0);
-                            resData = new byte[BitConverter.ToUInt32(head, 4)];
-                            for (int n = 0; n < resData.Length;)
-                            {
-                                int m = ns.Read(resData, n, resData.Length - n);
-                                if (m <= 0)
-                                {
-                                    return ErrCode.CMD_ERR;
-                                }
-                                n += m;
-                            }
-                            res = new MemoryStream(resData, false);
-                            return Enum.IsDefined(typeof(ErrCode), resParam) ? (ErrCode)resParam : ErrCode.CMD_ERR;
-                        }
-                        catch (IOException)
-                        {
-                            // 認証に失敗するとサーバーから切断されるため Read 中に IOException が発生する
-                            return ErrCode.CMD_ERR;
-                        }
+                        return ReadCmdResponse(ns, ref res);
                     }
                 }
             }

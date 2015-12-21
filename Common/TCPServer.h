@@ -3,6 +3,7 @@
 #include "StringUtil.h"
 #include "CtrlCmdDef.h"
 #include "StructDef.h"
+#include "CryptUtil.h"
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -32,14 +33,29 @@ protected:
 	DWORD m_dwPort;
 	DWORD m_dwResponseTimeout;
 	wstring m_acl;
-	string m_password;
+	CCryptUtil m_hmac;
 
 	BOOL m_stopFlag;
 	HANDLE m_hThread;
 
 	SOCKET m_sock;
 	
+	struct AUTH_INFO {
+		DWORD nonceSize;
+		BYTE *nonceData;
+
+		CMD_STREAM stRes; // CMD2_EPG_SRV_AUTH_REPLY, HMAC size and HMAC data
+
+		AUTH_INFO() : nonceSize(0), nonceData(NULL) {}
+		~AUTH_INFO() { SAFE_DELETE_ARRAY(nonceData); }
+	};
+
 protected:
 	static UINT WINAPI ServerThread(LPVOID pParam);
 
+	BOOL Authenticate(SOCKET sock, AUTH_INFO *auth);
+	BOOL CheckkCmd(DWORD cmd, DWORD size);
+	BOOL ReceiveHeader(SOCKET sock, CMD_STREAM& stCmd, AUTH_INFO* auth = nullptr);
+	BOOL ReceiveData(SOCKET sock, CMD_STREAM& stCmd, AUTH_INFO* auth = nullptr);
+	BOOL SendData(SOCKET sock, CMD_STREAM& stRes);
 };

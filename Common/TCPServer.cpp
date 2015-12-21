@@ -39,10 +39,7 @@ BOOL CTCPServer::StartServer(DWORD dwPort, DWORD dwResponseTimeout, LPCWSTR acl,
 	m_dwPort = dwPort;
 	m_dwResponseTimeout = dwResponseTimeout;
 	m_acl = acl;
-
-	wstring wstr;
-	Decrypt(password, wstr);
-	WtoUTF8(wstr, m_password);
+	m_hmac.Create(password);
 
 	m_sock = socket(AF_INET, SOCK_STREAM, 0);
 	if( m_sock == INVALID_SOCKET ){
@@ -119,7 +116,7 @@ static BOOL TestAcl(struct in_addr addr, wstring acl)
 	}
 }
 
-static BOOL ReceiveHeader(SOCKET sock, CMD_STREAM& stCmd)
+BOOL CTCPServer::ReceiveHeader(SOCKET sock, CMD_STREAM& stCmd, AUTH_INFO* auth)
 {
 	DWORD head[2];
 	int iRet = recv(sock, (char*)head, sizeof(DWORD) * 2, 0);
@@ -129,34 +126,47 @@ static BOOL ReceiveHeader(SOCKET sock, CMD_STREAM& stCmd)
 	stCmd.param = head[0];
 	stCmd.dataSize = head[1];
 	//_OutputDebugString(L"Cmd = %d, size = %d\n", stCmd.param, stCmd.dataSize);
-	return TRUE;
+
+	// Headerの改ざんチェック
+	return auth == nullptr || auth->nonceSize == 0 ||
+		(m_hmac.SelectHash(stCmd.dataSize > 0 ? auth->stRes.dataSize / 2 : auth->stRes.dataSize) &&
+			m_hmac.CalcHmac(auth->nonceData, auth->nonceSize) &&
+			m_hmac.CalcHmac((BYTE*)head, 8) &&
+			m_hmac.CompareHmac(auth->stRes.data));
 }
 
-static BOOL ReceiveData(SOCKET sock, CMD_STREAM& stCmd)
+BOOL CTCPServer::ReceiveData(SOCKET sock, CMD_STREAM& stCmd, AUTH_INFO* auth)
 {
-	if (stCmd.dataSize > 0) {
-		SAFE_DELETE_ARRAY(stCmd.data);
-		stCmd.data = new BYTE[stCmd.dataSize];
-
-		DWORD dwRead = 0;
-		while (dwRead < stCmd.dataSize) {
-			int iRet = recv(sock, (char*)(stCmd.data + dwRead), stCmd.dataSize - dwRead, 0);
-			if (iRet == SOCKET_ERROR) {
-				break;
-			}
-			else if (iRet == 0) {
-				break;
-			}
-			dwRead += iRet;
-		}
-		if (dwRead < stCmd.dataSize) {
-			return FALSE;
-		}
+	if (stCmd.dataSize == 0) {
+		return TRUE;
 	}
-	return TRUE;
+
+	SAFE_DELETE_ARRAY(stCmd.data);
+	stCmd.data = new BYTE[stCmd.dataSize];
+
+	DWORD dwRead = 0;
+	while (dwRead < stCmd.dataSize) {
+		int iRet = recv(sock, (char*)(stCmd.data + dwRead), stCmd.dataSize - dwRead, 0);
+		if (iRet == SOCKET_ERROR) {
+			break;
+		}
+		else if (iRet == 0) {
+			break;
+		}
+		dwRead += iRet;
+	}
+	if (dwRead < stCmd.dataSize) {
+		return FALSE;
+	}
+
+	// Dataの改ざんチェック
+	return auth == nullptr || auth->nonceSize == 0 ||
+		(m_hmac.CalcHmac(auth->nonceData, auth->nonceSize) &&
+			m_hmac.CalcHmac((BYTE*)stCmd.data, stCmd.dataSize) &&
+			m_hmac.CompareHmac(auth->stRes.data + m_hmac.GetHashSize()));
 }
 
-static BOOL SendData(SOCKET sock, CMD_STREAM& stRes)
+BOOL CTCPServer::SendData(SOCKET sock, CMD_STREAM& stRes)
 {
 	DWORD head[2] = { stRes.param, stRes.dataSize };
 	int iRet = send(sock, (char*)head, sizeof(DWORD) * 2, 0);
@@ -175,13 +185,14 @@ static BOOL SendData(SOCKET sock, CMD_STREAM& stRes)
 	return TRUE;
 }
 
- BOOL Authenticate(SOCKET sock, const string& password)
+BOOL CTCPServer::Authenticate(SOCKET sock, AUTH_INFO *auth)
 {
 	// パスワードが設定されていない場合は認証処理を行わない
-	if (password.empty()) {
+	if (!m_hmac.IsInitialized()) {
 		return TRUE;
 	}
 
+	// AUTH_REQUEST コマンドのみ受け付ける
 	CMD_STREAM stCmd;
 	if (ReceiveHeader(sock, stCmd) == FALSE ||
 		stCmd.param != CMD2_EPG_SRV_AUTH_REQUEST ||
@@ -189,29 +200,20 @@ static BOOL SendData(SOCKET sock, CMD_STREAM& stRes)
 		return FALSE;
 	}
 
-#if 1
-	// nonce を生成する (軽量版)
-	// 普通、現在時刻とランダム値を繋げたりするが、
-	// QueryPerformanceCounter が進む前に nonce を再生成することはなく 64bit が1周するまでは完全にユニーク
-	// であることから、ここでは QueryPerformanceCounter を採用してみる。
-	DWORD size = sizeof(LARGE_INTEGER);
-	BYTE *msg = new BYTE[size];
-	QueryPerformanceCounter((LARGE_INTEGER*)msg);
-#else
-	// nonce を生成する (CryptGenRandom版)
-	DWORD size = 20; // 何バイトでもいいけど長さにあまり意味はない (ユニークであれば十分)
-	BYTE *msg = new BYTE[size];
-	GetRandom(msg, size);
-#endif
+	// nonce を生成する
+	auth->nonceSize = 8; // 何バイトでもいいけど長さにあまり意味はない (ユニークであれば十分)
+	auth->nonceData = new BYTE[auth->nonceSize];
+	m_hmac.GetRandom(auth->nonceData, auth->nonceSize);
 
 	// 認証要求として、nonce をクライアントへ送る
 	CMD_STREAM stAuth;
 	stAuth.param = CMD_AUTH_REQUEST;
-	stAuth.data = msg;
-	stAuth.dataSize = size;
+	stAuth.data = auth->nonceData;
+	stAuth.dataSize = auth->nonceSize;
 	if (SendData(sock, stAuth) == FALSE) {
 		return FALSE;
 	}
+	stAuth.data = NULL; // nonceData を delete しない
 
 	// 受信待機
 	fd_set ready;
@@ -227,42 +229,17 @@ static BOOL SendData(SOCKET sock, CMD_STREAM& stRes)
 		return FALSE;
 	}
 
-	// レスポンスを受け取る
-	CMD_STREAM stRes;
-	if (ReceiveHeader(sock, stRes) == FALSE ||
-		stRes.param != CMD2_EPG_SRV_AUTH_REPLY ||
-		stRes.dataSize > 64) { // HMAC-SHA512 以上のサイズの応答は受け付けない
+	// AUTH_REPLY レスポンスを受け取る
+	if (ReceiveHeader(sock, auth->stRes) == FALSE ||
+		auth->stRes.param != CMD2_EPG_SRV_AUTH_REPLY ||
+		auth->stRes.dataSize > 64 * 2) { // HMAC-SHA512 以上のサイズの応答は受け付けない
+		_OutputDebugString(L"Invalid authentication replay : param = %d, size = %d\r\n", auth->stRes.param, auth->stRes.dataSize);
 		return FALSE;
 	}
-	ReceiveData(sock, stRes);
-
-	BYTE *hmacOut = NULL;
-	DWORD szOut = 0;
-	BOOL ret = FALSE;
-	switch (stRes.dataSize)
-	{
-	case 128 / 8:  // HMAC-MD5 (今現在 HMAC-MD5 で十分な強度があることが知られている)
-		ret = HMAC(CALG_MD5, (BYTE*)password.data(), (DWORD)password.size(), msg, size, &hmacOut, &szOut);
-		break;
-	case 160 / 8: // HMAC-SHA1
-		ret = HMAC(CALG_SHA1, (BYTE*)password.data(), (DWORD)password.size(), msg, size, &hmacOut, &szOut);
-		break;
-	case 256 / 8: // HMAC-SHA256
-		ret = HMAC(CALG_SHA_256, (BYTE*)password.data(), (DWORD)password.size(), msg, size, &hmacOut, &szOut);
-		break;
-	case 384 / 8: // HMAC-SHA384
-		ret = HMAC(CALG_SHA_384, (BYTE*)password.data(), (DWORD)password.size(), msg, size, &hmacOut, &szOut);
-		break;
-	case 512 / 8: // HMAC-SHA512
-		ret = HMAC(CALG_SHA_512, (BYTE*)password.data(), (DWORD)password.size(), msg, size, &hmacOut, &szOut);
-		break;
-	}
-	ret = ret && (szOut == stRes.dataSize && memcmp(hmacOut, stRes.data, szOut) == 0);
-	delete[] hmacOut;
-	return ret;
+	return ReceiveData(sock, auth->stRes);
 }
 
-BOOL CheckkCmd(DWORD cmd, DWORD size)
+BOOL CTCPServer::CheckkCmd(DWORD cmd, DWORD size)
 {
 	// size が cmd に対し適正か確認
 
@@ -345,76 +322,75 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 			}else if( TestAcl(client.sin_addr, pSys->m_acl) == FALSE ){
 				_OutputDebugString(L"Deny from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
 				closesocket(sock);
+				continue;
 			}else if( (itr_bl = blacklist.find(client.sin_addr.S_un.S_addr)) != blacklist.end() && itr_bl->second.dwCount >= 5 ){
 				_OutputDebugString(L"Delay access from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
 				if( GetTickCount() - itr_bl->second.dwTick < 30*1000 ){
 					itr_bl->second.dwTick = GetTickCount();
 					closesocket(sock);
+					continue;
 				}else{
 					blacklist.erase(itr_bl->first);
 				}
-			}else{
-				for(;;){
-					CMD_STREAM stCmd;
-					CMD_STREAM stRes;
+			}
+			for(;;){
+				AUTH_INFO auth;
+				CMD_STREAM stCmd;
+				CMD_STREAM stRes;
 
-					if( Authenticate(sock, pSys->m_password) == FALSE ){
-						_OutputDebugString(L"Authentication error from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
-						blacklist[client.sin_addr.S_un.S_addr].dwCount++;
-						blacklist[client.sin_addr.S_un.S_addr].dwTick = GetTickCount();
-						break;
-					}
+				if( pSys->Authenticate(sock, &auth) == FALSE ||
+					pSys->ReceiveHeader(sock, stCmd, &auth) == FALSE ||
+					pSys->CheckkCmd(stCmd.param, stCmd.dataSize) == FALSE ||
+					pSys->ReceiveData(sock, stCmd, &auth) == FALSE ){
+					_OutputDebugString(L"Authentication error from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
+					blacklist[client.sin_addr.S_un.S_addr].dwCount++;
+					blacklist[client.sin_addr.S_un.S_addr].dwTick = GetTickCount();
+					break;
+				}
 
-					if( ReceiveHeader(sock, stCmd) == FALSE || 
-						CheckkCmd(stCmd.param, stCmd.dataSize) == FALSE ||
-						ReceiveData(sock, stCmd) == FALSE ){
-						break;
-					}
+				if( stCmd.param == CMD2_EPG_SRV_REGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_UNREGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_ISREGIST_GUI_TCP ){
+					string ip = inet_ntoa(client.sin_addr);
 
-					if( stCmd.param == CMD2_EPG_SRV_REGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_UNREGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_ISREGIST_GUI_TCP ){
-						string ip = inet_ntoa(client.sin_addr);
+					REGIST_TCP_INFO setParam;
+					AtoW(ip, setParam.ip);
+					ReadVALUE(&setParam.port, stCmd.data, stCmd.dataSize, NULL);
 
-						REGIST_TCP_INFO setParam;
-						AtoW(ip, setParam.ip);
-						ReadVALUE(&setParam.port, stCmd.data, stCmd.dataSize, NULL);
+					SAFE_DELETE_ARRAY(stCmd.data);
+					stCmd.data = NewWriteVALUE(&setParam, stCmd.dataSize);
+				}
 
-						SAFE_DELETE_ARRAY(stCmd.data);
-						stCmd.data = NewWriteVALUE(&setParam, stCmd.dataSize);
-					}
-
-					pSys->m_pCmdProc(pSys->m_pParam, &stCmd, &stRes);
-					if( stRes.param == CMD_NO_RES ){
-						if( stCmd.param == CMD2_EPG_SRV_GET_STATUS_NOTIFY2 ){
-							//保留可能なコマンドは応答待ちリストに移動
-							if( waitList.size() < FD_SETSIZE - 1 ){
-								WAIT_INFO waitInfo;
-								waitInfo.sock = sock;
-								waitInfo.cmd = new CMD_STREAM;
-								waitInfo.cmd->param = stCmd.param;
-								waitInfo.cmd->dataSize = stCmd.dataSize;
-								waitInfo.cmd->data = stCmd.data;
-								waitInfo.tick = GetTickCount();
-								waitList.push_back(waitInfo);
-								sock = INVALID_SOCKET;
-								stCmd.data = NULL;
-							}
+				pSys->m_pCmdProc(pSys->m_pParam, &stCmd, &stRes);
+				if( stRes.param == CMD_NO_RES ){
+					if( stCmd.param == CMD2_EPG_SRV_GET_STATUS_NOTIFY2 ){
+						//保留可能なコマンドは応答待ちリストに移動
+						if( waitList.size() < FD_SETSIZE - 1 ){
+							WAIT_INFO waitInfo;
+							waitInfo.sock = sock;
+							waitInfo.cmd = new CMD_STREAM;
+							waitInfo.cmd->param = stCmd.param;
+							waitInfo.cmd->dataSize = stCmd.dataSize;
+							waitInfo.cmd->data = stCmd.data;
+							waitInfo.tick = GetTickCount();
+							waitList.push_back(waitInfo);
+							sock = INVALID_SOCKET;
+							stCmd.data = NULL;
 						}
-						break;
 					}
-
-					if( SendData(sock, stRes) == FALSE ){
-						break;
-					}
-
-					if( stRes.param != CMD_NEXT && stRes.param != OLD_CMD_NEXT ){
-						//Enum用の繰り返しではない
-						break;
-					}
+					break;
 				}
-				if( sock != INVALID_SOCKET ){
-					shutdown(sock, SD_BOTH);
-					closesocket(sock);
+
+				if( pSys->SendData(sock, stRes) == FALSE ){
+					break;
 				}
+
+				if( stRes.param != CMD_NEXT && stRes.param != OLD_CMD_NEXT ){
+					//Enum用の繰り返しではない
+					break;
+				}
+			}
+			if( sock != INVALID_SOCKET ){
+				shutdown(sock, SD_BOTH);
+				closesocket(sock);
 			}
 		}
 	}
