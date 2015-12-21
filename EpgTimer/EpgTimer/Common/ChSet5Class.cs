@@ -7,15 +7,14 @@ namespace EpgTimer
 {
     class ChSet5
     {
-        private bool _loaded;
         private Dictionary<UInt64, ChSet5Item> _chList;
         public Dictionary<UInt64, ChSet5Item> ChList
         {
             get
             {
-                if (_loaded == false)
+                if (_chList == null)
                 {
-                    _loaded = LoadFile();
+                    _chList = LoadFile();
                 }
                 return _chList;
             }
@@ -35,7 +34,6 @@ namespace EpgTimer
         public ChSet5()
         {
             _instance = null;
-            _loaded = false;
             _chList = null;
         }
 
@@ -68,18 +66,11 @@ namespace EpgTimer
             return IsDttv(ONID) == false && IsBS(ONID) == false && IsCS(ONID) == false;
         }
 
-        public static bool LoadFile()
+        private Dictionary<UInt64, ChSet5Item> LoadFile()
         {
             try
             {
-                if (Instance._chList == null)
-                {
-                    Instance._chList = new Dictionary<UInt64, ChSet5Item>();
-                }
-                else
-                {
-                    Instance._chList.Clear();
-                }
+                Dictionary<UInt64, ChSet5Item> chlist = new Dictionary<UInt64, ChSet5Item>();
 
                 // 直接ファイルを読まずに EpgTimerSrv.exe に問い合わせる
                 byte[] binData;
@@ -113,20 +104,21 @@ namespace EpgTimer
                             finally
                             {
                                 UInt64 key = item.Key;
-                                Instance._chList.Add(key, item);
+                                chlist.Add(key, item);
                             }
                         }
                     }
 
                     reader.Close();
                 }
-
+                HasChanged = false;
+                return chlist;
             }
             catch
             {
-                return false;
+                HasChanged = false;
+                return new Dictionary<UInt64, ChSet5Item>();
             }
-            return true;
         }
 
         public static bool SaveFile()
@@ -138,7 +130,7 @@ namespace EpgTimer
                     return false;
                 }
 
-                if (Instance.ChList != null)
+                if (Instance.HasChanged && Instance.ChList != null)
                 {
                     string output = "";
                     foreach (ChSet5Item info in Instance.ChList.Values)
@@ -167,6 +159,7 @@ namespace EpgTimer
                         }
                     }
                 }
+                Instance.HasChanged = false;
             }
             catch
             {
@@ -174,23 +167,80 @@ namespace EpgTimer
             }
             return true;
         }
+
+        public static void Clear()
+        {
+            Instance._chList = null;
+        }
+        public bool HasChanged { get; set; }
     }
 
     public class ChSet5Item
     {
         public ChSet5Item() { }
 
+        private UInt16 onid;
+        private UInt16 tsid;
+        private UInt16 sid;
+        private UInt16 serviceType;
+        private Byte partialFlag;
+        private String serviceName;
+        private String networkName;
+        private Byte epgCapFlag;
+        private Byte searchFlag;
+        private Byte remoconID;
+
         public UInt64 Key { get { return CommonManager.Create64Key(ONID, TSID, SID); } }
-        public UInt16 ONID { get; set; }
-        public UInt16 TSID { get; set; }
-        public UInt16 SID { get; set; }
-        public UInt16 ServiceType { get; set; }
-        public Byte PartialFlag { get; set; }
-        public String ServiceName { get; set; }
-        public String NetworkName { get; set; }
-        public Byte EpgCapFlag { get; set; }
-        public Byte SearchFlag { get; set; }
-        public Byte RemoconID { get; set; }
+        public UInt16 ONID
+        {
+            get { return onid; }
+            set { ChSet5.Instance.HasChanged |= onid != value; onid = value; }
+        }
+        public UInt16 TSID
+        {
+            get { return tsid; }
+            set { ChSet5.Instance.HasChanged |= tsid != value; tsid = value; }
+        }
+        public UInt16 SID
+        {
+            get { return sid; }
+            set { ChSet5.Instance.HasChanged |= sid != value; sid = value; }
+        }
+        public UInt16 ServiceType
+        {
+            get { return serviceType; }
+            set { ChSet5.Instance.HasChanged |= serviceType != value; serviceType = value; }
+        }
+        public Byte PartialFlag
+        {
+            get { return partialFlag; }
+            set { ChSet5.Instance.HasChanged |= partialFlag != value; partialFlag = value; }
+        }
+        public String ServiceName
+        {
+            get { return serviceName; }
+            set { ChSet5.Instance.HasChanged |= serviceName != value; serviceName = value; }
+        }
+        public String NetworkName
+        {
+            get { return networkName; }
+            set { ChSet5.Instance.HasChanged |= networkName != value; networkName = value; }
+        }
+        public Byte EpgCapFlag
+        {
+            get { return epgCapFlag; }
+            set { ChSet5.Instance.HasChanged |= epgCapFlag != value; epgCapFlag = value; }
+        }
+        public Byte SearchFlag
+        {
+            get { return searchFlag; }
+            set { ChSet5.Instance.HasChanged |= searchFlag != value; searchFlag = value; }
+        }
+        public Byte RemoconID
+        {
+            get { return remoconID; }
+            set { ChSet5.Instance.HasChanged |= remoconID != value; remoconID = value; }
+        }
 
         public bool IsVideo { get { return ChSet5.IsVideo(ServiceType); } }
         public bool IsDttv { get { return ChSet5.IsDttv(ONID); } }

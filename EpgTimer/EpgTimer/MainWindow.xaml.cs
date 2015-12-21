@@ -550,7 +550,7 @@ namespace EpgTimer
 
             if (CommonManager.Instance.IsConnected)
             {
-                ChSet5.LoadFile();
+                ChSet5.Clear();
 
                 if (CommonManager.Instance.NWMode)
                 {

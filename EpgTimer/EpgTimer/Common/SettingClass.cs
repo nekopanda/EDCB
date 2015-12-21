@@ -130,7 +130,7 @@ namespace EpgTimer
             //SendIniCopy("ChSet5.txt");
 
             Settings.UpdateDefRecSetting();
-            ChSet5.LoadFile();
+            ChSet5.Clear();
         }
 
         public static bool CanReadInifile { get { return CommonManager.Instance.NW.IsConnected == false || IniSetting.Instance.CanReadInifile == true; } }
