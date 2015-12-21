@@ -1616,6 +1616,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			resParam->param = CMD_ERR;
 			wstring val;
 			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL)) {
+				bool needToUpdate = false;
 				wstring path;
 				wstring section;
 				wstring key;
@@ -1693,9 +1694,11 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 								if (!value.empty())
 									break;
 								WritePrivateProfileStringW(section.c_str(), key.c_str()+1, NULL, path.c_str());
+								needToUpdate = true;
 							}
 							else {
 								WritePrivateProfileStringW(section.c_str(), key.c_str(), value.c_str(), path.c_str());
+								needToUpdate = true;
 							}
 						}
 						else {
@@ -1717,9 +1720,12 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 							DWORD dwWrite;
 							WriteFile(hFile, text[0].c_str(), (DWORD)text[0].length(), &dwWrite, NULL);
 							CloseHandle(hFile);
+							needToUpdate = true;
 						}
 					}
-					sys->ReloadSetting();
+					if (needToUpdate) {
+						sys->ReloadSetting();
+					}
 					resParam->param = CMD_SUCCESS;
 				}
 			}
