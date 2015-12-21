@@ -91,14 +91,6 @@ namespace EpgTimer
 
             InitializeComponent();
 
-            // Icon化起動すると Windows_Loaded イベントが来ないので
-            // InitializeComponent 後に ConnectCmd しておく。
-            // 多重起動時は自動接続しない
-            if (firstInstance && (Settings.Instance.NWMode == false || Settings.Instance.WakeReconnectNW == true))
-            {
-                ConnectCmd(false);
-            }
-
             initExe = true;
 
             try
@@ -106,6 +98,13 @@ namespace EpgTimer
                 // 多重起動時は最小化しない
                 if (firstInstance && Settings.Instance.WakeMin == true)
                 {
+                    // Icon化起動すると Windows_Loaded イベントが来ないので
+                    // InitializeComponent 後に ConnectCmd しておく。
+                    if (Settings.Instance.NWMode == false || Settings.Instance.WakeReconnectNW == true)
+                    {
+                        ConnectCmd(false);
+                    }
+
                     if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
                     {
                         this.Visibility = Visibility.Hidden;
@@ -493,13 +492,10 @@ namespace EpgTimer
                     pipeServer.StartServer(pipeEventName, pipeName, (c, r) => OutsideCmdCallback(c, r, false));
 
                     ErrCode err = ErrCode.CMD_SUCCESS;
-                    int j = 0;
-                    do
+                    for (int i = 0; i < 150 && (err = cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id)) != ErrCode.CMD_SUCCESS; i++)
                     {
-                        Thread.Sleep(300);
-                        err = cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id);
+                        Thread.Sleep(100);
                     }
-                    while (j++ < 50 && err != ErrCode.CMD_SUCCESS);
                     CommonManager.Instance.IsConnected = (err == ErrCode.CMD_SUCCESS);
                 }
                 else
@@ -605,9 +601,12 @@ namespace EpgTimer
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if ((Settings.Instance.NWMode == true && Settings.Instance.WakeReconnectNW == false) || CommonManager.Instance.IsConnected == false)
+            if (CommonManager.Instance.IsConnected == false)
             {
-                ConnectCmd(true);
+                if ((Settings.Instance.NWMode == true && Settings.Instance.WakeReconnectNW == false) || ConnectCmd(false) == false)
+                {
+                    ConnectCmd(true);
+                }
             }
         }
 
