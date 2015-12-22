@@ -21,7 +21,7 @@
             <GradientStop Color="#CDCDCD" Offset="1"/>
         </LinearGradientBrush>
         <SolidColorBrush x:Key="ButtonNormalBorder" Color="#FF707070"/>
-        <Style TargetType="{x:Type Button}">
+        <Style x:Key="ButtonStyle1" TargetType="{x:Type Button}">
             <Setter Property="FocusVisualStyle" Value="{StaticResource ButtonFocusVisual}"/>
             <Setter Property="Background" Value="{StaticResource ButtonNormalBackground}"/>
             <Setter Property="BorderBrush" Value="{StaticResource ButtonNormalBorder}"/>
@@ -51,7 +51,5 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style TargetType="{x:Type ListBoxItem}" />
-        <Style TargetType="{x:Type ListViewItem}" />
     </Application.Resources>
 </Application>
