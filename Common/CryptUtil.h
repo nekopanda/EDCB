@@ -2,8 +2,7 @@
 
 #include <wincrypt.h>
 
-// HMAC の全アルゴリズムで同じ ipad, opad にしておくためパスワードの長さを64以下としておく。
-#define MAX_PASSWORD_LENGTH  64 
+#define MAX_PASSWORD_LENGTH  64
 
 class CCryptUtil
 {
