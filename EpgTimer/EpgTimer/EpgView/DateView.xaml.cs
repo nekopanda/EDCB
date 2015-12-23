@@ -24,7 +24,6 @@ namespace EpgTimer.EpgView
         public DateView()
         {
             InitializeComponent();
-            this.Resources = App.Current.Resources;//設定してやらないとリソースが繋がらない。
         }
 
         public void ClearInfo()
@@ -76,6 +75,7 @@ namespace EpgTimer.EpgView
 
                     itemTime = itemTime.AddDays(1);
                 }
+                CommonManager.Instance.VUtil.SetButtonStyle1(this);
             }
             catch (Exception ex)
             {

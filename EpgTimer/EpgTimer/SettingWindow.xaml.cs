@@ -23,6 +23,7 @@ namespace EpgTimer
         public SettingWindow()
         {
             InitializeComponent();
+            CommonManager.Instance.VUtil.SetButtonStyle1(this);
         }
 
         private void button_OK_Click(object sender, RoutedEventArgs e)

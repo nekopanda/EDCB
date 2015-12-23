@@ -15,6 +15,8 @@ namespace EpgTimer
         public EpgDataViewSettingWindow()
         {
             InitializeComponent();
+            CommonManager.Instance.VUtil.SetButtonStyle1(this);
+
             checkBox_tryEpgSetting.Visibility = Visibility.Hidden;
         }
 

@@ -20,6 +20,7 @@ namespace EpgTimer
         public RecFolderWindow()
         {
             InitializeComponent();
+            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             if (CommonManager.Instance.IsConnected == true)
             {

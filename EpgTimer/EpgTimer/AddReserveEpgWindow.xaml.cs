@@ -19,6 +19,7 @@ namespace EpgTimer
         public AddReserveEpgWindow()
         {
             InitializeComponent();
+            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             //コマンドの登録
             this.CommandBindings.Add(new CommandBinding(EpgCmds.Cancel, (sender, e) => DialogResult = false));

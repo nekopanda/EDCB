@@ -22,6 +22,7 @@ namespace EpgTimer
         public ConnectWindow()
         {
             InitializeComponent();
+            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             try
             {

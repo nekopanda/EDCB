@@ -419,6 +419,47 @@ namespace EpgTimer
                 }
             }
         }
+
+        public void WalkLogicalTree(DependencyObject obj, Func<object, bool> func)
+        {
+            if (func(obj) == false)
+            {
+                foreach (var child in LogicalTreeHelper.GetChildren(obj))
+                {
+                    if (child is DependencyObject)
+                    {
+                        WalkLogicalTree((DependencyObject)child, func);
+                    }
+                }
+            }
+        }
+        public void SetButtonStyle1(Control this_)
+        {
+            Style style = null;
+            if (Settings.Instance.NoStyle == 0)
+            {
+                ResourceDictionary rd = new ResourceDictionary();
+                rd.MergedDictionaries.Add(
+                    Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
+                    //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
+                    );
+                this_.Resources = rd;
+                style = App.Current.Resources["ButtonStyle1"] as Style;
+            }
+
+            WalkLogicalTree(this_, (obj) => {
+                if (obj is Button)
+                {
+                    Button btn = obj as Button;
+                    if (btn.Style == null || btn.Style.BasedOn == null)
+                    {
+                        btn.Style = style;
+                    }
+                    return true;
+                }
+                return false;
+            });
+        }
     }
 
     public static class ViewUtilEx

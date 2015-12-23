@@ -48,6 +48,7 @@ namespace EpgTimer.Setting
         public SetAppView()
         {
             InitializeComponent();
+            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             try
             {
@@ -94,20 +95,20 @@ namespace EpgTimer.Setting
                 int recEndMode = IniFileHandler.GetPrivateProfileInt("SET", "RecEndMode", 2, SettingPath.TimerSrvIniPath);
                 switch (recEndMode)
                 {
-                    case 0:
-                        radioButton_none.IsChecked = true;
-                        break;
-                    case 1:
-                        radioButton_standby.IsChecked = true;
-                        break;
-                    case 2:
-                        radioButton_suspend.IsChecked = true;
-                        break;
-                    case 3:
-                        radioButton_shutdown.IsChecked = true;
-                        break;
-                    default:
-                        break;
+                case 0:
+                    radioButton_none.IsChecked = true;
+                    break;
+                case 1:
+                    radioButton_standby.IsChecked = true;
+                    break;
+                case 2:
+                    radioButton_suspend.IsChecked = true;
+                    break;
+                case 3:
+                    radioButton_shutdown.IsChecked = true;
+                    break;
+                default:
+                    break;
                 }
                 if (IniFileHandler.GetPrivateProfileInt("SET", "Reboot", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
@@ -732,7 +733,7 @@ namespace EpgTimer.Setting
             button_btnUp.Click += new RoutedEventHandler(bxb.button_up_Click);
             button_btnDown.Click += new RoutedEventHandler(bxb.button_down_Click);
             button_btnAdd.Click += new RoutedEventHandler((sender, e) => button_Add(bxb, buttonItem));
-            button_btnDel.Click += new RoutedEventHandler((sender, e) => button_Dell(bxb, bxt, buttonItem));
+            button_btnDel.Click += new RoutedEventHandler((sender, e) => button_Del(bxb, bxt, buttonItem));
             bxb.sourceBoxKeyEnable(listBox_itemBtn, (sender, e) => button_btnAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
             bxb.targetBoxKeyEnable(listBox_viewBtn, (sender, e) => button_btnDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
             bxb.doubleClickSetter(listBox_itemBtn, (sender, e) => button_btnAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
@@ -745,7 +746,7 @@ namespace EpgTimer.Setting
             button_taskUp.Click += new RoutedEventHandler(bxt.button_up_Click);
             button_taskDown.Click += new RoutedEventHandler(bxt.button_down_Click);
             button_taskAdd.Click += new RoutedEventHandler((sender, e) => button_Add(bxt, taskItem));
-            button_taskDel.Click += new RoutedEventHandler((sender, e) => button_Dell(bxt, bxb, taskItem));
+            button_taskDel.Click += new RoutedEventHandler((sender, e) => button_Del(bxt, bxb, taskItem));
             bxt.sourceBoxKeyEnable(listBox_itemTask, (sender, e) => button_taskAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
             bxt.targetBoxKeyEnable(listBox_viewTask, (sender, e) => button_taskDel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
             bxt.doubleClickSetter(listBox_itemTask, (sender, e) => button_taskAdd.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
@@ -796,7 +797,7 @@ namespace EpgTimer.Setting
                 bx.SourceBox.SelectedIndex = pos - 1;//順序がヘンだが、ENTERの場合はこの後に+1処理が入る模様
             }
         }
-        private void button_Dell(BoxExchangeEditor bx, BoxExchangeEditor bx_other, List<string> src)
+        private void button_Del(BoxExchangeEditor bx, BoxExchangeEditor bx_other, List<string> src)
         {
             if (bx.TargetBox.SelectedItem == null) return;
             //

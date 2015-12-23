@@ -29,6 +29,8 @@ namespace EpgTimer
         public SearchKeyDescView()
         {
             InitializeComponent();
+            CommonManager.Instance.VUtil.SetButtonStyle1(this);
+
             try
             {
                 foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)

@@ -83,6 +83,7 @@ namespace EpgTimer
         public ChgReserveWindow()
         {
             InitializeComponent();
+            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             this.DataContext = this;
 

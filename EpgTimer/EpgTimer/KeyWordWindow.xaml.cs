@@ -23,6 +23,7 @@ namespace EpgTimer
         public KeyWordWindow()
         {
             InitializeComponent();
+            CommonManager.Instance.VUtil.SetButtonStyle1(this);
         }
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {

@@ -56,23 +56,6 @@ namespace EpgTimer
             CommonManager.Instance.MM.ReloadWorkData();
             CommonManager.Instance.ReloadCustContentColorList();
 
-            if (Settings.Instance.NoStyle == 1)
-            {
-                App.Current.Resources = new ResourceDictionary();
-            }
-            else
-            {
-                //EpgTimerはボタンだけ独自テーマだけど、どういう経緯があったのだろう？
-                App.Current.Resources.MergedDictionaries.Add(
-                    //Application.LoadComponent(new Uri("/PresentationFramework.AeroLite, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aerolite.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Aero2, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero2.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Royale, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/royale.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Luna, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/luna.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/classic.xaml", UriKind.Relative)) as ResourceDictionary
-                    );
-            }
-
             mutex = new System.Threading.Mutex(false, "Global\\EpgTimer_Bon2");
             firstInstance = mutex.WaitOne(0, false);
             if (!firstInstance)
@@ -185,6 +168,8 @@ namespace EpgTimer
                 {
                     ShowInfoWindow();
                 }
+
+                CommonManager.Instance.VUtil.SetButtonStyle1(this);
             }
             catch (Exception ex)
             {

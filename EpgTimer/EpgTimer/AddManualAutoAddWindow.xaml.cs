@@ -28,9 +28,11 @@ namespace EpgTimer
         public AddManualAutoAddWindow()
         {
             InitializeComponent();
+            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             try
             {
+
                 //コマンドの登録
                 this.CommandBindings.Add(new CommandBinding(EpgCmds.Cancel, (sender, e) => DialogResult = false));
                 this.CommandBindings.Add(new CommandBinding(EpgCmds.AddInDialog, button_add_click));

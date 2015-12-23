@@ -21,6 +21,7 @@ namespace EpgTimer.Setting
         public SetDefRecSettingWindow()
         {
             InitializeComponent();
+            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             if (CommonManager.Instance.NWMode == true)
             {

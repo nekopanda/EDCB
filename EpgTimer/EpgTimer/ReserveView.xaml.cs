@@ -21,6 +21,7 @@ namespace EpgTimer
         public ReserveView()
         {
             InitializeComponent();
+            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             try
             {

@@ -21,6 +21,7 @@ namespace EpgTimer
         public RecInfoView()
         {
             InitializeComponent();
+            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             try
             {

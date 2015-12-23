@@ -40,6 +40,7 @@ namespace EpgTimer
         public SearchWindow()
         {
             InitializeComponent();
+            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             try
             {

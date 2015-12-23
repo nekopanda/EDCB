@@ -23,6 +23,7 @@ namespace EpgTimer
         public RecInfoDescWindow()
         {
             InitializeComponent();
+            CommonManager.Instance.VUtil.SetButtonStyle1(this);
         }
 
         public void SetRecInfo(RecFileInfo info)
