@@ -255,6 +255,11 @@ namespace EpgTimer
             if (pos >= 0)
             {
                 ConnectionList[pos] = newitem;
+                int DefPresetPos = ConnectionList.ToList().FindIndex(item => item.Name == DefPresetStr);
+                if (DefPresetPos >= 0 && ConnectionList[DefPresetPos].EqualsTo(newitem, true))
+                {
+                    ConnectionList.RemoveAt(DefPresetPos);
+                }
                 UpdateNWPreset();
                 listView_List.SelectedIndex = pos;
             }
