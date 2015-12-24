@@ -1076,7 +1076,6 @@ namespace EpgTimer
                     }
                     else
                     {
-                        pResParam.uiParam = (uint)ErrCode.CMD_SUCCESS;
                         this.Visibility = System.Windows.Visibility.Visible;
                     }
                     break;

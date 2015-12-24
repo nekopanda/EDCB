@@ -29,7 +29,7 @@ namespace EpgTimer.Setting
             }
         }
 
-        public void SetSettingMode(string title = "", int tab = 0)
+        public void SetSettingMode(string title = "")
         {
             Title = (title == "") ? "録画設定変更" : title;
             button_cancel.Visibility = Visibility.Visible;

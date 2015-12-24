@@ -23,6 +23,16 @@ namespace EpgTimer
             this.RecInfo = item;
         }
 
+        public static string GetValuePropertyName(string key)
+        {
+            switch (key)
+            {
+                case "StartTime": return "StartTimeValue";
+                case "ProgramDuration": return "ProgramDurationValue";
+                default: return key;
+            }
+        }
+
         public bool IsProtect
         {
             set
@@ -56,13 +66,22 @@ namespace EpgTimer
                 return RecInfo.ServiceName;
             }
         }
-        public TimeSpan ProgramDuration
+        public String ProgramDuration
         {
             get
             {
-                if (RecInfo == null) return new TimeSpan();
+                if (RecInfo == null) return "";
                 //
-                return TimeSpan.FromSeconds(RecInfo.DurationSecond);
+                return CommonManager.ConvertDurationText(RecInfo.DurationSecond, Settings.Instance.RecInfoNoDurSecond);
+            }
+        }
+        public UInt32 ProgramDurationValue
+        {
+            get
+            {
+                if (RecInfo == null) return UInt32.MinValue;
+                //
+                return RecInfo.DurationSecond;
             }
         }
         public String StartTime
@@ -71,8 +90,16 @@ namespace EpgTimer
             {
                 if (RecInfo == null) return "";
                 //
-                DateTime endTime = RecInfo.StartTime + TimeSpan.FromSeconds(RecInfo.DurationSecond);
-                return RecInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ") + endTime.ToString("HH:mm:ss");
+                return CommonManager.ConvertTimeText(RecInfo.StartTime, RecInfo.DurationSecond, Settings.Instance.RecInfoNoYear, Settings.Instance.RecInfoNoSecond);
+            }
+        }
+        public DateTime StartTimeValue
+        {
+            get
+            {
+                if (RecInfo == null) return new DateTime();
+                //
+                return RecInfo.StartTime;
             }
         }
         public String Drops
@@ -167,13 +194,13 @@ namespace EpgTimer
                     long scrambles = Settings.Instance.RecinfoErrCriticalDrops == false ? RecInfo.Scrambles : RecInfo.ScramblesCritical;
 
                     if (Settings.Instance.RecInfoDropErrIgnore >= 0 && drops > Settings.Instance.RecInfoDropErrIgnore
-                        || RecInfo.RecStatusBasic() == RecEndStatusBasic.ERR)
+                        || RecInfo.RecStatusBasic == RecEndStatusBasic.ERR)
                     {
                         return CommonManager.Instance.RecEndErrBackColor;
                     }
                     if (Settings.Instance.RecInfoDropWrnIgnore >= 0 && drops > Settings.Instance.RecInfoDropWrnIgnore
                         || Settings.Instance.RecInfoScrambleIgnore >= 0 && scrambles > Settings.Instance.RecInfoScrambleIgnore
-                        || RecInfo.RecStatusBasic() == RecEndStatusBasic.WARN)
+                        || RecInfo.RecStatusBasic == RecEndStatusBasic.WARN)
                     {
                         return CommonManager.Instance.RecEndWarBackColor;
                     }
@@ -197,9 +224,7 @@ namespace EpgTimer
                 String view = "";
                 if (RecInfo != null)
                 {
-                    view = RecInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ");
-                    DateTime endTime = RecInfo.StartTime + TimeSpan.FromSeconds(RecInfo.DurationSecond);
-                    view += endTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss") + "\r\n";
+                    view = CommonManager.ConvertTimeText(RecInfo.StartTime, RecInfo.DurationSecond, false, false, false) + "\r\n";
 
                     view += ServiceName;
                     view += "(" + CommonManager.ConvertNetworkNameText(RecInfo.OriginalNetworkID) + ")" + "\r\n";

@@ -431,23 +431,28 @@
                 <GroupBox Header="各種設定" Margin="12,4">
                     <StackPanel>
                         <CheckBox Name="checkBox_playDClick" Content="録画済み一覧のダブルクリックで再生を行う" Margin="6,12,0,0"/>
-                        <GroupBox Header="ドロップ・スクランブル未解除" Margin="6,8">
+                        <StackPanel Margin="6,2" Orientation="Horizontal">
+                            <Label Content="リスト表示で省略する" />
+                            <CheckBox Name="checkBox_recNoYear" Content="'年'" Margin="4,0" VerticalAlignment="Center" />
+                            <CheckBox Name="checkBox_recNoSecond" Content="'秒'" Margin="4,0" VerticalAlignment="Center" />
+                            <CheckBox Name="checkBox_recNoDurSecond" Content="長さの'秒'" Margin="4,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <GroupBox Header="ドロップ・スクランブル未解除" Margin="6,2">
                             <WrapPanel>
                                 <StackPanel>
-                                    <StackPanel Margin="4" Orientation="Horizontal">
+                                    <StackPanel Margin="4" Orientation="Horizontal" Width="320">
                                         <Label Content="ドロップをエラー扱いしない閾値" Width="230" />
                                         <TextBox Name="textBox_dropErrIgnore" Width="60" Height="25" VerticalContentAlignment="Center" />
                                     </StackPanel>
-                                    <StackPanel Margin="4" Orientation="Horizontal">
+                                    <StackPanel Margin="4" Orientation="Horizontal" Width="320">
                                         <Label Content="ドロップを警告扱いしない閾値" Width="230" />
                                         <TextBox Name="textBox_dropWrnIgnore" Width="60" Height="25" VerticalContentAlignment="Center" />
                                     </StackPanel>
-                                    <StackPanel Margin="4" Orientation="Horizontal">
+                                    <StackPanel Margin="4" Orientation="Horizontal" Width="320">
                                         <Label Content="スクランブル未解除を警告扱いしない閾値" Width="230" />
                                         <TextBox Name="textBox_scrambleIgnore" Width="60" Height="25" VerticalContentAlignment="Center" />
                                     </StackPanel>
-                                    <Label Content="※それぞれ-1指定で、ドロップなどを全て無視。" Margin="4,-10,0,4" />
-                                    <StackPanel Width="330" ><!-- WrapPanel で右のブロックとの間隔をあけるためのダミー --></StackPanel>
+                                    <Label Content="※それぞれ-1指定で、ドロップなどを全て無視。" Margin="4" Width="320"/>
                                 </StackPanel>
                                 <CheckBox Name="checkBox_recinfo_errCritical" Margin="4">
                                     <TextBlock>エラー・警告表示にドロップ(映像・音声)、<LineBreak/>スクランブル未解除(映像・音声)を使う</TextBlock>
@@ -483,16 +488,22 @@
                         <GroupBox Header="各種設定" Margin="12,4">
                             <StackPanel>
                                 <Button Name="button_set_cm" Content="右クリックメニューの設定" Margin="8" Width="170" Height="25"  Click="button_set_cm_Click" HorizontalAlignment="Left" />
-                                <CheckBox Name="checkBox_displayAutoAddMissing" Margin="8" ToolTip="自動予約登録を削除・変更した場合や、EPGのタイトルが変わった場合などに発生する場合があります">
+                                <CheckBox Name="checkBox_displayAutoAddMissing" Margin="8,2" ToolTip="自動予約登録を削除・変更した場合や、EPGのタイトルが変わった場合などに発生する場合があります">
                                     <TextBlock TextWrapping="Wrap">自動予約登録(EPG予約、プログラム予約)を見失った予約を強調表示する<LineBreak/>※EpgTimerNWでは若干もたつく感じがあるかもしれません</TextBlock>
                                 </CheckBox>
-                                <WrapPanel Margin="8">
+                                <WrapPanel Margin="10,0">
                                     <Label Content="番組表などへジャンプしたときの強調表示の継続時間" />
                                     <StackPanel Margin="30,0" Orientation="Horizontal">
                                         <TextBox Name="textBox_DisplayJumpTime" Width="55" Height="25" VerticalContentAlignment="Center" />
                                         <Label Content="秒"  />
                                     </StackPanel>
                                 </WrapPanel>
+                                <StackPanel Orientation="Horizontal" Margin="10,0">
+                                    <Label Content="リスト表示で省略する" />
+                                    <CheckBox Name="checkBox_resNoYear" Content="'年'" Margin="4,0" VerticalAlignment="Center" />
+                                    <CheckBox Name="checkBox_resNoSecond" Content="'秒'" Margin="4,0" VerticalAlignment="Center" ToolTip="たまに'秒'単位の番組も存在します。" />
+                                    <CheckBox Name="checkBox_resNoDurSecond" Content="長さの'秒'" Margin="4,0" VerticalAlignment="Center" ToolTip="たまに'秒'単位の番組も存在します。" />
+                                </StackPanel>
                             </StackPanel>
                         </GroupBox>
                     </StackPanel>

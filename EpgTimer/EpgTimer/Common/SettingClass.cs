@@ -122,16 +122,50 @@ namespace EpgTimer
             return buff.ToString();
         }
 
-        public static void UpdateSrvProfileIniNW()
+        public static void UpdateSrvProfileIniNW(List<string> iniList = null)
         {
-            //SendIniCopy("EpgTimerSrv.ini");
-            //SendIniCopy("Common.ini");
-            //SendIniCopy("EpgDataCap_Bon.ini");
-            //SendIniCopy("ChSet5.txt");
+            if (CommonManager.Instance.NW.IsConnected == false) return;
 
+            //ReloadSettingFilesNW(iniList);
             Settings.UpdateDefRecSetting();
             ChSet5.Clear();
         }
+
+#if false // for tkntrec版
+        public static void ReloadSettingFilesNW(List<string> iniList = null)
+        {
+            if (iniList == null)
+            {
+                iniList = new List<string> {
+                    "EpgTimerSrv.ini"
+                    ,"Common.ini"
+                    ,"EpgDataCap_Bon.ini"
+                    ,"ChSet5.txt"
+                };
+            }
+
+            try
+            {
+                var datalist = new List<FileData>();
+                if (CommonManager.Instance.CtrlCmd.SendFileCopy2(iniList, ref datalist) == ErrCode.CMD_SUCCESS)
+                {
+                    Directory.CreateDirectory(SettingPath.SettingFolderPath);
+                    foreach (var data in datalist.Where(d1 => d1.Size != 0))
+                    {
+                        try
+                        {
+                            using (var w = new BinaryWriter(File.Create(Path.Combine(SettingPath.SettingFolderPath, data.Name))))
+                            {
+                                w.Write(data.Data);
+                            }
+                        }
+                        catch { }
+                    }
+                }
+            }
+            catch { }
+        }
+#endif
 
         public static bool CanReadInifile { get { return CommonManager.Instance.NW.IsConnected == false || IniSetting.Instance.CanReadInifile == true; } }
         public static bool CanUpdateInifile { get { return CommonManager.Instance.NW.IsConnected == false || IniSetting.Instance.CanUpdateInifile == true; } }
@@ -575,6 +609,12 @@ namespace EpgTimer
         private long recInfoDropWrnIgnore;
         private long recInfoScrambleIgnore;
         private List<string> recInfoDropExclude;
+        private bool recInfoNoYear;
+        private bool recInfoNoSecond;
+        private bool recInfoNoDurSecond;
+        private bool resInfoNoYear;
+        private bool resInfoNoSecond;
+        private bool resInfoNoDurSecond;
         private string tvTestExe;
         private string tvTestCmd;
         private bool nwTvMode;
@@ -1069,6 +1109,36 @@ namespace EpgTimer
             get { return recInfoDropExclude; }
             set { recInfoDropExclude = value; }
         }
+        public bool RecInfoNoYear
+        {
+            get { return recInfoNoYear; }
+            set { recInfoNoYear = value; }
+        }
+        public bool RecInfoNoSecond
+        {
+            get { return recInfoNoSecond; }
+            set { recInfoNoSecond = value; }
+        }
+        public bool RecInfoNoDurSecond
+        {
+            get { return recInfoNoDurSecond; }
+            set { recInfoNoDurSecond = value; }
+        }
+        public bool ResInfoNoYear
+        {
+            get { return resInfoNoYear; }
+            set { resInfoNoYear = value; }
+        }
+        public bool ResInfoNoSecond
+        {
+            get { return resInfoNoSecond; }
+            set { resInfoNoSecond = value; }
+        }
+        public bool ResInfoNoDurSecond
+        {
+            get { return resInfoNoDurSecond; }
+            set { resInfoNoDurSecond = value; }
+        }
         public string TvTestExe
         {
             get { return tvTestExe; }
@@ -1495,6 +1565,12 @@ namespace EpgTimer
             recInfoDropWrnIgnore = 0;
             recInfoScrambleIgnore = 0;
             recInfoDropExclude = new List<string>();
+            recInfoNoYear = false;
+            recInfoNoSecond = false;
+            recInfoNoDurSecond = false;
+            resInfoNoYear = false;
+            resInfoNoSecond = false;
+            resInfoNoDurSecond = false;
             tvTestExe = "";
             tvTestCmd = "";
             nwTvMode = false;
@@ -1590,10 +1666,7 @@ namespace EpgTimer
         {
             if (list.Count < val.Count)
             {
-                for (int i = list.Count; i < val.Count; i++)
-                {
-                    list.Add(val[i]);
-                }
+                list.AddRange(val.Skip(list.Count));
             }
         }
 

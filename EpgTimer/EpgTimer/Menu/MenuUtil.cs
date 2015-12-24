@@ -240,6 +240,13 @@ namespace EpgTimer
             return marginTime;
         }
 
+        public double GetMarginForSort(RecSettingData recSetting, bool start)
+        {
+            if (recSetting == null) return 0;
+            //
+            return GetMargin(recSetting, start) * (start ? -1 : 1) + (recSetting.UseMargineFlag == 1 ? 0.1 : 0);
+        }
+
         private string CustomTimeFormat(int span, byte useMarginFlag)
         {
             string hours;
@@ -531,7 +538,7 @@ namespace EpgTimer
 
                 Setting.SetDefRecSettingWindow dlg = new Setting.SetDefRecSettingWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(owner).RootVisual;
-                dlg.SetSettingMode(start == true ? "開始マージン設定" : "終了マージン設定", 1);
+                dlg.SetSettingMode(start == true ? "開始マージン設定" : "終了マージン設定");
                 dlg.recSettingView.SetDefSetting(infoList[0]);
                 dlg.recSettingView.SetChangeMode(start == true ? 0 : 1);
 
@@ -693,7 +700,7 @@ namespace EpgTimer
                 + CmdExeUtil.FormatTitleListForDialog(list);
 
             return MessageBox.Show(text, "[予約" + description + "]の確認", MessageBoxButton.OKCancel,
-                                MessageBoxImage.Exclamation, MessageBoxResult.OK) == MessageBoxResult.OK;
+                                MessageBoxImage.Exclamation, MessageBoxResult.Cancel) == MessageBoxResult.OK;
         }
 
         public bool EpgAutoAddAdd(List<EpgAutoAddData> itemlist)
@@ -744,7 +751,8 @@ namespace EpgTimer
                         + "よろしいですか？\r\n\r\n"
                         + "[項目数 : " + itemlist.Count + "]\r\n"
                         + "[追加される予約数 : " + addReserveNum + "]\r\n"
-                        , "EPG自動予約の変更", MessageBoxButton.OKCancel) == MessageBoxResult.Cancel)
+                        , "EPG自動予約の変更", MessageBoxButton.OKCancel,
+                        MessageBoxImage.Exclamation, MessageBoxResult.Cancel) == MessageBoxResult.Cancel)
                     {
                         return false;
                     }
@@ -858,7 +866,7 @@ namespace EpgTimer
             {
                 if (MessageBox.Show("多数の項目を処理しようとしています。\r\nよろしいですか？\r\n"
                     + "　項目数: " + Count + "\r\n"
-                    , description, MessageBoxButton.OKCancel) == MessageBoxResult.Cancel)
+                    , description, MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.Cancel) == MessageBoxResult.Cancel)
                 {
                     return false;
                 }
@@ -1189,6 +1197,20 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
+        }
+
+        public List<string> GetRecFolderViewList(RecSettingData recSetting)
+        {
+            var list = new List<string>();
+            List<RecFolderInfo> defs = Settings.GetDefRecFolders();
+            string def1 = defs.Count == 0 ? "!Default" : defs[0].recFolder;
+            Func<string, string> AdjustName = (f => f == "!Default" ? def1 : f);
+            if (recSetting != null)
+            {
+                recSetting.RecFolderList.ForEach(info => list.Add(AdjustName(info.RecFolder)));
+                recSetting.PartialRecFolder.ForEach(info => list.Add("(ワンセグ) " + AdjustName(info.RecFolder)));
+            }
+            return list;
         }
 
     }

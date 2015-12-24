@@ -21,6 +21,16 @@ namespace EpgTimer
             EventInfo = item;
         }
 
+        public static string GetValuePropertyName(string key)
+        {
+            switch (key)
+            {
+                case "StartTime": return "StartTimeValue";
+                case "ProgramDuration": return "ProgramDurationValue";
+                default: return key;
+            }
+        }
+
         public bool IsReserved
         {
             get
@@ -68,19 +78,38 @@ namespace EpgTimer
                 if (EventInfo == null) return "";
                 if (EventInfo.StartTimeFlag == 0) return "未定";
                 //
-                return EventInfo.start_time.ToString("yyyy/MM/dd(ddd) HH:mm:ss");
+                return CommonManager.ConvertTimeText(EventInfo.start_time, Settings.Instance.ResInfoNoYear, Settings.Instance.ResInfoNoSecond);
+            }
+        }
+        public virtual DateTime StartTimeValue
+        {
+            get
+            {
+                if (EventInfo == null || EventInfo.StartTimeFlag == 0) return new DateTime();
+                //
+                return EventInfo.start_time;
             }
         }
         /// <summary>
         /// 番組放送時間(長さ)
         /// </summary>
-        public virtual TimeSpan ProgramDuration
+        public virtual String ProgramDuration
         {
             get
             {
-                if (EventInfo == null || EventInfo.DurationFlag == 0) return new TimeSpan();
+                if (EventInfo == null) return "";
+                if (EventInfo.DurationFlag == 0) return "不明";
                 //
-                return TimeSpan.FromSeconds(EventInfo.durationSec);
+                return CommonManager.ConvertDurationText(EventInfo.durationSec, Settings.Instance.ResInfoNoDurSecond);
+            }
+        }
+        public virtual UInt32 ProgramDurationValue
+        {
+            get
+            {
+                if (EventInfo == null || EventInfo.DurationFlag == 0) return UInt32.MinValue;
+                //
+                return EventInfo.durationSec;
             }
         }
         /// <summary>

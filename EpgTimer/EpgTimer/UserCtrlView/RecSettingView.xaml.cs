@@ -604,7 +604,7 @@ namespace EpgTimer
                 listView_recFolder.Items.Add(new RecFileSetInfoView(setInfo, partialRec));
             }
         }
-
+        
         private void button_del_preset_Click(object sender, RoutedEventArgs e)
         {
             try

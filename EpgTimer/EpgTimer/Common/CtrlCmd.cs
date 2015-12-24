@@ -102,7 +102,7 @@ namespace EpgTimer
             Version = version;
             tailPos = long.MaxValue;
         }
-        private byte[] ReadBytes(int size)
+        public byte[] ReadBytes(int size)
         {
             var a = new byte[size];
             if (Stream.Read(a, 0, size) != size)
@@ -347,6 +347,8 @@ namespace EpgTimer
         CMD_EPG_SRV_EPG_CAP_NOW = 1053,
         /// <summary>指定ファイルを転送する</summary>
         CMD_EPG_SRV_FILE_COPY = 1060,
+        /// <summary>指定ファイルをまとめて転送する</summary>
+        CMD_EPG_SRV_FILE_COPY2 = 2060,
         /// <summary>PlugInファイルの一覧を取得する（1:ReName、2:Write）</summary>
         CMD_EPG_SRV_ENUM_PLUGIN = 1061,
         /// <summary>TVTestのチャンネル切り替え用の情報を取得する</summary>
@@ -510,7 +512,7 @@ namespace EpgTimer
         public ErrCode SendRegistTCP(uint port) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_REGIST_GUI_TCP, port); }
         /// <summary>EpgTimerSrv.exeのTCP接続GUI登録を解除する</summary>
         public ErrCode SendUnRegistTCP(uint port) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_UNREGIST_GUI_TCP, port); }
-        /// <summary>EpgTimerSrv.exeのTCP接続GUI登録状況確認</summary>
+        /// <summary>EpgTimerSrv.exeのTCP接続GUI登録状況を確認する</summary>
         public ErrCode SendIsRegistTCP(uint port, ref bool registered)
         {
             object o = new int();
@@ -644,6 +646,8 @@ namespace EpgTimer
             resVal = ret == ErrCode.CMD_SUCCESS ? res.ToArray() : null;
             return ret;
         }
+        /// <summary>指定ファイルをまとめて転送する</summary>
+        public ErrCode SendFileCopy2(List<string> list, ref List<FileData> val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_FILE_COPY2, list, ref o); }
 
         /// <summary>INIファイルを更新する</summary>
         public ErrCode SendUpdateSetting(string val)

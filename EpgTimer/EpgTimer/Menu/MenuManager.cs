@@ -88,8 +88,8 @@ namespace EpgTimer
             var cm_ChgPriorityMenu = new CtxmItemData("優先度", EpgCmdsEx.ChgPriorityMenu);
             for (int i = 1; i <= 5; i++)
             {
-                cm_ChgPriorityMenu.Items.Add(new CtxmItemData(string.Format("{0} (_{0})", i)
-                    , EpgCmds.ChgPriority, i));
+                cm_ChgPriorityMenu.Items.Add(new CtxmItemData(
+                    CommonManager.Instance.PriorityDictionary[(byte)i].DisplayName.Insert(1, string.Format(" (_{0})", i)), EpgCmds.ChgPriority, i));
             }
 
             ////イベントリレー変更
@@ -172,7 +172,7 @@ namespace EpgTimer
             //メニューアイテム:予約一覧
             ctmd = DefCtxmData[CtxmCode.ReserveView];
             ctmd.Items.Add(new CtxmItemData("予約←→無効", cm_ChangeOnOff));
-            ctmd.Items.Add(new CtxmItemData("変更", cm_ChangeMenu));
+            ctmd.Items.Add(new CtxmItemData("変更(_C)", cm_ChangeMenu));
             ctmd.Items.Add(new CtxmItemData("削除", cm_Delete));
             ctmd.Items.Add(new CtxmItemData("プログラム予約追加", cm_ShowAddDialog));
             ctmd.Items.Add(new CtxmItemData("自動予約変更", cm_ChangeAutoAddMenu));
@@ -180,14 +180,14 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("番組表へジャンプ", cm_JumpTable));
             ctmd.Items.Add(new CtxmItemData("自動予約登録", cm_ToAutoadd));
             ctmd.Items.Add(new CtxmItemData("追っかけ再生", cm_Play));
-            ctmd.Items.Add(new CtxmItemData("録画フォルダを開く", cm_OpenFolderMenu));
+            ctmd.Items.Add(new CtxmItemData("録画フォルダを開く(_F)", cm_OpenFolderMenu));
             ctmd.Items.AddRange(AddAppendMenus.Clone());
             ctmd.Items.AddRange(AddMenuSetting.Clone());
 
             //メニューアイテム:使用予定チューナー
             ctmd = DefCtxmData[CtxmCode.TunerReserveView];
             ctmd.Items.Add(new CtxmItemData("予約←→無効", cm_ChangeOnOff));
-            ctmd.Items.Add(new CtxmItemData("変更", cm_ChangeMenu));
+            ctmd.Items.Add(new CtxmItemData("変更(_C)", cm_ChangeMenu));
             ctmd.Items.Add(new CtxmItemData("削除", cm_Delete));
             ctmd.Items.Add(new CtxmItemData("プログラム予約追加", cm_ShowAddDialog));
             ctmd.Items.Add(new CtxmItemData("自動予約変更", cm_ChangeAutoAddMenu));
@@ -195,7 +195,7 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("番組表へジャンプ", cm_JumpTable));
             ctmd.Items.Add(new CtxmItemData("自動予約登録", cm_ToAutoadd));
             ctmd.Items.Add(new CtxmItemData("追っかけ再生", cm_Play));
-            ctmd.Items.Add(new CtxmItemData("録画フォルダを開く", cm_OpenFolderMenu));
+            ctmd.Items.Add(new CtxmItemData("録画フォルダを開く(_F)", cm_OpenFolderMenu));
             ctmd.Items.AddRange(AddAppendMenus.Clone());
             ctmd.Items.AddRange(AddMenuSetting.Clone());
 
@@ -213,13 +213,13 @@ namespace EpgTimer
 
             //メニューアイテム:EPG自動予約登録
             ctmd = DefCtxmData[CtxmCode.EpgAutoAddView];
-            ctmd.Items.Add(new CtxmItemData("変更", cm_ChangeMenu));
+            ctmd.Items.Add(new CtxmItemData("変更(_C)", cm_ChangeMenu));
             ctmd.Items.Add(new CtxmItemData("削除", cm_Delete));
             ctmd.Items.Add(new CtxmItemData("予約ごと削除", cm_Delete2));
             ctmd.Items.Add(new CtxmItemData("予約のみ削除", cm_Delete3));
             ctmd.Items.Add(new CtxmItemData("予約を自動登録に合わせる", cm_AdjustReserve));
             ctmd.Items.Add(new CtxmItemData("自動予約登録を追加", cm_ShowAddDialog));
-            ctmd.Items.Add(new CtxmItemData("録画フォルダを開く", cm_OpenFolderMenu));
+            ctmd.Items.Add(new CtxmItemData("録画フォルダを開く(_F)", cm_OpenFolderMenu));
             ctmd.Items.Add(new CtxmItemData(cm_Separator));
             ctmd.Items.Add(new CtxmItemData("Andキーワードをコピー", cm_CopyTitle));
             ctmd.Items.Add(new CtxmItemData("Andキーワードをネットで検索", cm_SearchTitle));
@@ -229,13 +229,13 @@ namespace EpgTimer
 
             //メニューアイテム:プログラム自動予約登録
             ctmd = DefCtxmData[CtxmCode.ManualAutoAddView];
-            ctmd.Items.Add(new CtxmItemData("変更", cm_ChangeMenu));
+            ctmd.Items.Add(new CtxmItemData("変更(_C)", cm_ChangeMenu));
             ctmd.Items.Add(new CtxmItemData("削除", cm_Delete));
             ctmd.Items.Add(new CtxmItemData("予約ごと削除", cm_Delete2));
             ctmd.Items.Add(new CtxmItemData("予約のみ削除", cm_Delete3));
             ctmd.Items.Add(new CtxmItemData("予約を自動登録に合わせる", cm_AdjustReserve));
             ctmd.Items.Add(new CtxmItemData("自動予約登録を追加", cm_ShowAddDialog));
-            ctmd.Items.Add(new CtxmItemData("録画フォルダを開く", cm_OpenFolderMenu));
+            ctmd.Items.Add(new CtxmItemData("録画フォルダを開く(_F)", cm_OpenFolderMenu));
             ctmd.Items.Add(new CtxmItemData(cm_Separator));
             ctmd.Items.Add(new CtxmItemData("番組名をコピー", cm_CopyTitle));
             ctmd.Items.Add(new CtxmItemData("番組名をネットで検索", cm_SearchTitle));
@@ -244,8 +244,8 @@ namespace EpgTimer
             //メニューアイテム:番組表
             ctmd = DefCtxmData[CtxmCode.EpgView];
             ctmd.Items.Add(new CtxmItemData("簡易予約/予約←→無効", cm_ChangeOnOff));
-            ctmd.Items.Add(new CtxmItemData("予約追加", cm_AddMenu));
-            ctmd.Items.Add(new CtxmItemData("変更", cm_ChangeMenu));
+            ctmd.Items.Add(new CtxmItemData("予約追加(_A)", cm_AddMenu));
+            ctmd.Items.Add(new CtxmItemData("変更(_C)", cm_ChangeMenu));
             ctmd.Items.Add(new CtxmItemData("削除", cm_Delete));
             ctmd.Items.Add(new CtxmItemData("自動予約変更", cm_ChangeAutoAddMenu));
             ctmd.Items.Add(new CtxmItemData("予約一覧へジャンプ", cm_JumpReserve));
@@ -253,17 +253,17 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("番組表(標準モード)へジャンプ", cm_JumpTable));
             ctmd.Items.Add(new CtxmItemData("自動予約登録", cm_ToAutoadd));
             ctmd.Items.Add(new CtxmItemData("追っかけ再生", cm_Play));
-            ctmd.Items.Add(new CtxmItemData("録画フォルダを開く", cm_OpenFolderMenu));
+            ctmd.Items.Add(new CtxmItemData("録画フォルダを開く(_F)", cm_OpenFolderMenu));
             ctmd.Items.AddRange(AddAppendMenus.Clone());
             ctmd.Items.Add(new CtxmItemData(cm_Separator));
-            ctmd.Items.Add(new CtxmItemData("表示モード", cm_ViewMenu));
+            ctmd.Items.Add(new CtxmItemData("表示モード(_V)", cm_ViewMenu));
             ctmd.Items.AddRange(AddMenuSetting.Clone());
 
             //メニューアイテム:検索ダイアログ、EPG予約ダイアログ
             ctmd = DefCtxmData[CtxmCode.SearchWindow];
             ctmd.Items.Add(new CtxmItemData("簡易予約/予約←→無効", cm_ChangeOnOff));
-            ctmd.Items.Add(new CtxmItemData("予約追加", cm_AddMenu));
-            ctmd.Items.Add(new CtxmItemData("変更", cm_ChangeMenu));
+            ctmd.Items.Add(new CtxmItemData("予約追加(_A)", cm_AddMenu));
+            ctmd.Items.Add(new CtxmItemData("変更(_C)", cm_ChangeMenu));
             ctmd.Items.Add(new CtxmItemData("削除", cm_Delete));
             ctmd.Items.Add(new CtxmItemData("自動予約変更", cm_ChangeAutoAddMenu));
             ctmd.Items.Add(new CtxmItemData("予約一覧へジャンプ", cm_JumpReserve));
@@ -272,7 +272,7 @@ namespace EpgTimer
             ctmd.Items.Add(new CtxmItemData("番組名で再検索", EpgCmds.ReSearch));
             ctmd.Items.Add(new CtxmItemData("番組名で再検索(サブウィンドウ)", EpgCmds.ReSearch2));
             ctmd.Items.Add(new CtxmItemData("追っかけ再生", cm_Play));
-            ctmd.Items.Add(new CtxmItemData("録画フォルダを開く", cm_OpenFolderMenu));
+            ctmd.Items.Add(new CtxmItemData("録画フォルダを開く(_F)", cm_OpenFolderMenu));
             ctmd.Items.AddRange(AddAppendMenus.Clone());
             ctmd.Items.AddRange(AddMenuSetting.Clone());
         }
@@ -597,19 +597,28 @@ namespace EpgTimer
 
             menu.Items.Clear();
 
-            if (recSetting != null && recSetting.RecFolderList.Count != 0)
-            {
-                recSetting.RecFolderList.ForEach(info => CtxmGenerateOpenFolderItem(menu, info.RecFolder));
-            }
-            else
-            {
-                Settings.GetDefRecFolders().ForEach(folder => CtxmGenerateOpenFolderItem(menu, folder.recFolder, "(デフォルト) "));
-            }
+            bool defOutPutted = false;
+            recSetting = recSetting == null ? new RecSettingData() : recSetting;
 
-            if (recSetting != null)
+            var addFolderList = new Action<List<RecFileSetInfo>, bool, string>((fldrs, recflg, header_exp) =>
             {
-                recSetting.PartialRecFolder.ForEach(info => CtxmGenerateOpenFolderItem(menu, info.RecFolder, "(ワンセグ) "));
-            }
+                //ワンセグ出力未チェックでも、フォルダ設定があれば表示する。
+                //ただし、デフォルトフォルダは1回だけ展開して表示する。
+                if (defOutPutted == false && (recflg && fldrs.Count == 0 || fldrs.Any(info => info.RecFolder == "!Default")))
+                {
+                    defOutPutted = true;
+                    Settings.GetDefRecFolders().ForEach(folder => CtxmGenerateOpenFolderItem(menu, folder.recFolder, header_exp + "(デフォルト) "));
+                }
+
+                foreach (var info in fldrs.Where(info => info.RecFolder != "!Default"))
+                {
+                    CtxmGenerateOpenFolderItem(menu, info.RecFolder, header_exp);
+                }
+            });
+
+            addFolderList(recSetting.RecFolderList, true, "");
+            addFolderList(recSetting.PartialRecFolder, recSetting.PartialRecFlag != 0, "(ワンセグ) ");
+
         }
         private void CtxmGenerateOpenFolderItem(MenuItem menu, string path, string header_exp = "")
         {

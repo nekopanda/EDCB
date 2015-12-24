@@ -29,7 +29,6 @@ namespace EpgTimer
         private SearchMode winMode = SearchMode.Find;
         public bool IsThisSubWindow { get { return this.Owner is SearchWindow; } }
         private static string subWindowString = "(サブウィンドウ)";
-        EpgAutoAddDataAppend counter = new EpgAutoAddDataAppend(null);
         
         private UInt32 autoAddID = 0;
 
@@ -225,8 +224,6 @@ namespace EpgTimer
 
         private void SearchPg()
         {
-            counter = new EpgAutoAddDataAppend(null);
-
             lstCtrl.ReloadInfoData(dataList =>
             {
                 EpgSearchKeyInfo key = new EpgSearchKeyInfo();
@@ -237,7 +234,6 @@ namespace EpgTimer
                 cmd.SendSearchPg(mutil.ToList(key), ref list);
 
                 lstCtrl.dataList.AddFromEventList(list, false, true);
-                counter.EpgEventList = list;
 
                 searchKeyView.AddSearchLog();
                 return true;
@@ -248,12 +244,13 @@ namespace EpgTimer
 
         private void RefreshStatus()
         {
-            counter.updateCounts = true;
-            text_result.Text = string.Format("検索数:{0}  ", counter.SearchCount);
-            if (counter.ReserveCount != 0)
+            text_result.Text = string.Format("検索数:{0}  ", lstCtrl.dataList.Count);
+            List<ReserveData> rlist = lstCtrl.dataList.GetReserveList();
+            if (rlist.Count != 0)
             {
-                text_result.Text += string.Format("予約数:{0} ( 有効 {1} / 無効 {2} )"
-                                                    , counter.ReserveCount, counter.OnCount, counter.OffCount);
+                int OnCount = rlist.Count(data => data.RecSetting.RecMode != 5);
+                int OffCount = rlist.Count - OnCount;
+                text_result.Text += string.Format("予約数:{0} ( 有効 {1} / 無効 {2} )", rlist.Count, OnCount, OffCount);
             }
         }
 
@@ -329,6 +326,8 @@ namespace EpgTimer
                         //EPG自動予約登録と、登録された予約、および録画済みファイルとの関連付けを実装
                         this.SetRecFileList(newinfo.recFileList);
                     }
+
+                    SearchPg();
                 }
             }
             catch (Exception ex)
@@ -373,7 +372,10 @@ namespace EpgTimer
                 addItem.searchInfo = searchKey;
                 addItem.recSetting = recSetKey;
 
-                mutil.EpgAutoAddChange(mutil.ToList(addItem));
+                if (mutil.EpgAutoAddChange(mutil.ToList(addItem)) == true)
+                {
+                    SearchPg();
+                }
             }
             catch (Exception ex)
             {
@@ -395,6 +397,7 @@ namespace EpgTimer
             {
                 SetViewMode(SearchMode.NewAdd);
                 this.autoAddID = 0;
+                SearchPg();
             }
         }
 

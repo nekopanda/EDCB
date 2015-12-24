@@ -224,78 +224,61 @@ namespace EpgTimer
             dest.transportStreamID = src.transportStreamID;
         }
 
-        public static Func<object, ulong> GetKeyFunc(object refobj)
+        public static Func<object, ulong> GetKeyFunc(Type t)
         {
-            if (refobj != null)
+            if (t == typeof(ReserveItem))
             {
-                string typeName = refobj.GetType().Name;
-                if (refobj is ReserveItem)
-                {
-                    return info => (info as ReserveItem).ReserveInfo.ReserveID;
-                }
-                else if (refobj is RecInfoItem)
-                {
-                    return info => (info as RecInfoItem).RecInfo.ID;
-                }
-                else if (refobj is EpgAutoDataItem)
-                {
-                    return info => (info as EpgAutoDataItem).EpgAutoAddInfo.dataID;
-                }
-                else if (refobj is ManualAutoAddDataItem)
-                {
-                    return info => (info as ManualAutoAddDataItem).ManualAutoAddInfo.dataID;
-                }
-                else if (refobj is SearchItem)
-                {
-                    return info => (info as SearchItem).EventInfo.Create64PgKey();
-                }
-                else if (refobj is NotifySrvInfoItem)
-                {
-                    return info => (info as NotifySrvInfoItem).NotifyInfo.notifyID;
-                }
+                return info => (info as ReserveItem).ReserveInfo.ReserveID;
             }
-
-            //キーにはなっていないが、エラーにしないため一応返す
-            return info => (ulong)info.GetHashCode();
+            else if (t == typeof(RecInfoItem))
+            {
+                return info => (info as RecInfoItem).RecInfo.ID;
+            }
+            else if (t == typeof(EpgAutoDataItem))
+            {
+                return info => (info as EpgAutoDataItem).EpgAutoAddInfo.dataID;
+            }
+            else if (t == typeof(ManualAutoAddDataItem))
+            {
+                return info => (info as ManualAutoAddDataItem).ManualAutoAddInfo.dataID;
+            }
+            else if (t == typeof(SearchItem))
+            {
+                return info => (info as SearchItem).EventInfo.Create64PgKey();
+            }
+            else if (t == typeof(NotifySrvInfoItem))
+            {
+                return info => (info as NotifySrvInfoItem).NotifyInfo.notifyID;
+            }
+            else
+            {
+                //必ずしもキーにはなるとは限らないが、エラーにしないため一応返す。
+                return info => (ulong)info.GetHashCode();
+            }
         }
 
-        //簡易ステータス
-        public static RecEndStatusBasic RecStatusBasic(this RecFileInfo info)
+        //ソート用の代替プロパティがあればその名前を返す
+        public static string GetValuePropertyName(Type t, string key)
         {
-            switch ((RecEndStatus)info.RecStatus)
+            if (t == typeof(ReserveItem))
             {
-                case RecEndStatus.NORMAL:           //正常終了
-                    return RecEndStatusBasic.DEFAULT;
-                case RecEndStatus.OPEN_ERR:         //チューナーのオープンができなかった
-                    return RecEndStatusBasic.ERR;   
-                case RecEndStatus.ERR_END:          //録画中にエラーが発生した
-                    return RecEndStatusBasic.ERR;
-                case RecEndStatus.NEXT_START_END:   //次の予約開始のため終了
-                    return RecEndStatusBasic.ERR;
-                case RecEndStatus.START_ERR:        //開始時間が過ぎていた
-                    return RecEndStatusBasic.ERR;
-                case RecEndStatus.CHG_TIME:         //開始時間が変更された
-                    return RecEndStatusBasic.DEFAULT;
-                case RecEndStatus.NO_TUNER:         //チューナーが足りなかった
-                    return RecEndStatusBasic.ERR;
-                case RecEndStatus.NO_RECMODE:       //無効扱いだった
-                    return RecEndStatusBasic.DEFAULT;
-                case RecEndStatus.NOT_FIND_PF:      //p/fに番組情報確認できなかった
-                    return RecEndStatusBasic.WARN;
-                case RecEndStatus.NOT_FIND_6H:      //6時間番組情報確認できなかった
-                    return RecEndStatusBasic.WARN;
-                case RecEndStatus.END_SUBREC:       //サブフォルダへの録画が発生した
-                    return RecEndStatusBasic.WARN;
-                case RecEndStatus.ERR_RECSTART:     //録画開始に失敗した
-                    return RecEndStatusBasic.ERR;
-                case RecEndStatus.NOT_START_HEAD:   //一部のみ録画された
-                    return RecEndStatusBasic.ERR;
-                case RecEndStatus.ERR_CH_CHG:       //チャンネル切り替えに失敗した
-                    return RecEndStatusBasic.ERR;
-                case RecEndStatus.ERR_END2:         //録画中にエラーが発生した(Writeでexception)
-                    return RecEndStatusBasic.ERR;
-                default:                            //状況不明
-                    return RecEndStatusBasic.ERR;
+                return ReserveItem.GetValuePropertyName(key);
+            }
+            else if (t == typeof(SearchItem))
+            {
+                return SearchItem.GetValuePropertyName(key);
+            }
+            else if (t == typeof(RecInfoItem))
+            {
+                return RecInfoItem.GetValuePropertyName(key);
+            }
+            else if (t == typeof(EpgAutoDataItem))
+            {
+                return EpgAutoDataItem.GetValuePropertyName(key);
+            }
+            else
+            {
+                return key;
             }
         }
 
@@ -568,7 +551,49 @@ namespace EpgTimer
             dropsCritical = this.Drops;
             scramblesCritical = this.Scrambles;
         }
-    }
 
+        //簡易ステータス
+        public RecEndStatusBasic RecStatusBasic
+        {
+            get
+            {
+                switch ((RecEndStatus)RecStatus)
+                {
+                    case RecEndStatus.NORMAL:           //正常終了
+                        return RecEndStatusBasic.DEFAULT;
+                    case RecEndStatus.OPEN_ERR:         //チューナーのオープンができなかった
+                        return RecEndStatusBasic.ERR;
+                    case RecEndStatus.ERR_END:          //録画中にエラーが発生した
+                        return RecEndStatusBasic.ERR;
+                    case RecEndStatus.NEXT_START_END:   //次の予約開始のため終了
+                        return RecEndStatusBasic.ERR;
+                    case RecEndStatus.START_ERR:        //開始時間が過ぎていた
+                        return RecEndStatusBasic.ERR;
+                    case RecEndStatus.CHG_TIME:         //開始時間が変更された
+                        return RecEndStatusBasic.DEFAULT;
+                    case RecEndStatus.NO_TUNER:         //チューナーが足りなかった
+                        return RecEndStatusBasic.ERR;
+                    case RecEndStatus.NO_RECMODE:       //無効扱いだった
+                        return RecEndStatusBasic.DEFAULT;
+                    case RecEndStatus.NOT_FIND_PF:      //p/fに番組情報確認できなかった
+                        return RecEndStatusBasic.WARN;
+                    case RecEndStatus.NOT_FIND_6H:      //6時間番組情報確認できなかった
+                        return RecEndStatusBasic.WARN;
+                    case RecEndStatus.END_SUBREC:       //サブフォルダへの録画が発生した
+                        return RecEndStatusBasic.WARN;
+                    case RecEndStatus.ERR_RECSTART:     //録画開始に失敗した
+                        return RecEndStatusBasic.ERR;
+                    case RecEndStatus.NOT_START_HEAD:   //一部のみ録画された
+                        return RecEndStatusBasic.ERR;
+                    case RecEndStatus.ERR_CH_CHG:       //チャンネル切り替えに失敗した
+                        return RecEndStatusBasic.ERR;
+                    case RecEndStatus.ERR_END2:         //録画中にエラーが発生した(Writeでexception)
+                        return RecEndStatusBasic.ERR;
+                    default:                            //状況不明
+                        return RecEndStatusBasic.ERR;
+                }
+            }
+        }
+    }
 
 }

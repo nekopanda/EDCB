@@ -2217,6 +2217,69 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			}
 		}
 		break;
+    case CMD2_EPG_SRV_FILE_COPY2:
+        {
+            OutputDebugString(L"CMD2_EPG_SRV_FILE_COPY2\r\n");
+            WORD ver;
+            DWORD readSize;
+            if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
+                vector<wstring> list;
+                if( ReadVALUE2(ver, &list, cmdParam->data + readSize, cmdParam->dataSize - readSize, NULL) ){
+                    vector<FILE_DATA> result;
+                    vector<wstring>::iterator itr;
+                    for( itr = list.begin(); itr != list.end(); itr++ ){
+                        FILE_DATA data1;
+                        data1.Name = *itr;
+
+                        wstring path=L"";
+                        if( CompareNoCase(*itr, L"ChSet5.txt") == 0 ){
+                            GetSettingPath(path);
+                            path += L"\\" + *itr;
+                        }else if( CompareNoCase(*itr, L"EpgTimerSrv.ini") == 0 ){
+                            GetEpgTimerSrvIniPath(path);
+                        }else if( CompareNoCase(*itr, L"Common.ini") == 0 ){
+                            GetCommonIniPath(path);
+                        }else if( CompareNoCase(*itr, L"EpgDataCap_Bon.ini") == 0 
+                            || CompareNoCase(*itr, L"BonCtrl.ini") == 0
+                            || CompareNoCase(*itr, L"Bitrate.ini") == 0 ){
+                            GetModuleFolderPath(path);
+                            path += L"\\" + *itr;
+                        }
+
+                        if(path != L""){
+                            HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                            if( hFile != INVALID_HANDLE_VALUE ){
+                                DWORD dwFileSize = GetFileSize(hFile, NULL);
+                                if( dwFileSize != INVALID_FILE_SIZE && dwFileSize != 0 ){
+                                    DWORD dwRead;
+                                    BYTE* buff = new BYTE[dwFileSize];
+                                    if( ReadFile(hFile, buff, dwFileSize, &dwRead, NULL) && dwRead != 0 ){
+                                        data1.Size = dwFileSize;
+                                        data1.Data = buff;
+                                    }
+                                    else{
+                                        delete[] buff;
+                                    }
+                                }
+                                CloseHandle(hFile);
+                            }
+                        }
+
+                        result.push_back(data1);
+                    }
+
+                    resParam->data = NewWriteVALUE2WithVersion(ver, &result, resParam->dataSize);
+                    resParam->param = CMD_SUCCESS;
+
+                    vector<FILE_DATA>::iterator itr2;
+                    for( itr2 = result.begin(); itr2 != result.end(); itr2++ ){
+                        delete[] itr2->Data;
+                        itr2->Data = NULL;
+                    }
+                }
+            }
+        }
+        break;
 	case CMD2_EPG_SRV_GET_STATUS_NOTIFY2:
 		{
 			WORD ver;

@@ -17,6 +17,16 @@ namespace EpgTimer
             base.ReserveInfo = item;
         }
 
+        public static new string GetValuePropertyName(string key)
+        {
+            switch (key)
+            {
+                case "MarginStart": return "MarginStartValue";
+                case "MarginEnd": return "MarginEndValue";
+                default: return SearchItem.GetValuePropertyName(key);
+            }
+        }
+
         private EpgEventInfo eventInfo = null;
         public override EpgEventInfo EventInfo
         {
@@ -68,8 +78,16 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
-                return ReserveInfo.StartTime.ToString("yyyy/MM/dd(ddd) HH:mm:ss ～ ") + endTime.ToString("HH:mm:ss");
+                return CommonManager.ConvertTimeText(ReserveInfo.StartTime, ReserveInfo.DurationSecond, Settings.Instance.ResInfoNoYear, Settings.Instance.ResInfoNoSecond);
+            }
+        }
+        public override DateTime StartTimeValue
+        {
+            get
+            {
+                if (ReserveInfo == null) return new DateTime();
+                //
+                return ReserveInfo.StartTime;
             }
         }
         public String StartTimeShort
@@ -78,19 +96,25 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                DateTime endTime = ReserveInfo.StartTime + TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
-                return ReserveInfo.StartTime.ToString("MM/dd(ddd) HH:mm～") + endTime.ToString("HH:mm");
+                return CommonManager.ConvertTimeText(ReserveInfo.StartTime, ReserveInfo.DurationSecond, true, true);
             }
         }
-        public String ShortTime { get { return StartTimeShort; } }
-
-        public override TimeSpan ProgramDuration
+        public override String ProgramDuration
         {
             get
             {
-                if (ReserveInfo == null) { return new TimeSpan(); }
+                if (ReserveInfo == null) return "";
                 //
-                return TimeSpan.FromSeconds(ReserveInfo.DurationSecond);
+                return CommonManager.ConvertDurationText(ReserveInfo.DurationSecond, Settings.Instance.ResInfoNoDurSecond);
+            }
+        }
+        public override UInt32 ProgramDurationValue
+        {
+            get
+            {
+                if (ReserveInfo == null) return UInt32.MinValue;
+                //
+                return ReserveInfo.DurationSecond;
             }
         }
         public String MarginStart
@@ -102,6 +126,15 @@ namespace EpgTimer
                 return mutil.MarginText(ReserveInfo.RecSetting,true);
             }
         }
+        public Double MarginStartValue
+        {
+            get
+            {
+                if (ReserveInfo == null) return Double.MinValue;
+                //
+                return mutil.GetMarginForSort(ReserveInfo.RecSetting, true);
+            }
+        }
         public String MarginEnd
         {
             get
@@ -109,6 +142,15 @@ namespace EpgTimer
                 if (ReserveInfo == null) return "";
                 //
                 return mutil.MarginText(ReserveInfo.RecSetting, false);
+            }
+        }
+        public Double MarginEndValue
+        {
+            get
+            {
+                if (ReserveInfo == null) return Double.MinValue;
+                //
+                return mutil.GetMarginForSort(ReserveInfo.RecSetting, false);
             }
         }
         //public String ProgramContent -> SearchItem.cs
@@ -216,13 +258,9 @@ namespace EpgTimer
         {
             get
             {
-                List<String> list = new List<string>();
-                if (ReserveInfo != null)
-                {
-                    ReserveInfo.RecSetting.RecFolderList.ForEach(info => list.Add(info.RecFolder));
-                    ReserveInfo.RecSetting.PartialRecFolder.ForEach(info => list.Add("(ワンセグ) " + info.RecFolder));
-                }
-                return list;
+                if (ReserveInfo == null) new List<string>();
+                //
+                return mutil.GetRecFolderViewList(ReserveInfo.RecSetting);
             }
         }
         public List<String> RecFileName
