@@ -83,6 +83,8 @@ void CTCPServer::StopServer()
 		closesocket(m_sock);
 		m_sock = INVALID_SOCKET;
 	}
+
+	m_hmac.Close();
 }
 
 static BOOL TestAcl(struct in_addr addr, wstring acl)

@@ -349,7 +349,7 @@ namespace EpgTimer.Setting
                 textBox_tcpAcl.Text = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessControlList", "+127.0.0.1,+192.168.0.0/16", SettingPath.TimerSrvIniPath);
                 string base64string = IniFileHandler.GetPrivateProfileString("SET", "TCPAccessPassword", "", SettingPath.TimerSrvIniPath);
                 password = new SerializableSecureString(base64string);
-                if (base64string.Length == password.Length)
+                if (password.Length > 0 && password.Length == base64string.Length)
                 {
                     // decrypt 出来なかったので disable にする
                     passwordBox_tcpPassword.IsEnabled = false;
