@@ -1182,9 +1182,16 @@ namespace EpgTimer
                         ErrCode err = cmg.CtrlCmd.SendGetRecFileNetworkPath(filePath, ref nPath);
                         if (err == ErrCode.CMD_SUCCESS)
                         {
-                            String cmdLine = Settings.Instance.FilePlayCmd;
-                            cmdLine = cmdLine.Replace("$FilePath$", nPath);
-                            process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
+                            if (System.IO.File.Exists(nPath) == true)
+                            {
+                                String cmdLine = Settings.Instance.FilePlayCmd;
+                                cmdLine = cmdLine.Replace("$FilePath$", nPath);
+                                process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
+                            }
+                            else
+                            {
+                                MessageBox.Show(nPath + "\nが見つかりません");
+                            }
                         }
                         else
                         {
