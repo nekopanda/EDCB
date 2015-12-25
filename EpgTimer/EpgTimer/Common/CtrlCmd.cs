@@ -694,7 +694,7 @@ namespace EpgTimer
         /// <summary>プログラム予約自動登録の条件変更</summary>
         public ErrCode SendChgManualAdd(List<ManualAutoAddData> val) { return SendCmdData2(CtrlCmd.CMD_EPG_SRV_CHG_MANU_ADD2, val); }
         /// <summary>現在のNOTIFY_UPDATE_SRV_STATUSを取得する (xtnet6f氏版)</summary>
-        public ErrCode SendGetNotifySrvStatus(ref NotifySrvInfo val) { object o = val; return ReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_GET_STATUS_NOTIFY2, ref o); }
+        public ErrCode SendGetNotifySrvStatus(ref NotifySrvInfo val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_GET_STATUS_NOTIFY2, 0, ref o); }
         #endregion
         #region // タイマーGUI（EpgTimer_Bon.exe）用
         /// <summary>ダイアログを前面に表示</summary>
