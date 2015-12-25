@@ -117,7 +117,7 @@ public:
 		return SendCmdData(CMD2_EPG_SRV_UNREGIST_GUI_TCP, port);
 	}
 
-	//EpgTimerSrv.exeのTCP接続GUI登録状況を確認する
+	//EpgTimerSrv.exeのTCP接続GUI登録状況を確認する (tkntrec氏版)
 	//戻り値：
 	// エラーコード
 	//引数：
@@ -265,6 +265,18 @@ public:
 		return ReceiveCmdData(CMD2_EPG_SRV_ENUM_PG_ALL, val);
 	}
 
+	//録画保存場所一覧を取得する
+	//戻り値：
+	//引数：
+	// val			[IN]フォルダーパス (空の場合は録画保存フォルダー)
+	// resVal		[OUT]フォルダーの情報一覧
+	DWORD SendEnumRecFolders(
+		wstring val,
+		vector<REC_FOLDER_INFO>* resVal
+		){
+		return SendAndReceiveCmdData(CMD2_EPG_SRV_ENUM_REC_FOLDER, val, resVal);
+	}
+
 	//自動予約登録条件一覧を取得する
 	//戻り値：
 	// エラーコード
@@ -309,7 +321,7 @@ public:
 		return SendCmdData(CMD2_EPG_SRV_CHG_AUTO_ADD, val);
 	}
 
-	//自動予約登録条件一覧を取得する
+	//プログラム予約登録条件一覧を取得する
 	//戻り値：
 	// エラーコード
 	//引数：
@@ -320,7 +332,7 @@ public:
 		return ReceiveCmdData(CMD2_EPG_SRV_ENUM_MANU_ADD, val);
 	}
 
-	//自動予約登録条件を追加する
+	//プログラム予約登録条件を追加する
 	//戻り値：
 	// エラーコード
 	//引数：
@@ -353,21 +365,26 @@ public:
 		return SendCmdData(CMD2_EPG_SRV_CHG_MANU_ADD, val);
 	}
 
-
+	//スタンバイ、休止、シャットダウンを行っていいかの確認
 	DWORD SendChkSuspend(){
 		return SendCmdWithoutData(CMD2_EPG_SRV_CHK_SUSPEND);
 	}
 
+	//スタンバイ、休止、シャットダウンに移行する
+	//引数：
+	// val			[IN] 1:スタンバイ 2:休止 3:シャットダウン | 0x0100:復帰後再起動
 	DWORD SendSuspend(
 		WORD val
 		){
 		return SendCmdData(CMD2_EPG_SRV_SUSPEND, val);
 	}
 
+	//PC再起動を行う
 	DWORD SendReboot(){
 		return SendCmdWithoutData(CMD2_EPG_SRV_REBOOT);
 	}
 
+	//10秒後にEPGデータの取得を行う
 	DWORD SendEpgCapNow(){
 		return SendCmdWithoutData(CMD2_EPG_SRV_EPG_CAP_NOW);
 	}
@@ -385,14 +402,14 @@ public:
 		DWORD* resValSize
 		);
 
-	//指定ファイルをまとめて転送する
+	//指定ファイルをまとめて転送する (tkntrec氏版)
 	//戻り値：
 	// エラーコード
 	//引数：
 	// list			[IN]ファイル名のリスト
 	// resVal		[OUT]ファイルデータのリスト
 	DWORD SendFileCopy2(
-		const vector<EPGDB_SEARCH_KEY_INFO>* list,
+		const vector<wstring>* list,
 		vector<FILE_DATA>* resVal
 		){
 		return SendAndReceiveCmdData2(CMD2_EPG_SRV_FILE_COPY2, list, resVal);
@@ -424,9 +441,14 @@ public:
 		return SendAndReceiveCmdData(CMD2_EPG_SRV_GET_CHG_CH_TVTEST, val, resVal);
 	}
 
-	//設定ファイル(ini)の更新を通知させる
+	//設定ファイル(ini)の更新を通知させる (tkntrec氏版)
 	DWORD SendNotifyProfileUpdate(){
 		return SendCmdWithoutData(CMD2_EPG_SRV_PROFILE_UPDATE);
+	}
+
+	//INIファイルを更新する (abt8WG氏版)
+	DWORD SendUpdateSetting(wstring val){
+		return SendCmdData(CMD2_EPG_SRV_UPDATE_SETTING, val);
 	}
 
 	//ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え
@@ -551,6 +573,19 @@ public:
 		return SendAndReceiveCmdData(CMD2_EPG_SRV_NWPLAY_TF_OPEN, val, resVal);
 	}
 
+	//録画ファイルのネットワークパスを取得 (niisaka氏版)
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]ローカルパス
+	// resVal			[OUT]ネットワークUNCパス
+	DWORD SendGetRecFileNetworkPath(
+		wstring val,
+		wstring* resVal
+		){
+		return SendAndReceiveCmdData(CMD2_EPG_SRV_GET_NETWORK_PATH, val, resVal);
+	}
+
 //コマンドバージョン対応版
 	//予約一覧を取得する
 	//戻り値：
@@ -591,6 +626,28 @@ public:
 		return SendCmdData2(CMD2_EPG_SRV_CHG_RESERVE2, val);
 	}
 
+	//録画済み情報一覧取得
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val			[OUT]録画済み情報一覧
+	DWORD SendEnumRecInfo2(
+		vector<REC_FILE_INFO>* val
+		) {
+		return ReceiveCmdData2(CMD2_EPG_SRV_ENUM_RECINFO2, val);
+	}
+
+	//録画済み情報のプロテクト変更
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val			[IN]録画済み情報一覧
+	DWORD SendChgProtectRecInfo2(
+		const vector<REC_FILE_INFO>* val
+		) {
+		return SendCmdData2(CMD2_EPG_SRV_CHG_PROTECT_RECINFO2, val);
+	}
+
 	//予約追加が可能か確認する
 	//戻り値：
 	// エラーコード
@@ -625,7 +682,7 @@ public:
 		DWORD* resValSize
 		);
 
-	//指定キーワードで番組情報を検索する
+	//指定キーワードで番組情報を検索する (tkntrec氏版)
 	//戻り値：
 	// エラーコード
 	//引数：
@@ -638,7 +695,7 @@ public:
 		return SendAndReceiveCmdData2(CMD2_EPG_SRV_SEARCH_PG2, key, val);
 	}
 
-	//指定キーワードで番組情報を検索する(キーごと)
+	//指定キーワードで番組情報を検索する(キーごと) (tkntrec氏版)
 	//戻り値：
 	// エラーコード
 	//引数：
@@ -717,26 +774,13 @@ public:
 		return SendCmdData2(CMD2_EPG_SRV_CHG_MANU_ADD2, val);
 	}
 
-	//録画済み情報一覧取得
+	//現在のNOTIFY_UPDATE_SRV_STATUSを取得する (xtnet6f氏版)
 	//戻り値：
 	// エラーコード
 	//引数：
-	// val			[OUT]録画済み情報一覧
-	DWORD SendEnumRecInfo2(
-		vector<REC_FILE_INFO>* val
-		){
-		return ReceiveCmdData2(CMD2_EPG_SRV_ENUM_RECINFO2, val);
-	}
-
-	//録画済み情報のプロテクト変更
-	//戻り値：
-	// エラーコード
-	//引数：
-	// val			[IN]録画済み情報一覧
-	DWORD SendChgProtectRecInfo2(
-		const vector<REC_FILE_INFO>* val
-		){
-		return SendCmdData2(CMD2_EPG_SRV_CHG_PROTECT_RECINFO2, val);
+	// val			[OUT]通知情報
+	DWORD SendGetNotifySrvStatus(NOTIFY_SRV_INFO* val){
+		return ReceiveCmdData2(CMD2_EPG_SRV_GET_STATUS_NOTIFY2, val);
 	}
 
 //タイマーGUI（EpgTimer_Bon.exe）用
@@ -765,16 +809,7 @@ public:
 		return SendCmdWithoutData(CMD2_TIMER_GUI_UPDATE_EPGDATA);
 	}
 
-	//情報更新を通知する
-	//戻り値：
-	// エラーコード
-	//引数：
-	// val				[IN]通知情報
-	DWORD SendGUINotifyInfo2(const NOTIFY_SRV_INFO* val){
-		return SendCmdData2(CMD2_TIMER_GUI_SRV_STATUS_NOTIFY2, val);
-	}
-
-//Viewアプリ（EpgDataCap_Bon.exe）を起動
+	//Viewアプリ（EpgDataCap_Bon.exe）を起動
 	//戻り値：
 	// エラーコード
 	//引数：
@@ -817,6 +852,15 @@ public:
 		return SendCmdData(CMD2_TIMER_GUI_SRV_STATUS_CHG, status);
 	}
 
+//タイマーGUI バージョン情報追加対応版
+	//情報更新を通知する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]通知情報
+	DWORD SendGUINotifyInfo2(const NOTIFY_SRV_INFO* val){
+		return SendCmdData2(CMD2_TIMER_GUI_SRV_STATUS_NOTIFY2, val);
+	}
 
 //Viewアプリ（EpgDataCap_Bon.exe）用
 
@@ -912,6 +956,14 @@ public:
 		DWORD keepFlag
 		){
 		return SendCmdData(CMD2_VIEW_APP_SET_STANDBY_REC, keepFlag);
+	}
+
+	//Viewボタン登録アプリ起動
+	//戻り値：
+	// エラーコード
+	DWORD SendViewExecViewApp(
+		){
+		return SendCmdWithoutData(CMD2_VIEW_APP_EXEC_VIEW_APP);
 	}
 
 	//ストリーム制御用コントロール作成
@@ -1044,14 +1096,6 @@ public:
 		EPGDB_EVENT_INFO* resVal
 		){
 		return SendAndReceiveCmdData(CMD2_VIEW_APP_GET_EVENT_PF, val, resVal);
-	}
-
-	//Viewボタン登録アプリ起動
-	//戻り値：
-	// エラーコード
-	DWORD SendViewExecViewApp(
-		){
-		return SendCmdWithoutData(CMD2_VIEW_APP_EXEC_VIEW_APP);
 	}
 
 //TVTest連携のストリーミング配信専用

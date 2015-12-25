@@ -181,7 +181,10 @@ inline DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const vector<RE
 inline BOOL ReadVALUE( WORD ver, vector<REC_FILE_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize ){ CCUTIL_VECTOR_READ_; }
 
 DWORD WriteVALUE(WORD ver, BYTE* buff, DWORD buffOffset, const REC_FOLDER_INFO& val);
+BOOL ReadVALUE(WORD ver, REC_FOLDER_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize);
+
 inline DWORD WriteVALUE(WORD ver, BYTE* buff, DWORD buffOffset, const vector<REC_FOLDER_INFO>& val) { CCUTIL_VECTOR_WRITE_; }
+inline BOOL ReadVALUE(WORD ver, vector<REC_FOLDER_INFO>* val, const BYTE* buff, DWORD buffSize, DWORD* readSize) { CCUTIL_VECTOR_READ_; }
 
 DWORD WriteVALUE(WORD ver, BYTE* buff, DWORD buffOffset, const EPG_AUTO_ADD_BASIC_INFO& val);
 BOOL ReadVALUE(WORD ver, EPG_AUTO_ADD_BASIC_INFO* val, const BYTE* buff, DWORD buffSize, DWORD* readSize);
