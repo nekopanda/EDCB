@@ -919,6 +919,7 @@ namespace EpgTimer.Setting
             {
                 button_inst.IsEnabled = true;
                 button_uninst.IsEnabled = false;
+                button_start.IsEnabled = false;
                 button_stop.IsEnabled = false;
             }
             else
@@ -927,12 +928,18 @@ namespace EpgTimer.Setting
                 button_uninst.IsEnabled = true;
                 if (ServiceCtrlClass.IsStarted("EpgTimer Service") == true)
                 {
+                    button_start.IsEnabled = false;
                     button_stop.IsEnabled = true;
                 }
                 else
                 {
+                    button_start.IsEnabled = true;
                     button_stop.IsEnabled = false;
                 }
+            }
+            if (ServiceStop)
+            {
+                labelServiceInfo.Content = "※ 設定を閉じ、接続しなおしてください。";
             }
         }
 
@@ -948,13 +955,62 @@ namespace EpgTimer.Setting
 
         private void button_uninst_Click(object sender, RoutedEventArgs e)
         {
+            bool started = ServiceCtrlClass.IsStarted("EpgTimer Service");
             if (ServiceCtrlClass.Uninstall("EpgTimer Service") == false)
             {
                 MessageBox.Show("アンインストールに失敗しました。\r\nVista以降のOSでは、管理者権限で起動されている必要があります。");
             }
             else
             {
-                ServiceStop = true;
+                ServiceStop |= started;
+            }
+            UpdateServiceBtn();
+        }
+
+        private void button_start_Click(object sender, RoutedEventArgs e)
+        {
+            //System.Diagnostics.Process[] process = System.Diagnostics.Process.GetProcessesByName("EpgTimerSrv");
+            if (CommonManager.Instance.NWMode == false && CommonManager.Instance.IsConnected == true)
+            {
+                int count;
+                if ((count = System.Diagnostics.Process.GetProcessesByName("EpgTimerSrv").Count()) > 0)
+                {
+                    if (MessageBox.Show("EpgTimerSrv を一度終了する必要があります。終了させますか？", "確認", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                    {
+                        if (CommonManager.Instance.CtrlCmd.SendClose() == ErrCode.CMD_SUCCESS)
+                        {
+                            for (int i = 0; i < 5 && (count = System.Diagnostics.Process.GetProcessesByName("EpgTimerSrv").Count()) > 0; i++)
+                            {
+                                System.Threading.Thread.Sleep(1000);
+                            }
+                            if (count > 0)
+                            {
+                                MessageBox.Show("EpgTimerSrv を終了できませんでした。");
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("EpgTimerSrv を終了できませんでした。\r\n[動作設定]-[その他]-[EpgTimerSrvを常駐させる] をオフにしてみてください。");
+                        }
+                    }
+                }
+                if (count == 0)
+                {
+                    bool started = false;
+                    for (int i = 0; i < 5 && (started = ServiceCtrlClass.IsStarted("EpgTimer Service")) == false; i++)
+                    {
+                        ServiceCtrlClass.StartService("EpgTimer Service");
+                        System.Threading.Thread.Sleep(1000);
+                    }
+                    if (started == false)
+                    {
+                        MessageBox.Show("サービスの開始に失敗しました。\r\nVista以降のOSでは、管理者権限で起動されている必要があります。");
+                    }
+                    else
+                    {
+                        ServiceStop = true; // 接続しなおす必要がある。
+                    }
+                }
             }
             UpdateServiceBtn();
         }

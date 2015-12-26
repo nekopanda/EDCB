@@ -58,6 +58,7 @@ namespace EpgTimer
         private void button_cancel_Click(object sender, RoutedEventArgs e)
         {
             IniSetting.Instance.Clear();
+            ServiceStop |= setAppView.ServiceStop;
             this.DialogResult = false;
         }
 
