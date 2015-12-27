@@ -716,15 +716,12 @@ void CEpgTimerSrvMain::ReloadSetting()
 
 	wstring iniPath;
 	GetModuleIniPath(iniPath);
-	if( this->residentFlag == false ){
-		int residentMode = GetPrivateProfileInt(L"SET", L"ResidentMode", 0, iniPath.c_str());
-		if( residentMode >= 1 ){
-			//常駐する(CMD2_EPG_SRV_CLOSEを無視)
-			this->residentFlag = true;
-			//タスクトレイに表示するかどうか
-			PostMessage(this->hwndMain, WM_SHOW_TRAY, residentMode >= 2,
-				GetPrivateProfileInt(L"SET", L"NoBalloonTip", 0, iniPath.c_str()) == 0);
-		}
+	int residentMode = GetPrivateProfileInt(L"SET", L"ResidentMode", 0, iniPath.c_str());
+	this->residentFlag = residentMode >= 1; //常駐するかどうか(CMD2_EPG_SRV_CLOSEを無視)
+	if( this->residentFlag ){
+		//タスクトレイに表示するかどうか
+		PostMessage(this->hwndMain, WM_SHOW_TRAY, residentMode >= 2,
+			GetPrivateProfileInt(L"SET", L"NoBalloonTip", 0, iniPath.c_str()) == 0);
 	}
 	this->saveNotifyLog = GetPrivateProfileInt(L"SET", L"SaveNotifyLog", 0, iniPath.c_str()) != 0;
 	this->wakeMarginSec = GetPrivateProfileInt(L"SET", L"WakeTime", 5, iniPath.c_str()) * 60;
