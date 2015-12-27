@@ -289,7 +289,7 @@ namespace EpgTimer.Setting
                 textBox_autoDelRecInfo.IsEnabled = IniFileHandler.CanUpdateInifile;
 
                 checkBox_timeSync.IsEnabled = false; // EPG取得時に放送波時間でPC時計を同期する
-                checkBox_srvResident.IsEnabled = false; // バルーンチップでの動作通知を抑制する
+                checkBox_srvResident.IsEnabled = false; // EpgTimerSrvを常駐させる
 
                 checkBox_wakeReconnect.IsEnabled = true; // 起動時に前回接続サーバーに接続する
                 checkBox_suspendClose.IsEnabled = true; // 休止／スタンバイ移行時にEpgTimerNWを終了する
@@ -333,7 +333,11 @@ namespace EpgTimer.Setting
             // 読める設定のみ項目に反映させる
             if (IniFileHandler.CanReadInifile)
             {
-                if (checkBox_srvResident.IsEnabled)
+                if (ServiceCtrlClass.IsStarted("EpgTimer Service") == true)
+                {
+                    checkBox_srvResident.IsEnabled = false;
+                }
+                else if (checkBox_srvResident.IsEnabled)
                 {
                     int residentMode = IniFileHandler.GetPrivateProfileInt("SET", "ResidentMode", 0, SettingPath.TimerSrvIniPath);
                     checkBox_srvResident.IsChecked = residentMode >= 1;
@@ -969,13 +973,17 @@ namespace EpgTimer.Setting
 
         private void button_start_Click(object sender, RoutedEventArgs e)
         {
-            //System.Diagnostics.Process[] process = System.Diagnostics.Process.GetProcessesByName("EpgTimerSrv");
             if (CommonManager.Instance.NWMode == false && CommonManager.Instance.IsConnected == true)
             {
                 int count;
                 if ((count = System.Diagnostics.Process.GetProcessesByName("EpgTimerSrv").Count()) > 0)
                 {
-                    if (MessageBox.Show("EpgTimerSrv を一度終了する必要があります。終了させますか？", "確認", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                    int residentMode = IniFileHandler.GetPrivateProfileInt("SET", "ResidentMode", 0, SettingPath.TimerSrvIniPath);
+                    if (residentMode > 0)
+                    {
+                        MessageBox.Show("[動作設定]-[その他]-[EpgTimerSrvを常駐させる] をオフにしてください。");
+                    }
+                    else if (MessageBox.Show("EpgTimerSrv を一度終了する必要があります。終了させますか？", "確認", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                     {
                         if (CommonManager.Instance.CtrlCmd.SendClose() == ErrCode.CMD_SUCCESS)
                         {
@@ -983,14 +991,10 @@ namespace EpgTimer.Setting
                             {
                                 System.Threading.Thread.Sleep(1000);
                             }
-                            if (count > 0)
-                            {
-                                MessageBox.Show("EpgTimerSrv を終了できませんでした。");
-                            }
                         }
-                        else
+                        if (count > 0)
                         {
-                            MessageBox.Show("EpgTimerSrv を終了できませんでした。\r\n[動作設定]-[その他]-[EpgTimerSrvを常駐させる] をオフにしてみてください。");
+                            MessageBox.Show("EpgTimerSrv を終了できませんでした。");
                         }
                     }
                 }
