@@ -14,6 +14,7 @@ using System.Windows.Shapes;
 using System.Threading; //紅
 using System.Windows.Interop; //紅
 using System.Runtime.InteropServices; //紅
+using System.Security.AccessControl;
 
 namespace EpgTimer
 {
@@ -22,7 +23,7 @@ namespace EpgTimer
     /// </summary>
     public partial class MainWindow : Window
     {
-        private System.Threading.Mutex mutex;
+        private Semaphore semaphore;
 
         private TaskTrayClass taskTray = null;
         private bool serviceMode = false;
@@ -56,16 +57,19 @@ namespace EpgTimer
             CommonManager.Instance.MM.ReloadWorkData();
             CommonManager.Instance.ReloadCustContentColorList();
 
-            mutex = new System.Threading.Mutex(false, "Global\\EpgTimer_Bon2");
-            firstInstance = mutex.WaitOne(0, false);
+            SemaphoreSecurity ss = new SemaphoreSecurity();
+            ss.AddAccessRule(new SemaphoreAccessRule("Everyone", SemaphoreRights.FullControl, AccessControlType.Allow));
+            semaphore = new Semaphore(int.MaxValue, int.MaxValue, "Global\\EpgTimer_Bon2", out firstInstance, ss);
+            semaphore.WaitOne(0);
             if (!firstInstance)
             {
                 CheckCmdLine();
 
                 if (Settings.Instance.ApplyMultiInstance == false)
                 {
-                    mutex.Close();
-                    mutex = null;
+                    semaphore.Release();
+                    semaphore.Close();
+                    semaphore = null;
 
                     CloseCmd();
                     return;
@@ -407,6 +411,7 @@ namespace EpgTimer
                 reconnect = dlg.ShowDialog() == true;
             }
 
+            serviceMode = ServiceCtrlClass.IsStarted("EpgTimer Service");
             if (reconnect)
             {
                 Title = appName;
@@ -423,8 +428,7 @@ namespace EpgTimer
                     {
                         if (System.Diagnostics.Process.GetProcessesByName("EpgTimerSrv").Count() == 0)
                         {
-                            serviceMode = ServiceCtrlClass.ServiceIsInstalled("EpgTimer Service");
-                            if (serviceMode == true)
+                            if (ServiceCtrlClass.ServiceIsInstalled("EpgTimer Service") == true)
                             {
                                 if (ServiceCtrlClass.IsStarted("EpgTimer Service") == false)
                                 {
@@ -466,7 +470,6 @@ namespace EpgTimer
                         }
                         else
                         {
-                            serviceMode = ServiceCtrlClass.IsStarted("EpgTimer Service");
                             startExe = true;
                         }
                     }
@@ -630,20 +633,33 @@ namespace EpgTimer
                 if (initExe == true)
                 {
                     SaveData();
-                    DisconnectServer();
                 }
-                if (mutex != null)
+                if (semaphore!= null)
                 {
-                    if (CommonManager.Instance.NWMode == false && serviceMode == false && initExe == true)
+                    int n = semaphore.Release();
+                    if (n == int.MaxValue - 1)
                     {
-                        cmd.SendClose();
+                        if (serviceMode == false && initExe == true)
+                        {
+                            if (CommonManager.Instance.NWMode == false)
+                            {
+                                cmd.SendClose();
+                            }
+                            else if (System.Diagnostics.Process.GetProcessesByName("EpgTimerSrv").Count() > 0)
+                            {
+                                cmd.SetSendMode(false);
+                                IniSetting.Instance.Clear();
+                                int residentMode = IniFileHandler.GetPrivateProfileInt("SET", "ResidentMode", 0, SettingPath.TimerSrvIniPath);
+                                if (residentMode == 0 && MessageBox.Show("このコンピューター上で起動中の EpgTimerSrv.exe を終了させますか？", "確認", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                                {
+                                    cmd.SendClose();
+                                }
+                            }
+                        }
                     }
-                    if (firstInstance)
-                    {
-                        mutex.ReleaseMutex();
-                    }
-                    mutex.Close();
+                    semaphore.Close();
                 }
+                DisconnectServer();
                 if (taskTray != null)
                 {
                     taskTray.Dispose();
