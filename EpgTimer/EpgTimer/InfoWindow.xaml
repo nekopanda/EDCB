@@ -19,7 +19,7 @@
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{Binding Path=Status}" Foreground="{Binding StatusColor}" Width="20"/>
-                        <TextBlock Text="{Binding Path=ShortTime}" Margin="0,0,4,0"/>
+                        <TextBlock Text="{Binding Path=StartTimeShort}" Margin="0,0,4,0"/>
                         <TextBlock Text="{Binding Path=ServiceName}" Width="80" Margin="0,0,4,0"/>
                         <TextBlock Text="{Binding Path=EventName}"/>
                     </StackPanel>
