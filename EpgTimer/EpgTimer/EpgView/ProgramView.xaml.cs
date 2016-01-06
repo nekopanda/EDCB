@@ -81,7 +81,7 @@ namespace EpgTimer.EpgView
             popupItem.Width = viewInfo.Width;
             popupItem.MinHeight = viewInfo.Height;
 
-            double sizeMin = Settings.Instance.FontSizeTitle;
+            double sizeMin = Settings.Instance.FontSizeTitle - 1;
             double sizeTitle = Settings.Instance.FontSizeTitle;
             double sizeNormal = Settings.Instance.FontSize;
             double indentTitle = Math.Floor(sizeMin * 1.7 + 1);
@@ -106,7 +106,7 @@ namespace EpgTimer.EpgView
                 titleText.FontSize = sizeTitle;
                 titleText.FontWeight = titleWeight;
                 titleText.Foreground = CommonManager.Instance.CustTitle1Color;
-                titleText.Margin = new Thickness(indentTitle, 1, 3, 3);
+                titleText.Margin = new Thickness(indentTitle, 1, 0, 3);
                 titleText.LineHeight = Math.Max(Settings.Instance.FontHeightTitle, sizeTitle + 2);
 
                 if (epgInfo.ShortInfo.text_char.Length == 0)
@@ -121,7 +121,7 @@ namespace EpgTimer.EpgView
                     infoText.FontSize = sizeNormal;
                     //infoText.FontWeight = FontWeights.Normal;
                     infoText.Foreground = CommonManager.Instance.CustTitle2Color;
-                    infoText.Margin = new Thickness(indentNormal, 1, 3, 3);
+                    infoText.Margin = new Thickness(indentNormal, 1, 0, 3);
                     infoText.LineHeight = Math.Max(Settings.Instance.FontHeight, sizeNormal + 2);
                 }
             }

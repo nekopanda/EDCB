@@ -55,6 +55,10 @@ namespace EpgTimer.TunerReserveViewCtrl
                 List<double> advanceWidths = new List<double>();
                 for (int n = 0; n < line.Length; n++)
                 {
+                    // XAML に合わせて、行頭の空白を無視する
+                    if (glyphIndexes.Count == 0 && (line[n] == ' ' || line[n] == '\x3000'))
+                        continue;
+
                     //ushort glyphIndex = glyphType.CharacterToGlyphMap[line[n]];
                     //double width = glyphType.AdvanceWidths[glyphIndex] * fontSize;
 
@@ -110,6 +114,10 @@ namespace EpgTimer.TunerReserveViewCtrl
                             totalWidth = 0;
                             glyphIndexes = new List<ushort>();
                             advanceWidths = new List<double>();
+
+                            // XAML に合わせて、行頭の空白を無視する
+                            if (line[n] == ' ' || line[n] == '\x3000')
+                                continue;
                         }
                     }
                     glyphIndexes.Add(glyphIndex);
@@ -174,7 +182,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                     double x = info.LeftPos;
                     double y = info.TopPos;
                     double height = Math.Max(info.Height, 0);
-                    double width = info.Width;
+                    double width = info.Width - 2;
 
                     dc.DrawRectangle(info.BorderBrushTuner, null, new Rect(x, y, width, height));
                     if (height > 2)
@@ -195,7 +203,7 @@ namespace EpgTimer.TunerReserveViewCtrl
 
                         // margin 設定
                         x += 2;
-                        width -= 2;
+                        width -= 4;
 
                         double useHeight = 0;
 
