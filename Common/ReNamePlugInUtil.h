@@ -20,6 +20,25 @@ typedef struct _PLUGIN_RESERVE_INFO{
 	DWORD sizeOfStruct;			//未使用（0または構造体サイズで初期化）（ConvertRecName3で必須）
 }PLUGIN_RESERVE_INFO;
 
+//PlugInの名前を取得する
+//nameがNULL時は必要なサイズをnameSizeで返す
+//通常nameSize=256で呼び出し
+//戻り値
+// TRUE（成功）、FALSE（失敗）
+//引数：
+// name						[OUT]名称
+// nameSize					[IN/OUT]nameのサイズ(WCHAR単位)
+typedef BOOL(WINAPI* GetPlugInNameRNP)(
+	WCHAR* name,
+	DWORD* nameSize
+	);
+
+//PlugInで設定が必要な場合、設定用のダイアログなどを表示する
+//引数：
+// parentWnd				[IN]親ウインドウ
+typedef void (WINAPI* SettingRNP)(
+	HWND parentWnd
+	);
 
 //入力された予約情報を元に、録画時のファイル名を作成する（拡張子含む）
 //recNameがNULL時は必要なサイズをrecNamesizeで返す
@@ -79,6 +98,8 @@ private:
 	struct PLUGIN_INFO
 	{
 		HMODULE hModule;
+		GetPlugInNameRNP   pfnGetPlugInNameRNP;
+		SettingRNP         pfnSettingRNP;
 		ConvertRecNameRNP  pfnConvertRecName;
 		ConvertRecName2RNP pfnConvertRecName2;
 		ConvertRecName3RNP pfnConvertRecName3;
@@ -91,6 +112,30 @@ public:
 	~CReNamePlugInUtil();
 	static CReNamePlugInUtil* GetInstance();
 	void ReleaseInstance();
+
+	//PlugInの名前を取得する
+	//nameがNULL時は必要なサイズをnameSizeで返す
+	//通常nameSize=256で呼び出し
+	//戻り値
+	// TRUE（成功）、FALSE（失敗）
+	//引数：
+	// name						[OUT]名称
+	// nameSize					[IN/OUT]nameのサイズ(WCHAR単位)
+	static BOOL GetPlugInName(
+		const WCHAR* dllPattern,
+		const WCHAR* dllFolder,
+		WCHAR* name,
+		DWORD* nameSize
+		);
+
+	//PlugInで設定が必要な場合、設定用のダイアログなどを表示する
+	//引数：
+	// parentWnd				[IN]親ウインドウ
+	static BOOL Setting(
+		const WCHAR* dllPattern,
+		const WCHAR* dllFolder,
+		HWND parentWnd
+		);
 
 	//入力された予約情報と変換パターンを元に、録画時のファイル名を作成する（拡張子含む）
 	//recNameがNULL時は必要なサイズをrecNamesizeで返す

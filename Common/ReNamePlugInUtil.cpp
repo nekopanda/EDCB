@@ -72,6 +72,8 @@ const CReNamePlugInUtil::PLUGIN_INFO* CReNamePlugInUtil::FindPlugin(
 		}
 		else
 		{
+			plugin->pfnGetPlugInNameRNP = (GetPlugInNameRNP)GetProcAddress(plugin->hModule, "GetPlugInName");
+			plugin->pfnSettingRNP = (SettingRNP)GetProcAddress(plugin->hModule, "Setting");
 			plugin->pfnConvertRecName = (ConvertRecNameRNP)GetProcAddress(plugin->hModule, "ConvertRecName");
 			plugin->pfnConvertRecName2 = (ConvertRecName2RNP)GetProcAddress(plugin->hModule, "ConvertRecName2");
 			plugin->pfnConvertRecName3 = (ConvertRecName3RNP)GetProcAddress(plugin->hModule, "ConvertRecName3");
@@ -79,6 +81,29 @@ const CReNamePlugInUtil::PLUGIN_INFO* CReNamePlugInUtil::FindPlugin(
 		pluginMap.insert(pair<const wstring, const CReNamePlugInUtil::PLUGIN_INFO*>(pluginName, plugin));
 		return plugin;
 	}
+}
+
+BOOL CReNamePlugInUtil::GetPlugInName(const WCHAR * dllPattern, const WCHAR * dllFolder, WCHAR * name, DWORD * nameSize)
+{
+	CReNamePlugInUtil *pluginUtil = CReNamePlugInUtil::GetInstance();
+	const CReNamePlugInUtil::PLUGIN_INFO* plugin = pluginUtil->FindPlugin(dllPattern, dllFolder);
+
+	if (plugin->hModule == NULL || plugin->pfnGetPlugInNameRNP == NULL) {
+		return FALSE;
+	}
+	return plugin->pfnGetPlugInNameRNP(name, nameSize);
+}
+
+BOOL CReNamePlugInUtil::Setting(const WCHAR * dllPattern, const WCHAR * dllFolder, HWND parentWnd)
+{
+	CReNamePlugInUtil *pluginUtil = CReNamePlugInUtil::GetInstance();
+	const CReNamePlugInUtil::PLUGIN_INFO* plugin = pluginUtil->FindPlugin(dllPattern, dllFolder);
+
+	if (plugin->hModule == NULL || plugin->pfnSettingRNP == NULL) {
+		return FALSE;
+	}
+	plugin->pfnSettingRNP(parentWnd);
+	return TRUE;
 }
 
 BOOL CReNamePlugInUtil::ConvertRecName3(

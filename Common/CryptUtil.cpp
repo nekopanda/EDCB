@@ -179,17 +179,14 @@ BOOL CCryptUtil::CalcHmac(const BYTE *pbData, DWORD cbData)
 	return ret;
 }
 
-BOOL CCryptUtil::CompareHmac(const BYTE *pbData)
+BOOL CCryptUtil::GetHmac(BYTE *pbData, DWORD cbData)
 {
-	BYTE tmp[64] = { 0 }; // SHA512(64バイト)まで対応
-	DWORD size = sizeof(tmp);
-
-	if (m_hProv == NULL || m_hHash == NULL || m_hashSize == 0 || size < m_hashSize) {
+	if (m_hProv == NULL || m_hHash == NULL || m_hashSize == 0 || cbData < m_hashSize) {
 		return FALSE;
 	}
 
 	// ipad + data の hash を取得する
-	BOOL ret = CryptGetHashParam(m_hHash, HP_HASHVAL, tmp, &size, 0);
+	BOOL ret = CryptGetHashParam(m_hHash, HP_HASHVAL, pbData, &cbData, 0);
 	CryptDestroyHash(m_hHash);
 	m_hHash = NULL;
 
@@ -197,26 +194,31 @@ BOOL CCryptUtil::CompareHmac(const BYTE *pbData)
 	HCRYPTHASH  hHash = NULL;
 	ret = ret && (CryptCreateHash(m_hProv, m_algid, 0, 0, &hHash) &&
 		CryptHashData(hHash, m_opad, sizeof(m_opad), 0) &&
-		CryptHashData(hHash, tmp, size, 0) &&
-		CryptGetHashParam(hHash, HP_HASHVAL, tmp, &size, 0));
+		CryptHashData(hHash, pbData, cbData, 0) &&
+		CryptGetHashParam(hHash, HP_HASHVAL, pbData, &cbData, 0));
 	if (hHash) {
 		CryptDestroyHash(hHash);
 	}
-
-	return ret && size == m_hashSize && memcmp(pbData, tmp, size) == 0;
+	return ret;
 }
 
-BOOL CCryptUtil::Encrypt(const wstring& input_string, wstring& output_string)
+BOOL CCryptUtil::CompareHmac(const BYTE *pbData)
+{
+	BYTE tmp[64] = { 0 }; // SHA512(64バイト)まで対応
+	return GetHmac(tmp, sizeof(tmp)) && memcmp(pbData, tmp, m_hashSize) == 0;
+}
+
+BOOL CCryptUtil::Encrypt(const wstring& input_string, wstring& output_string, DWORD flags)
 {
 	string utf8;
 	WtoUTF8(input_string, utf8);
-	return Encrypt(utf8, output_string);
+	return Encrypt(utf8, output_string, flags);
 }
 
-BOOL CCryptUtil::Decrypt(const wstring& input_string, wstring& output_string)
+BOOL CCryptUtil::Decrypt(const wstring& input_string, wstring& output_string, DWORD flags)
 {
 	string utf8;
-	BOOL ret = Decrypt(input_string, utf8);
+	BOOL ret = Decrypt(input_string, utf8, flags);
 	if (ret) {
 		UTF8toW(utf8, output_string);
 	}

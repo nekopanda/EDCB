@@ -5,6 +5,7 @@
 #include "CtrlCmdDef.h"
 #include "ErrDef.h"
 #include "CtrlCmdUtil.h"
+#include "CryptUtil.h"
 
 class CSendCtrlCmd
 {
@@ -44,7 +45,8 @@ public:
 	// port			[IN]接続先ポート
 	void SetNWSetting(
 		wstring ip,
-		DWORD port
+		DWORD port,
+		wstring password
 		);
 
 	//接続処理時のタイムアウト設定
@@ -1115,8 +1117,10 @@ protected:
 	wstring pipeName;
 	wstring ip;
 	DWORD port;
+	CCryptUtil hmac;
 
 protected:
+	DWORD Authenticate(SOCKET sock, BYTE** pbdata, DWORD* pndata);
 	DWORD SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut, CMD_STREAM* send, CMD_STREAM* res);
 	DWORD SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* sendCmd, CMD_STREAM* resCmd);
 

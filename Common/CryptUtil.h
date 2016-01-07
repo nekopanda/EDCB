@@ -32,15 +32,16 @@ public:
 	DWORD GetHashSize() { return m_hashSize; }
 
 	BOOL CalcHmac(const BYTE *pbData, DWORD cbData);
+	BOOL GetHmac(BYTE *pbData, DWORD cbData);
 	BOOL CompareHmac(const BYTE *pbData);
 
 	BOOL GetRandom(BYTE *pOut, DWORD cbOut) { return m_hProv != NULL && CryptGenRandom(m_hProv, cbOut, pOut); }
 
-	static BOOL Encrypt(const wstring& input_string, wstring& output_string);
-	static BOOL Decrypt(const wstring& input_string, wstring& output_string);
+	static BOOL Encrypt(const wstring& input_string, wstring& output_string, DWORD flags = CRYPTPROTECT_LOCAL_MACHINE | CRYPTPROTECT_UI_FORBIDDEN | CRYPTPROTECT_AUDIT);
+	static BOOL Decrypt(const wstring& input_string, wstring& output_string, DWORD flags = CRYPTPROTECT_LOCAL_MACHINE | CRYPTPROTECT_UI_FORBIDDEN | CRYPTPROTECT_AUDIT);
 
 	template<class T>
-	static BOOL Encrypt(const string& input_string, T& output_string)
+	static BOOL Encrypt(const string& input_string, T& output_string, DWORD flags = CRYPTPROTECT_LOCAL_MACHINE | CRYPTPROTECT_UI_FORBIDDEN | CRYPTPROTECT_AUDIT)
 	{
 		BOOL ret = TRUE;
 		if (input_string.empty()) {
@@ -49,10 +50,9 @@ public:
 		else {
 			DATA_BLOB input;
 			DATA_BLOB output;
-			DWORD dwFlags = CRYPTPROTECT_LOCAL_MACHINE | CRYPTPROTECT_UI_FORBIDDEN | CRYPTPROTECT_AUDIT;
 			input.pbData = (BYTE*)input_string.data();
 			input.cbData = (DWORD)input_string.size();
-			ret = CryptProtectData(&input, NULL, NULL, NULL, NULL, dwFlags, &output);
+			ret = CryptProtectData(&input, NULL, NULL, NULL, NULL, flags, &output);
 			if (ret) {
 				ret = Base64Encode(output.pbData, output.cbData, output_string);
 				LocalFree(output.pbData);
@@ -62,7 +62,7 @@ public:
 	}
 
 	template<class T>
-	static BOOL Decrypt(const T& input_string, string& output_string)
+	static BOOL Decrypt(const T& input_string, string& output_string, DWORD flags = CRYPTPROTECT_LOCAL_MACHINE | CRYPTPROTECT_UI_FORBIDDEN | CRYPTPROTECT_AUDIT)
 	{
 		BOOL ret = TRUE;
 		if (input_string.empty()) {
@@ -75,10 +75,9 @@ public:
 			if (ret) {
 				DATA_BLOB input;
 				DATA_BLOB output;
-				DWORD dwFlags = CRYPTPROTECT_LOCAL_MACHINE | CRYPTPROTECT_UI_FORBIDDEN | CRYPTPROTECT_AUDIT;
 				input.pbData = pData;
 				input.cbData = cbData;
-				ret = CryptUnprotectData(&input, NULL, NULL, NULL, NULL, dwFlags, &output);
+				ret = CryptUnprotectData(&input, NULL, NULL, NULL, NULL, flags, &output);
 				if (ret) {
 					output_string.assign((char*)output.pbData, output.cbData);
 					LocalFree(output.pbData);

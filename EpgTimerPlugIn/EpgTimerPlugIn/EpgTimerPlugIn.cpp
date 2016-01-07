@@ -425,7 +425,7 @@ LRESULT CALLBACK CEpgTimerPlugIn::StreamCtrlDlgCallback(HWND hwnd,UINT uMsg,WPAR
 					(sys->nwModeInfo.serverIP&0x000000FF));
 
 				sys->cmd.SetSendMode(TRUE);
-				sys->cmd.SetNWSetting(ip,sys->nwModeInfo.serverPort);
+				sys->cmd.SetNWSetting(ip,sys->nwModeInfo.serverPort, L"");
 				sys->cmd.SetConnectTimeOut(15*1000);
 				sys->ctrlDlg.SetCtrlCmd(&sys->cmd, sys->nwModeInfo.ctrlID, sys->nwModeInfo.udpSend, sys->nwModeInfo.tcpSend, TRUE, sys->nwModeInfo.timeShiftMode);
 			}

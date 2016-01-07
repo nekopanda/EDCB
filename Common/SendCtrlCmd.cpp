@@ -7,6 +7,7 @@
 #pragma comment(lib, "Ws2_32.lib")
 */
 #include "StringUtil.h"
+#include "CryptUtil.h"
 
 CSendCtrlCmd::CSendCtrlCmd(void)
 {
@@ -18,7 +19,7 @@ CSendCtrlCmd::CSendCtrlCmd(void)
 
 	this->ip = L"127.0.0.1";
 	this->port = 5678;
-
+	this->hmac.SelectHash((ALG_ID)CALG_MD5);
 }
 
 
@@ -75,13 +76,17 @@ void CSendCtrlCmd::SetPipeSetting(
 //引数：
 // ip			[IN]接続先IP
 // port			[IN]接続先ポート
+// password		[IN]接続先パスワード
 void CSendCtrlCmd::SetNWSetting(
 	wstring ip,
-	DWORD port
+	DWORD port,
+	wstring password
 	)
 {
 	this->ip = ip;
 	this->port = port;
+	this->hmac.Close();
+	this->hmac.Create(password);
 }
 
 //接続処理時のタイムアウト設定
@@ -182,6 +187,74 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut,
 	return res->param;
 }
 
+DWORD CSendCtrlCmd::Authenticate(SOCKET sock, BYTE** pbdata, DWORD* pndata)
+{
+	if (!hmac.IsInitialized()) {
+		return CMD_SUCCESS;
+	}
+
+	// nonce要求
+	DWORD header[2];
+	header[0] = CMD2_EPG_SRV_AUTH_REQUEST;
+	header[1] = 0;
+	if (send(sock, (char*)header, sizeof(header), 0) == SOCKET_ERROR) {
+		return CMD_ERR;
+	}
+
+	// nonce を受け取る
+	if (recv(sock, (char*)header, sizeof(header), 0) != sizeof(header)) {
+		return CMD_ERR;
+	}
+	if (header[0] != CMD_AUTH_REQUEST) {
+		return CMD_ERR;
+	}
+	BYTE *nonce = new BYTE[header[1]];
+	int read = 0;
+	while (read < (int)header[1]) {
+		int ret = recv(sock, (char*)(nonce + read), header[1] - read, 0);
+		if (ret == SOCKET_ERROR || ret == 0) {
+			delete[] nonce;
+			return CMD_ERR;
+		}
+		read += ret;
+	}
+
+	//サーバー応答の nonce とパスワードから応答パケットを作る
+	DWORD sizeAuthPacket = sizeof(DWORD) * 2 + hmac.GetHashSize();
+	if (*pndata > sizeof(DWORD) * 2) {
+		sizeAuthPacket += hmac.GetHashSize();
+	}
+
+	// 認証応答パケット
+	//   cmd[ 0～ 3] : CMD2_EPG_SRV_AUTH_REPLY
+	//   cmd[ 4～ 7] : HMAC size (= 32 bytes)
+	//   cmd[ 8～23] : HMAC for header (16 bytes)
+	//   cmd[24～39] : HMAC for data (16 bytes) if exist;
+	BYTE *cmd = new BYTE[sizeAuthPacket + *pndata];
+	((DWORD*)cmd)[0] = CMD2_EPG_SRV_AUTH_REPLY;
+	((DWORD*)cmd)[1] = sizeAuthPacket - sizeof(DWORD) * 2;
+
+	// コマンドヘッダーのHMACを計算する
+	hmac.CalcHmac(nonce, read);
+	hmac.CalcHmac(*pbdata, sizeof(DWORD) * 2);
+	hmac.GetHmac(cmd + sizeof(DWORD) * 2, hmac.GetHashSize());
+
+	if (*pndata > sizeof(DWORD) * 2) {
+		// コマンド本体のHMACを計算する
+		hmac.CalcHmac(nonce, read);
+		hmac.CalcHmac(*pbdata + sizeof(DWORD) * 2, *pndata - sizeof(DWORD) * 2);
+		hmac.GetHmac(cmd + sizeof(DWORD) * 2 + hmac.GetHashSize(), hmac.GetHashSize());
+	}
+
+	// オリジナルのコマンドパケットを認証応答パケットの後ろに追加する
+	memcpy(cmd + sizeAuthPacket, *pbdata, *pndata);
+
+	delete[] * pbdata;
+	*pbdata = cmd;
+	*pndata += sizeAuthPacket;
+	return CMD_SUCCESS;
+}
+
 DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* sendCmd, CMD_STREAM* resCmd)
 {
 	if( sendCmd == NULL || resCmd == NULL ){
@@ -211,27 +284,29 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 		return CMD_ERR_CONNECT;
 	}
 
-	DWORD read = 0;
-	//送信
-	DWORD head[2];
-	head[0] = sendCmd->param;
-	head[1] = sendCmd->dataSize;
-	ret = send(sock, (char*)head, sizeof(DWORD)*2, 0 );
-	if( ret == SOCKET_ERROR ){
+	// 送信パケット生成
+	DWORD sizeData = sizeof(DWORD) * 2 + sendCmd->dataSize;
+	BYTE *data = new BYTE[sizeData];
+	((DWORD*)data)[0] = sendCmd->param;
+	((DWORD*)data)[1] = sendCmd->dataSize;
+	memcpy(data + sizeof(DWORD) * 2, sendCmd->data, sendCmd->dataSize);
+	delete[] sendCmd->data;
+	sendCmd->data = data;
+
+	if (Authenticate(sock, &sendCmd->data, &sizeData) != CMD_SUCCESS) {
 		closesocket(sock);
 		return CMD_ERR;
 	}
-	if( sendCmd->dataSize > 0 ){
-		if( sendCmd->data == NULL ){
-			closesocket(sock);
-			return CMD_ERR_INVALID_ARG;
-		}
-		ret = send(sock, (char*)sendCmd->data, sendCmd->dataSize, 0 );
-		if( ret == SOCKET_ERROR ){
-			closesocket(sock);
-			return CMD_ERR;
-		}
+
+	//送信: 認証応答パケットとコマンドパケットをまとめて送る
+	ret = send(sock, (char*)sendCmd->data, sizeData, 0);
+	if (ret == SOCKET_ERROR) {
+		closesocket(sock);
+		return CMD_ERR;
 	}
+
+	DWORD read = 0;
+	DWORD head[2];
 	//受信
 	ret = recv(sock, (char*)head, sizeof(DWORD)*2, 0 );
 	if( ret != sizeof(DWORD)*2 ){

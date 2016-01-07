@@ -1,0 +1,280 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "windows.h"
+#include "../resource.h"
+/////////////////////////////////////////////////////////////////////////////
+// 日本語 (日本) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_JPN)
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+#pragma code_page(932)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_RESERVELIST         ICON                    "ReserveList.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_TABICONS            BITMAP                  "TabIcons.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDM_RESERVEITEM MENU
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM "予約の変更(&C)...",                CM_RESERVE_SETTINGS
+        POPUP "優先度(&P)"
+        BEGIN
+            MENUITEM "&1 (最低)",                     CM_RESERVE_PRIORITY_1
+            MENUITEM "&2 (低)",                      CM_RESERVE_PRIORITY_2
+            MENUITEM "&3 (中)",                      CM_RESERVE_PRIORITY_3
+            MENUITEM "&4 (高)",                      CM_RESERVE_PRIORITY_4
+            MENUITEM "&5 (最高)",                     CM_RESERVE_PRIORITY_5
+        END
+        POPUP "録画モード(&M)"
+        BEGIN
+            MENUITEM "全サービス(&A)",                   CM_RESERVE_RECMODE_ALL
+            MENUITEM "指定サービス(&S)",                  CM_RESERVE_RECMODE_SERVICE
+            MENUITEM "全サービス (スクランブル解除なし) (&D)",     CM_RESERVE_RECMODE_ALL_NODESCRAMBLE
+            MENUITEM "指定サービス (スクランブル解除なし) (&E)",    CM_RESERVE_RECMODE_SERVICE_NODESCRAMBLE
+            MENUITEM "視聴(&V)",                      CM_RESERVE_RECMODE_VIEW
+            MENUITEM "無効(&N)",                      CM_RESERVE_RECMODE_NO
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "予約の削除(&D)\tDel",              CM_RESERVE_DELETE
+    END
+END
+
+IDM_RECORDEDFILE MENU
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM "ファイルを開く(&O)",                 CM_RECORDEDFILE_OPEN
+        MENUITEM "フォルダを開く(&F)",                 CM_RECORDEDFILE_OPENFOLDER
+        MENUITEM SEPARATOR
+        MENUITEM "リストから削除(&R)\tDel",            CM_RECORDEDFILE_REMOVE
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_OPTIONS DIALOGEX 0, 0, 240, 152
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "EDCB Support Plugin 設定"
+FONT 9, "ＭＳ Ｐゴシック", 0, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,116,134,56,14
+    PUSHBUTTON      "キャンセル",IDCANCEL,176,134,56,14
+    CONTROL         "ローカル",IDC_OPTIONS_USELOCAL,"Button",BS_AUTORADIOBUTTON | WS_GROUP,8,8,40,8
+    CONTROL         "ネットワーク",IDC_OPTIONS_USENETWORK,"Button",BS_AUTORADIOBUTTON,8,36,56,8
+    LTEXT           "EDCBフォルダ:",IDC_OPTIONS_EDCBFOLDER_LABEL,16,22,48,8
+    EDITTEXT        IDC_OPTIONS_EDCBFOLDER,68,20,146,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_OPTIONS_EDCBFOLDER_BROWSE,218,19,14,14
+    LTEXT           "アドレス:",IDC_OPTIONS_NETWORKADDRESS_LABEL,16,50,48,8
+    EDITTEXT        IDC_OPTIONS_NETWORKADDRESS,68,48,80,12,ES_AUTOHSCROLL
+    LTEXT           "ポート:",IDC_OPTIONS_NETWORKPORT_LABEL,156,50,24,8
+    EDITTEXT        IDC_OPTIONS_NETWORKPORT,184,48,32,12,ES_NUMBER
+    GROUPBOX        "表示",-1,8,78,224,48
+    CONTROL         "通常予約",IDC_OPTIONS_COLOR_NORMAL_ENABLE,"Button",BS_AUTOCHECKBOX | BS_LEFTTEXT | WS_TABSTOP,16,92,64,9
+    PUSHBUTTON      "",IDC_OPTIONS_COLOR_NORMAL_CHOOSE,84,89,32,14
+    CONTROL         "無効予約",IDC_OPTIONS_COLOR_DISABLED_ENABLE,"Button",BS_AUTOCHECKBOX | BS_LEFTTEXT | WS_TABSTOP,16,108,64,9
+    PUSHBUTTON      "",IDC_OPTIONS_COLOR_DISABLED_CHOOSE,84,105,32,14
+    CONTROL         "チューナー不足",IDC_OPTIONS_COLOR_NOTUNER_ENABLE,"Button",BS_AUTOCHECKBOX | BS_LEFTTEXT | WS_TABSTOP,124,92,64,9
+    PUSHBUTTON      "",IDC_OPTIONS_COLOR_NOTUNER_CHOOSE,192,89,32,14
+    CONTROL         "一部実行",IDC_OPTIONS_COLOR_CONFLICT_ENABLE,"Button",BS_AUTOCHECKBOX | BS_LEFTTEXT | WS_TABSTOP,124,108,64,9
+    PUSHBUTTON      "",IDC_OPTIONS_COLOR_CONFLICT_CHOOSE,192,105,32,14
+    LTEXT           "パスワード:",IDC_OPTIONS_NETWORKPASSWORD_LABEL,16,65,48,8
+    EDITTEXT        IDC_OPTIONS_NETWORKPASSWORD,68,63,80,12,ES_PASSWORD | ES_AUTOHSCROLL
+END
+
+IDD_RESERVE DIALOG 0, 0, 272, 304
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "EpgTimer 予約設定"
+FONT 9, "ＭＳ Ｐゴシック"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,148,282,56,14
+    PUSHBUTTON      "キャンセル",IDCANCEL,208,282,56,14
+    EDITTEXT        IDC_RESERVE_INFO,0,0,272,24,ES_MULTILINE | ES_READONLY | NOT WS_BORDER
+    LTEXT           "タイトル:",-1,8,34,36,8
+    EDITTEXT        IDC_RESERVE_TITLE,64,32,200,12,ES_AUTOHSCROLL
+    CONTROL         "プログラム予約",IDC_RESERVE_PROGRAM,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,48,64,9
+    LTEXT           "開始日時:",IDC_RESERVE_STARTTIME_LABEL,8,62,36,8
+    CONTROL         "",IDC_RESERVE_STARTTIME,"SysDateTimePick32",WS_TABSTOP,64,60,92,12
+    LTEXT           "終了日時:",IDC_RESERVE_ENDTIME_LABEL,8,78,36,8
+    CONTROL         "",IDC_RESERVE_ENDTIME,"SysDateTimePick32",WS_TABSTOP,64,76,92,12
+    CONTROL         "追従する",IDC_RESERVE_FOLLOW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,92,40,9
+    CONTROL         "ぴったり(?)録画",IDC_RESERVE_JUST,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,56,92,64,9
+    LTEXT           "録画モード:",-1,8,106,48,8
+    COMBOBOX        IDC_RESERVE_RECMODE,64,104,124,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "優先度:",-1,196,106,24,8
+    COMBOBOX        IDC_RESERVE_PRIORITY,224,104,40,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "録画フォルダ:",-1,8,120,48,8
+    LISTBOX         IDC_RESERVE_FOLDERLIST,64,120,156,52,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP
+    PUSHBUTTON      "追加...",IDC_RESERVE_FOLDERLIST_ADD,224,120,40,14
+    PUSHBUTTON      "編集...",IDC_RESERVE_FOLDERLIST_EDIT,224,136,40,14
+    PUSHBUTTON      "削除",IDC_RESERVE_FOLDERLIST_REMOVE,224,158,40,14
+    LTEXT           "録画後動作:",-1,8,178,44,8
+    COMBOBOX        IDC_RESERVE_SUSPENDMODE,64,176,64,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "復帰後再起動する",IDC_RESERVE_REBOOT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,136,178,72,9
+    LTEXT           "録画後実行BAT:",-1,8,196,52,8
+    COMBOBOX        IDC_RESERVE_BAT,64,194,182,80,CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "...",IDC_RESERVE_BAT_BROWSE,250,193,14,14
+    CONTROL         "録画マージンを指定する",IDC_RESERVE_USEMARGIN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,212,88,9
+    LTEXT           "開始:",IDC_RESERVE_STARTMARGIN_LABEL,104,212,20,8
+    EDITTEXT        IDC_RESERVE_STARTMARGIN,128,210,32,12,ES_AUTOHSCROLL
+    LTEXT           "秒",IDC_RESERVE_STARTMARGIN_UNIT,162,212,8,8
+    LTEXT           "終了:",IDC_RESERVE_ENDMARGIN_LABEL,180,212,20,8
+    EDITTEXT        IDC_RESERVE_ENDMARGIN,204,210,32,12,ES_AUTOHSCROLL
+    LTEXT           "秒",IDC_RESERVE_ENDMARGIN_UNIT,238,212,8,8
+    CONTROL         "対象データを指定する",IDC_RESERVE_SERVICEMODE_CUSTOM,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,226,80,9
+    CONTROL         "字幕データ",IDC_RESERVE_SERVICEMODE_CAPTION,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,104,226,48,9
+    CONTROL         "データ放送",IDC_RESERVE_SERVICEMODE_DATA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,160,226,48,9
+    CONTROL         "ワンセグを別ファイルに同時出力する",IDC_RESERVE_PARTIALREC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,238,128,9
+    CONTROL         "連続した録画を同じファイルに出力する",IDC_RESERVE_CONTINUEREC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,250,136,9
+    LTEXT           "使用チューナー:",-1,8,264,52,8
+    COMBOBOX        IDC_RESERVE_TUNER,64,262,120,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_HSCROLL
+END
+
+IDD_FOLDER DIALOG 0, 0, 240, 86
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "フォルダ設定"
+FONT 9, "ＭＳ Ｐゴシック"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,116,64,56,14
+    PUSHBUTTON      "キャンセル",IDCANCEL,176,64,56,14
+    LTEXT           "フォルダ:",-1,8,10,32,8
+    EDITTEXT        IDC_FOLDER_FOLDER,68,8,146,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_FOLDER_FOLDER_BROWSE,218,7,14,14
+    LTEXT           "出力PlugIn:",-1,8,26,40,8
+    COMBOBOX        IDC_FOLDER_WRITEPLUGIN,68,24,128,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "設定",IDC_FOLDER_WRITEPLUGIN_SETTING,200,23,32,14
+    LTEXT           "ファイル名PlugIn:",-1,8,42,56,8
+    COMBOBOX        IDC_FOLDER_FILENAMEPLUGIN,68,40,128,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "設定",IDC_FOLDER_FILENAMEPLUGIN_SETTING,200,39,32,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 0,2,0,0
+ PRODUCTVERSION 0,2,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "041104B0"
+        BEGIN
+            VALUE "Comments", "TVTest EDCB Support Plugin"
+            VALUE "CompanyName", "HDUSTestの中の人"
+            VALUE "FileDescription", "EDCBSupport"
+            VALUE "FileVersion", "0.2.0"
+            VALUE "InternalName", "EDCBSupport"
+            VALUE "OriginalFilename", "EDCBSupport.tvtp"
+            VALUE "ProductName", "EDCBSupport"
+            VALUE "ProductVersion", "0.2.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x411, 1200
+    END
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_OPTIONS, DIALOG
+    BEGIN
+    END
+
+    IDD_FOLDER, DIALOG
+    BEGIN
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_OPTIONS AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+#endif    // 日本語 (日本) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

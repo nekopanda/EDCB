@@ -356,7 +356,7 @@ UINT CNotifyManager::SendNotifyThread()
 			}
 
 			sendCtrl.SetSendMode(TRUE);
-			sendCtrl.SetNWSetting(itrTCP->second.ip, itrTCP->second.port);
+			sendCtrl.SetNWSetting(itrTCP->second.ip, itrTCP->second.port, L"");
 			sendCtrl.SetConnectTimeOut(10*1000);
 
 			DWORD err = sendCtrl.SendGUINotifyInfo2(&notifyInfo);
