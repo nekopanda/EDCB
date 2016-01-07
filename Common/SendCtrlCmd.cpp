@@ -19,7 +19,8 @@ CSendCtrlCmd::CSendCtrlCmd(void)
 
 	this->ip = L"127.0.0.1";
 	this->port = 5678;
-	this->hmac.SelectHash((ALG_ID)CALG_MD5);
+
+	this->pfnSend = SendPipe;
 }
 
 
@@ -57,6 +58,7 @@ void CSendCtrlCmd::SetPipeSetting(
 {
 	this->eventName = eventName;
 	this->pipeName = pipeName;
+	this->pfnSend = SendPipe;
 }
 
 //名前付きパイプモード時の接続先を設定（接尾にプロセスIDを伴うタイプ）
@@ -70,6 +72,7 @@ void CSendCtrlCmd::SetPipeSetting(
 {
 	Format(this->eventName, L"%s%d", eventName, pid);
 	Format(this->pipeName, L"%s%d", pipeName, pid);
+	this->pfnSend = SendPipe;
 }
 
 //TCP/IPモード時の接続先を設定
@@ -86,7 +89,9 @@ void CSendCtrlCmd::SetNWSetting(
 	this->ip = ip;
 	this->port = port;
 	this->hmac.Close();
+	this->hmac.SelectHash((ALG_ID)CALG_MD5);
 	this->hmac.Create(password);
+	this->pfnSend = SendTCP;
 }
 
 //接続処理時のタイムアウト設定
@@ -96,6 +101,11 @@ void CSendCtrlCmd::SetConnectTimeOut(
 	)
 {
 	this->connectTimeOut = timeOut;
+}
+
+DWORD CSendCtrlCmd::SendPipe(CSendCtrlCmd *t, CMD_STREAM* send, CMD_STREAM* res)
+{
+	return t->SendPipe(t->pipeName.c_str(), t->eventName.c_str(), t->connectTimeOut, send, res);
 }
 
 DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut, CMD_STREAM* send, CMD_STREAM* res)
@@ -255,6 +265,10 @@ DWORD CSendCtrlCmd::Authenticate(SOCKET sock, BYTE** pbdata, DWORD* pndata)
 	return CMD_SUCCESS;
 }
 
+DWORD CSendCtrlCmd::SendTCP(CSendCtrlCmd *t, CMD_STREAM* sendCmd, CMD_STREAM* resCmd)
+{
+	return t->SendTCP(t->ip, t->port, t->connectTimeOut, sendCmd, resCmd);
+}
 DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* sendCmd, CMD_STREAM* resCmd)
 {
 	if( sendCmd == NULL || resCmd == NULL ){
@@ -382,10 +396,8 @@ DWORD CSendCtrlCmd::SendCmdStream(CMD_STREAM* send, CMD_STREAM* res)
 	if( res == NULL ){
 		res = &tmpRes;
 	}
-	if( this->tcpFlag == FALSE ){
-		ret = SendPipe(this->pipeName.c_str(), this->eventName.c_str(), this->connectTimeOut, send, res);
-	}else{
-		ret = SendTCP(this->ip, this->port, this->connectTimeOut, send, res);
+	if (this->pfnSend) {
+		ret = this->pfnSend(this, send, res);
 	}
 
 	return ret;
