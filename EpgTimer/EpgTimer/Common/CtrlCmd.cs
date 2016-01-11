@@ -767,25 +767,27 @@ namespace EpgTimer
         public ErrCode SendViewSetStreamingInfo(TVTestStreamingInfo val) { return SendCmdData(CtrlCmd.CMD_VIEW_APP_TT_SET_CTRL, val); }
         #endregion
 
+        private static int ReadAll(Stream s, byte[] buffer, int offset, int size)
+        {
+            int n = 0;
+            for (int m; n < size && (m = s.Read(buffer, offset + n, size - n)) > 0; n += m) ;
+            return n;
+        }
+
         private ErrCode ReadCmdResponse(Stream s, ref MemoryStream res)
         {
             try
             {
                 var head = new byte[8];
-                if (s.Read(head, 0, 8) != 8)
+                if (ReadAll(s, head, 0, 8) != 8)
                 {
                     return ErrCode.CMD_ERR;
                 }
                 uint resParam = BitConverter.ToUInt32(head, 0);
                 var resData = new byte[BitConverter.ToUInt32(head, 4)];
-                for (int n = 0; n < resData.Length;)
+                if (ReadAll(s, resData, 0, resData.Length) != resData.Length)
                 {
-                    int m = s.Read(resData, n, resData.Length - n);
-                    if (m <= 0)
-                    {
-                        return ErrCode.CMD_ERR;
-                    }
-                    n += m;
+                    return ErrCode.CMD_ERR;
                 }
                 res = new MemoryStream(resData, false);
                 return Enum.IsDefined(typeof(ErrCode), resParam) ? (ErrCode)resParam : ErrCode.CMD_ERR;
@@ -942,23 +944,22 @@ namespace EpgTimer
                     using (System.Net.Sockets.NetworkStream ns = tcp.GetStream())
                     {
                         // 送信パケット生成
-                        uint sizeData = send == null ? 0 : (uint)send.Length;
-                        byte[] data = new byte[8 + sizeData];
-                        BitConverter.GetBytes((uint)param).CopyTo(data, 0);
-                        BitConverter.GetBytes(sizeData).CopyTo(data, 4);
-                        if (sizeData > 0)
+                        var head = new byte[8 + (send == null ? 0 : send.Length)];
+                        BitConverter.GetBytes((uint)param).CopyTo(head, 0);
+                        BitConverter.GetBytes((uint)(send == null ? 0 : send.Length)).CopyTo(head, 4);
+                        if (send != null && send.Length != 0)
                         {
                             send.Close();
-                            send.ToArray().CopyTo(data, 8);
+                            send.ToArray().CopyTo(head, 8);
                         }
 
-                        if (Authenticate(ns, ref data) != ErrCode.CMD_SUCCESS)
+                        if (Authenticate(ns, ref head) != ErrCode.CMD_SUCCESS)
                         {
                             return ErrCode.CMD_ERR;
                         }
 
                         // 送信: 認証応答パケットとコマンドパケットをまとめて送る
-                        ns.Write(data, 0, data.Length);
+                        ns.Write(head, 0, head.Length);
 
                         // 受信
                         return ReadCmdResponse(ns, ref res);

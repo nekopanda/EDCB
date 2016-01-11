@@ -26,7 +26,6 @@ namespace EpgTimer
         public NotifyLogWindow()
         {
             InitializeComponent();
-            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             //リストビュー関連の設定
             lstCtrl = new ListViewController<NotifySrvInfoItem>(this);

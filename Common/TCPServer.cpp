@@ -32,6 +32,17 @@ BOOL CTCPServer::StartServer(DWORD dwPort, DWORD dwResponseTimeout, LPCWSTR acl,
 		return FALSE;
 	}
 
+#if 0
+	if( m_hThread != NULL &&
+	    m_pCmdProc == pfnCmdProc &&
+	    m_pParam == pParam &&
+	    m_dwPort == dwPort &&
+	    m_dwResponseTimeout == dwResponseTimeout &&
+	    m_acl == acl ){
+		return TRUE;
+	}
+#endif
+
 	StopServer();
 
 	m_pCmdProc = pfnCmdProc;
@@ -52,9 +63,6 @@ BOOL CTCPServer::StartServer(DWORD dwPort, DWORD dwResponseTimeout, LPCWSTR acl,
 	BOOL b=1;
 
 	setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&b, sizeof(b));
-	DWORD socketBuffSize = 1024*1024;
-	setsockopt(m_sock, SOL_SOCKET, SO_SNDBUF, (const char*)&socketBuffSize, sizeof(socketBuffSize));
-	setsockopt(m_sock, SOL_SOCKET, SO_SNDBUF, (const char*)&socketBuffSize, sizeof(socketBuffSize));
 
 	bind(m_sock, (struct sockaddr *)&addr, sizeof(addr));
 
@@ -118,10 +126,25 @@ static BOOL TestAcl(struct in_addr addr, wstring acl)
 	}
 }
 
+static int RecvAll(SOCKET sock, char* buf, int len, int flags)
+{
+	int n = 0;
+	while( n < len ){
+		int ret = recv(sock, buf + n, len - n, flags);
+		if( ret < 0 ){
+			return ret;
+		}else if( ret <= 0 ){
+			break;
+		}
+		n += ret;
+	}
+	return n;
+}
+
 BOOL CTCPServer::ReceiveHeader(SOCKET sock, CMD_STREAM& stCmd, AUTH_INFO* auth)
 {
 	DWORD head[2];
-	int iRet = recv(sock, (char*)head, sizeof(DWORD) * 2, 0);
+	int iRet = RecvAll(sock, (char*)head, sizeof(DWORD) * 2, 0);
 	if (iRet != sizeof(DWORD) * 2) {
 		return FALSE;
 	}
@@ -145,19 +168,7 @@ BOOL CTCPServer::ReceiveData(SOCKET sock, CMD_STREAM& stCmd, AUTH_INFO* auth)
 
 	SAFE_DELETE_ARRAY(stCmd.data);
 	stCmd.data = new BYTE[stCmd.dataSize];
-
-	DWORD dwRead = 0;
-	while (dwRead < stCmd.dataSize) {
-		int iRet = recv(sock, (char*)(stCmd.data + dwRead), stCmd.dataSize - dwRead, 0);
-		if (iRet == SOCKET_ERROR) {
-			break;
-		}
-		else if (iRet == 0) {
-			break;
-		}
-		dwRead += iRet;
-	}
-	if (dwRead < stCmd.dataSize) {
+	if (RecvAll(sock, (char*)stCmd.data, stCmd.dataSize, 0) != stCmd.dataSize) {
 		return FALSE;
 	}
 
@@ -170,19 +181,18 @@ BOOL CTCPServer::ReceiveData(SOCKET sock, CMD_STREAM& stCmd, AUTH_INFO* auth)
 
 BOOL CTCPServer::SendData(SOCKET sock, CMD_STREAM& stRes)
 {
-	DWORD head[2] = { stRes.param, stRes.dataSize };
-	int iRet = send(sock, (char*)head, sizeof(DWORD) * 2, 0);
-	if (iRet == SOCKET_ERROR) {
-		return FALSE;
+	BYTE head[1024];
+	((DWORD*)head)[0] = stRes.param;
+	((DWORD*)head)[1] = stRes.dataSize;
+
+	DWORD extSize = 0;
+	if( stRes.dataSize > 0 ){
+		extSize = min(stRes.dataSize, sizeof(head) - sizeof(DWORD)*2);
+		memcpy(head + sizeof(DWORD)*2, stRes.data, extSize);
 	}
-	if (stRes.dataSize > 0) {
-		if (stRes.data == NULL) {
-			return FALSE;
-		}
-		iRet = send(sock, (char*)(stRes.data), stRes.dataSize, 0);
-		if (iRet == SOCKET_ERROR) {
-			return FALSE;
-		}
+	if( send(sock, (char*)head, sizeof(DWORD)*2 + extSize, 0) == SOCKET_ERROR ||
+		stRes.dataSize > extSize && send(sock, (char*)stRes.data + extSize, stRes.dataSize - extSize, 0) == SOCKET_ERROR ){
+		return FALSE;
 	}
 	return TRUE;
 }
@@ -298,12 +308,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 						continue;
 					}
 				}else{
-					DWORD head[2] = { stRes.param, stRes.dataSize };
-					if( send(waitList[i].sock, (const char*)head, sizeof(head), 0) != SOCKET_ERROR ){
-						if( stRes.dataSize > 0 && stRes.data != NULL ){
-							send(waitList[i].sock, (const char*)stRes.data, stRes.dataSize, 0);
-						}
-					}
+					pSys->SendData(waitList[i].sock, stRes);
 				}
 				shutdown(waitList[i].sock, SD_BOTH);
 			}
@@ -335,6 +340,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					blacklist.erase(itr_bl->first);
 				}
 			}
+
 			for(;;){
 				AUTH_INFO auth;
 				CMD_STREAM stCmd;

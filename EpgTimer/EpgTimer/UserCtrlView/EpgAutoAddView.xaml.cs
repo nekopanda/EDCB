@@ -36,7 +36,6 @@ namespace EpgTimer
         public EpgAutoAddView()
         {
             InitializeComponent();
-            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             try
             {

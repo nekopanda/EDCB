@@ -420,6 +420,7 @@ namespace EpgTimer
             }
         }
 
+#if false
         public void WalkLogicalTree(DependencyObject obj, Func<object, bool> func)
         {
             if (func(obj) == false)
@@ -460,6 +461,7 @@ namespace EpgTimer
                 return false;
             });
         }
+#endif
     }
 
     public static class ViewUtilEx

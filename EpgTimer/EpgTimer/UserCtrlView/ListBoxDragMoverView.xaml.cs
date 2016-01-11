@@ -25,7 +25,6 @@ namespace EpgTimer.UserCtrlView
         public ListBoxDragMoverView()
         {
             InitializeComponent();
-            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             try
             {

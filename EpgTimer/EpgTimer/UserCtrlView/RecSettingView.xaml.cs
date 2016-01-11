@@ -33,7 +33,6 @@ namespace EpgTimer
         public RecSettingView()
         {
             InitializeComponent();
-            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             try
             {

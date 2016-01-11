@@ -23,7 +23,6 @@ namespace EpgTimer
         public ColorSetWindow()
         {
             InitializeComponent();
-            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             slider_R.Value = 0xFF;
             slider_G.Value = 0xFF;

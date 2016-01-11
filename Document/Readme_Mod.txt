@@ -327,6 +327,11 @@ EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
   EpgTimerSrv.iniのSETでSaveNotifyLog=1とすると、EpgTimerSrvのあるフォルダの
   EpgTimerSrvNotifyLog.txtにも保存できます(EpgTimerSrvによる直接保存)【追加】。
 
+◇デザインをロードしない
+  NoStyleが0(デフォルト)のとき、EpgTimerのあるフォルダにEpgTimer.exe.rd.xamlがあ
+  れば、そこに定義されたリソースを適用します【追加】。iniフォルダに簡単なサンプ
+  ルを用意したので参考にしてください。
+
 ◇DLNAのDMSぽい機能を使う
   「Civetwebの組み込みについて」を参照。
 
@@ -456,7 +461,6 @@ S GetPrivateProfile( セクション:S, キー:S, 既定値:S|I|B, ファイル名:S )
   ファイル名はEDCBフォルダ配下に置かれたiniファイルを相対指定する。
   例：v=0+edcb.GetPrivateProfile('SET','HttpPort',5510,'EpgTimerSrv.ini')
   ファイル名が'Setting\\'で始まるときは「設定関係保存フォルダ」にリダイレクトされる。
-  戻り値がUTF-16換算で8192文字以上の部分は切り捨てられる。
   特例的に以下の引数でEDCBフォルダのパスが返る。
   edcb.GetPrivateProfile('SET','ModulePath','','Common.ini')
 

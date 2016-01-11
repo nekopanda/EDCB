@@ -103,11 +103,17 @@ void CSendCtrlCmd::SetConnectTimeOut(
 	this->connectTimeOut = timeOut;
 }
 
+static DWORD ReadFileAll(HANDLE hFile, BYTE* lpBuffer, DWORD dwToRead)
+{
+	DWORD dwRet = 0;
+	for( DWORD dwRead; dwRet < dwToRead && ReadFile(hFile, lpBuffer + dwRet, dwToRead - dwRet, &dwRead, NULL); dwRet += dwRead );
+	return dwRet;
+}
+
 DWORD CSendCtrlCmd::SendPipe(CSendCtrlCmd *t, CMD_STREAM* send, CMD_STREAM* res)
 {
 	return t->SendPipe(t->pipeName.c_str(), t->eventName.c_str(), t->connectTimeOut, send, res);
 }
-
 DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut, CMD_STREAM* send, CMD_STREAM* res)
 {
 	if( pipeName == NULL || eventName == NULL || send == NULL || res == NULL ){
@@ -137,7 +143,6 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut,
 	}
 
 	DWORD write = 0;
-	DWORD read = 0;
 
 	//送信
 	DWORD head[2];
@@ -148,28 +153,14 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut,
 		return CMD_ERR;
 	}
 	if( send->dataSize > 0 ){
-		if( send->data == NULL ){
+		if( WriteFile(pipe, send->data, send->dataSize, &write, NULL ) == FALSE ){
 			CloseHandle(pipe);
-			return CMD_ERR_INVALID_ARG;
-		}
-		DWORD sendNum = 0;
-		while(sendNum < send->dataSize ){
-			DWORD sendSize = 0;
-			if( send->dataSize - sendNum < CMD2_SEND_BUFF_SIZE ){
-				sendSize = send->dataSize - sendNum;
-			}else{
-				sendSize = CMD2_SEND_BUFF_SIZE;
-			}
-			if( WriteFile(pipe, send->data + sendNum, sendSize, &write, NULL ) == FALSE ){
-				CloseHandle(pipe);
-				return CMD_ERR;
-			}
-			sendNum += write;
+			return CMD_ERR;
 		}
 	}
 
 	//受信
-	if( ReadFile(pipe, head, sizeof(DWORD)*2, &read, NULL ) == FALSE || read != sizeof(DWORD)*2 ){
+	if( ReadFileAll(pipe, (BYTE*)head, sizeof(head)) != sizeof(head) ){
 		CloseHandle(pipe);
 		return CMD_ERR;
 	}
@@ -177,24 +168,29 @@ DWORD CSendCtrlCmd::SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut,
 	res->dataSize = head[1];
 	if( res->dataSize > 0 ){
 		res->data = new BYTE[res->dataSize];
-		DWORD readNum = 0;
-		while(readNum < res->dataSize ){
-			DWORD readSize = 0;
-			if( res->dataSize - readNum < CMD2_RES_BUFF_SIZE ){
-				readSize = res->dataSize - readNum;
-			}else{
-				readSize = CMD2_RES_BUFF_SIZE;
-			}
-			if( ReadFile(pipe, res->data + readNum, readSize, &read, NULL ) == FALSE ){
-				CloseHandle(pipe);
-				return CMD_ERR;
-			}
-			readNum += read;
+		if( ReadFileAll(pipe, res->data, res->dataSize) != res->dataSize ){
+			CloseHandle(pipe);
+			return CMD_ERR;
 		}
 	}
 	CloseHandle(pipe);
 
 	return res->param;
+}
+
+static int RecvAll(SOCKET sock, char* buf, int len, int flags)
+{
+	int n = 0;
+	while( n < len ){
+		int ret = recv(sock, buf + n, len - n, flags);
+		if( ret < 0 ){
+			return ret;
+		}else if( ret <= 0 ){
+			break;
+		}
+		n += ret;
+	}
+	return n;
 }
 
 DWORD CSendCtrlCmd::Authenticate(SOCKET sock, BYTE** pbdata, DWORD* pndata)
@@ -212,21 +208,16 @@ DWORD CSendCtrlCmd::Authenticate(SOCKET sock, BYTE** pbdata, DWORD* pndata)
 	}
 
 	// nonce を受け取る
-	if (recv(sock, (char*)header, sizeof(header), 0) != sizeof(header)) {
+	if (RecvAll(sock, (char*)header, sizeof(header), 0) != sizeof(header)) {
 		return CMD_ERR;
 	}
 	if (header[0] != CMD_AUTH_REQUEST) {
 		return CMD_ERR;
 	}
 	BYTE *nonce = new BYTE[header[1]];
-	int read = 0;
-	while (read < (int)header[1]) {
-		int ret = recv(sock, (char*)(nonce + read), header[1] - read, 0);
-		if (ret == SOCKET_ERROR || ret == 0) {
-			delete[] nonce;
-			return CMD_ERR;
-		}
-		read += ret;
+	int read = RecvAll(sock, (char*)nonce, header[1], 0);
+	if (read != (int)header[1]) {
+		return CMD_ERR;
 	}
 
 	//サーバー応答の nonce とパスワードから応答パケットを作る
@@ -259,7 +250,7 @@ DWORD CSendCtrlCmd::Authenticate(SOCKET sock, BYTE** pbdata, DWORD* pndata)
 	// オリジナルのコマンドパケットを認証応答パケットの後ろに追加する
 	memcpy(cmd + sizeAuthPacket, *pbdata, *pndata);
 
-	delete[] * pbdata;
+	SAFE_DELETE_ARRAY(*pbdata);
 	*pbdata = cmd;
 	*pndata += sizeAuthPacket;
 	return CMD_SUCCESS;
@@ -284,9 +275,6 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	string strA = "";
 	WtoA(ip, strA);
 	server.sin_addr.S_un.S_addr = inet_addr(strA.c_str());
-	DWORD socketBuffSize = 1024*1024;
-	setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (const char*)&socketBuffSize, sizeof(socketBuffSize));
-	setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (const char*)&socketBuffSize, sizeof(socketBuffSize));
 
 	int ret = connect(sock, (struct sockaddr *)&server, sizeof(server));
 	if( ret == SOCKET_ERROR ){
@@ -304,7 +292,7 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	((DWORD*)data)[0] = sendCmd->param;
 	((DWORD*)data)[1] = sendCmd->dataSize;
 	memcpy(data + sizeof(DWORD) * 2, sendCmd->data, sendCmd->dataSize);
-	delete[] sendCmd->data;
+	SAFE_DELETE_ARRAY(sendCmd->data);
 	sendCmd->data = data;
 
 	if (Authenticate(sock, &sendCmd->data, &sizeData) != CMD_SUCCESS) {
@@ -322,8 +310,7 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	DWORD read = 0;
 	DWORD head[2];
 	//受信
-	ret = recv(sock, (char*)head, sizeof(DWORD)*2, 0 );
-	if( ret != sizeof(DWORD)*2 ){
+	if( RecvAll(sock, (char*)head, sizeof(DWORD)*2, 0) != sizeof(DWORD)*2 ){
 		closesocket(sock);
 		return CMD_ERR;
 	}
@@ -331,14 +318,9 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	resCmd->dataSize = head[1];
 	if( resCmd->dataSize > 0 ){
 		resCmd->data = new BYTE[resCmd->dataSize];
-		read = 0;
-		while( read < resCmd->dataSize ){
-			ret = recv(sock, (char*)(resCmd->data + read), resCmd->dataSize - read, 0);
-			if( ret == SOCKET_ERROR || ret == 0 ){
-				closesocket(sock);
-				return CMD_ERR;
-			}
-			read += ret;
+		if( RecvAll(sock, (char*)resCmd->data, resCmd->dataSize, 0) != resCmd->dataSize ){
+			closesocket(sock);
+			return CMD_ERR;
 		}
 	}
 	closesocket(sock);

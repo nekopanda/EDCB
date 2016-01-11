@@ -29,7 +29,6 @@ namespace EpgTimer
         public SearchKeyDescView()
         {
             InitializeComponent();
-            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             try
             {

@@ -179,7 +179,7 @@
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=LastRecFile}">
                             <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="最後の録画" Tag="LastRecFile" HorizontalContentAlignment="Left" ToolTip="Ctrl + クリック（マルチ・ソート）"/>
+                                <GridViewColumnHeader Content="最後の録画" Tag="LastRecFile" HorizontalContentAlignment="Left" />
                             </GridViewColumn.Header>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=NextReserve}">

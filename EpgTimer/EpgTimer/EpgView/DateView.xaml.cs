@@ -75,7 +75,6 @@ namespace EpgTimer.EpgView
 
                     itemTime = itemTime.AddDays(1);
                 }
-                CommonManager.Instance.VUtil.SetButtonStyle1(this);
             }
             catch (Exception ex)
             {

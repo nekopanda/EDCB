@@ -28,7 +28,6 @@ namespace EpgTimer
         public SetAppCancelWindow()
         {
             InitializeComponent();
-            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             button_process_del.IsEnabled = IniFileHandler.CanUpdateInifile;
             label2.IsEnabled = IniFileHandler.CanUpdateInifile;

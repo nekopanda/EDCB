@@ -22,7 +22,6 @@ namespace EpgTimer
         public AddPresetWindow()
         {
             InitializeComponent();
-            CommonManager.Instance.VUtil.SetButtonStyle1(this);
         }
 
         public void SetMode(bool chgMode)

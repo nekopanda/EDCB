@@ -23,7 +23,6 @@ namespace EpgTimer
         public SetApp2DelWindow()
         {
             InitializeComponent();
-            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             button_add.IsEnabled = IniFileHandler.CanUpdateInifile;
             textBox_ext.IsEnabled = IniFileHandler.CanUpdateInifile;

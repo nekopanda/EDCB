@@ -117,8 +117,16 @@ namespace EpgTimer
           GetPrivateProfileString(string lpAppName,
           string lpKeyName, string lpDefault, string lpFileName)
         {
-            StringBuilder buff = new StringBuilder(512);
-            IniFileHandler.GetPrivateProfileString(lpAppName, lpKeyName, lpDefault, buff, 512, lpFileName);
+            StringBuilder buff = null;
+            for (uint n = 512; n <= 1024 * 1024; n *= 2)
+            {
+                //セクション名取得などのNUL文字分割された結果は先頭要素のみ格納される
+                buff = new StringBuilder((int)n);
+                if (GetPrivateProfileString(lpAppName, lpKeyName, lpDefault, buff, n, lpFileName) < n - 2)
+                {
+                    break;
+                }
+            }
             return buff.ToString();
         }
 

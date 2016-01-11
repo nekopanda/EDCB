@@ -23,7 +23,6 @@ namespace EpgTimer.Setting
         public SetOtherAppView()
         {
             InitializeComponent();
-            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             try
             {

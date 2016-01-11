@@ -21,7 +21,6 @@ namespace EpgTimer
         public SetDefSearchSettingWindow()
         {
             InitializeComponent();
-            CommonManager.Instance.VUtil.SetButtonStyle1(this);
         }
 
         public void SetDefSetting(EpgSearchKeyInfo key)

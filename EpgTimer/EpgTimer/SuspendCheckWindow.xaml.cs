@@ -24,7 +24,6 @@ namespace EpgTimer
         public SuspendCheckWindow()
         {
             InitializeComponent();
-            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             countTimer = new DispatcherTimer(DispatcherPriority.Normal);
             countTimer.Tick += new EventHandler(CountTimer);

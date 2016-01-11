@@ -32,7 +32,6 @@ namespace EpgTimer.EpgView
         protected override void InitCommand()
         {
             base.InitCommand();
-            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             //コマンド集の初期化の続き
             mc.SetFuncGetDataList(isAll => isAll == true ? reserveList.GetDataList() : reserveList.GetHitDataList(clickPos));

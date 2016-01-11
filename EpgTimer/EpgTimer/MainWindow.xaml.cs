@@ -57,6 +57,31 @@ namespace EpgTimer
             CommonManager.Instance.MM.ReloadWorkData();
             CommonManager.Instance.ReloadCustContentColorList();
 
+            if (Settings.Instance.NoStyle == 0)
+            {
+                if (System.IO.File.Exists(System.Reflection.Assembly.GetEntryAssembly().Location + ".rd.xaml"))
+                {
+                    //ResourceDictionaryを定義したファイルがあるので本体にマージする
+                    try
+                    {
+                        App.Current.Resources.MergedDictionaries.Add(
+                            (ResourceDictionary)System.Windows.Markup.XamlReader.Load(
+                                System.Xml.XmlReader.Create(System.Reflection.Assembly.GetEntryAssembly().Location + ".rd.xaml")));
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.ToString());
+                    }
+                }
+                else
+                {
+                    //既定のテーマ(Aero)をマージする
+                    App.Current.Resources.MergedDictionaries.Add(
+                        Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
+                        );
+                }
+            }
+
             SemaphoreSecurity ss = new SemaphoreSecurity();
             ss.AddAccessRule(new SemaphoreAccessRule("Everyone", SemaphoreRights.FullControl, AccessControlType.Allow));
             semaphore = new Semaphore(int.MaxValue, int.MaxValue, "Global\\EpgTimer_Bon2", out firstInstance, ss);
@@ -172,8 +197,6 @@ namespace EpgTimer
                 {
                     ShowInfoWindow();
                 }
-
-                CommonManager.Instance.VUtil.SetButtonStyle1(this);
             }
             catch (Exception ex)
             {

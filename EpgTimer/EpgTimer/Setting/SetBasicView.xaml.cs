@@ -40,7 +40,6 @@ namespace EpgTimer.Setting
         public SetBasicView()
         {
             InitializeComponent();
-            CommonManager.Instance.VUtil.SetButtonStyle1(this);
 
             listBox_Button_Set();
 
