@@ -17,7 +17,7 @@ namespace EpgTimer
     /// </summary>
     public partial class ChgReserveWindow : Window, INotifyPropertyChanged
     {
-        #region INotifyPropertyChanged実装
+        #region INotifyPropertyChanged実装 (nekopanda版)
 
         public event PropertyChangedEventHandler PropertyChanged;
         private void RaisePropertyChanged([CallerMemberName]string propertyName = "")
@@ -41,7 +41,7 @@ namespace EpgTimer
         private EpgEventInfo eventInfoNew = null;
         private EpgEventInfo eventInfoSelected = null;
 
-        #region ReserveMode 変更通知プロパティ
+        #region ReserveMode 変更通知プロパティ (nekopanda版)
 
         private UIReserveMode _ReserveMode = UIReserveMode.None;
 
@@ -61,7 +61,7 @@ namespace EpgTimer
 
         #endregion
 
-        #region CanSelectAutoAdd 変更通知プロパティ
+        #region CanSelectAutoAdd 変更通知プロパティ (nekopanda版)
 
         private bool _CanSelectAutoAdd;
 
@@ -84,7 +84,7 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            this.DataContext = this;
+            this.DataContext = this; // (nekopanda版)
 
             //コマンドの登録
             this.CommandBindings.Add(new CommandBinding(EpgCmds.Cancel, (sender, e) => DialogResult = false));
@@ -138,6 +138,7 @@ namespace EpgTimer
             }
         }
 
+        // nekopanda版
         private UIReserveMode GetReserveModeFromInfo()
         {
             if (reserveInfo == null) return UIReserveMode.Program;
@@ -440,11 +441,11 @@ namespace EpgTimer
 
                 if (addMode == AddMode.Change)
                 {
-                    mutil.ReserveChange(mutil.ToList(reserveInfo));
+                    mutil.ReserveChange(CommonUtil.ToList(reserveInfo));
                 }
                 else
                 {
-                    mutil.ReserveAdd(mutil.ToList(reserveInfo));
+                    mutil.ReserveAdd(CommonUtil.ToList(reserveInfo));
                 }
 
                 // EPG自動予約以外になったら戻せないようにしておく
@@ -470,7 +471,7 @@ namespace EpgTimer
 
             if (CheckExistReserveItem() == false) return;
 
-            mutil.ReserveDelete(mutil.ToList(reserveInfo));
+            mutil.ReserveDelete(CommonUtil.ToList(reserveInfo));
 
             DialogResult = true;
         }
@@ -527,6 +528,7 @@ namespace EpgTimer
         }
     }
 
+    // nekopanda版
     public enum UIReserveMode
     {
         None = 0,

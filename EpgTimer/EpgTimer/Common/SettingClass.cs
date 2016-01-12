@@ -486,8 +486,8 @@ namespace EpgTimer
             {
                 if (IniFileHandler.CanReadInifile == true)
                 {
-                    string defRecExe = SettingPath.ModulePath.TrimEnd('\\') + "\\EpgDataCap_Bon.exe";
-                    return IniFileHandler.GetPrivateProfileString("SET", "RecExePath", defRecExe, SettingPath.CommonIniPath);
+                    string defRecExe = ModulePath.TrimEnd('\\') + "\\EpgDataCap_Bon.exe";
+                    return IniFileHandler.GetPrivateProfileString("SET", "RecExePath", defRecExe, CommonIniPath);
                 }
                 else
                 {
@@ -512,8 +512,8 @@ namespace EpgTimer
             {
                 if (IniFileHandler.CanReadInifile == true)
                 {
-                    string path = IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", ModulePath.TrimEnd('\\') + "\\Setting", SettingPath.CommonIniPath);
-                    return (Path.IsPathRooted(path) ? "" : SettingPath.ModulePath.TrimEnd('\\') + "\\") + path;
+                    string path = IniFileHandler.GetPrivateProfileString("SET", "DataSavePath", DefSettingFolderPath, CommonIniPath);
+                    return (Path.IsPathRooted(path) ? "" : ModulePath.TrimEnd('\\') + "\\") + path;
                 }
                 else
                 {

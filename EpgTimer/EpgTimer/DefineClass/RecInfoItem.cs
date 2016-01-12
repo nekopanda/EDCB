@@ -17,19 +17,28 @@ namespace EpgTimer
     {
         private MenuUtil mutil = CommonManager.Instance.MUtil;
 
-        public RecFileInfo RecInfo { get; set; }
+        public RecInfoItem() { }
         public RecInfoItem(RecFileInfo item)
         {
             this.RecInfo = item;
         }
 
+        public RecFileInfo RecInfo { get; set; }
+
         public static string GetValuePropertyName(string key)
         {
-            switch (key)
+            var obj = new RecInfoItem();
+            if (key == CommonUtil.GetMemberName(() => obj.StartTime))
             {
-                case "StartTime": return "StartTimeValue";
-                case "ProgramDuration": return "ProgramDurationValue";
-                default: return key;
+                return CommonUtil.GetMemberName(() => obj.StartTimeValue);
+            }
+            else if (key == CommonUtil.GetMemberName(() => obj.ProgramDuration))
+            {
+                return CommonUtil.GetMemberName(() => obj.ProgramDurationValue);
+            }
+            else
+            {
+                return key;
             }
         }
 

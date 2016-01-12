@@ -55,6 +55,10 @@ namespace EpgTimer.Setting
                     label2.IsEnabled = false; // 録画用アプリのexe
                     textBox_exe.IsEnabled = false;
                     button_exe.IsEnabled = false; // 開く
+                    label3.IsEnabled = false; //録画保存フォルダ
+                    label4.IsEnabled = false; //※ 録画中やEPG取得中に設定を変更すると正常動作しなくなる可能性があります。
+                    button_shortCut.IsEnabled = false; //スタートアップにショートカットを作成する
+                    label5.IsEnabled = false; //※ 削除時は手動で行ってください
                 }
                 listBox_recFolder.IsEnabled = IniFileHandler.CanUpdateInifile;
                 button_rec_up.IsEnabled = IniFileHandler.CanUpdateInifile; // ↑
@@ -69,6 +73,8 @@ namespace EpgTimer.Setting
                 {
                     textBox_setPath.Text = SettingPath.SettingFolderPath;
                     textBox_exe.Text = SettingPath.EdcbExePath;
+
+                    textBox_recInfoFolder.Text = IniFileHandler.GetPrivateProfileString("SET", "RecInfoFolder", "", SettingPath.CommonIniPath);
 
                     Settings.GetDefRecFolders().ForEach(folder => listBox_recFolder.Items.Add(new UserCtrlView.BGBarListBoxItem(folder)));
                 }
@@ -253,6 +259,11 @@ namespace EpgTimer.Setting
 
                     IniFileHandler.WritePrivateProfileString("SET", "DataSavePath",textBox_setPath.Text, SettingPath.CommonIniPath);
                 }
+                if (textBox_recInfoFolder.IsEnabled)
+                {
+                    IniFileHandler.WritePrivateProfileString("SET", "RecInfoFolder",
+                                                             textBox_recInfoFolder.Text.Trim() == "" ? null : textBox_recInfoFolder.Text, SettingPath.CommonIniPath);
+                }
                 if (textBox_exe.IsEnabled)
                 {
                     IniFileHandler.WritePrivateProfileString("SET", "RecExePath", textBox_exe.Text, SettingPath.CommonIniPath);
@@ -396,6 +407,16 @@ namespace EpgTimer.Setting
                 textBox_exe.Text = path;
             }
         }
+
+        private void button_recInfoFolder_Click(object sender, RoutedEventArgs e)
+        {
+            string path = CommonManager.Instance.GetFolderNameByDialog(textBox_recInfoFolder.Text, "録画情報保存フォルダの選択");
+            if (path != null)
+            {
+                textBox_recInfoFolder.Text = path;
+            }
+        }
+
 
         //ボタン表示画面の上下ボタンのみ他と同じものを使用する。
         private BoxExchangeEditor bxr = new BoxExchangeEditor();

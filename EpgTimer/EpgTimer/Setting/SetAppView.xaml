@@ -227,6 +227,7 @@
                     </WrapPanel>
                     <WrapPanel>
                         <CheckBox Name="checkBox_autoDelRecInfo" Content="録画結果を自動的に削除する" Margin="6,6,-20,6" Width="180" />
+                        <CheckBox Name="checkBox_autoDelRecFile" Content="録画ファイルも削除する" Margin="6,6,-20,6" Width="180" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_autoDelRecInfo, UpdateSourceTrigger=PropertyChanged}" />
                         <StackPanel Orientation="Horizontal">
                             <Label Name="label42" Content="保持件数" Margin="20,0,0,0" Width="80" />
                             <TextBox Name="textBox_autoDelRecInfo" Width="50" Height="25" VerticalContentAlignment="Center" />

@@ -19,11 +19,18 @@ namespace EpgTimer
 
         public static new string GetValuePropertyName(string key)
         {
-            switch (key)
+            var obj = new ReserveItem();
+            if (key == CommonUtil.GetMemberName(() => obj.MarginStart))
             {
-                case "MarginStart": return "MarginStartValue";
-                case "MarginEnd": return "MarginEndValue";
-                default: return SearchItem.GetValuePropertyName(key);
+                return CommonUtil.GetMemberName(() => obj.MarginStartValue);
+            }
+            else if (key == CommonUtil.GetMemberName(() => obj.MarginEnd))
+            {
+                return CommonUtil.GetMemberName(() => obj.MarginEndValue);
+            }
+            else
+            {
+                return SearchItem.GetValuePropertyName(key);
             }
         }
 

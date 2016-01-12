@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -176,7 +175,7 @@ namespace EpgTimer
                                 "[◆▽].*", // タイトルに埋め込まれた番組説明
                                 "[\\[［【\\(（][^\\]］】\\)）]*リマスター[^\\]］】\\)）]*[\\]］】\\)）]",// ときどき見かけるので1
                                 "(((HD)|(ＨＤ)|(ハイビジョン)|(デジタル))リマスター((HD)|(ＨＤ))?版?)|(リマスター((HD)|(ＨＤ)|版)版?)",// 同上、括弧無しは特定パタンのみ
-                                markExp1 + "$" // 末尾の記号
+                                "(（二）|（字幕版）|（吹替版）|" + markExp1 + ")+$" // 末尾の記号
                                 };
             foreach (string str1 in exp)
             {
@@ -274,18 +273,6 @@ namespace EpgTimer
             return block;
         }
 
-        public List<T> ToList<T>(T item)
-        {
-            return new List<T> { item };
-        }
-
-        /// <summary>メンバ名を返す。</summary>
-        public string GetMemberName<T>(Expression<Func<T>> e)
-        {
-            var member = (MemberExpression)e.Body;
-            return member.Member.Name;
-        }
-        
         /// <summary>
         /// 変換エラーの場合、デフォルト値を返し、テキストボックスの内容をデフォルト値に置き換える。
         /// </summary>

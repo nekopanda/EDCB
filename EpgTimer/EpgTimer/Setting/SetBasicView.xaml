@@ -21,6 +21,8 @@
                         <RowDefinition />
                         <RowDefinition Height="auto"/>
                         <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0" Margin="0,8,0,4">
                         <Grid.ColumnDefinitions>
@@ -65,10 +67,19 @@
                         <Button Grid.Row="3" Grid.Column="1" Content="開く" Height="25" Margin="12,8,0,0" Name="button_rec_open" Width="44" Click="button_rec_open_Click" HorizontalAlignment="Right" />
                         <Button Grid.Row="3" Grid.Column="2" Content="追加" Height="25" Margin="12,8,12,0" Name="button_rec_add" Click="button_rec_add_Click" Width="44" />
                     </Grid>
-                    <Label Grid.Row="4" Name="label4" Margin="12,8" Foreground="Red">
+                    <Label Grid.Row="4" Margin="12,8,0,4" Content="録画情報保存フォルダ" Height="25" ToolTip="未指定の場合は録画ファイルと同じ場所に保存されます。" ToolTipService.ShowOnDisabled="True" />
+                    <Grid Grid.Row="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Name="textBox_recInfoFolder" Height="25" Margin="45,0,0,0" VerticalContentAlignment="Center" ToolTip="{Binding ElementName=textBox_recInfoFolder, Path=Text}" ToolTipService.ShowOnDisabled="True" />
+                        <Button Grid.Column="1" Name="button_recInfoFolder" Content="開く" Height="25" Width="44" Margin="12,8,12,0" Click="button_recInfoFolder_Click" />
+                    </Grid>
+                    <Label Grid.Row="6" Name="label4" Margin="12,8" Foreground="Red">
                         <TextBlock TextWrapping="Wrap">※ 録画中やEPG取得中に設定を変更すると正常動作しなくなる可能性があります。</TextBlock>
                     </Label>
-                    <WrapPanel Grid.Row="5" Margin="0,0,0,10">
+                    <WrapPanel Grid.Row="7" Margin="0,0,0,10">
                         <Button Name="button_shortCut" Content="スタートアップにショートカットを作成する" Height="25" Width="240" Margin="12,0,0,0" Click="button_shortCut_Click" />
                         <Label Name="label5" Content="※ 削除時は手動で行ってください" Margin="12,0,0,0"/>
                     </WrapPanel>
