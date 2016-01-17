@@ -2,6 +2,7 @@
 #include "EpgDataCap_BonMain.h"
 
 #include "EpgDataCap_BonDef.h"
+#include "../../Common/CommonDef.h"
 #include "../../Common/CtrlCmdDef.h"
 #include "../../Common/CtrlCmdUtil.h"
 
@@ -730,12 +731,12 @@ void CEpgDataCap_BonMain::StartServer()
 
 	OutputDebugString(pipeName.c_str());
 	OutputDebugString(eventName.c_str());
-	this->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), CtrlCmdCallback, this, 0, GetCurrentProcessId());
+	this->pipeServer.StartServer(eventName.c_str(), pipeName.c_str(), CtrlCmdCallback, this);
 }
 
-void CEpgDataCap_BonMain::StopServer()
+BOOL CEpgDataCap_BonMain::StopServer(BOOL checkOnlyFlag)
 {
-	this->pipeServer.StopServer();
+	return this->pipeServer.StopServer(checkOnlyFlag);
 }
 
 BOOL CEpgDataCap_BonMain::GetViewStatusInfo(
