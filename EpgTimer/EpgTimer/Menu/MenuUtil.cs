@@ -1109,32 +1109,30 @@ namespace EpgTimer
                 return;
             }
 
-            string file = "";
-            string folder = "";
-            if(info.RecFileNameList.Count!=0)
+            if (info.RecSetting.RecMode == 4)//視聴モード
             {
-                file=info.RecFileNameList[0];
+                CommonManager.Instance.TVTestCtrl.SetLiveCh(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID);
+                return;
             }
-            if (info.RecSetting.RecFolderList.Count != 0)
+            else if (Settings.Instance.FilePlayOnAirWithExe == true)
             {
-                folder = info.RecSetting.RecFolderList[0].RecFolder;
+                //ファイルパスを取得するため開いてすぐ閉じる
+                var nwinfo = new NWPlayTimeShiftInfo();
+                if (cmd.SendNwTimeShiftOpen(info.ReserveID, ref nwinfo) == ErrCode.CMD_SUCCESS)
+                {
+                    cmd.SendNwPlayClose(nwinfo.ctrlID);
+                    if (nwinfo.filePath != "")
+                    {
+                        FilePlay(nwinfo.filePath);
+                        return;
+                    }
+                }
+                MessageBox.Show("録画ファイルの場所がわかりませんでした。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {
-                List<RecFolderInfo> defFolders = Settings.GetDefRecFolders();
-                if (defFolders.Count != 0)
-                {
-                    folder = defFolders[0].recFolder;
-                }
+                CommonManager.Instance.TVTestCtrl.StartTimeShift(info.ReserveID);
             }
-
-            if (file=="" || folder == "")
-            {
-                MessageBox.Show("録画ファイルの場所がわかりませんでした。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            FilePlay(folder.TrimEnd('\\') + "\\" + file);
         }
         public void FilePlay(String filePath)
         {
@@ -1153,7 +1151,9 @@ namespace EpgTimer
                     else
                     {
                         String cmdLine = Settings.Instance.FilePlayCmd;
-                        cmdLine = cmdLine.Replace("$FilePath$", filePath);
+                        //'$'->'\t'は再帰的な展開を防ぐため
+                        cmdLine = cmdLine.Replace("$FileNameExt$", System.IO.Path.GetFileName(filePath).Replace('$', '\t'));
+                        cmdLine = cmdLine.Replace("$FilePath$", filePath).Replace('\t', '$');
                         process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
                     }
                 }
@@ -1172,7 +1172,9 @@ namespace EpgTimer
                             if (System.IO.File.Exists(nPath) == true)
                             {
                                 String cmdLine = Settings.Instance.FilePlayCmd;
-                                cmdLine = cmdLine.Replace("$FilePath$", nPath);
+                                //'$'->'\t'は再帰的な展開を防ぐため
+                                cmdLine = cmdLine.Replace("$FileNameExt$", System.IO.Path.GetFileName(nPath).Replace('$', '\t'));
+                                cmdLine = cmdLine.Replace("$FilePath$", nPath).Replace('\t', '$');
                                 process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
                             }
                             else

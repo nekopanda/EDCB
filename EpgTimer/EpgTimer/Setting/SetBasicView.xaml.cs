@@ -57,8 +57,9 @@ namespace EpgTimer.Setting
                     button_exe.IsEnabled = false; // 開く
                     label3.IsEnabled = false; //録画保存フォルダ
                     label4.IsEnabled = false; //※ 録画中やEPG取得中に設定を変更すると正常動作しなくなる可能性があります。
-                    button_shortCut.IsEnabled = false; //スタートアップにショートカットを作成する
-                    label5.IsEnabled = false; //※ 削除時は手動で行ってください
+                    label5.IsEnabled = false; //スタートアップにショートカットを作成する
+                    button_shortCut.IsEnabled = false;
+                    button_shortCutSrv.IsEnabled = false;
                 }
                 listBox_recFolder.IsEnabled = IniFileHandler.CanUpdateInifile;
                 button_rec_up.IsEnabled = IniFileHandler.CanUpdateInifile; // ↑
@@ -129,6 +130,10 @@ namespace EpgTimer.Setting
                         listBox_bon.SelectedIndex = 0;
                     }
                 }
+                button_shortCut.Content = (string)button_shortCut.Content + (File.Exists(
+                    System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTime.lnk")) ? "を解除" : "");
+                button_shortCutSrv.Content = (string)button_shortCutSrv.Content + (File.Exists(
+                    System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTimerSrv.lnk")) ? "を解除" : "");
 
                 // tabItem3 - EPG取得
                 // 保存できない項目は IsEnabled = false にする
@@ -521,13 +526,37 @@ namespace EpgTimer.Setting
         {
             try
             {
-                Assembly myAssembly = Assembly.GetEntryAssembly();
-                string targetPath = myAssembly.Location;
-                string shortcutPath = System.IO.Path.Combine(
-                    Environment.GetFolderPath(System.Environment.SpecialFolder.Startup),
-                    @"EpgTime.lnk");
+                string shortcutPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTime.lnk");
+                if (File.Exists(shortcutPath))
+                {
+                    File.Delete(shortcutPath);
+                }
+                else
+                {
+                    CreateShortCut(shortcutPath, Assembly.GetEntryAssembly().Location, "");
+                }
+                button_shortCut.Content = ((string)button_shortCut.Content).Replace("を解除", "") + (File.Exists(shortcutPath) ? "を解除" : "");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
 
-                CreateShortCut(shortcutPath, targetPath, "");
+        private void button_shortCutSrv_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string shortcutPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTimerSrv.lnk");
+                if (File.Exists(shortcutPath))
+                {
+                    File.Delete(shortcutPath);
+                }
+                else
+                {
+                    CreateShortCut(shortcutPath, System.IO.Path.Combine(SettingPath.ModulePath, "EpgTimerSrv.exe"), "");
+                }
+                button_shortCutSrv.Content = ((string)button_shortCutSrv.Content).Replace("を解除", "") + (File.Exists(shortcutPath) ? "を解除" : "");
             }
             catch (Exception ex)
             {
@@ -554,6 +583,7 @@ namespace EpgTimer.Setting
             Type shortcutType = shell.GetType();
             // TargetPathプロパティをセットする
             shortcutType.InvokeMember("TargetPath", BindingFlags.SetProperty, null, shortCut, new object[] { targetPath });
+            shortcutType.InvokeMember("WorkingDirectory", BindingFlags.SetProperty, null, shortCut, new object[] { System.IO.Path.GetDirectoryName(targetPath) });
             // Descriptionプロパティをセットする
             shortcutType.InvokeMember("Description", BindingFlags.SetProperty, null, shortCut, new object[] { description });
             // Saveメソッドを実行する

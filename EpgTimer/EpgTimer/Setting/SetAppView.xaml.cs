@@ -271,8 +271,6 @@ namespace EpgTimer.Setting
         {
             if (CommonManager.Instance.NWMode == true)
             {
-                button_recDef.Content = "録画プリセットを確認";
-
                 checkBox_tcpServer.IsEnabled = false; // ネットワーク接続を許可する
                 label41.IsEnabled = false; // ポート
                 textBox_tcpPort.IsEnabled = false;
@@ -297,6 +295,10 @@ namespace EpgTimer.Setting
                 checkBox_keepTCPConnect.IsEnabled = true; // EpgTimerSrvとの接続維持を試みる
                 textBox_keepTCPConnect.IsEnabled = true;
                 label_keepTCPConnect.IsEnabled = true; // 分間隔
+            }
+            if (IniFileHandler.CanUpdateInifile == false)
+            {
+                button_recDef.Content = "録画プリセットを確認";
             }
 
             // 読める設定のみ項目に反映させる

@@ -610,7 +610,6 @@ namespace EpgTimer
         private List<string> andKeyList;
         private List<string> notKeyList;
         private EpgSearchKeyInfo defSearchKey;
-        private List<RecPresetItem> recPresetList;
         private string recInfoColumnHead;
         private ListSortDirection recInfoSortDirection;
         private long recInfoDropErrIgnore;
@@ -1082,11 +1081,6 @@ namespace EpgTimer
             get { return defSearchKey; }
             set { defSearchKey = value; }
         }
-        public List<RecPresetItem> RecPresetList
-        {
-            get { return recPresetList; }
-            set { recPresetList = value; }
-        }
         public string RecInfoColumnHead
         {
             get { return recInfoColumnHead; }
@@ -1101,6 +1095,29 @@ namespace EpgTimer
         {
             get { return recInfoDropErrIgnore; }
             set { recInfoDropErrIgnore = value; }
+        }
+        [System.Xml.Serialization.XmlIgnore]
+        public List<RecPresetItem> RecPresetList
+        {
+            get
+            {
+                var list = new List<RecPresetItem>();
+                list.Add(new RecPresetItem());
+                list[0].DisplayName = "デフォルト";
+                list[0].ID = 0;
+                foreach (string s in IniFileHandler.GetPrivateProfileString("SET", "PresetID", "", SettingPath.TimerSrvIniPath).Split(','))
+                {
+                    uint id;
+                    uint.TryParse(s, out id);
+                    if (list.Exists(p => p.ID == id) == false)
+                    {
+                        list.Add(new RecPresetItem());
+                        list.Last().DisplayName = IniFileHandler.GetPrivateProfileString("REC_DEF" + id, "SetName", "", SettingPath.TimerSrvIniPath);
+                        list.Last().ID = id;
+                    }
+                }
+                return list;
+            }
         }
         public long RecInfoDropWrnIgnore
         {
@@ -1566,7 +1583,6 @@ namespace EpgTimer
             andKeyList = new List<string>();
             notKeyList = new List<string>();
             defSearchKey = new EpgSearchKeyInfo();
-            recPresetList = new List<RecPresetItem>();
             recInfoColumnHead = "";
             recInfoSortDirection = ListSortDirection.Ascending;
             recInfoDropErrIgnore = 0;

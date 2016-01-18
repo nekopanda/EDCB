@@ -64,8 +64,9 @@ EpgDataCap_Bon.exe.errというテキストファイルに出力するようにしました(スタックト
 るEpgDataCap_Bon.pdbが同じフォルダにあれば出力内容が詳細になります。
 
 ■Readme_EpgTimer.txt■
-"EpgTimer.exe"を"EpgTimerNW.exe"にファイル名をリネームすることで、EpgTimerNW相当
-の動作になります。
+"EpgTimer.exe"を"EpgTimerNW～.exe"にファイル名をリネームすることで、EpgTimerNW相
+当の動作になります。～には任意の文字列を指定可能で、この文字列が異なるEpgTimerNW
+は多重起動できます。
 EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
 したniisaka版と、従来に近いlegacy版の2種類あります。気分で使い分けてください。
 
@@ -150,6 +151,12 @@ EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
         廃止しました。
       ・タスクトレイアイコンを表示する【追加】
         タスクトレイアイコンの表示・非表示を切り替えます。
+    ●Windowsサービス
+      このタブは廃止しました。サービス登録、解除はiniフォルダにある以下のバッチ
+      ファイルを管理者権限で起動してください。予めEpgTimerは閉じてください。
+        ・EpgTimerSrv_Install.bat : サービス登録と開始
+        ・EpgTimerSrv_Remove.bat : サービス停止と解除
+      EpgTimerを管理者権限で起動する必要はありません(むしろ避けてください)。
   ●番組表タブ
     ●基本
       ・表示
@@ -166,6 +173,11 @@ EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
           アフリカ中央テレビ2
           アフリカ中央テレビ1、の順に追加すると番組表上は1サービス分の幅で表示
   ●外部アプリケーション
+    ●ファイル再生
+      ・再生アプリのexeパス
+        指定するとEpgTimerNWのファイル再生にもこのアプリを使います【追加】。
+      ・追っかけ再生にも使用する【追加】
+        追っかけ再生にも(NetworkTVモードではなく)このアプリを使います。
     ●Twitter設定タブ
       廃止しました。
 

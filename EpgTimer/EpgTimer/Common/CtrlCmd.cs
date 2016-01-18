@@ -615,7 +615,7 @@ namespace EpgTimer
         /// <summary>ストリーム配信用ファイルを開く</summary>
         public ErrCode SendNwPlayOpen(string val, ref uint resVal) { object o = resVal; var ret = SendAndReceiveCmdData(CtrlCmd.CMD_EPG_SRV_NWPLAY_OPEN, val, ref o); resVal = (uint)o; return ret; }
         /// <summary>ストリーム配信用ファイルを閉じる</summary>
-        //public ErrCode SendNwPlayClose(uint val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_NWPLAY_CLOSE, val); }
+        public ErrCode SendNwPlayClose(uint val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_NWPLAY_CLOSE, val); }
         /// <summary>ストリーム配信開始</summary>
         //public ErrCode SendNwPlayStart(uint val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_NWPLAY_PLAY, val); }
         /// <summary>ストリーム配信停止</summary>

@@ -74,14 +74,15 @@
                             <ColumnDefinition Width="auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBox Grid.Column="0" Name="textBox_recInfoFolder" Height="25" Margin="45,0,0,0" VerticalContentAlignment="Center" ToolTip="{Binding ElementName=textBox_recInfoFolder, Path=Text}" ToolTipService.ShowOnDisabled="True" />
-                        <Button Grid.Column="1" Name="button_recInfoFolder" Content="開く" Height="25" Width="44" Margin="12,8,12,0" Click="button_recInfoFolder_Click" />
+                        <Button Grid.Column="1" Name="button_recInfoFolder" Content="開く" Width="44" Height="25" Margin="12,0,12,0" Click="button_recInfoFolder_Click" />
                     </Grid>
                     <Label Grid.Row="6" Name="label4" Margin="12,8" Foreground="Red">
                         <TextBlock TextWrapping="Wrap">※ 録画中やEPG取得中に設定を変更すると正常動作しなくなる可能性があります。</TextBlock>
                     </Label>
                     <WrapPanel Grid.Row="7" Margin="0,0,0,10">
-                        <Button Name="button_shortCut" Content="スタートアップにショートカットを作成する" Height="25" Width="240" Margin="12,0,0,0" Click="button_shortCut_Click" />
-                        <Label Name="label5" Content="※ 削除時は手動で行ってください" Margin="12,0,0,0"/>
+                        <Label Name="label5" Content="スタートアップにショートカットを作成する" Margin="12,0"/>
+                        <Button Name="button_shortCut" Content="EpgTimer.exe" Height="25" Width="160" Margin="12,0" Click="button_shortCut_Click" ToolTip="※ 削除時は手動で行ってください" />
+                        <Button Name="button_shortCutSrv" Content="EpgTimerSrv.exe" Height="25" Width="160" Margin="12,0" Click="button_shortCutSrv_Click" ToolTip="※ 削除時は手動で行ってください" />
                     </WrapPanel>
                 </Grid>
             </TabItem>

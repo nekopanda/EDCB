@@ -78,7 +78,7 @@ namespace EpgTimer
                     }
                 }
 
-                if (CommonManager.Instance.NWMode == true)
+                if (IniFileHandler.CanUpdateInifile == false)
                 {
                     button_bat.IsEnabled = false;
                 }
@@ -112,7 +112,6 @@ namespace EpgTimer
 
         public void SavePreset()
         {
-            Settings.Instance.RecPresetList.Clear();
             string saveID = "";
             for (int i = 0; i < comboBox_preSet.Items.Count; i++)
             {
@@ -167,8 +166,6 @@ namespace EpgTimer
                 IniFileHandler.WritePrivateProfileString(defName, "ContinueRec", info.ContinueRecFlag.ToString(), SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString(defName, "PartialRec", info.PartialRecFlag.ToString(), SettingPath.TimerSrvIniPath);
                 IniFileHandler.WritePrivateProfileString(defName, "TunerID", info.TunerID.ToString(), SettingPath.TimerSrvIniPath);
-
-                Settings.Instance.RecPresetList.Add(preItem);
             }
             IniFileHandler.WritePrivateProfileString("SET", "PresetID", saveID, SettingPath.TimerSrvIniPath);
             IniSetting.Instance.UpToDate();
@@ -375,12 +372,6 @@ namespace EpgTimer
         {
             try
             {
-                if (CommonManager.Instance.NWMode == true)
-                {
-                    button_add_preset.IsEnabled = false;
-                    button_chg_preset.IsEnabled = false;
-                    button_del_preset.IsEnabled = false;
-                }
                 foreach (RecModeInfo info in comboBox_recMode.Items)
                 {
                     if (info.Value == recSetting.RecMode)

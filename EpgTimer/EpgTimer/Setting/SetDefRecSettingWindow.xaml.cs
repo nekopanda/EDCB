@@ -22,7 +22,7 @@ namespace EpgTimer.Setting
         {
             InitializeComponent();
 
-            if (CommonManager.Instance.NWMode == true)
+            if (IniFileHandler.CanUpdateInifile == false)
             {
                 label1.Content += "　(EpgTimerNWからはプリセットの設定は出来ません)";
             }
