@@ -12,7 +12,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Interop;
-using System.IO;
+using System.Diagnostics;
 
 namespace EpgTimer.Setting
 {
@@ -956,24 +956,39 @@ namespace EpgTimer.Setting
             }
         }
 
+        private bool WaitToExit()
+        {
+            int count = 0;
+            for (int i = 0; i < 5 && (count = Process.GetProcessesByName("EpgTimerSrv").Count()) > 0; i++)
+            {
+                System.Threading.Thread.Sleep(1000);
+            }
+            if (count > 0)
+            {
+                MessageBox.Show("EpgTimerSrv を終了できませんでした。");
+            }
+            return count == 0;
+        }
+
         private void button_inst_Click(object sender, RoutedEventArgs e)
         {
             String exePath = SettingPath.ModulePath + "\\EpgTimerSrv.exe";
             if (ServiceCtrlClass.Install("EpgTimer Service", "EpgTimer Service", exePath) == false)
             {
-                MessageBox.Show("インストールに失敗しました。\r\nVista以降のOSでは、管理者権限で起動されている必要があります。");
+                MessageBox.Show("インストールに失敗しました。");
             }
             UpdateServiceBtn();
         }
 
         private void button_uninst_Click(object sender, RoutedEventArgs e)
         {
+            String exePath = SettingPath.ModulePath + "\\EpgTimerSrv.exe";
             bool started = ServiceCtrlClass.IsStarted("EpgTimer Service");
-            if (ServiceCtrlClass.Uninstall("EpgTimer Service") == false)
+            if (ServiceCtrlClass.Uninstall("EpgTimer Service", exePath) == false)
             {
-                MessageBox.Show("アンインストールに失敗しました。\r\nVista以降のOSでは、管理者権限で起動されている必要があります。");
+                MessageBox.Show("アンインストールに失敗しました。");
             }
-            else
+            else if (WaitToExit())
             {
                 ServiceStop |= started;
             }
@@ -984,8 +999,8 @@ namespace EpgTimer.Setting
         {
             if (CommonManager.Instance.NWMode == false && CommonManager.Instance.IsConnected == true)
             {
-                int count;
-                if ((count = System.Diagnostics.Process.GetProcessesByName("EpgTimerSrv").Count()) > 0)
+                int count = Process.GetProcessesByName("EpgTimerSrv").Count();
+                if (count > 0)
                 {
                     int residentMode = IniFileHandler.GetPrivateProfileInt("SET", "ResidentMode", 0, SettingPath.TimerSrvIniPath);
                     if (residentMode > 0)
@@ -996,28 +1011,15 @@ namespace EpgTimer.Setting
                     {
                         if (CommonManager.Instance.CtrlCmd.SendClose() == ErrCode.CMD_SUCCESS)
                         {
-                            for (int i = 0; i < 5 && (count = System.Diagnostics.Process.GetProcessesByName("EpgTimerSrv").Count()) > 0; i++)
-                            {
-                                System.Threading.Thread.Sleep(1000);
-                            }
-                        }
-                        if (count > 0)
-                        {
-                            MessageBox.Show("EpgTimerSrv を終了できませんでした。");
+                            count = WaitToExit() ? 0 : 1;
                         }
                     }
                 }
                 if (count == 0)
                 {
-                    bool started = false;
-                    for (int i = 0; i < 5 && (started = ServiceCtrlClass.IsStarted("EpgTimer Service")) == false; i++)
+                    if (ServiceCtrlClass.StartService("EpgTimer Service") == false)
                     {
-                        ServiceCtrlClass.StartService("EpgTimer Service");
-                        System.Threading.Thread.Sleep(1000);
-                    }
-                    if (started == false)
-                    {
-                        MessageBox.Show("サービスの開始に失敗しました。\r\nVista以降のOSでは、管理者権限で起動されている必要があります。");
+                        MessageBox.Show("サービスの開始に失敗しました。");
                     }
                     else
                     {
@@ -1032,7 +1034,7 @@ namespace EpgTimer.Setting
         {
             if (ServiceCtrlClass.StopService("EpgTimer Service") == false)
             {
-                MessageBox.Show("サービスの停止に失敗しました。\r\nVista以降のOSでは、管理者権限で起動されている必要があります。");
+                MessageBox.Show("サービスの停止に失敗しました。");
             }
             else
             {

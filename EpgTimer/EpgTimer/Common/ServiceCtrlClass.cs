@@ -5,6 +5,8 @@ using System.Text;
 using System.ServiceProcess;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.IO;
+using System.Diagnostics;
 
 namespace EpgTimer
 {
@@ -70,21 +72,16 @@ namespace EpgTimer
         public static bool Install(string serviceName, string displayName, string fileName)
         {
             bool ret = false;
-            IntPtr scm = OpenSCManager(ScmAccessRights.AllAccess);
+            IntPtr scm = OpenSCManager(ScmAccessRights.Connect);
             if (scm == IntPtr.Zero)
             {
                 return false;
             }
 
-            IntPtr service = OpenService(scm, serviceName, ServiceAccessRights.AllAccess);
+            IntPtr service = OpenService(scm, serviceName, ServiceAccessRights.QueryStatus);
             if (service == IntPtr.Zero)
             {
-                service = CreateService(scm, serviceName, displayName, ServiceAccessRights.AllAccess, SERVICE_WIN32_OWN_PROCESS, ServiceBootFlag.AutoStart, ServiceError.Normal, fileName, null, IntPtr.Zero, null, null, null);
-                if (service != IntPtr.Zero)
-                {
-                    ret = true;
-                    CloseServiceHandle(service);
-                }
+                ret = File.Exists(fileName) == true && RunAs(fileName, "-install") == 0;
             }
             else
             {
@@ -95,25 +92,42 @@ namespace EpgTimer
             return ret;
         }
 
-        public static bool Uninstall(string serviceName)
+        public static bool Uninstall(string serviceName, string fileName)
         {
             bool ret = false;
-            IntPtr scm = OpenSCManager(ScmAccessRights.AllAccess);
+            IntPtr scm = OpenSCManager(ScmAccessRights.Connect);
             if (scm == IntPtr.Zero)
             {
                 return false;
             }
 
-            IntPtr service = OpenService(scm, serviceName, ServiceAccessRights.AllAccess);
+            IntPtr service = OpenService(scm, serviceName, ServiceAccessRights.QueryStatus);
             if (service == IntPtr.Zero)
             {
                 CloseServiceHandle(scm);
                 return false;
             }
-            StopService(service);
-            if (DeleteService(service) == true ){
-                ret = true;
-            }
+
+            //TODO: get fileName from QueryServiceConfig();
+            //typedef struct _QUERY_SERVICE_CONFIG
+            //{
+            //    DWORD dwServiceType;
+            //    DWORD dwStartType;
+            //    DWORD dwErrorControl;
+            //    LPTSTR lpBinaryPathName;
+            //    LPTSTR lpLoadOrderGroup;
+            //    DWORD dwTagId;
+            //    LPTSTR lpDependencies;
+            //    LPTSTR lpServiceStartName;
+            //    LPTSTR lpDisplayName;
+            //}
+            //BOOL WINAPI QueryServiceConfig(
+            //  _In_      SC_HANDLE              hService,
+            //  _Out_opt_ LPQUERY_SERVICE_CONFIG lpServiceConfig,
+            //  _In_      DWORD                  cbBufSize,
+            //  _Out_     LPDWORD                pcbBytesNeeded
+            //);
+            ret = File.Exists(fileName) == true && RunAs(fileName, "-remove") == 0;
 
             CloseServiceHandle(service);
             CloseServiceHandle(scm);
@@ -174,10 +188,14 @@ namespace EpgTimer
                 return false;
             }
 
-            IntPtr service = OpenService(scm, serviceName, ServiceAccessRights.QueryStatus | ServiceAccessRights.Start);
+            IntPtr service = OpenService(scm, serviceName, ServiceAccessRights.QueryStatus);
             if (service != IntPtr.Zero)
             {
-                ret = StartService(service);
+                //ret = StartService(service);
+                if (RunAs("net.exe", "start \"" + serviceName + "\"") == 0)
+                {
+                    ret = WaitForServiceStatus(service, ServiceState.StartPending, ServiceState.Running);
+                }
                 CloseServiceHandle(service);
             }
 
@@ -194,16 +212,21 @@ namespace EpgTimer
                 return false;
             }
 
-            IntPtr service = OpenService(scm, serviceName, ServiceAccessRights.QueryStatus | ServiceAccessRights.Stop);
+            IntPtr service = OpenService(scm, serviceName, ServiceAccessRights.QueryStatus);
             if (service != IntPtr.Zero)
             {
-                ret = StopService(service);
+                //ret = StopService(service);
+                if (RunAs("net.exe", "stop \"" + serviceName + "\"") == 0)
+                {
+                    ret = WaitForServiceStatus(service, ServiceState.StartPending, ServiceState.Stopped);
+                }
                 CloseServiceHandle(service);
             }
             CloseServiceHandle(scm);
             return ret;
         }
 
+#if false
         private static bool StartService(IntPtr service)
         {
             SERVICE_STATUS status = new SERVICE_STATUS();
@@ -221,7 +244,9 @@ namespace EpgTimer
                 return true;
             }
         }
+#endif
 
+#if false
         private static bool StopService(IntPtr service)
         {
             SERVICE_STATUS status = new SERVICE_STATUS();
@@ -239,7 +264,9 @@ namespace EpgTimer
                 return true;
             }
         }
+#endif
 
+#if false
         public static ServiceState GetServiceStatus(string serviceName)
         {
             IntPtr scm = OpenSCManager(ScmAccessRights.Connect);
@@ -264,6 +291,7 @@ namespace EpgTimer
                 CloseServiceHandle(scm);
             }
         }
+#endif
 
         private static ServiceState GetServiceStatus(IntPtr service)
         {
@@ -311,6 +339,28 @@ namespace EpgTimer
                 throw new ApplicationException("Could not connect to service control manager.");*/
 
             return scm;
+        }
+
+        private static int RunAs(string exe, string args)
+        {
+            int ret = -1;
+            try
+            {
+                Process proc = new Process();
+                proc.StartInfo.FileName = exe;
+                proc.StartInfo.Arguments = args;
+                proc.StartInfo.Verb = "RunAs";  // XPでも有効なのかは未確認
+                proc.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
+                proc.Start();
+                proc.WaitForExit();
+                ret = proc.ExitCode;
+                proc.Close();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+            return ret;
         }
     }
 

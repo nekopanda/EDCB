@@ -349,12 +349,12 @@
                 </Grid>
             </TabItem>
             <TabItem Name="tabItem7" Header="Windowsサービス">
-                <StackPanel Margin="20,0">
-                    <Label Name="labelServiceInfo" Content="※ Vista以降のOSでは、管理者権限で起動されている必要があります。" Margin="0,20" Foreground="Red" HorizontalAlignment="Center" />
+                <StackPanel Margin="0,20">
                     <Button Name="button_inst" Content="Windowsサービスとしてインストール" Margin="0,8" Width="260" Height="25" Click="button_inst_Click" />
                     <Button Name="button_uninst" Content="Windowsサービスからアンインストール" Margin="0,8" Width="260" Height="25" Click="button_uninst_Click" />
                     <Button Name="button_start" Content="サービスを開始" Margin="0,8" Width="260" Height="25" Click="button_start_Click" />
                     <Button Name="button_stop" Content="サービスを停止" Margin="0,8" Width="260" Height="25" Click="button_stop_Click" />
+                    <Label Name="labelServiceInfo" Margin="0,20" Foreground="Red" HorizontalAlignment="Center" />
                 </StackPanel>
             </TabItem>
         </TabControl>
