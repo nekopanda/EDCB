@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -28,7 +27,7 @@ namespace EpgTimer
         public CmdExeReserve(Control owner)
             : base(owner)
         {
-            _copyItemData = CtrlCmdDefEx.CopyTo;
+            _copyItemData = ReserveDataEx.CopyTo;
         }
         protected override void SetData(bool IsAllData = false  )
         {
@@ -50,7 +49,7 @@ namespace EpgTimer
                 eventListEx = new List<EpgEventInfo>();
                 eventList.ForEach(epg => 
                 {
-                    if (dataList.All(res => CommonManager.EqualsPg(epg, res) == false))
+                    if (dataList.All(res => CtrlCmdDefEx.EqualsPg(epg, res) == false))
                     {
                         eventListEx.Add(epg);
                     }
@@ -203,7 +202,7 @@ namespace EpgTimer
         {
             if (dataList.Count != 0)
             {
-                mutil.FilePlay(dataList[0]);
+                CommonManager.Instance.FilePlay(dataList[0]);
                 IsCommandExecuted = true;
             }
         }
@@ -235,11 +234,11 @@ namespace EpgTimer
         {
             if (eventList.Count != 0)//番組情報優先
             {
-                mutil.SearchText(eventList[0].Title(), CmdExeUtil.IsKeyGesture(e));
+                mutil.SearchTextWeb(eventList[0].Title(), CmdExeUtil.IsKeyGesture(e));
             }
             else if (dataList.Count != 0)
             {
-                mutil.SearchText(dataList[0].Title, CmdExeUtil.IsKeyGesture(e));
+                mutil.SearchTextWeb(dataList[0].Title, CmdExeUtil.IsKeyGesture(e));
             }
             IsCommandExecuted = true;
         }
@@ -268,9 +267,7 @@ namespace EpgTimer
 
                     if (view == CtxmCode.SearchWindow)
                     {
-                        var recInfo = new RecSettingData();
-                        (this.Owner as SearchWindow).GetRecSetting(ref recInfo);
-                        RecPresetItem preset = recInfo.LookUpPreset();
+                        RecPresetItem preset = (this.Owner as SearchWindow).GetRecSetting().LookUpPreset();
                         string text = preset.ID == 0xFFFFFFFF ? "カスタム設定" : string.Format("プリセット'{0}'", preset.DisplayName);
                         menu.ToolTip = string.Format("このダイアログの録画設定({0})で予約する", text);
                     }
@@ -310,9 +307,6 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmds.JumpReserve || menu.Tag == EpgCmds.JumpTuner)
             {
-                //先にサブウィンドウ関係をチェック
-                if (mcs_ctxmLoading_CheckSearchSubWindow(menu) == true) return;
-
                 //メニュー実行時に選択されるアイテムが予約でないときは無効
                 menu.IsEnabled = (headData as ReserveData != null);
                 menu.ToolTip = null;
@@ -326,7 +320,6 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmds.JumpTable)
             {
-                if (mcs_ctxmLoading_CheckSearchSubWindow(menu) == true) return;
                 if (view != CtxmCode.EpgView) return;
 
                 //標準モードでは非表示。
@@ -334,10 +327,6 @@ namespace EpgTimer
                 {
                     menu.Visibility = Visibility.Collapsed;
                 }
-            }
-            else if (menu.Tag == EpgCmds.ReSearch2)
-            {
-                mcs_ctxmLoading_CheckSearchSubWindow(menu);
             }
             else if (menu.Tag == EpgCmds.Play)
             {
@@ -367,17 +356,6 @@ namespace EpgTimer
                     item.IsChecked = ((item.CommandParameter as EpgCmdParam).ID == (int)ctxm.Tag);
                 }
             }
-        }
-        protected bool mcs_ctxmLoading_CheckSearchSubWindow(MenuItem menu)
-        {
-            bool isHit = (this.Owner is SearchWindow) == true && ((SearchWindow)this.Owner).IsThisSubWindow == true;
-            if (isHit == true)
-            {
-                menu.IsEnabled = false;
-                menu.Header += menu.Header.ToString().EndsWith("(無効)") ? "" : "(無効)";
-                menu.ToolTip = "サブウィンドウでは無効になります。";
-            }
-            return isHit;
         }
     }
 }

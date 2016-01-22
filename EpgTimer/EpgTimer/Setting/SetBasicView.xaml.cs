@@ -77,7 +77,7 @@ namespace EpgTimer.Setting
 
                     textBox_recInfoFolder.Text = IniFileHandler.GetPrivateProfileString("SET", "RecInfoFolder", "", SettingPath.CommonIniPath);
 
-                    Settings.GetDefRecFolders().ForEach(folder => listBox_recFolder.Items.Add(new UserCtrlView.BGBarListBoxItem(folder)));
+                    Settings.Instance.DefRecFolders.ForEach(folder => listBox_recFolder.Items.Add(new UserCtrlView.BGBarListBoxItem(folder)));
                 }
 
                 // tabItem2 - チューナー
@@ -131,7 +131,7 @@ namespace EpgTimer.Setting
                     }
                 }
                 button_shortCut.Content = (string)button_shortCut.Content + (File.Exists(
-                    System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTime.lnk")) ? "を解除" : "");
+                    System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), SettingPath.ModuleName + ".lnk")) ? "を解除" : "");
                 button_shortCutSrv.Content = (string)button_shortCutSrv.Content + (File.Exists(
                     System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTimerSrv.lnk")) ? "を解除" : "");
 
@@ -526,7 +526,7 @@ namespace EpgTimer.Setting
         {
             try
             {
-                string shortcutPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTime.lnk");
+                string shortcutPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), SettingPath.ModuleName + ".lnk");
                 if (File.Exists(shortcutPath))
                 {
                     File.Delete(shortcutPath);

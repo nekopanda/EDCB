@@ -140,8 +140,8 @@ namespace EpgTimer
         //パネルアイテムにマージンを適用。
         public void ApplyMarginForPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
         {
-            int StartMargin = mutil.GetMargin(resInfo.RecSetting, true);
-            int EndMargin = mutil.GetMargin(resInfo.RecSetting, false);
+            int StartMargin = resInfo.RecSetting.GetTrueMargin(true);
+            int EndMargin = resInfo.RecSetting.GetTrueMargin(false);
 
             if (StartMargin < 0)
             {
@@ -157,8 +157,8 @@ namespace EpgTimer
 
         public void ApplyMarginForTunerPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
         {
-            int StartMargin = mutil.GetMargin(resInfo.RecSetting, true);
-            int EndMargin = mutil.GetMargin(resInfo.RecSetting, false);
+            int StartMargin = resInfo.RecSetting.GetTrueMargin(true);
+            int EndMargin = resInfo.RecSetting.GetTrueMargin(false);
 
             startTime = resInfo.StartTime.AddSeconds(StartMargin * -1);
             duration = (int)resInfo.DurationSecond + StartMargin + EndMargin;
@@ -358,15 +358,14 @@ namespace EpgTimer
 
                     var notifyTimer = new System.Windows.Threading.DispatcherTimer();
                     notifyTimer.Interval = TimeSpan.FromSeconds(0.2);
-                    TimeSpan RemainTime = TimeSpan.FromSeconds(Settings.Instance.DisplayNotifyJumpTime);
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
                     notifyTimer.Tick += (sender, e) =>
                     {
-                        RemainTime -= notifyTimer.Interval;
-                        if (RemainTime <= TimeSpan.FromSeconds(0))
+                        if (sw.ElapsedMilliseconds > Settings.Instance.DisplayNotifyJumpTime * 1000)
                         {
+                            notifyTimer.Stop();
                             target_item.NowJumpingTable = 0;
                             listBox.SelectedItem = target_item;
-                            notifyTimer.Stop();
                         }
                         else
                         {

@@ -13,7 +13,7 @@ namespace EpgTimer
         public CmdExeManualAutoAdd(Control owner)
             : base(owner)
         {
-            _copyItemData = CtrlCmdDefEx.CopyTo;
+            _copyItemData = ManualAutoAddDataEx.CopyTo;
         }
         protected override void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e)
         {
@@ -101,7 +101,7 @@ namespace EpgTimer
         }
         protected override void mc_SearchTitle(object sender, ExecutedRoutedEventArgs e)
         {
-            mutil.SearchText(dataList[0].title, CmdExeUtil.IsKeyGesture(e));
+            mutil.SearchTextWeb(dataList[0].title, CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
         }
         protected override void mcs_ctxmLoading_switch(ContextMenu ctxm, MenuItem menu)

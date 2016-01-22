@@ -13,7 +13,7 @@ namespace EpgTimer
         public CmdExeRecinfo(Control owner)
             : base(owner)
         {
-            _copyItemData = CtrlCmdDefEx.CopyTo;
+            _copyItemData = RecFileInfoEx.CopyTo;
         }
         protected override void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e)
         {
@@ -55,7 +55,7 @@ namespace EpgTimer
         }
         protected override void mc_Play(object sender, ExecutedRoutedEventArgs e)
         {
-            mutil.FilePlay(dataList[0].RecFilePath);
+            CommonManager.Instance.FilePlay(dataList[0].RecFilePath);
             IsCommandExecuted = true;
         }
         protected override void mc_OpenFolder(object sender, ExecutedRoutedEventArgs e)
@@ -75,7 +75,7 @@ namespace EpgTimer
         }
         protected override void mc_SearchTitle(object sender, ExecutedRoutedEventArgs e)
         {
-            mutil.SearchText(dataList[0].Title, CmdExeUtil.IsKeyGesture(e));
+            mutil.SearchTextWeb(dataList[0].Title, CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
         }
         protected override void mcs_ctxmLoading_switch(ContextMenu ctxm, MenuItem menu)
@@ -87,6 +87,10 @@ namespace EpgTimer
             else if (menu.Tag == EpgCmdsEx.ShowAutoAddDialogMenu)
             {
                 mcs_chgAutoAddMenuOpening(menu, (dataList.Count) == 0 ? null : dataList[0].AutoAddInfo);
+            }
+            else if (menu.Tag == EpgCmds.OpenFolder)
+            {
+                menu.ToolTip = (dataList.Count == 0 ? null : System.IO.Path.GetDirectoryName(dataList[0].RecFilePath));
             }
         }
     }

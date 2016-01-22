@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
@@ -82,7 +81,7 @@ namespace EpgTimer
 
         public void CopyContent2Clipboard(ReserveData resInfo, bool NotToggle = false)
         {
-            CopyContent2Clipboard(CommonManager.Instance.GetEpgEventInfoFromReserveData(resInfo, true), NotToggle);
+            CopyContent2Clipboard(resInfo.SearchEventInfo(true), NotToggle);
         }
 
         public void CopyContent2Clipboard(RecFileInfo recInfo, bool NotToggle = false)
@@ -118,7 +117,7 @@ namespace EpgTimer
             Clipboard.SetDataObject(text, true);
         }
 
-        public void SearchText(string txtKey, bool NotToggle = false)
+        public void SearchTextWeb(string txtKey, bool NotToggle = false)
         {
             string txtKey1 = txtKey;
             bool setting = Settings.Instance.MenuSet.SearchTitle_Trim;
@@ -165,9 +164,9 @@ namespace EpgTimer
                 ")";
             string[] exp = {
                                 "^((５．１)|(5.1)|" + markExp1 + ")+", // 先頭の記号
-                                "^(([#＃][\\d０-９]+)|(第[\\d０-９]+話))", // 先頭にある話数の除去
+                                "^(([#＃♯][\\d０-９]+)|(第[\\d０-９]+話))", // 先頭にある話数の除去
                                 "^[\\(（][\\d０-９]+[\\)）]\\s*「[^」]+」", // 先頭にある話数の除去
-                                "(([#＃][\\d０-９]+)|(第[\\d０-９]+話)).*", // ドラマ等の話数から後ろ全て
+                                "(([#＃♯][\\d０-９]+)|(第[\\d０-９]+話)).*", // ドラマ等の話数から後ろ全て
                                 "[\\(（][\\d０-９]+[\\)）]\\s*「[^」]+」.*", // ドラマ等の話数から後ろ全て その2
                                 //"「[^」]+」.*", // ドラマ等のサブタイトルから後ろ全て、ちょっと強すぎるかも
                                 "<[^>]+>", // NHK・フジテレビが使う補足
@@ -216,52 +215,6 @@ namespace EpgTimer
                 else
                     rt.Append("%" + i.ToString("X2"));
             return rt.ToString();
-        }
-
-        public string MarginText(RecSettingData recSetting, bool start)
-        {
-            return CustomTimeFormat(GetMargin(recSetting, start) * (start ? -1 : 1), recSetting.UseMargineFlag);
-        }
-
-        public int GetMargin(RecSettingData recSetting, bool start)
-        {
-            if (recSetting == null) return 0;
-
-            int marginTime;
-            if (recSetting.UseMargineFlag == 1)
-            {
-                marginTime = start ? recSetting.StartMargine : recSetting.EndMargine;
-            }
-            else
-            {
-                marginTime = IniFileHandler.GetPrivateProfileInt("SET", start ? "StartMargin" : "EndMargin", 0, SettingPath.TimerSrvIniPath);
-            }
-            return marginTime;
-        }
-
-        public double GetMarginForSort(RecSettingData recSetting, bool start)
-        {
-            if (recSetting == null) return 0;
-            //
-            return GetMargin(recSetting, start) * (start ? -1 : 1) + (recSetting.UseMargineFlag == 1 ? 0.1 : 0);
-        }
-
-        private string CustomTimeFormat(int span, byte useMarginFlag)
-        {
-            string hours;
-            string minutes;
-            string seconds = (span % 60).ToString("00;00");
-            if (Math.Abs(span) < 3600)
-            {
-                hours = "";
-                minutes = (span / 60).ToString("0;0") + ":";
-            }
-            else
-            {
-                hours = (span / 3600).ToString("0;0") + ":";
-                minutes = ((span % 3600) / 60).ToString("00;00") + ":";
-            }
-            return span.ToString("+;-") + hours + minutes + seconds + (useMarginFlag == 1 ? " " : "*");
         }
 
         public TextBlock GetTooltipBlockStandard(string text)
@@ -325,7 +278,7 @@ namespace EpgTimer
                 if (recSettingView != null)
                 {
                     //ダイアログからの予約、SearchWindowの簡易予約
-                    recSettingView.GetRecSetting(ref setInfo);
+                    setInfo = recSettingView.GetRecSetting();
                 }
                 else
                 {
@@ -340,7 +293,7 @@ namespace EpgTimer
                     if (item.StartTimeFlag != 0)
                     {
                         var resInfo = new ReserveData();
-                        CommonManager.ConvertEpgToReserveData(item, ref resInfo);
+                        item.ConvertToReserveData(ref resInfo);
                         resInfo.RecSetting = setInfo;
                         list.Add(resInfo);
                     }
@@ -380,7 +333,7 @@ namespace EpgTimer
                 //現在の設定を読み込む。SearchWindowの場合だけ。
                 if (recSettingView != null)
                 {
-                    recSettingView.GetRecSetting(ref setInfo);
+                    setInfo = recSettingView.GetRecSetting();
                     
                     //現在の設定が無効で登録の場合は、デフォルトの設定を読み込みに行く
                     if (setInfo.RecMode == 5)
@@ -492,8 +445,8 @@ namespace EpgTimer
                     {
                         if (info.UseMargineFlag == 0)
                         {
-                            info.StartMargine = GetMargin(info, true);
-                            info.EndMargine = GetMargin(info, false);
+                            info.StartMargine = info.GetTrueMargin(true);
+                            info.EndMargine = info.GetTrueMargin(false);
                         }
 
                         info.UseMargineFlag = 1;
@@ -523,7 +476,7 @@ namespace EpgTimer
             {
                 infoList[0].UseMargineFlag = 1;
 
-                Setting.SetDefRecSettingWindow dlg = new Setting.SetDefRecSettingWindow();
+                var dlg = new Setting.SetDefRecSettingWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(owner).RootVisual;
                 dlg.SetSettingMode(start == true ? "開始マージン設定" : "終了マージン設定");
                 dlg.recSettingView.SetDefSetting(infoList[0]);
@@ -531,8 +484,7 @@ namespace EpgTimer
 
                 if (dlg.ShowDialog() == false) return false;
 
-                var setData = new RecSettingData();
-                dlg.recSettingView.GetRecSetting(ref setData);
+                RecSettingData setData = dlg.recSettingView.GetRecSetting();
 
                 infoList.ForEach(info =>
                 {
@@ -573,7 +525,7 @@ namespace EpgTimer
         {
             try
             {
-                Setting.SetDefRecSettingWindow dlg = new Setting.SetDefRecSettingWindow();
+                var dlg = new Setting.SetDefRecSettingWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(owner).RootVisual;
                 dlg.SetSettingMode("まとめて変更");
                 dlg.recSettingView.SetDefSetting(infoList[0], pgAll == true);
@@ -581,9 +533,8 @@ namespace EpgTimer
 
                 if (dlg.ShowDialog() == false) return false;
 
-                var setData = new RecSettingData();
-                dlg.recSettingView.GetRecSetting(ref setData);
-
+                RecSettingData setData = dlg.recSettingView.GetRecSetting();
+                
                 infoList.ForEach(info => setData.CopyTo(info));
                 return true;
             }
@@ -598,16 +549,14 @@ namespace EpgTimer
         {
             try
             {
-                SetDefSearchSettingWindow dlg = new SetDefSearchSettingWindow();
+                var dlg = new SetDefSearchSettingWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(owner).RootVisual;
                 dlg.SetDefSetting(infoList[0]);
                 dlg.searchKey.searchKeyDescView.SetChangeMode(0);
 
                 if (dlg.ShowDialog() == false) return false;
 
-                var setData = new EpgSearchKeyInfo();
-                dlg.GetSetting(ref setData);
-
+                EpgSearchKeyInfo setData = dlg.GetSetting();
                 infoList.ForEach(info => info.contentList = setData.contentList.Clone());
                 return true;
             }
@@ -941,16 +890,13 @@ namespace EpgTimer
             try
             {
                 var dlg = new SearchWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
                 dlg.SetViewMode(mode);
                 if (Data != null)
                 {
-                    dlg.SetChgAutoAddID(Data.dataID);
-                    dlg.SetSearchKey(Data.searchInfo);
-                    dlg.SetRecSetting(Data.recSetting);
-                    dlg.SetRecFileList(Data.recFileList);
+                    dlg.SetAutoAddData(Data);
                 }
-                return dlg.ShowDialog();
+                dlg.Show();
+                return true;
             }
             catch (Exception ex)
             {
@@ -975,7 +921,6 @@ namespace EpgTimer
             try
             {
                 var dlg = new SearchWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
                 dlg.SetViewMode(SearchWindow.SearchMode.NewAdd);
 
                 EpgSearchKeyInfo key = Settings.Instance.DefSearchKey.Clone();
@@ -985,7 +930,7 @@ namespace EpgTimer
                 key.serviceList.Add((Int64)sidKey);
 
                 dlg.SetSearchKey(key);
-                dlg.ShowDialog();
+                dlg.Show();
             }
             catch (Exception ex)
             {
@@ -1037,60 +982,6 @@ namespace EpgTimer
             }
         }
 
-        public void SetSearchItemReserved(ICollection<SearchItem> list)
-        {
-            var listKeys = new Dictionary<ulong, SearchItem>();
-
-            foreach (SearchItem listItem1 in list)
-            {
-                //重複するキーは基本的に無いという前提
-                try
-                {
-                    listKeys.Add(listItem1.EventInfo.Create64PgKey(), listItem1);
-                    listItem1.ReserveInfo = null;
-                }
-                catch { }
-            }
-
-            SearchItem setItem;
-            foreach (ReserveData data in CommonManager.Instance.DB.ReserveList.Values)
-            {
-                if (listKeys.TryGetValue(data.Create64PgKey(), out setItem))
-                {
-                    setItem.ReserveInfo = data;
-                }
-            }
-        }
-
-        public EpgEventInfo SearchEventLikeThat(ReserveData resInfo)
-        {
-            if (resInfo == null) return null;
-            double dist = double.MaxValue, dist1;
-            EpgEventInfo eventPossible = null;
-
-            UInt64 key = resInfo.Create64Key();
-            if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
-            {
-                foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
-                {
-                    dist1 = Math.Abs((resInfo.StartTime - eventChkInfo.start_time).TotalSeconds);
-                    double overlapLength = CulcOverlapLength(resInfo.StartTime, resInfo.DurationSecond,
-                                                            eventChkInfo.start_time, eventChkInfo.durationSec);
-
-                    //開始時間が最も近いものを選ぶ。同じ差なら時間が前のものを選ぶ
-                    if (overlapLength >= 0 && (dist > dist1 ||
-                        dist == dist1 && (eventPossible == null || resInfo.StartTime > eventChkInfo.start_time)))
-                    {
-                        dist = dist1;
-                        eventPossible = eventChkInfo;
-                        if (dist == 0) break;
-                    }
-                }
-            }
-
-            return eventPossible;
-        }
-
         /// <summary>重複してない場合は負数が返る。</summary>
         public static double CulcOverlapLength(DateTime s1, uint d1, DateTime s2, uint d2)
         {
@@ -1100,105 +991,10 @@ namespace EpgTimer
             return Math.Min(Math.Min(ts1.TotalSeconds, ts2.TotalSeconds), Math.Min(d1, d2));
         }
 
-        public void FilePlay(ReserveData info)
-        {
-            if (info == null || info.RecSetting == null || info.RecSetting.RecMode == 5) return;
-            if (info.IsOnRec() == false)
-            {
-                MessageBox.Show("まだ録画が開始されていません。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            if (info.RecSetting.RecMode == 4)//視聴モード
-            {
-                CommonManager.Instance.TVTestCtrl.SetLiveCh(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID);
-                return;
-            }
-            else if (Settings.Instance.FilePlayOnAirWithExe == true)
-            {
-                //ファイルパスを取得するため開いてすぐ閉じる
-                var nwinfo = new NWPlayTimeShiftInfo();
-                if (cmd.SendNwTimeShiftOpen(info.ReserveID, ref nwinfo) == ErrCode.CMD_SUCCESS)
-                {
-                    cmd.SendNwPlayClose(nwinfo.ctrlID);
-                    if (nwinfo.filePath != "")
-                    {
-                        FilePlay(nwinfo.filePath);
-                        return;
-                    }
-                }
-                MessageBox.Show("録画ファイルの場所がわかりませんでした。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            else
-            {
-                CommonManager.Instance.TVTestCtrl.StartTimeShift(info.ReserveID);
-            }
-        }
-        public void FilePlay(String filePath)
-        {
-            try
-            {
-                if (filePath == null || filePath.Length == 0) return;
-
-                System.Diagnostics.Process process;
-                CommonManager cmg = CommonManager.Instance;
-                if (cmg.NWMode == false)
-                {
-                    if (Settings.Instance.FilePlayExe.Length == 0)
-                    {
-                        process = System.Diagnostics.Process.Start(filePath);
-                    }
-                    else
-                    {
-                        String cmdLine = Settings.Instance.FilePlayCmd;
-                        //'$'->'\t'は再帰的な展開を防ぐため
-                        cmdLine = cmdLine.Replace("$FileNameExt$", System.IO.Path.GetFileName(filePath).Replace('$', '\t'));
-                        cmdLine = cmdLine.Replace("$FilePath$", filePath).Replace('\t', '$');
-                        process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
-                    }
-                }
-                else
-                {
-                    if (Settings.Instance.FilePlayExe.Length == 0)
-                    {
-                        cmg.TVTestCtrl.StartStreamingPlay(filePath, cmg.NW.ConnectedIP, cmg.NW.ConnectedPort);
-                    }
-                    else
-                    {
-                        String nPath = "";
-                        ErrCode err = cmg.CtrlCmd.SendGetRecFileNetworkPath(filePath, ref nPath);
-                        if (err == ErrCode.CMD_SUCCESS)
-                        {
-                            if (System.IO.File.Exists(nPath) == true)
-                            {
-                                String cmdLine = Settings.Instance.FilePlayCmd;
-                                //'$'->'\t'は再帰的な展開を防ぐため
-                                cmdLine = cmdLine.Replace("$FileNameExt$", System.IO.Path.GetFileName(nPath).Replace('$', '\t'));
-                                cmdLine = cmdLine.Replace("$FilePath$", nPath).Replace('\t', '$');
-                                process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
-                            }
-                            else
-                            {
-                                MessageBox.Show(nPath + "\nが見つかりません");
-                            }
-                        }
-                        else
-                        {
-                            cmg.TVTestCtrl.StartStreamingPlay(filePath, cmg.NW.ConnectedIP, cmg.NW.ConnectedPort);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
         public List<string> GetRecFolderViewList(RecSettingData recSetting)
         {
             var list = new List<string>();
-            List<RecFolderInfo> defs = Settings.GetDefRecFolders();
+            List<RecFolderInfo> defs = Settings.Instance.DefRecFolders;
             string def1 = defs.Count == 0 ? "!Default" : defs[0].recFolder;
             Func<string, string> AdjustName = (f => f == "!Default" ? def1 : f);
             if (recSetting != null)

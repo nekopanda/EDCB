@@ -7,7 +7,7 @@ namespace EpgTimer
 {
     class ChSet5
     {
-        private Dictionary<UInt64, ChSet5Item> _chList;
+        private Dictionary<UInt64, ChSet5Item> _chList = null;
         public Dictionary<UInt64, ChSet5Item> ChList
         {
             get
@@ -18,9 +18,11 @@ namespace EpgTimer
                 }
                 return _chList;
             }
+            private set { _chList = value; }
         }
+        public static void Clear() { Instance._chList = null; }
         
-        private static ChSet5 _instance;
+        private static ChSet5 _instance = null;
         public static ChSet5 Instance
         {
             get
@@ -31,11 +33,7 @@ namespace EpgTimer
             }
         }
 
-        public ChSet5()
-        {
-            _instance = null;
-            _chList = null;
-        }
+        public ChSet5() { }
 
         public static bool IsVideo(UInt16 ServiceType)
         {
@@ -168,10 +166,6 @@ namespace EpgTimer
             return true;
         }
 
-        public static void Clear()
-        {
-            Instance._chList = null;
-        }
         public bool HasChanged { get; set; }
     }
 

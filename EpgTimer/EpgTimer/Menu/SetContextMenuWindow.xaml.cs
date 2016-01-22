@@ -25,7 +25,7 @@ namespace EpgTimer
             new ComboItem(CtxmCode.EpgAutoAddView, "EPG自動予約登録"),
             new ComboItem(CtxmCode.ManualAutoAddView, "プログラム自動予約登録"),
             new ComboItem(CtxmCode.EpgView, "番組表(共通)"),
-            new ComboItem(CtxmCode.SearchWindow, "検索/EPG自動登録ダイアログ"),
+            new ComboItem(CtxmCode.SearchWindow, "検索/キーワード予約ダイアログ"),
             new ComboItem(CtxmCode.EditChgMenu, "[編集]サブメニュー")
         };
 
@@ -292,11 +292,6 @@ namespace EpgTimer
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
-        }
-
-        private void checkBox_NoMessageDelete2_ValueChanged(object sender, RoutedEventArgs e)
-        {
-            checkBox_NoMessageDelete3.IsChecked = checkBox_NoMessageDelete2.IsChecked;
         }
 
         private void button_allDefault_Click(object sender, RoutedEventArgs e)

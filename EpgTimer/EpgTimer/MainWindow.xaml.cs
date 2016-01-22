@@ -568,7 +568,7 @@ namespace EpgTimer
                 autoAddView.UpdateAutoAddInfo();
                 recInfoView.UpdateInfo();
                 epgView.UpdateEpgData();
-                SearchWindow.UpdateInfo(this);
+                SearchWindow.UpdatesInfo();
             }
 
             if (CommonManager.Instance.IsConnected)
@@ -653,6 +653,8 @@ namespace EpgTimer
                     infoWindow.TrueClose();
                 }
 
+                SearchWindow.CloseWindows();
+
                 if (initExe == true)
                 {
                     SaveData();
@@ -733,12 +735,18 @@ namespace EpgTimer
             {
                 if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
                 {
-                    this.Visibility = Visibility.Hidden;
+                    foreach (Window win in Application.Current.Windows)
+                    {
+                        win.Visibility = Visibility.Hidden;
+                    }
                 }
             }
             if (this.WindowState == WindowState.Normal || this.WindowState == WindowState.Maximized)
             {
-                this.Visibility = Visibility.Visible;
+                foreach (Window win in Application.Current.Windows)
+                {
+                    win.Visibility = Visibility.Visible;
+                }
                 taskTray.LastViewState = this.WindowState;
                 Settings.Instance.LastWindowState = this.WindowState;
             }
@@ -884,7 +892,7 @@ namespace EpgTimer
                     recInfoView.UpdateInfo();
                     autoAddView.UpdateAutoAddInfo();
                     epgView.UpdateSetting();
-                    SearchWindow.UpdateInfo(this, true);
+                    SearchWindow.UpdatesInfo(true);
                     ResetButtonView();
                     ResetTaskMenu();
                     RefreshMenu(false);
@@ -919,34 +927,17 @@ namespace EpgTimer
             mBinds.ResetInputBindings(this);
         }
 
-        /// <summary>番組表へジャンプした際に非表示にしたSearchWindow</summary>
-        private SearchWindow hideSearchWindow = null;
-        public bool HasHideSearchWindow { get { return hideSearchWindow != null; } }
-        public void SetHideSearchWindow(SearchWindow win)
-        {
-            // 非表示で保存するSearchWindowは最新のもの1つだけ
-            if (hideSearchWindow != null && hideSearchWindow != win)
-            {
-                hideSearchWindow.Close();
-            }
-            hideSearchWindow = win;
-            EmphasizeSearchButton(this.HasHideSearchWindow);
-        }
-
         void searchButton_Click(object sender, ExecutedRoutedEventArgs e)
         {
-            // Hide()したSearchWindowを復帰
-            if (this.HasHideSearchWindow == true)
+            // 最小化したSearchWindowを復帰
+            if (SearchWindow.HasHideSearchWindow == true)
             {
-                //ウィンドウ管理を真面目にやればモードレスもありか
-                Window win = hideSearchWindow;
-                EmphasizeSearchButton(false);
-                hideSearchWindow = null;
-                win.ShowDialog();
-                return;
+                SearchWindow.RestoreMinimizedWindow();
             }
-            //
-            CommonManager.Instance.MUtil.OpenSearchEpgDialog(this);
+            else
+            {
+                CommonManager.Instance.MUtil.OpenSearchEpgDialog(this);
+            }
         }
 
         void closeButton_Click(object sender, RoutedEventArgs e)
@@ -1368,7 +1359,7 @@ namespace EpgTimer
                     reserveView.UpdateInfo();
                     infoWindowViewModel.UpdateInfo();
                     epgView.UpdateReserveData();
-                    SearchWindow.UpdateInfo(this, true);
+                    SearchWindow.UpdatesInfo(true);
                     break;
                 case UpdateNotifyItem.RecEnd:
                     TaskTrayBaloonWork("録画終了", status.param4);
@@ -1402,7 +1393,7 @@ namespace EpgTimer
                         }
                         autoAddView.epgAutoAddView.UpdateInfo();//検索数の更新
                         epgView.UpdateEpgData();
-                        SearchWindow.UpdateInfo(this);
+                        SearchWindow.UpdatesInfo();
                         
                         GC.Collect();
                     }
@@ -1418,7 +1409,7 @@ namespace EpgTimer
                         tunerReserveView.UpdateInfo();
                         autoAddView.UpdateAutoAddInfo();
                         epgView.UpdateReserveData();
-                        SearchWindow.UpdateInfo(this, true);
+                        SearchWindow.UpdatesInfo(true);
                     }
                     break;
                 case UpdateNotifyItem.RecInfo:
@@ -1445,7 +1436,7 @@ namespace EpgTimer
                             reserveView.UpdateInfo();
                             tunerReserveView.UpdateInfo();
                             epgView.UpdateReserveData();
-                            SearchWindow.UpdateInfo(this, true);
+                            SearchWindow.UpdatesInfo(true);
                         }
                     }
                     break;
@@ -1463,7 +1454,7 @@ namespace EpgTimer
                             reserveView.UpdateInfo();
                             tunerReserveView.UpdateInfo();
                             epgView.UpdateReserveData();
-                            SearchWindow.UpdateInfo(this, true);
+                            SearchWindow.UpdatesInfo(true);
                         }
                     }
                     break;
@@ -1478,7 +1469,7 @@ namespace EpgTimer
                             tunerReserveView.UpdateInfo();
                             autoAddView.UpdateAutoAddInfo();
                             epgView.UpdateReserveData();
-                            SearchWindow.UpdateInfo(this, true);
+                            SearchWindow.UpdatesInfo(true);
                         }
                     }
                     break;
@@ -1538,7 +1529,7 @@ namespace EpgTimer
                         tunerReserveView.UpdateInfo();
                         autoAddView.UpdateAutoAddInfo();
                         epgView.UpdateReserveData();
-                        SearchWindow.UpdateInfo(this, true);
+                        SearchWindow.UpdatesInfo(true);
                     }
                 }
             }
@@ -1581,6 +1572,7 @@ namespace EpgTimer
             BlackoutWindow.NowJumpTable = true;
             new BlackoutWindow(this).showWindow(tab.Header.ToString());
             this.Focus();//チューナ画面やEPG画面でのフォーカス対策。とりあえずこれで解決する。
+            tab.IsSelected = false;//必ずOnVisibleChanged()を発生させるため。
             tab.IsSelected = true;
         }
 

@@ -4,7 +4,6 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -189,16 +188,16 @@ namespace EpgTimer
                     GetReserveTimeInfo(ref resInfo);
 
                     //描画回数の削減を気にしないなら、この条件文は無くてもいい
-                    if (CommonManager.EqualsPg(resInfoDisplay, resInfo, false, true) == false)
+                    if (CtrlCmdDefEx.EqualsPg(resInfoDisplay, resInfo, false, true) == false)
                     {
                         //EPGを自動で読み込んでない時でも、元がEPG予約ならその番組情報は表示させられるようにする
-                        if (reserveInfo.EventID != 0xFFFF && CommonManager.EqualsPg(reserveInfo, resInfo, false, true) == true)
+                        if (reserveInfo.EventID != 0xFFFF && CtrlCmdDefEx.EqualsPg(reserveInfo, resInfo, false, true) == true)
                         {
-                            SetProgramContent(CommonManager.Instance.GetEpgEventInfoFromReserveData(reserveInfo, true));
+                            SetProgramContent(reserveInfo.SearchEventInfo(true));
                         }
                         else
                         {
-                            SetProgramContent(mutil.SearchEventLikeThat(resInfo));
+                            SetProgramContent(resInfo.SearchEventInfoLikeThat());
                         }
 
                         resInfoDisplay = resInfo;
@@ -210,7 +209,7 @@ namespace EpgTimer
                     //最も表示される可能性が高いので、何度も探しにいかせないようにする。
                     if (eventInfoSelected == null)
                     {
-                        eventInfoSelected = CommonManager.Instance.GetEpgEventInfoFromReserveData(reserveInfo, true);
+                        eventInfoSelected = reserveInfo.SearchEventInfo(true);
                     }
                     SetProgramContent(eventInfoSelected);
                     resInfoDisplay = null;
@@ -221,7 +220,7 @@ namespace EpgTimer
         private void SetProgramContent(EpgEventInfo info)
         {
             //放映時刻情報に対してEPGデータ無い場合もあるので、resInfoDisplayとは別にeventInfoDisplayを管理する
-            if (CommonManager.EqualsPg(eventInfoDisplay, info) == false)
+            if (CtrlCmdDefEx.EqualsPg(eventInfoDisplay, info) == false)
             {
                 richTextBox_descInfo.Document = CommonManager.Instance.ConvertDisplayText(info);
             }
@@ -396,9 +395,6 @@ namespace EpgTimer
 
                 if (addMode == AddMode.Change && CheckExistReserveItem() == false) return;
 
-                var setInfo = new RecSettingData();
-                recSettingView.GetRecSetting(ref setInfo);
-
                 //ダイアログを閉じないときはreserveInfoを変更しないよう注意する
                 if (ReserveMode == UIReserveMode.Program)
                 {
@@ -410,7 +406,7 @@ namespace EpgTimer
                     }
 
                     //reserveInfo取得前に保存する。サービスや時間が変わったら、個別予約扱いにする。タイトルのみ変更は見ない。
-                    bool chgManualMode = !CommonManager.EqualsPg(resInfo, reserveInfo, false, true);
+                    bool chgManualMode = !CtrlCmdDefEx.EqualsPg(resInfo, reserveInfo, false, true);
 
                     GetReserveTimeInfo(ref reserveInfo);
                     if (reserveInfo.EventID != 0xFFFF || chgManualMode == true)
@@ -427,7 +423,7 @@ namespace EpgTimer
                     {
                         //基本的にAddReserveEpgWindowと同じ処理内容
                         if (mutil.IsEnableReserveAdd(eventInfoNew) == false) return;
-                        CommonManager.ConvertEpgToReserveData(eventInfoNew, ref reserveInfo);
+                        eventInfoNew.ConvertToReserveData(ref reserveInfo);
                         reserveInfo.Comment = "";
                     }
                     // 自動予約から個別予約に変える場合
@@ -437,7 +433,7 @@ namespace EpgTimer
                     }
                 }
 
-                reserveInfo.RecSetting = setInfo;
+                reserveInfo.RecSetting = recSettingView.GetRecSetting();
 
                 if (addMode == AddMode.Change)
                 {
@@ -492,7 +488,7 @@ namespace EpgTimer
                 var resInfo = new ReserveData();
                 GetReserveTimeInfo(ref resInfo);
 
-                if (reserveInfo.EventID != 0xFFFF && CommonManager.EqualsPg(reserveInfo, resInfo, false, true) == true)
+                if (reserveInfo.EventID != 0xFFFF && CtrlCmdDefEx.EqualsPg(reserveInfo, resInfo, false, true) == true)
                 {
                     //EPG予約で、元の状態に戻る場合
                     textBox_title.Text = reserveInfo.Title;
@@ -500,7 +496,7 @@ namespace EpgTimer
                 }
                 else
                 {
-                    eventInfoNew = mutil.SearchEventLikeThat(resInfo);
+                    eventInfoNew = resInfo.SearchEventInfoLikeThat();
                     if (eventInfoNew == null)
                     {
                         MessageBox.Show("変更可能な番組がありません。\r\n" +
@@ -509,7 +505,7 @@ namespace EpgTimer
                     }
                     else
                     {
-                        SetReserveTimeInfo(CommonManager.ConvertEpgToReserveData(eventInfoNew));
+                        SetReserveTimeInfo(CtrlCmdDefEx.ConvertEpgToReserveData(eventInfoNew));
                     }
                 }
             }

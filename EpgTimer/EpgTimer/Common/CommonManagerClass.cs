@@ -488,61 +488,6 @@ namespace EpgTimer
             return key;
         }
 
-        public static bool EqualsPg(ReserveData i1, ReserveData i2, bool IdMode = true, bool TimeMode = false)
-        {
-            if (i1 == null && i2 == null) return true;
-            if (i1 == null || i2 == null) return false;
-            return (IdMode == false || i1.EventID == i2.EventID)
-                    && (TimeMode == false || i1.StartTime == i2.StartTime && i1.DurationSecond == i2.DurationSecond)
-                    && i1.Create64Key() == i2.Create64Key();
-        }
-
-        //以降の三つは数の多いEpgEventInfo相手に実行されるので、Convert使わずバラしちゃった方がいいのかも
-        public static bool EqualsPg(EpgEventInfo i1, EpgEventInfo i2, bool IdMode = true, bool TimeMode = false)
-        {
-            return EqualsPg(ConvertEpgToReserveData(i1), ConvertEpgToReserveData(i2), IdMode, TimeMode);
-        }
-
-        public static bool EqualsPg(EpgEventInfo i1, ReserveData i2, bool IdMode = true, bool TimeMode = false)
-        {
-            return EqualsPg(ConvertEpgToReserveData(i1), i2, IdMode, TimeMode);
-        }
-
-        public static bool EqualsPg(ReserveData i1, EpgEventInfo i2, bool IdMode = true, bool TimeMode = false)
-        {
-            return EqualsPg(i1, ConvertEpgToReserveData(i2), IdMode, TimeMode);
-        }
-
-        public static ReserveData ConvertEpgToReserveData(EpgEventInfo epgInfo)
-        {
-            if (epgInfo == null) return null;
-            ReserveData resInfo = new ReserveData();
-            ConvertEpgToReserveData(epgInfo, ref resInfo);
-            return resInfo;
-        }
-
-        public static bool ConvertEpgToReserveData(EpgEventInfo epgInfo, ref ReserveData resInfo)
-        {
-            if (epgInfo == null || resInfo == null) return false;
-
-            resInfo.Title = epgInfo.Title();
-            resInfo.StartTime = epgInfo.start_time;
-            resInfo.StartTimeEpg = epgInfo.start_time;
-            resInfo.DurationSecond = (epgInfo.DurationFlag == 0 ? 10 * 60 : epgInfo.durationSec);
-
-            UInt64 key = epgInfo.Create64Key();
-            if (ChSet5.Instance.ChList.ContainsKey(key) == true)
-            {
-                resInfo.StationName = ChSet5.Instance.ChList[key].ServiceName;
-            }
-            resInfo.OriginalNetworkID = epgInfo.original_network_id;
-            resInfo.TransportStreamID = epgInfo.transport_stream_id;
-            resInfo.ServiceID = epgInfo.service_id;
-            resInfo.EventID = epgInfo.event_id;
-
-            return true;
-        }
-
         public static EpgServiceInfo ConvertChSet5To(ChSet5Item item)
         {
             EpgServiceInfo info = new EpgServiceInfo();
@@ -718,50 +663,9 @@ namespace EpgTimer
             return false;
         }
 
-        public EpgEventInfo GetEpgEventInfoFromReserveData(ReserveData info, bool getSrv = false)
+        public static String ConvertTimeText(DateTime start, uint duration, bool isNoYear, bool isNoSecond, bool isNoEndDay = true, bool isNoStartDay = false)
         {
-            CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-            EpgEventInfo eventInfo = null;
-
-            if (info != null)
-            {
-                try
-                {
-                    if (info.EventID != 0xFFFF)
-                    {
-                        UInt64 key = info.Create64Key();
-                        if (CommonManager.Instance.DB.ServiceEventList.ContainsKey(key) == true)
-                        {
-                            foreach (EpgEventInfo eventChkInfo in CommonManager.Instance.DB.ServiceEventList[key].eventList)
-                            {
-                                if (eventChkInfo.event_id == info.EventID)
-                                {
-                                    eventInfo = eventChkInfo;
-                                    break;
-                                }
-                            }
-                        }
-                        if (eventInfo == null && getSrv == true)
-                        {
-                            UInt64 pgId = info.Create64PgKey();
-                            eventInfo = new EpgEventInfo();
-                            cmd.SendGetPgInfo(pgId, ref eventInfo);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }
-
-            }
-
-            return eventInfo;
-        }
-
-        public static String ConvertTimeText(DateTime start, uint duration, bool isNoYear, bool isNoSecond, bool isNoEndDay = true)
-        {
-            return ConvertTimeText(start, isNoYear, isNoSecond) 
+            return ConvertTimeText(start, isNoYear, isNoSecond, isNoStartDay) 
                 + (isNoSecond == true ? "～" : " ～ ")
                 + ConvertTimeText(start + TimeSpan.FromSeconds(duration), isNoYear, isNoSecond, isNoEndDay);
         }
@@ -1301,6 +1205,11 @@ namespace EpgTimer
             return flowDoc;
         }
 
+        public String ConvertTextSearchString(String s)
+        {
+            return ReplaceUrl(MUtil.TrimKeyword(s));
+        }        
+
         //デフォルト番組表の情報作成
         public List<CustomEpgTabInfo> CreateDefaultTabInfo()
         {
@@ -1481,6 +1390,100 @@ namespace EpgTimer
             }
         }
 
+        public void FilePlay(ReserveData data)
+        {
+            if (data == null || data.RecSetting == null || data.RecSetting.RecMode == 5) return;
+            if (data.IsOnRec() == false)
+            {
+                MessageBox.Show("まだ録画が開始されていません。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (data.RecSetting.RecMode == 4)//視聴モード
+            {
+                CommonManager.Instance.TVTestCtrl.SetLiveCh(data.OriginalNetworkID, data.TransportStreamID, data.ServiceID);
+                return;
+            }
+            else if (Settings.Instance.FilePlayOnAirWithExe && (NWMode == false || Settings.Instance.FilePlayExe.Length != 0))
+            {
+                //ファイルパスを取得するため開いてすぐ閉じる
+                var info = new NWPlayTimeShiftInfo();
+                if (CtrlCmd.SendNwTimeShiftOpen(data.ReserveID, ref info) == ErrCode.CMD_SUCCESS)
+                {
+                    CtrlCmd.SendNwPlayClose(info.ctrlID);
+                    if (info.filePath != "")
+                    {
+                        FilePlay(info.filePath);
+                        return;
+                    }
+                }
+                MessageBox.Show("録画ファイルの場所がわかりませんでした。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                TVTestCtrl.StartTimeShift(data.ReserveID);
+            }
+        }
+        public void FilePlay(String filePath)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(filePath) == true) return;
+
+                System.Diagnostics.Process process;
+                if (NWMode == false)
+                {
+                    if (Settings.Instance.FilePlayExe.Length == 0)
+                    {
+                        process = System.Diagnostics.Process.Start(filePath);
+                    }
+                    else
+                    {
+                        String cmdLine = Settings.Instance.FilePlayCmd;
+                        //'$'->'\t'は再帰的な展開を防ぐため
+                        cmdLine = cmdLine.Replace("$FileNameExt$", Path.GetFileName(filePath).Replace('$', '\t'));
+                        cmdLine = cmdLine.Replace("$FilePath$", filePath).Replace('\t', '$');
+                        process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
+                    }
+                }
+                else
+                {
+                    if (Settings.Instance.FilePlayExe.Length == 0)
+                    {
+                        TVTestCtrl.StartStreamingPlay(filePath, NW.ConnectedIP, NW.ConnectedPort);
+                    }
+                    else
+                    {
+                        String nPath = "";
+                        ErrCode err = CtrlCmd.SendGetRecFileNetworkPath(filePath, ref nPath);
+                        if (err == ErrCode.CMD_SUCCESS)
+                        {
+                            if (File.Exists(nPath) == true)
+                            {
+                                String cmdLine = Settings.Instance.FilePlayCmd;
+                                //'$'->'\t'は再帰的な展開を防ぐため
+                                cmdLine = cmdLine.Replace("$FileNameExt$", Path.GetFileName(nPath).Replace('$', '\t'));
+                                cmdLine = cmdLine.Replace("$FilePath$", nPath).Replace('\t', '$');
+                                process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
+                            }
+                            else
+                            {
+                                MessageBox.Show(nPath + "\nが見つかりません");
+                            }
+                        }
+                        else
+                        {
+                            TVTestCtrl.StartStreamingPlay(filePath, NW.ConnectedIP, NW.ConnectedPort);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+        
         //ReloadCustContentColorList()用のコンバートメソッド
         private Brush _GetColorBrush(string colorName, uint colorValue = 0
             , bool gradation = false, double luminance = -1, double saturation = -1)

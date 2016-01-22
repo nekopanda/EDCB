@@ -43,7 +43,7 @@ namespace EpgTimer
                 {
                     if (ReserveInfo != null)
                     {
-                        eventInfo = CommonManager.Instance.GetEpgEventInfoFromReserveData(ReserveInfo, false);
+                        eventInfo = ReserveInfo.SearchEventInfo(false);
                     }
                 }
                 return eventInfo;
@@ -130,7 +130,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return mutil.MarginText(ReserveInfo.RecSetting,true);
+                return ReserveInfo.RecSetting.GetTrueMarginText(true);
             }
         }
         public Double MarginStartValue
@@ -139,7 +139,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return Double.MinValue;
                 //
-                return mutil.GetMarginForSort(ReserveInfo.RecSetting, true);
+                return ReserveInfo.RecSetting.GetTrueMarginForSort(true);
             }
         }
         public String MarginEnd
@@ -148,7 +148,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                return mutil.MarginText(ReserveInfo.RecSetting, false);
+                return ReserveInfo.RecSetting.GetTrueMarginText(false);
             }
         }
         public Double MarginEndValue
@@ -157,7 +157,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return Double.MinValue;
                 //
-                return mutil.GetMarginForSort(ReserveInfo.RecSetting, false);
+                return ReserveInfo.RecSetting.GetTrueMarginForSort(false);
             }
         }
         //public String ProgramContent -> SearchItem.cs
@@ -237,12 +237,17 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) return "";
                 //
-                String view = (ReserveInfo.IsAutoAddMissing() == true ? "不明な" : "") + ReserveInfo.Comment.ToString();
-                if (view == "")
+
+                if (ReserveInfo.Comment == "")
                 {
-                    view = "個別予約(" + (ReserveInfo.EventID == 0xFFFF ? "プログラム" : "EPG") + ")";
+                    return "個別予約(" + (ReserveInfo.EventID == 0xFFFF ? "プログラム" : "EPG") + ")";
                 }
-                return view;
+                else
+                {
+                    string s = ReserveInfo.Comment;
+                    return (ReserveInfo.IsAutoAddMissing() == true ? "不明な" : "")
+                            + (s.StartsWith("EPG自動予約(") == true ? "キーワード予約(" + s.Substring(8) : s);
+                }
             }
         }
         public String AutoAddInfo
@@ -267,7 +272,7 @@ namespace EpgTimer
             {
                 if (ReserveInfo == null) new List<string>();
                 //
-                return mutil.GetRecFolderViewList(ReserveInfo.RecSetting);
+                return ReserveInfo.RecSetting.GetRecFolderViewList();
             }
         }
         public List<String> RecFileName
