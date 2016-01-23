@@ -136,6 +136,10 @@ namespace EpgTimer.Setting
                 {
                     checkBox_appNW.IsChecked = true;
                 }
+                if (IniFileHandler.GetPrivateProfileInt("SET", "KeepDisk", 1, SettingPath.TimerSrvIniPath) == 1)
+                {
+                    checkBox_appKeepDisk.IsChecked = true;
+                }
                 if (IniFileHandler.GetPrivateProfileInt("SET", "RecOverWrite", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
                     checkBox_appOverWrite.IsChecked = true;
@@ -203,6 +207,11 @@ namespace EpgTimer.Setting
                 if (IniFileHandler.GetPrivateProfileInt("SET", "RecNamePlugIn", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
                     checkBox_recname.IsChecked = true;
+                }
+
+                if (IniFileHandler.GetPrivateProfileInt("SET", "NoChkYen", 0, SettingPath.TimerSrvIniPath) == 1)
+                {
+                    checkBox_noChkYen.IsChecked = true;
                 }
             }
 
@@ -288,6 +297,9 @@ namespace EpgTimer.Setting
                 checkBox_keepTCPConnect.IsEnabled = true; // EpgTimerSrvとの接続維持を試みる
                 textBox_keepTCPConnect.IsEnabled = true;
                 label_keepTCPConnect.IsEnabled = true; // 分間隔
+
+                checkBox_srvSaveNotifyLog.IsEnabled = false; // 情報通知ログをファイルに保存する
+                checkBox_srvSaveDebugLog.IsEnabled = false; // デバッグ出力をファイルに保存する
             }
             if (IniFileHandler.CanUpdateInifile == false)
             {
@@ -495,6 +507,11 @@ namespace EpgTimer.Setting
                 IniFileHandler.WritePrivateProfileString("SET", "RecNW", setValue, SettingPath.TimerSrvIniPath);
             }
 
+            if (checkBox_appKeepDisk.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "KeepDisk", checkBox_appKeepDisk.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
+            }
+
             if (checkBox_appOverWrite.IsEnabled)
             {
                 setValue = (checkBox_appOverWrite.IsChecked == true ? "1" : "0");
@@ -555,6 +572,11 @@ namespace EpgTimer.Setting
             {
                 setValue = (comboBox_recname.SelectedItem != null ? (string)comboBox_recname.SelectedItem : "");
                 IniFileHandler.WritePrivateProfileString("SET", "RecNamePlugInFile", setValue, SettingPath.TimerSrvIniPath);
+            }
+
+            if (checkBox_noChkYen.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "NoChkYen", checkBox_noChkYen.IsChecked == true ? "1" : "0", SettingPath.TimerSrvIniPath);
             }
 
             if (IniFileHandler.CanUpdateInifile)
@@ -646,6 +668,15 @@ namespace EpgTimer.Setting
             if (textBox_tcpResTo.IsEnabled)
             {
                 IniFileHandler.WritePrivateProfileString("SET", "TCPResponseTimeoutSec", textBox_tcpResTo.Text, SettingPath.TimerSrvIniPath);
+            }
+
+            if (checkBox_srvSaveNotifyLog.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "SaveNotifyLog", checkBox_srvSaveNotifyLog.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
+            }
+            if (checkBox_srvSaveDebugLog.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "SaveDebugLog", checkBox_srvSaveDebugLog.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
             }
 
             Settings.Instance.NoToolTip = (checkBox_noToolTips.IsChecked == true);

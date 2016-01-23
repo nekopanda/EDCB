@@ -40,6 +40,9 @@ HTTPサーバ機能はフル機能のWebサーバを組み込み、ページ生成をLuaに任せました。詳細
     く動いているように動作する可能性もありますが誤動作です。安定性に問題が出るの
     で絶対パスを使用してください。
   ●動作設定タブ
+    ・デバッグ出力をファイルに保存する【追加】
+      デバッグ出力(OutputDebugStringW)をEpgDataCap_Bon.exeの起動数に応じて
+      EpgDataCap_Bon_DebugLog-{番号}.txtに保存します。
     ・TS入力/ファイル出力バッファ上限【追加】
       EpgDataCap_Bon.iniのTsBuffMaxCount/WriteBuffMaxCountを設定します。
   ●EPG取得設定タブ
@@ -106,6 +109,9 @@ EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
 
 ◇設定
   ●基本設定タブ
+    ●保存フォルダ
+      ・録画情報保存フォルダ【追加】
+        .program.txt/.errの保存先を指定します(Common.iniのRecInfoFolderに相当)。
     ●チューナー
       利用可能なチューナー数のうちEPG取得に使用するチューナー数を設定できるよう
       になりました。【追加】
@@ -116,6 +122,11 @@ EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
     ●録画動作
       ・bat実行条件
         廃止しました(バッチごとに指定)。
+      ・録画ファイルの容量確保を行う【追加】
+        Bitrate.iniをもとに録画容量を予想してファイルにあらかじめブランク領域を
+        確保します(EpgTimerSrv.iniのKeepDiskに相当)。並列録画時の断片化を抑制で
+        きる可能性が高いですが、このようなファイルを追っかけ再生できるソフトは比
+        較的少ないです。
     ●予約情報管理処理
       ・イベントリレーによる追従を行う
         廃止しました(予約ごとに指定)。
@@ -125,6 +136,9 @@ EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
         廃止しました(常にオフ)。
       ・同一物理チャンネルで連続となるチューナーの使用を優先する
         廃止しました(常にオン)。
+      ・ファイル名の禁則文字の変換対象から「\」を除外する【追加】
+        PlugInが返すファイル名の禁則文字の変換対象から「\」を除外して、フォルダ
+        階層を表現できるようにします(EpgTimerSrv.iniのNoChkYenに相当)。
     ●ボタン表示
       ・タブの位置に表示【追加】
         上部表示ボタンを上部タブと並列に配置します。
@@ -147,6 +161,12 @@ EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
         ・タスクトレイアイコンを表示する【追加】
         ・バルーンチップでの動作通知を抑制する【追加】
           ※これらはEpgTimerSrv.exeが直接表示するものについての設定です
+      ・情報通知ログをファイルに保存する【追加】
+        情報通知ログをEpgTimerSrvのあるフォルダのEpgTimerSrvNotifyLog.txtに保存
+        します。
+      ・デバッグ出力をファイルに保存する【追加】
+        EpgTimerSrvのデバッグ出力(OutputDebugStringW)をEpgTimerSrvのあるフォルダ
+        のEpgTimerSrvDebugLog.txtに保存します。
       ・サーバー間連携
         廃止しました。
       ・タスクトレイアイコンを表示する【追加】
@@ -335,10 +355,6 @@ EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
 ◇録画後bat起動時の形式を変える
   非サービス時は常に最小化で起動します。
 
-◇情報通知ログを自動的にファイルに保存する
-  EpgTimerSrv.iniのSETでSaveNotifyLog=1とすると、EpgTimerSrvのあるフォルダの
-  EpgTimerSrvNotifyLog.txtにも保存できます(EpgTimerSrvによる直接保存)【追加】。
-
 ◇デザインをロードしない
   NoStyleが0(デフォルト)のとき、EpgTimerのあるフォルダにEpgTimer.exe.rd.xamlがあ
   れば、そこに定義されたリソースを適用します【追加】。iniフォルダに簡単なサンプ
@@ -346,13 +362,6 @@ EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
 
 ◇DLNAのDMSぽい機能を使う
   「Civetwebの組み込みについて」を参照。
-
-◇デバッグ出力をファイルに保存する【追加】
-  EpgTimerSrv.iniのSETでSaveDebugLog=1とすると、デバッグ出力(OutputDebugStringW)
-  の内容をEpgTimerSrvのあるフォルダのEpgTimerSrvDebugLog.txtに保存できます。
-  ※DLLからのデバッグ出力は対象外
-  EpgDataCap_Bon.iniについても同様に設定できます。こちらはEpgDataCap_Bon.exeの起
-  動数に応じてEpgDataCap_Bon_DebugLog-{番号}.txtとなります。
 
 ◇同一番組無効登録で番組名の比較の際に無視する文字列を指定する【追加】
   [無]や[生]などのついた番組名も同一番組として扱いたい場合に利用することを想定し

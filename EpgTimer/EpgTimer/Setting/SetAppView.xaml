@@ -80,6 +80,7 @@
                                 <CheckBox Name="checkBox_appDrop" Content="ドロップログを出力する" Margin="10,4" Width="150"/>
                                 <CheckBox Name="checkBox_addPgInfo" Content="番組情報を出力する" Margin="10,4" Width="150"/>
                                 <CheckBox Name="checkBox_appNW" Content="UDP、TCP送信を行う" Margin="10,4" Width="150"/>
+                                <CheckBox Name="checkBox_appKeepDisk" Content="録画ファイルの容量確保を行う" Margin="10,4" Width="150" />
                                 <CheckBox Name="checkBox_appOverWrite" Content="同一ファイル名が存在した場合に上書きする" Margin="10,4" />
                             </WrapPanel>
                             <Label Grid.Column="0" Grid.Row="3" Name="label16" Content="プロセス優先度" Margin="8" />
@@ -102,6 +103,7 @@
                             <Button Name="button_recname" Content="設定" Width="54" Height="25" Click="button_recname_Click" VerticalAlignment="Center" />
                         </StackPanel>
                     </WrapPanel>
+                    <CheckBox Name="checkBox_noChkYen" Content="ファイル名の禁則文字の変換対象から「\」を除外する" Margin="8,8,0,8" VerticalAlignment="Center" />
                     <WrapPanel>
                         <CheckBox Name="checkBox_cautionOnRecChange" Content="録画中または開始直前の予約を変更・削除するとき警告する" Margin="8,8,0,8" VerticalAlignment="Center" />
                         <StackPanel Orientation="Horizontal">
@@ -193,81 +195,81 @@
                 <StackPanel Margin="8">
                     <WrapPanel>
                         <StackPanel>
-                            <CheckBox Name="checkBox_closeMin" Content="×ボタンで最小化する" Margin="6" Width="200" />
-                            <CheckBox Name="checkBox_minWake" Content="最小化で起動する" Margin="6" Width="200" />
-                            <CheckBox Name="checkBox_applyMulti" Content="多重起動を許す" Margin="6" Width="200" />
+                            <CheckBox Name="checkBox_closeMin" Content="×ボタンで最小化する" Margin="6,4" Width="200" />
+                            <CheckBox Name="checkBox_minWake" Content="最小化で起動する" Margin="6,4" Width="200" />
+                            <CheckBox Name="checkBox_applyMulti" Content="多重起動を許す" Margin="6,4" Width="200" />
                         </StackPanel>
                         <StackPanel>
-                            <CheckBox Name="checkBox_showTray" Content="タスクトレイアイコンを表示する" Margin="6" Width="200" />
-                            <CheckBox Name="checkBox_minHide" Content="最小化時にタスクトレイに格納する" Margin="6" Width="200" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_showTray, UpdateSourceTrigger=PropertyChanged}" />
+                            <CheckBox Name="checkBox_showTray" Content="タスクトレイアイコンを表示する" Margin="6,4" Width="200" />
+                            <CheckBox Name="checkBox_minHide" Content="最小化時にタスクトレイに格納する" Margin="6,4" Width="200" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_showTray, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </WrapPanel>
                     <WrapPanel>
-                        <Button Name="button_recDef" Content="録画プリセットを設定" Margin="6" Width="200" Height="25" Click="button_recDef_Click" />
-                        <Button Name="button_searchDef" Content="検索条件のデフォルト値を設定" Margin="6" Width="200" Height="25" Click="button_searchDef_Click" />
+                        <Button Name="button_recDef" Content="録画プリセットを設定" Margin="6,4" Width="200" Height="23" Click="button_recDef_Click" />
+                        <Button Name="button_searchDef" Content="検索条件のデフォルト値を設定" Margin="6,4" Width="200" Height="23" Click="button_searchDef_Click" />
                     </WrapPanel>
                     <WrapPanel>
-                        <CheckBox Name="checkBox_tcpServer" Content="ネットワーク接続を許可する" Margin="6,6,-20,6" Width="180" />
+                        <CheckBox Name="checkBox_tcpServer" Content="ネットワーク接続を許可する" Margin="6,4,-20,4" Width="180" />
                         <StackPanel Margin="0,0,-20,0" Orientation="Horizontal">
-                            <Label Name="label41" Content="ポート" Margin="20,0,0,0" Width="80" />
-                            <TextBox Name="textBox_tcpPort" Margin="0,0,15,0" Width="50" Height="25" VerticalContentAlignment="Center"/>
+                            <Label Name="label41" Content="ポート" Margin="20,0,0,0" Padding="0" Width="80" Height="21" VerticalContentAlignment="Center" />
+                            <TextBox Name="textBox_tcpPort" Margin="0,0,15,0" Width="50" Height="21" VerticalContentAlignment="Center"/>
                         </StackPanel>
                         <StackPanel Margin="0,0,-20,0" Orientation="Horizontal">
-                            <Label Name="label_tcpAcl" Content="アクセス制御" Margin="20,0,0,0" Width="80" />
-                            <TextBox Name="textBox_tcpAcl" Margin="0,0,15,0" Width="175" Height="25" VerticalContentAlignment="Center" />
+                            <Label Name="label_tcpAcl" Content="アクセス制御" Margin="20,0,0,0" Padding="0" Width="80" Height="21" VerticalContentAlignment="Center" />
+                            <TextBox Name="textBox_tcpAcl" Margin="0,0,15,0" Width="175" Height="21" VerticalContentAlignment="Center" />
                         </StackPanel>
                         <StackPanel Margin="0,0,-20,0" Orientation="Horizontal">
-                            <Label Name="label_tcpPassword" Content="パスワード" Margin="20,0,0,0" Width="80" />
-                            <PasswordBox Name="passwordBox_tcpPassword" Margin="0,0,15,0" Width="175" Height="25" VerticalContentAlignment="Center" />
+                            <Label Name="label_tcpPassword" Content="パスワード" Margin="20,0,0,0" Padding="0" Width="80" Height="21" VerticalContentAlignment="Center" />
+                            <PasswordBox Name="passwordBox_tcpPassword" Margin="0,0,15,0" Width="175" Height="21" VerticalContentAlignment="Center" />
                         </StackPanel>
                         <StackPanel Margin="0,0,-20,0" Orientation="Horizontal">
-                            <Label Name="label_tcpResTo" Content="無通信タイムアウト(秒)" Margin="20,0,0,0" Width="120" />
-                            <TextBox Name="textBox_tcpResTo" Margin="0,0,15,0" Width="50" Height="25" VerticalContentAlignment="Center" />
+                            <Label Name="label_tcpResTo" Content="無通信タイムアウト(秒)" Margin="20,0,0,0" Padding="0" Width="120" Height="21" VerticalContentAlignment="Center" />
+                            <TextBox Name="textBox_tcpResTo" Margin="0,0,15,0" Width="50" Height="21" VerticalContentAlignment="Center" />
                         </StackPanel>
                     </WrapPanel>
                     <WrapPanel>
-                        <CheckBox Name="checkBox_autoDelRecInfo" Content="録画結果を自動的に削除する" Margin="6,6,-20,6" Width="180" />
-                        <CheckBox Name="checkBox_autoDelRecFile" Content="録画ファイルも削除する" Margin="6,6,-20,6" Width="180" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_autoDelRecInfo, UpdateSourceTrigger=PropertyChanged}" />
+                        <CheckBox Name="checkBox_autoDelRecInfo" Content="録画結果を自動的に削除する" Margin="6,4,-20,4" Width="210" />
+                        <CheckBox Name="checkBox_autoDelRecFile" Content="録画ファイルも削除する" Margin="6,4,-20,4" Width="150" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_autoDelRecInfo, UpdateSourceTrigger=PropertyChanged}" />
                         <StackPanel Orientation="Horizontal">
-                            <Label Name="label42" Content="保持件数" Margin="20,0,0,0" Width="80" />
-                            <TextBox Name="textBox_autoDelRecInfo" Width="50" Height="25" VerticalContentAlignment="Center" />
+                            <Label Name="label42" Content="保持件数" Margin="20,0,0,0" Padding="0" Width="80" Height="21" VerticalContentAlignment="Center" />
+                            <TextBox Name="textBox_autoDelRecInfo" Width="50" Height="21" VerticalContentAlignment="Center" />
                         </StackPanel>
                     </WrapPanel>
                     <WrapPanel>
-                        <Grid Margin="6">
-                            <CheckBox Name="checkBox_timeSync">
-                                <TextBlock TextWrapping="Wrap">EPG取得時に放送波時間でPC時計を同期する<LineBreak/>※EpgTimerSrv.exeが管理者権限で起動している必要があります</TextBlock>
-                            </CheckBox>
-                        </Grid>
+                        <CheckBox Name="checkBox_timeSync" Margin="6,4">
+                            <TextBlock TextWrapping="Wrap">EPG取得時に放送波時間でPC時計を同期する<LineBreak/>※EpgTimerSrv.exeが管理者権限で起動している必要があります</TextBlock>
+                        </CheckBox>
                         <WrapPanel>
-                            <CheckBox Name="checkBox_noToolTips" Content="ツールチップの表示を抑制する" Margin="6" Width="200" />
-                            <CheckBox Name="checkBox_noBallonTips" Content="バルーンチップでの動作通知を抑制する" Margin="6" />
+                            <CheckBox Name="checkBox_noToolTips" Content="ツールチップの表示を抑制する" Margin="6,4" Width="200" />
+                            <CheckBox Name="checkBox_noBallonTips" Content="バルーンチップでの動作通知を抑制する" Margin="6,4" Width="220" />
                         </WrapPanel>
                     </WrapPanel>
                     <WrapPanel>
                         <StackPanel>
-                            <CheckBox Name="checkBox_srvResident" Content="EpgTimerSrvを常駐させる" Margin="6,6,60,4" />
+                            <CheckBox Name="checkBox_srvResident" Content="EpgTimerSrvを常駐させる" Margin="6,4,60,4" />
                             <CheckBox Name="checkBox_srvShowTray" Content="タスクトレイアイコンを表示する" Margin="20,4,60,4" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
                             <CheckBox Name="checkBox_srvNoBalloonTip" Content="バルーンチップでの動作通知を抑制する" Margin="20,4,60,4" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                         <StackPanel>
-                            <CheckBox Name="checkBox_wakeReconnect" Content="起動時に前回接続サーバーに接続する" Margin="6,6,6,4" IsEnabled="False" />
+                            <CheckBox Name="checkBox_wakeReconnect" Content="起動時に前回接続サーバーに接続する" Margin="6,4" IsEnabled="False" />
                             <CheckBox Name="checkBox_suspendClose" Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Margin="6,4" IsEnabled="False" />
                             <CheckBox Name="checkBox_ngAutoEpgLoad" Content="EPGデータを自動的に読み込まない" Margin="6,4" IsEnabled="False" />
                             <StackPanel Orientation="Horizontal">
-                                <CheckBox Name="checkBox_keepTCPConnect" Content="EpgTimerSrvとの接続維持を試みる" Margin="6,4" Width="200" IsEnabled="False" />
-                                <TextBox Name="textBox_keepTCPConnect" Margin="20,-1,0,0" Width="50" Height="25" IsEnabled="False" VerticalContentAlignment="Center" />
-                                <Label Name="label_keepTCPConnect" Content="分間隔" Margin="0,-1" IsEnabled="False" />
+                                <CheckBox Name="checkBox_keepTCPConnect" Content="EpgTimerSrvとの接続維持を試みる" Margin="6,4" Width="220" IsEnabled="False" />
+                                <TextBox Name="textBox_keepTCPConnect" Width="50" Height="21" IsEnabled="False" VerticalContentAlignment="Center" />
+                                <Label Name="label_keepTCPConnect" Content="分間隔" Margin="4,0" Padding="0" Height="21" IsEnabled="False" VerticalContentAlignment="Center" />
                             </StackPanel>
                         </StackPanel>
                     </WrapPanel>
                     <WrapPanel>
-                        <CheckBox Name="checkBox_cautionManyChange" Content="多数の項目を処理するとき警告する" Margin="6,8" Width="200" />
+                        <CheckBox Name="checkBox_cautionManyChange" Content="多数の項目を処理するとき警告する" Margin="6,4,-20,4" Width="220" />
                         <StackPanel Orientation="Horizontal">
-                            <TextBox Name="textBox_cautionManyChange" Margin="20,0,0,0" Width="50" Height="25" VerticalContentAlignment="Center" />
-                            <Label Content="以上" VerticalAlignment="Center" />
+                            <TextBox Name="textBox_cautionManyChange" Margin="20,0,0,0" Width="50" Height="21" VerticalContentAlignment="Center" />
+                            <Label Content="以上" Margin="4,0" Padding="0" Height="21" VerticalContentAlignment="Center" />
                         </StackPanel>
                     </WrapPanel>
+                    <CheckBox Name="checkBox_srvSaveNotifyLog" Content="情報通知ログをファイルに保存する" Margin="6,4" />
+                    <CheckBox Name="checkBox_srvSaveDebugLog" Content="デバッグ出力をファイルに保存する" Margin="6,4" />
                 </StackPanel>
             </TabItem>
             <TabItem Name="tabItem5" Header="カスタムボタン">
