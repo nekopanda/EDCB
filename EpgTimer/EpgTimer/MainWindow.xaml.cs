@@ -434,7 +434,7 @@ namespace EpgTimer
                 reconnect = dlg.ShowDialog() == true;
             }
 
-            serviceMode = ServiceCtrlClass.IsStarted("EpgTimer Service");
+            serviceMode = ServiceCtrlClass.ServiceIsInstalled("EpgTimer Service");
             if (reconnect)
             {
                 Title = appName;
@@ -451,14 +451,14 @@ namespace EpgTimer
                     {
                         if (System.Diagnostics.Process.GetProcessesByName("EpgTimerSrv").Count() == 0)
                         {
-                            if (ServiceCtrlClass.ServiceIsInstalled("EpgTimer Service") == true)
+                            if (serviceMode == true)
                             {
                                 if (ServiceCtrlClass.IsStarted("EpgTimer Service") == false)
                                 {
+                                    ServiceCtrlClass.StartService("EpgTimer Service");
                                     int count = 5;
                                     do
                                     {
-                                        ServiceCtrlClass.StartService("EpgTimer Service");
                                         System.Threading.Thread.Sleep(1000);
                                     }
                                     while (ServiceCtrlClass.IsStarted("EpgTimer Service") == false && --count > 0);
