@@ -57,8 +57,6 @@ namespace EpgTimer.Setting
                     button_exe.IsEnabled = false; // 開く
                     label3.IsEnabled = false; //録画保存フォルダ
                     label4.IsEnabled = false; //※ 録画中やEPG取得中に設定を変更すると正常動作しなくなる可能性があります。
-                    label5.IsEnabled = false; //スタートアップにショートカットを作成する
-                    button_shortCut.IsEnabled = false;
                     button_shortCutSrv.IsEnabled = false;
                 }
                 listBox_recFolder.IsEnabled = IniFileHandler.CanUpdateInifile;
