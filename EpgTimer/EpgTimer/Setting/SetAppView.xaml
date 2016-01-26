@@ -38,7 +38,7 @@
                             <Label Grid.Column="0" Grid.Row="1" Name="label1" Content="復帰処理開始時間" Margin="8" />
                             <StackPanel Grid.Column="1" Grid.Row="1" Margin="8" Orientation="Horizontal">
                                 <Label Name="label4" Content="録画開始" VerticalContentAlignment="Center" />
-                                <TextBox Name="textBox_pcWakeTime" Width="42" Height="25" />
+                                <TextBox Name="textBox_pcWakeTime" Width="42" Height="25" VerticalContentAlignment="Center" />
                                 <Label Name="label2" Content="分前 (再起動ありの場合は＋5分)" Height="28" />
                             </StackPanel>
                         </Grid>
@@ -75,12 +75,12 @@
                                 <Label Name="label15" Content="分前に起動する" />
                             </StackPanel>
                             <WrapPanel Grid.Column="1" Grid.Row="2" Margin="8" >
-                                <CheckBox Name="checkBox_appMin" Content="最小化で起動する" Margin="10,4" Width="150"/>
-                                <CheckBox Name="checkBox_appView" Content="視聴時はViewを起動する" Margin="10,4" Width="150"/>
-                                <CheckBox Name="checkBox_appDrop" Content="ドロップログを出力する" Margin="10,4" Width="150"/>
-                                <CheckBox Name="checkBox_addPgInfo" Content="番組情報を出力する" Margin="10,4" Width="150"/>
-                                <CheckBox Name="checkBox_appNW" Content="UDP、TCP送信を行う" Margin="10,4" Width="150"/>
-                                <CheckBox Name="checkBox_appKeepDisk" Content="録画ファイルの容量確保を行う" Margin="10,4" Width="150" />
+                                <CheckBox Name="checkBox_appMin" Content="最小化で起動する" Margin="10,4" Width="180"/>
+                                <CheckBox Name="checkBox_appView" Content="視聴時はViewを起動する" Margin="10,4" Width="180"/>
+                                <CheckBox Name="checkBox_appDrop" Content="ドロップログを出力する" Margin="10,4" Width="180"/>
+                                <CheckBox Name="checkBox_addPgInfo" Content="番組情報を出力する" Margin="10,4" Width="180"/>
+                                <CheckBox Name="checkBox_appNW" Content="UDP、TCP送信を行う" Margin="10,4" Width="180"/>
+                                <CheckBox Name="checkBox_appKeepDisk" Content="録画ファイルの容量確保を行う" Margin="10,4" Width="180" />
                                 <CheckBox Name="checkBox_appOverWrite" Content="同一ファイル名が存在した場合に上書きする" Margin="10,4" />
                             </WrapPanel>
                             <Label Grid.Column="0" Grid.Row="3" Name="label16" Content="プロセス優先度" Margin="8" />
