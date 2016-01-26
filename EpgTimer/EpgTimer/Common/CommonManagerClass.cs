@@ -1590,29 +1590,25 @@ namespace EpgTimer
 
             try
             {
-                if (CommonManager.Instance.NWMode == false)
+                String ChSet4Path = SettingPath.SettingFolderPath;
+                if (CommonManager.Instance.NWMode == false ||
+                    CtrlCmd.SendGetRecFileNetworkPath(ChSet4Path, ref ChSet4Path) == ErrCode.CMD_SUCCESS)
                 {
-                    foreach (string info in Directory.GetFiles(SettingPath.SettingFolderPath, "*.ChSet4.txt"))
+                    foreach (string info in Directory.GetFiles(ChSet4Path, "*.ChSet4.txt"))
                     {
                         list.Add(GetBonFileName(System.IO.Path.GetFileName(info)) + ".dll");
                     }
                 }
-                else
+                else if (IniFileHandler.CanReadInifile == true)
                 {
-                    //EpgTimerが作成したEpgTimerSrv.iniからBonDriverセクションを拾い出す
+                    //ChSet4ファイルを参照できない場合、サーバーからEpgTimerSrv.iniを取得しBonDriverセクションを拾い出す
                     //将来にわたって確実なリストアップではないし、本来ならSendEnumPlugIn()あたりを変更して取得すべきだが、
                     //参考表示なので構わない
-                    using (var reader = (new System.IO.StreamReader(SettingPath.TimerSrvIniPath, Encoding.Default)))
+                    foreach (string buff in IniSetting.Instance[SettingPath.TimerSrvIniPath].Keys)
                     {
-                        while (reader.Peek() >= 0)
+                        if (buff.LastIndexOf(".dll", StringComparison.OrdinalIgnoreCase) > 0)
                         {
-                            string buff = reader.ReadLine();
-                            int start = buff.IndexOf('[');
-                            int end = buff.LastIndexOf(".dll]");
-                            if (start >= 0 && end >= start + 2)
-                            {
-                                list.Add(buff.Substring(start + 1, end + 3 - start));
-                            }
+                            list.Add(buff);
                         }
                     }
                 }
