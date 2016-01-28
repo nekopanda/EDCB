@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:EpgTimer"
         mc:Ignorable="d"
         Title="EpgTimer" Height="100" Width="370"
-        Topmost="{Binding Path=IsTopMost}" ShowInTaskbar="False" Closing="Window_Closing" SourceInitialized="Window_SourceInitialized">
+        Topmost="{Binding Path=IsTopMost}" ShowInTaskbar="False" Closing="Window_Closing" WindowStyle="ToolWindow">
     <Grid>
         <Grid.ContextMenu>
             <ContextMenu>

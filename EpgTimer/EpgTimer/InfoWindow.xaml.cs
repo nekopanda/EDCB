@@ -69,6 +69,7 @@ namespace EpgTimer
             Activate();
         }
 
+#if false
         // 最小化できないようにする //
         private const int GWL_STYLE = -16,
                       WS_MINIMIZEBOX = 0x20000;
@@ -85,6 +86,7 @@ namespace EpgTimer
             int currentStyle = GetWindowLong(hwnd, GWL_STYLE);
             SetWindowLong(hwnd, GWL_STYLE, (currentStyle & ~WS_MINIMIZEBOX));
         }
+#endif
 
         private void Window_Closing(object sender, CancelEventArgs e)
         {

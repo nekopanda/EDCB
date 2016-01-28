@@ -737,6 +737,10 @@ namespace EpgTimer
                 {
                     foreach (Window win in Application.Current.Windows)
                     {
+                        // ToolWindow は消さないことにする (InfoWindow用)
+                        if (win.WindowStyle == WindowStyle.ToolWindow)
+                            continue;
+
                         win.Visibility = Visibility.Hidden;
                     }
                 }
@@ -745,6 +749,10 @@ namespace EpgTimer
             {
                 foreach (Window win in Application.Current.Windows)
                 {
+                    // ToolWindow は触らない (InfoWindow用)
+                    if (win.WindowStyle == WindowStyle.ToolWindow)
+                        continue;
+
                     win.Visibility = Visibility.Visible;
                 }
                 taskTray.LastViewState = this.WindowState;
