@@ -16,6 +16,8 @@ CNotifyManager::CNotifyManager(void)
 	this->notifyThread = NULL;
 	this->notifyStopFlag = FALSE;
 	this->srvStatus = 0;
+	this->notifyCount = 1;
+	this->notifyRemovePos = 0;
 	this->hwndNotify = NULL;
 }
 
@@ -91,6 +93,20 @@ void CNotifyManager::UnRegistTCP(const REGIST_TCP_INFO& info)
 	}
 }
 
+BOOL CNotifyManager::IsRegistTCP(const REGIST_TCP_INFO& info) const
+{
+	CBlockLock lock(&this->managerLock);
+
+	{
+		wstring key = L"";
+		Format(key, L"%s:%d", info.ip.c_str(), info.port);
+
+		map<wstring,REGIST_TCP_INFO>::const_iterator itr;
+		itr = this->registTCPMap.find(key);
+		return itr != this->registTCPMap.end();
+	}
+}
+
 void CNotifyManager::SetNotifyWindow(HWND hwnd, UINT msgID)
 {
 	CBlockLock lock(&this->managerLock);
@@ -104,9 +120,34 @@ vector<NOTIFY_SRV_INFO> CNotifyManager::RemoveSentList()
 {
 	CBlockLock lock(&this->managerLock);
 
-	vector<NOTIFY_SRV_INFO> list = this->notifySentList;
-	this->notifySentList.clear();
+	vector<NOTIFY_SRV_INFO> list(this->notifySentList.begin() + this->notifyRemovePos, this->notifySentList.end());
+	this->notifyRemovePos = this->notifySentList.size();
 	return list;
+}
+
+BOOL CNotifyManager::GetNotify(NOTIFY_SRV_INFO* info, DWORD targetCount)
+{
+	CBlockLock lock(&this->managerLock);
+
+	if( targetCount == 0 ){
+		//現在のsrvStatusを返す
+		NOTIFY_SRV_INFO status;
+		status.notifyID = NOTIFY_UPDATE_SRV_STATUS;
+		GetLocalTime(&status.time);
+		status.param1 = this->srvStatus;
+		//巡回カウンタは最後の通知と同値
+		status.param3 = this->notifyCount;
+		*info = status;
+		return TRUE;
+	}else if( this->notifySentList.empty() || targetCount - this->notifySentList.back().param3 < 0x80000000UL ){
+		//存在するかどうかは即断できる
+		return FALSE;
+	}else{
+		//巡回カウンタがtargetCountよりも大きくなる最初の通知を返す
+		*info = *std::find_if(this->notifySentList.begin(), this->notifySentList.end(),
+		                      [=](const NOTIFY_SRV_INFO& a) { return targetCount - a.param3 >= 0x80000000UL; });
+		return TRUE;
+	}
 }
 
 void CNotifyManager::GetRegistGUI(map<DWORD, DWORD>* registGUI) const
@@ -246,10 +287,16 @@ UINT WINAPI CNotifyManager::SendNotifyThread(LPVOID param)
 				//次の通知がある
 				SetEvent(sys->notifyEvent);
 			}
+			//巡回カウンタをつける(0を避けるため奇数)
+			sys->notifyCount += 2;
+			notifyInfo.param3 = sys->notifyCount;
 			//送信済みリストに追加してウィンドウメッセージで知らせる
 			sys->notifySentList.push_back(notifyInfo);
 			if( sys->notifySentList.size() > 100 ){
 				sys->notifySentList.erase(sys->notifySentList.begin());
+				if( sys->notifyRemovePos != 0 ){
+					sys->notifyRemovePos--;
+				}
 			}
 			if( sys->hwndNotify != NULL ){
 				PostMessage(sys->hwndNotify, sys->msgIDNotify, 0, 0);

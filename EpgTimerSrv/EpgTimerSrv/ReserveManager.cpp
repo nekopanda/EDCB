@@ -364,7 +364,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(r.reserveID);
 		if( itr != this->reserveText.GetMap().end() ){
 			//変更できないフィールドを上書き
-			r.comment = itr->second.comment;
+			//r.comment = itr->second.comment;プログラム予約に変更する場合があるので許可(tknerec版)
 			r.presentFlag = itr->second.presentFlag;
 			r.startTimeEpg = itr->second.startTimeEpg;
 			if( setReserveStatus == false ){
@@ -1166,7 +1166,7 @@ void CReserveManager::CheckAutoDel() const
 	for( size_t i = 0; i < this->autoDelFolderList.size(); i++ ){
 		wstring mountPath;
 		GetChkDrivePath(this->autoDelFolderList[i], mountPath);
-		std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
+		std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), towupper);
 		map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator itr = mountMap.find(mountPath);
 		if( itr == mountMap.end() ){
 			itr = mountMap.insert(std::make_pair(mountPath, std::make_pair(0ULL, vector<wstring>()))).first;
@@ -1197,7 +1197,7 @@ void CReserveManager::CheckAutoDel() const
 			for( size_t i = 0; i < recFolderList.size(); i++ ){
 				wstring mountPath;
 				GetChkDrivePath(recFolderList[i], mountPath);
-				std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), toupper);
+				std::transform(mountPath.begin(), mountPath.end(), mountPath.begin(), towupper);
 				map<wstring, pair<ULONGLONG, vector<wstring>>>::iterator jtr = mountMap.find(mountPath);
 				if( jtr != mountMap.end() ){
 					if( jtr->second.first == 0 ){
@@ -1217,8 +1217,6 @@ void CReserveManager::CheckAutoDel() const
 	}
 
 	//ドライブレベルでのチェック
-	map<wstring, wstring> protectFiles;
-	recInfoText.GetProtectFiles(&protectFiles);
 	for( map<wstring, pair<ULONGLONG, vector<wstring>>>::const_iterator itr = mountMap.begin(); itr != mountMap.end(); itr++ ){
 		ULARGE_INTEGER freeBytes;
 		if( itr->second.first > 0 && GetDiskFreeSpaceEx(itr->first.c_str(), &freeBytes, NULL, NULL) && freeBytes.QuadPart < itr->second.first ){
@@ -1245,9 +1243,9 @@ void CReserveManager::CheckAutoDel() const
 			}
 			while( needFreeSize > 0 && tsFileMap.empty() == false ){
 				wstring delPath = tsFileMap.begin()->second.second;
-				wstring delPathUpper = delPath;
-				std::transform(delPathUpper.begin(), delPathUpper.end(), delPathUpper.begin(), toupper);
-				if( protectFiles.find(delPathUpper) != protectFiles.end() ){
+				if( this->recInfoText.GetMap().end() != std::find_if(this->recInfoText.GetMap().begin(), this->recInfoText.GetMap().end(),
+				        [&](const pair<DWORD, REC_FILE_INFO>& a) { return a.second.protectFlag && CompareNoCase(a.second.recFilePath, delPath) == 0; }) ){
+					//プロテクトされた録画済みファイルは消さない
 					_OutputDebugString(L"★No Delete(Protected) : %s\r\n", delPath.c_str());
 				}else{
 					DeleteFile(delPath.c_str());
@@ -1821,7 +1819,7 @@ bool CReserveManager::GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* 
 	return false;
 }
 
-bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkDay) const
+bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, const EPGDB_SEARCH_KEY_INFO& key) const
 {
 	CBlockLock lock(&this->managerLock);
 	bool ret = false;
@@ -1841,10 +1839,10 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 			if( infoEventName.empty() == false && info.StartTimeFlag != 0 ){
 				map<DWORD, PARSE_REC_INFO2_ITEM>::const_iterator itr;
 				for( itr = this->recInfo2Text.GetMap().begin(); itr != this->recInfo2Text.GetMap().end(); itr++ ){
-					if( itr->second.originalNetworkID == info.original_network_id &&
-					    itr->second.transportStreamID == info.transport_stream_id &&
-					    itr->second.serviceID == info.service_id &&
-					    ConvertI64Time(itr->second.startTime) + chkDay*24*60*60*I64_1SEC > ConvertI64Time(info.start_time) ){
+					if( ( key.chkRecNoService == 1 || itr->second.originalNetworkID == info.original_network_id &&
+						itr->second.transportStreamID == info.transport_stream_id &&
+						itr->second.serviceID == info.service_id ) &&
+						ConvertI64Time(itr->second.startTime) + key.chkRecDay*24*60*60*I64_1SEC > ConvertI64Time(info.start_time) ){
 						wstring eventName = itr->second.eventName;
 						if( this->recInfo2RegExp.empty() == false ){
 							_bstr_t rpl = regExp->Replace(_bstr_t(eventName.c_str()), _bstr_t());
