@@ -387,6 +387,17 @@ EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
   デフォルトではEpgTimerSrv.exeと同じ場所のEpgTimer.exeを実行しますが、EpgTimer
   という名前のショートカットファイルがあればこちらを実行します。
 
+◇Write_DefaultのTeeコマンド機能について【追加】
+Write_Defaultの通常のファイル出力に平行して、出力と同じデータをPlugIn設定で指定
+されたコマンドの標準入力に渡します。コマンドには$FilePath$(出力ファイルパス)を指
+定できます。コマンドのカレントディレクトリは親プロセス(EpgDataCap_Bon.exeなど)の
+あるフォルダになります。
+録画終了後、標準入力は速やかに閉じられます(入力完了まで待機することはない)。コマ
+ンドの処理速度が録画速度を下回る場合は終了後の処理について(引数で受け取った出力
+ファイルパスをもとに処理を継続するなど)コマンド側で工夫してください。
+・Teeバッファサイズ(byte) : コマンドにデータを入力する単位
+・Tee読み込み遅延(byte) : コマンドへの入力をファイル出力からこの値だけ遅らせる
+
 ■Civetwebの組み込みについて■
 HTTPサーバ機能の簡単化とディレクトリトラバーサル等々のバグ修正を目的に、EpgTimerSrv.exeにCivetwebを組み込みました。
 HTTPサーバ機能は従来通りEpgTimerSrv.iniのEnableHttpSrvキーを1にすると有効になります(2にするとEpgTimerSrv.exeと同じ場所にログファイルも出力)。
