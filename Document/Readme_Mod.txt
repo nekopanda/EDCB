@@ -402,30 +402,48 @@ Write_Defaultの通常のファイル出力に平行して、出力と同じデータをPlugIn設定で指定
 HTTPサーバ機能の簡単化とディレクトリトラバーサル等々のバグ修正を目的に、EpgTimerSrv.exeにCivetwebを組み込みました。
 HTTPサーバ機能は従来通りEpgTimerSrv.iniのEnableHttpSrvキーを1にすると有効になります(2にするとEpgTimerSrv.exeと同じ場所にログファイルも出力)。
 有効にする場合はEpgTimerSrv.exeと同じ場所にlua52.dllが必要です。対応するものをDLしてください。
-http://sourceforge.net/projects/luabinaries/files/5.2.3/Windows%20Libraries/Dynamic/
+https://sourceforge.net/projects/luabinaries/files/5.2.4/Windows%20Libraries/Dynamic/
 Civetwebについては本家のドキュメント↓を参照してください(英語)
-https://github.com/civetweb/civetweb/tree/master/docs
+https://github.com/civetweb/civetweb/blob/master/docs/UserManual.md
 SSL/TLSを利用する場合はEpgTimerSrv.exeと同じ場所にssleay32.dllとlibeay32.dllが必要です。自ビルド(推奨)するか信頼できるどこかから入手してください。
 とりあえず https://www.openssl.org/community/binaries.html にある https://indy.fulgan.com/SSL/ で動作を確認しています。
 
 「DLNAのDMSぽい機能」はHTTPサーバに統合しました。
-iniフォルダにあるdlna以下をdocument_rootに置いてEpgTimerSrv.iniのEnableDMSキーを1にすると有効になります。
+iniフォルダにあるdlna以下を公開フォルダに置いてEpgTimerSrv.iniのEnableDMSキーを1にすると有効になります。
 
-以下の設定をCivetwebのデフォルトから変更しています:
-  access_control_list: EpgTimerSrv.iniのHttpAccessControlListキーの値(デフォルトは"+127.0.0.1")
-    ※従来通りすべてのアクセスを許可する場合は"+0.0.0.0/0"とする
+EpgTimerSrv.iniのSETに以下のキー[=デフォルト]を指定できます:
+HttpAccessControlList[=+127.0.0.1]
+  アクセス制御
+  # Civetwebのaccess_control_listに相当(ただし"deny all accesses"からスタート)
+  # 従来通りすべてのアクセスを許可する場合は+0.0.0.0/0とする
+HttpPort[=5510]
+  ポート番号
+  # Civetwebのlistening_portsに相当
+  # SSLや複数ポート指定方法などは本家ドキュメント参照
+HttpPublicFolder[=EpgTimerSrv.exeと同じ場所の"HttpPublic"]
+  公開フォルダ
+  # Civetwebのdocument_rootに相当
+  # フォルダパスに日本語(マルチバイト)文字を含まないこと
+HttpAuthenticationDomain[=Civetwebのデフォルト]
+  認証領域
+  # Civetwebのauthentication_domainに相当
+  # パスワード確認画面の文字列ぐらいの役割しかない
+HttpNumThreads[=3]
+  ワーカスレッド数
+  # Civetwebのnum_threadsに相当
+  # 最大50
+HttpRequestTimeoutSec[=120]
+  リクエストタイムアウト(秒)
+  # Civetwebのrequest_timeout_msに相当
+
+加えて、以下の設定をCivetwebのデフォルトから変更しています:
   extra_mime_types: "ContentTypeText.txt"に追加したMIMEタイプ(従来通り)
-  listening_ports: EpgTimerSrv.iniのHttpPortキーの値(従来通りデフォルトは5510)
-    ※複数ポート指定方法などは本家ドキュメント参照
-  document_root: EpgTimerSrv.iniのHttpPublicFolderキーの値(デフォルトはEpgTimerSrv.exeと同じ場所の"HttpPublic")
-    ※document_rootには日本語(マルチバイト)文字を含まないこと
-  num_threads: 3
   lua_script_pattern: "**.lua$|**.html$|*/api/*$" (つまり.htmlファイルはLuaスクリプト扱いになる)
-    ※REST APIとの互換のため、document_root直下のapiフォルダにあるファイルもLuaスクリプト扱いになる
-  ssl_certificate: listening_portsに文字's'を含むとき、EpgTimerSrv.exeと同じ場所の"ssl_cert.pem"
+    ※REST APIとの互換のため、公開フォルダ直下のapiフォルダにあるファイルもLuaスクリプト扱いになる
+  ssl_certificate: HttpPortに文字's'を含むとき、EpgTimerSrv.exeと同じ場所の"ssl_cert.pem"
   global_auth_file: EpgTimerSrv.exeと同じ場所の"glpasswd"
 
-document_root以下のフォルダやファイルが公開対象です(色々遊べる)。
+公開フォルダ以下のフォルダやファイルが公開対象です(色々遊べる)。
 iniフォルダに原作っぽい動作をするLuaスクリプトを追加したので参考にしてください。
 
 外部公開は推奨しませんが、もしも行う場合は本家ドキュメントに従い"glpasswd"を作成し(フォルダごとの.htpasswdは不確実)、
@@ -442,7 +460,7 @@ DoS耐性は期待できませんし、パス無しの公開サーバとしての利用もお勧めできません。
 > copy server.crt ssl_cert.pem
 > type server.key >> ssl_cert.pem
 
-"glpasswd"の簡単な作り方(ユーザ名root、パスワードtest)
+"glpasswd"の簡単な作り方(ユーザ名root、認証領域mydomain.com、パスワードtest)
 > set <nul /p "x=root:mydomain.com:test" | openssl md5
   (出力される32文字のハッシュ値でパスワードを上書き↓)
 > set <nul /p "x=root:mydomain.com:351eee77bbb11db9fef4870b0d78b061" >glpasswd
@@ -510,7 +528,7 @@ B ReloadEpg()
 ReloadSetting( ネットワーク設定を読み込むか:B )
   設定を再読み込みする
   引数をtrueにするとEpgTimerSrv.iniの以下のキーも読み込まれる(HTTPサーバは再起動する)。
-  EnableTCPSrv, TCPPort, EnableHttpSrv, HttpPort, HttpPublicFolder, HttpAccessControlList, EnableDMS
+  EnableTCPSrv, TCP*, EnableHttpSrv, Http*, EnableDMS
 
 B EpgCapNow()
   EPG取得開始を要求する
@@ -612,7 +630,7 @@ I GetNotifyUpdateCount( 通知ID:I )
     5=自動予約(プログラム)登録情報が更新された
 
 <ファイル情報>のリスト ListDmsPublicFile()
-  (document_root)/dlna/dms/PublicFileにあるファイルをリストする
+  (公開フォルダ)/dlna/dms/PublicFileにあるファイルをリストする
   「DLNAのDMSぽい機能」用。
 
 ■テーブル定義■
