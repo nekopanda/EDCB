@@ -12,6 +12,7 @@
         <CheckBox Content="木" Height="16" HorizontalAlignment="Left" Margin="228,17,0,0" Name="checkBox_week4" VerticalAlignment="Top" />
         <CheckBox Content="金" Height="16" HorizontalAlignment="Left" Margin="263,17,0,0" Name="checkBox_week5" VerticalAlignment="Top" />
         <CheckBox Content="土" Height="16" HorizontalAlignment="Left" Margin="298,17,0,0" Name="checkBox_week6" VerticalAlignment="Top" />
+        <CheckBox Content="自動登録を無効にする" Height="16" HorizontalAlignment="Left" Margin="360,17,0,0" Name="checkBox_keyDisabled" VerticalAlignment="Top" />
         <Label Content="録画時間" Height="28" HorizontalAlignment="Left" Margin="12,46,0,0" Name="label2" VerticalAlignment="Top" />
         <ComboBox Height="24" HorizontalAlignment="Left" Margin="88,46,0,0" Name="comboBox_startHH" VerticalAlignment="Top" Width="46" ItemsSource="{Binding}" />
         <Label Content="：" Height="28" HorizontalAlignment="Left" Margin="146,46,0,0" Name="label3" VerticalAlignment="Top" />
@@ -29,6 +30,7 @@
         <Label Content="サービス" Height="28" HorizontalAlignment="Left" Margin="12,114,0,0" Name="label9" VerticalAlignment="Top" />
         <ComboBox Height="24" HorizontalAlignment="Left" Margin="88,114,0,0" Name="comboBox_service" VerticalAlignment="Top" Width="194" />
         <my:RecSettingView Margin="0,144,0,0" x:Name="recSettingView" VerticalAlignment="Top" Height="400" />
+        <Button Content="予約ごと削除" Height="23" HorizontalAlignment="Right" Margin="0,0,456,12" Name="button_del2" VerticalAlignment="Bottom" Width="75" />
         <Button Content="削除" Height="23" HorizontalAlignment="Right" Margin="0,0,345,12" Name="button_del" VerticalAlignment="Bottom" Width="75" />
         <Button Content="変更" Height="23" HorizontalAlignment="Right" Margin="0,0,234,12" Name="button_chg" VerticalAlignment="Bottom" Width="75" />
         <Button Content="追加" Height="23" HorizontalAlignment="Right" Margin="0,0,123,12" Name="button_add" VerticalAlignment="Bottom" Width="75" />

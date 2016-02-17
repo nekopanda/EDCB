@@ -30,6 +30,11 @@ namespace EpgTimer
                     , CommonUtil.GetMemberName(() => Settings.Instance.RecInfoColumnHead)
                     , CommonUtil.GetMemberName(() => Settings.Instance.RecInfoSortDirection));
                 lstCtrl.SetViewSetting(listView_recinfo, gridView_recinfo, true);
+                lstCtrl.SetSelectedItemDoubleClick((sender, e) =>
+                {
+                    var cmd = Settings.Instance.PlayDClick == true ? EpgCmds.Play : EpgCmds.ShowDialog;
+                    cmd.Execute(sender, listView_recinfo);
+                });
 
                 //最初にコマンド集の初期化
                 mc = new CmdExeRecinfo(this);
@@ -40,6 +45,9 @@ namespace EpgTimer
                     return item == null ? null : item.RecInfo;
                 });
                 mc.SetFuncReleaseSelectedData(() => listView_recinfo.UnselectAll());
+
+                //コマンド集に無いもの
+                mc.AddReplaceCommand(EpgCmds.ChgOnOffCheck, (sender, e) => lstCtrl.ChgOnOffFromCheckbox(e.Parameter, EpgCmds.ProtectChange));
 
                 //コマンド集からコマンドを登録
                 mc.ResetCommandBindings(this, listView_recinfo.ContextMenu);
@@ -85,32 +93,10 @@ namespace EpgTimer
                 return true;
             });
         }
-        private void listView_recinfo_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (Settings.Instance.PlayDClick == true)
-            {
-                EpgCmds.Play.Execute(sender, this);
-            }
-            else
-            {
-                EpgCmds.ShowDialog.Execute(sender, this);
-            }
-        }
-
         private void button_reload_Click(object sender, RoutedEventArgs e)
         {
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
             ReloadInfoData();
-        }
-
-        //リストのカギマークからの呼び出し
-        public void ChgProtectRecInfoFromCheckbox(RecInfoItem hitItem)
-        {
-            if (listView_recinfo.SelectedItems.Contains(hitItem) == false)
-            {
-                listView_recinfo.SelectedItem = hitItem;
-            }
-            EpgCmds.ProtectChange.Execute(listView_recinfo, this);
         }
     }
 }

@@ -56,11 +56,10 @@ namespace EpgTimer
 
             //設定画面など用のテキスト設定
             EpgCmds.Add.Text = "予約(検索ダイアログ)";
-            EpgCmds.ShowAddDialog.Text = "プログラム予約/自動登録追加";
+            EpgCmds.ShowAddDialog.Text = "新規プログラム予約/自動登録...";
             EpgCmds.ChgOnOff.Text = "簡易予約/予約←→無効";
             EpgCmds.Delete.Text = "削除";
             EpgCmds.Delete2.Text = "予約ごと削除";
-            EpgCmds.Delete3.Text = "予約のみ削除";
             EpgCmds.DeleteAll.Text = "全て削除";
             EpgCmds.AdjustReserve.Text = "予約を自動登録に合わせる";
             EpgCmds.ShowDialog.Text = "変更/ダイアログ表示";
@@ -68,9 +67,9 @@ namespace EpgTimer
             EpgCmds.JumpReserve.Text = "予約一覧へジャンプ";
             EpgCmds.JumpTuner.Text = "チューナ画面へジャンプ";
             EpgCmds.JumpTable.Text = "番組表へジャンプ";
-            EpgCmds.ToAutoadd.Text = "自動予約登録";
+            EpgCmds.ToAutoadd.Text = "番組名でキーワード予約作成...";
             EpgCmds.ReSearch.Text = "番組名で再検索";
-            EpgCmds.ReSearch2.Text = "番組名で再検索(サブウィンドウ)";
+            EpgCmds.ReSearch2.Text = "番組名で再検索(別ウィンドウ)";
             EpgCmds.Play.Text = "再生/追っかけ再生";
             EpgCmds.OpenFolder.Text = "録画フォルダを開く";
             EpgCmds.CopyTitle.Text = "番組名/ANDキーをコピー";
@@ -79,7 +78,7 @@ namespace EpgTimer
             EpgCmds.CopyNotKey.Text = "NOTキーをコピー";
             EpgCmds.SetNotKey.Text = "NOTキーに貼り付け";
             EpgCmds.ProtectChange.Text = "プロテクト←→解除";
-            EpgCmds.ViewChgSet.Text = "表示設定";
+            EpgCmds.ViewChgSet.Text = "表示設定...";
             EpgCmds.ViewChgMode.Text = "標準モード";
             EpgCmds.MenuSetting.Text = "右クリックメニューの設定...";
             EpgCmds.AddInDialog .Text = "追加(ダイアログ内)";
@@ -90,6 +89,7 @@ namespace EpgTimer
             EpgCmds.DownItem.Text = "下へ移動(自動予約登録一覧)";
             EpgCmds.SaveOrder.Text = "並びを保存(自動予約登録一覧)";
             EpgCmds.RestoreOrder.Text = "並びを元に戻す(自動予約登録一覧)";
+            EpgCmdsEx.ShowAutoAddDialogMenu.Text = "自動予約登録変更"; 
 
             //ショートカットは、個別に無効にしたり範囲を限定したりするのでこちらで管理する。
             //AddCommand:コマンド、ショートカット、isEnable: 有効無効、
@@ -103,7 +103,6 @@ namespace EpgTimer
             AddCommand(EpgCmds.ChgGenre, isEnable: false, isSave: false);
             AddCommand(EpgCmds.Delete, Key.D, ModifierKeys.Control, Key.Delete);
             AddCommand(EpgCmds.Delete2, Key.D, ModifierKeys.Control | ModifierKeys.Shift);
-            AddCommand(EpgCmds.Delete3, Key.D, ModifierKeys.Control | ModifierKeys.Alt, isEnable: false);
             AddCommand(EpgCmds.DeleteAll, Key.D, ModifierKeys.Control | ModifierKeys.Alt, spc: GestureTrg.ToView);
             AddCommand(EpgCmds.AdjustReserve, isEnable: false);
             AddCommand(EpgCmds.ShowDialog, Key.Enter, gesNeedMenu: false);//doubleclickは上手く入らないので省略
@@ -113,7 +112,7 @@ namespace EpgTimer
             AddCommand(EpgCmds.JumpTable, Key.F3);
             AddCommand(EpgCmds.ToAutoadd);
             AddCommand(EpgCmds.ReSearch);
-            AddCommand(EpgCmds.ReSearch2);
+            AddCommand(EpgCmds.ReSearch2, isEnable: false);
             AddCommand(EpgCmds.Play, Key.P, ModifierKeys.Control);
             AddCommand(EpgCmds.OpenFolder, isEnable: false);
             AddCommand(EpgCmds.CopyTitle, Key.C, ModifierKeys.Control, isEnable: false);
@@ -130,6 +129,7 @@ namespace EpgTimer
             AddCommand(EpgCmds.AddInDialog, Key.A, ModifierKeys.Control | ModifierKeys.Shift, spc: GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.ChangeInDialog, Key.C, ModifierKeys.Control | ModifierKeys.Shift, spc: GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.DeleteInDialog, Key.X, ModifierKeys.Control | ModifierKeys.Shift, spc: GestureTrg.ToView, gesNeedMenu: false);
+            AddCommand(EpgCmds.Delete2InDialog, Key.D, ModifierKeys.Control | ModifierKeys.Shift, spc: GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.Search, Key.F, ModifierKeys.Control, spc: GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.UpItem, Key.Up, ModifierKeys.Control, spc: GestureTrg.ToList | GestureTrg.ToView, gesNeedMenu: false);
             AddCommand(EpgCmds.DownItem, Key.Down, ModifierKeys.Control, spc: GestureTrg.ToList | GestureTrg.ToView, gesNeedMenu: false);
@@ -141,7 +141,8 @@ namespace EpgTimer
             //ダミーコマンドは、キーとして使用しているが、メニュー自体には割り付けされない。
             AddCommand(EpgCmdsEx.AddMenu);
             AddCommand(EpgCmdsEx.ChgMenu);
-            AddCommand(EpgCmdsEx.ShowAutoAddDialogMenu);
+            AddCommand(EpgCmdsEx.ShowAutoAddDialogMenu, isEnable: false);
+            AddCommand(EpgCmdsEx.ChgResModeMenu, isEnable: false, isSave: false);
             AddCommand(EpgCmdsEx.ChgMarginStartMenu, isEnable: false, isSave: false);
             AddCommand(EpgCmdsEx.ChgMarginEndMenu, isEnable: false, isSave: false);
             AddCommand(EpgCmdsEx.OpenFolderMenu, isEnable: false);

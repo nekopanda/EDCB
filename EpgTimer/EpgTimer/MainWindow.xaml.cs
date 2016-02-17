@@ -703,6 +703,7 @@ namespace EpgTimer
             reserveView.SaveViewData();
             recInfoView.SaveViewData();
             autoAddView.SaveViewData();
+            epgView.SaveViewData(true);
         }
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -944,7 +945,7 @@ namespace EpgTimer
             }
             else
             {
-                CommonManager.Instance.MUtil.OpenSearchEpgDialog(this);
+                CommonManager.Instance.MUtil.OpenSearchEpgDialog();
             }
         }
 
@@ -1249,7 +1250,7 @@ namespace EpgTimer
             CommonManager.Instance.DB.ReloadReserveInfo();
 
             var sortList = CommonManager.Instance.DB.ReserveList.Values
-                .Where(info => info.RecSetting.RecMode != 5 && info.EndTimeWithMargin() > DateTime.Now)
+                .Where(info => info.IsEnabled == true && info.EndTimeWithMargin() > DateTime.Now)
                 .OrderBy(info => info.StartTimeWithMargin()).ToList();
 
             if (sortList.Count == 0) return "次の予約なし";

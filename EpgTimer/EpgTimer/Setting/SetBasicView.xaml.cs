@@ -128,7 +128,7 @@ namespace EpgTimer.Setting
                         listBox_bon.SelectedIndex = 0;
                     }
                 }
-                button_shortCut.Content = (string)button_shortCut.Content + (File.Exists(
+                button_shortCut.Content = SettingPath.ModuleName + ".exe" + (File.Exists(
                     System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), SettingPath.ModuleName + ".lnk")) ? "を解除" : "");
                 button_shortCutSrv.Content = (string)button_shortCutSrv.Content + (File.Exists(
                     System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTimerSrv.lnk")) ? "を解除" : "");

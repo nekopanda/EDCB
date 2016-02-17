@@ -7,21 +7,19 @@ using System.Windows;
 
 namespace EpgTimer
 {
-    public class SearchItem
+    public class SearchItem : RecSettingItem
     {
         protected MenuUtil mutil = CommonManager.Instance.MUtil;
         protected ViewUtil vutil = CommonManager.Instance.VUtil;
 
-        public virtual EpgEventInfo EventInfo { get; set; }
+        protected EpgEventInfo eventInfo = null;
+        public virtual EpgEventInfo EventInfo { get { return eventInfo; } set { eventInfo = value; } }
         public ReserveData ReserveInfo { get; set; }
 
         public SearchItem() { }
-        public SearchItem(EpgEventInfo item)
-        {
-            EventInfo = item;
-        }
+        public SearchItem(EpgEventInfo item) { eventInfo = item; }
 
-        public static string GetValuePropertyName(string key)
+        public static new string GetValuePropertyName(string key)
         {
             var obj = new SearchItem();
             if (key == CommonUtil.GetMemberName(() => obj.StartTime))
@@ -34,24 +32,21 @@ namespace EpgTimer
             }
             else
             {
-                return key;
+                return RecSettingItem.GetValuePropertyName(key);
             }
         }
 
-        public bool IsReserved
-        {
-            get
-            {
-                return (ReserveInfo != null);
-            }
-        }
+        public bool IsReserved { get { return (ReserveInfo != null); } }
+        public override RecSettingData RecSettingInfo { get { return ReserveInfo != null ? ReserveInfo.RecSetting : null; } }
+        public override bool IsManual { get { return ReserveInfo != null ? ReserveInfo.IsManual : false; } }
+
         public virtual String EventName
         {
             get
             {
                 if (EventInfo == null) return "";
                 //
-                return EventInfo.Title();
+                return EventInfo.DataTitle;
             }
         }
         public virtual String ServiceName
@@ -88,13 +83,13 @@ namespace EpgTimer
                 return CommonManager.ConvertTimeText(EventInfo.start_time, Settings.Instance.ResInfoNoYear, Settings.Instance.ResInfoNoSecond);
             }
         }
-        public virtual DateTime StartTimeValue
+        public virtual long StartTimeValue
         {
             get
             {
-                if (EventInfo == null || EventInfo.StartTimeFlag == 0) return new DateTime();
+                if (EventInfo == null || EventInfo.StartTimeFlag == 0) return long.MinValue;
                 //
-                return EventInfo.start_time;
+                return EventInfo.start_time.Ticks;
             }
         }
         /// <summary>
@@ -122,7 +117,7 @@ namespace EpgTimer
         /// <summary>
         /// 番組内容
         /// </summary>
-        public virtual String ProgramContent
+        public String ProgramContent
         {
             get
             {
@@ -138,6 +133,46 @@ namespace EpgTimer
                 if (EventInfo == null) return "";
                 //
                 return CommonManager.Instance.ConvertJyanruText(EventInfo);
+            }
+        }
+        public bool IsEnabled
+        {
+            set
+            {
+                EpgCmds.ChgOnOffCheck.Execute(this, null);
+            }
+            get
+            {
+                if (ReserveInfo == null) return false;
+                //
+                return ReserveInfo.IsEnabled;
+            }
+        }
+        public String Comment
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                if (ReserveInfo.IsAutoAdded == false)
+                {
+                    return "個別予約(" + (ReserveInfo.IsEpgReserve == true ? "EPG" : "プログラム") + ")";
+                }
+                else
+                {
+                    string s = ReserveInfo.Comment;
+                    return (ReserveInfo.IsAutoAddMissing == true ? "不明な" : ReserveInfo.IsAutoAddInvalid == true ? "無効の" : "")
+                            + (s.StartsWith("EPG自動予約(") == true ? "キーワード予約(" + s.Substring(8) : s);
+                }
+            }
+        }
+        public List<String> RecFileName
+        {
+            get
+            {
+                if (ReserveInfo == null) return new List<string>();
+                //
+                return ReserveInfo.RecFileNameList;
             }
         }
         public virtual TextBlock ToolTipView
@@ -172,7 +207,7 @@ namespace EpgTimer
                         {
                             index = 5;
                         }
-                        if (ReserveInfo.RecSetting.RecMode == 5) //無効の判定
+                        if (ReserveInfo.IsEnabled == false) //無効の判定
                         {
                             index += 2;
                         }
@@ -250,25 +285,25 @@ namespace EpgTimer
 
     public static class SearchItemEx
     {
-        public static List<EpgEventInfo> GetEventList(this ICollection<SearchItem> itemlist)
+        public static List<EpgEventInfo> GetEventList(this IEnumerable<SearchItem> list)
         {
-            return itemlist.Where(item => item != null).Select(item => item.EventInfo).ToList();
+            return list.Where(item => item != null).Select(item => item.EventInfo).ToList();
         }
-        public static List<EpgEventInfo> GetNoReserveList(this ICollection<SearchItem> itemlist)
+        public static List<EpgEventInfo> GetNoReserveList(this IEnumerable<SearchItem> list)
         {
-            return itemlist.Where(item => item == null ? false : item.IsReserved == false).Select(item => item.EventInfo).ToList();
+            return list.Where(item => item != null && item.IsReserved == false).Select(item => item.EventInfo).ToList();
         }
-        public static List<ReserveData> GetReserveList(this ICollection<SearchItem> itemlist)
+        public static List<ReserveData> GetReserveList(this IEnumerable<SearchItem> list)
         {
-            return itemlist.Where(item => item == null ? false : item.IsReserved == true).Select(item => item.ReserveInfo).ToList();
+            return list.Where(item => item != null && item.IsReserved == true).Select(item => item.ReserveInfo).ToList();
         }
-        //public static bool HasReserved(this List<SearchItem> list)
+        //public static bool HasReserved(this IEnumerable<SearchItem> list)
         //{
-        //    return list.Any(info => info == null ? false : info.IsReserved);
+        //    return list.Any(info => item != null && item.IsReserved == false);
         //}
-        //public static bool HasNoReserved(this List<SearchItem> list)
+        //public static bool HasNoReserved(this IEnumerable<SearchItem> list)
         //{
-        //    return list.Any(info => info == null ? false : !info.IsReserved);
+        //    return list.Any(info => item != null && item.IsReserved == true);
         //}
         public static void AddFromEventList(this ICollection<SearchItem> itemlist, ICollection<EpgEventInfo> eventList, bool isExceptUnknownStartTime, bool isExceptEnded)
         {

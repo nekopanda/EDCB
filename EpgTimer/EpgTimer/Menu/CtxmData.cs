@@ -48,7 +48,6 @@ namespace EpgTimer
     public class CtxmItemData
     {
         public string Header { set; get; }
-        public string Name { set; get; }
         public int ID { set; get; }
         public ICommand Command { set; get; }
         public List<CtxmItemData> Items { set; get; }
@@ -57,10 +56,9 @@ namespace EpgTimer
         public CtxmItemData(CtxmItemData data) { CopyData(data, this); }
 
         //デフォルト定義用
-        public CtxmItemData(string header, ICommand icmd = null, int id = 0, string name = null)
+        public CtxmItemData(string header, ICommand icmd = null, int id = 0)
         {
             Header = header;
-            Name = name;
             ID = id;
             Command = icmd;
             Items = new List<CtxmItemData>();
@@ -73,12 +71,11 @@ namespace EpgTimer
             Header = header;
         }
 
-        public static List<CtxmItemData> Clone(List<CtxmItemData> src) { return CopyObj.Clone(src, CtxmItemData.CopyData); }
+        public static List<CtxmItemData> Clone(IEnumerable<CtxmItemData> src) { return CopyObj.Clone(src, CopyData); }
         public CtxmItemData Clone() { return CopyObj.Clone(this, CopyData); }
         protected static void CopyData(CtxmItemData src, CtxmItemData dest)
         {
             dest.Header = src.Header;
-            dest.Name = src.Name;
             dest.ID = src.ID;
             dest.Command = src.Command;
             dest.Items = src.Items.Clone();
@@ -87,7 +84,7 @@ namespace EpgTimer
 
     public static class CtxmItemDataEx
     {
-        public static List<CtxmItemData> Clone(this List<CtxmItemData> src) { return CtxmItemData.Clone(src); }
+        public static List<CtxmItemData> Clone(this IEnumerable<CtxmItemData> src) { return CtxmItemData.Clone(src); }
     }
 
 }

@@ -22,7 +22,7 @@ namespace EpgTimer
             new ComboItem(CtxmCode.ReserveView, "予約一覧"),
             new ComboItem(CtxmCode.TunerReserveView, "使用予定チューナ"),
             new ComboItem(CtxmCode.RecInfoView, "録画済み一覧"),
-            new ComboItem(CtxmCode.EpgAutoAddView, "EPG自動予約登録"),
+            new ComboItem(CtxmCode.EpgAutoAddView, "キーワード自動予約登録"),
             new ComboItem(CtxmCode.ManualAutoAddView, "プログラム自動予約登録"),
             new ComboItem(CtxmCode.EpgView, "番組表(共通)"),
             new ComboItem(CtxmCode.SearchWindow, "検索/キーワード予約ダイアログ"),
@@ -33,7 +33,6 @@ namespace EpgTimer
             new List<ICommand>{EpgCmds.ChgOnOff},
             new List<ICommand>{EpgCmds.Delete},
             new List<ICommand>{EpgCmds.Delete2},
-            new List<ICommand>{EpgCmds.Delete3},
             new List<ICommand>{EpgCmds.ShowAutoAddDialog, EpgCmdsEx.ShowAutoAddDialogMenu},
             new List<ICommand>{EpgCmds.AdjustReserve},
             new List<ICommand>{EpgCmds.ProtectChange},
@@ -42,6 +41,7 @@ namespace EpgTimer
             new List<ICommand>{EpgCmds.JumpReserve},
             new List<ICommand>{EpgCmds.JumpTuner},
             new List<ICommand>{EpgCmds.JumpTable},
+            new List<ICommand>{EpgCmdsEx.ShowAutoAddDialogMenu},
             new List<ICommand>{EpgCmds.ToAutoadd},
             new List<ICommand>{EpgCmds.ReSearch},
             new List<ICommand>{EpgCmds.ReSearch2},
@@ -155,6 +155,7 @@ namespace EpgTimer
                 checkBox_NoMessageDelete2.IsChecked = info.NoMessageDelete2;
                 checkBox_NoMessageAdjustRes.IsChecked = info.NoMessageAdjustRes;
                 checkBox_CancelAutoAddOff.IsChecked = info.CancelAutoAddOff;
+                checkBox_AutoAddFazySerach.IsChecked = info.AutoAddFazySerach;
                 checkBox_EpgKeyword_Trim.IsChecked = info.Keyword_Trim;
                 checkBox_CopyTitle_Trim.IsChecked = info.CopyTitle_Trim;
                 checkBox_CopyContentBasic.IsChecked = info.CopyContentBasic;
@@ -221,6 +222,7 @@ namespace EpgTimer
                 info.NoMessageDelete2 = (checkBox_NoMessageDelete2.IsChecked == true);
                 info.NoMessageAdjustRes = (checkBox_NoMessageAdjustRes.IsChecked == true);
                 info.CancelAutoAddOff = (checkBox_CancelAutoAddOff.IsChecked == true);
+                info.AutoAddFazySerach = (checkBox_AutoAddFazySerach.IsChecked == true);
                 info.ManualMenuItems = editMenu.Clone();
                 info.Keyword_Trim = (checkBox_EpgKeyword_Trim.IsChecked == true);
                 info.CopyTitle_Trim = (checkBox_CopyTitle_Trim.IsChecked == true);
@@ -280,8 +282,9 @@ namespace EpgTimer
                         break;
                     case CtxmCode.EditChgMenu:
                         textblocExp.Text = "・[編集]サブメニューは「表示項目は個別設定を使用する」の設定に関わらず、常にこの個別設定が反映されます。\r\n\r\n"
-                            + "・「自動登録有効」「まとめてジャンル絞り込みを変更」は、EPG自動予約登録画面のみ表示されます。\r\n\r\n"
-                            + "・「イベントリレー追従」「ぴったり（？）録画」は、プログラム自動予約登録画面では表示されません。";
+                            + "・「まとめてジャンル絞り込みを変更」は、キーワード自動予約登録画面のみ表示されます。\r\n\r\n"
+                            + "・「イベントリレー追従」「ぴったり（？）録画」は、プログラム自動予約登録画面では表示されません。\r\n\r\n"
+                            + "・「予約モード変更」は、録画済み一覧画面及び自動予約登録画面では表示されません。";
                             break;
                     default:
                         textblocExp.Text = "";

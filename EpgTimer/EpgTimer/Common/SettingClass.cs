@@ -674,6 +674,12 @@ namespace EpgTimer
         private List<ListColumnInfo> recInfoListColumn;
         private List<ListColumnInfo> autoAddEpgColumn;
         private List<ListColumnInfo> autoAddManualColumn;
+        private List<ListColumnInfo> epgListColumn;
+        private string epgListColumnHead;
+        private ListSortDirection epgListSortDirection;
+        private List<ListColumnInfo> searchWndColumn;
+        private string searchColumnHead;
+        private ListSortDirection searchSortDirection;
         private double searchWndLeft;
         private double searchWndTop;
         private double searchWndWidth;
@@ -691,6 +697,9 @@ namespace EpgTimer
         private int cautionManyNum;
         private bool cautionOnRecChange;
         private int cautionOnRecMarginMin;
+        private bool syncResAutoAddChange;
+        private bool syncResAutoAddChgNewRes;
+        private bool syncResAutoAddDelete;
         private int keyDeleteDisplayItemNum;
         private bool displayNotifyEpgChange;
         private double displayNotifyJumpTime;
@@ -699,6 +708,9 @@ namespace EpgTimer
         private bool infoWindowTopMost;
         private bool infoWindowEnabled;
         private bool tryEpgSetting;
+        private bool laterTimeUse;
+        private int laterTimeHour;
+        private bool displayPresetOnSearch;
 
         public bool UseCustomEpgView
         {
@@ -1395,6 +1407,36 @@ namespace EpgTimer
             get { return autoAddManualColumn; }
             set { autoAddManualColumn = value; }
         }
+        public List<ListColumnInfo> EpgListColumn
+        {
+            get { return epgListColumn; }
+            set { epgListColumn = value; }
+        }
+        public string EpgListColumnHead
+        {
+            get { return epgListColumnHead; }
+            set { epgListColumnHead = value; }
+        }
+        public ListSortDirection EpgListSortDirection
+        {
+            get { return epgListSortDirection; }
+            set { epgListSortDirection = value; }
+        }
+        public List<ListColumnInfo> SearchWndColumn
+        {
+            get { return searchWndColumn; }
+            set { searchWndColumn = value; }
+        }
+        public string SearchColumnHead
+        {
+            get { return searchColumnHead; }
+            set { searchColumnHead = value; }
+        }
+        public ListSortDirection SearchSortDirection
+        {
+            get { return searchSortDirection; }
+            set { searchSortDirection = value; }
+        }
         public double SearchWndLeft
         {
             get { return searchWndLeft; }
@@ -1480,6 +1522,21 @@ namespace EpgTimer
             get { return cautionOnRecMarginMin; }
             set { cautionOnRecMarginMin = value; }
         }
+        public bool SyncResAutoAddChange
+        {
+            get { return syncResAutoAddChange; }
+            set { syncResAutoAddChange = value; }
+        }
+        public bool SyncResAutoAddChgNewRes
+        {
+            get { return syncResAutoAddChgNewRes; }
+            set { syncResAutoAddChgNewRes = value; }
+        }
+        public bool SyncResAutoAddDelete
+        {
+            get { return syncResAutoAddDelete; }
+            set { syncResAutoAddDelete = value; }
+        }
         public int KeyDeleteDisplayItemNum
         {
             get { return keyDeleteDisplayItemNum; }
@@ -1520,7 +1577,22 @@ namespace EpgTimer
             get { return tryEpgSetting; }
             set { tryEpgSetting = value; }
         }
-
+        public bool LaterTimeUse
+        {
+            get { return laterTimeUse; }
+            set { laterTimeUse = value; }
+        }
+        public int LaterTimeHour
+        {
+            get { return laterTimeHour; }
+            set { laterTimeHour = value; }
+        }
+        public bool DisplayPresetOnSearch
+        {
+            get { return displayPresetOnSearch; }
+            set { displayPresetOnSearch = value; }
+        }
+        
         public Settings()
         {
             useCustomEpgView = false;
@@ -1655,6 +1727,12 @@ namespace EpgTimer
             recInfoListColumn = new List<ListColumnInfo>();
             autoAddEpgColumn = new List<ListColumnInfo>();
             autoAddManualColumn = new List<ListColumnInfo>();
+            epgListColumn = new List<ListColumnInfo>();
+            epgListColumnHead = "";
+            epgListSortDirection = ListSortDirection.Ascending;
+            searchWndColumn = new List<ListColumnInfo>();
+            searchColumnHead = "";
+            searchSortDirection = ListSortDirection.Ascending;
             searchWndLeft = -100;
             searchWndTop = -100;
             searchWndWidth = -100;
@@ -1672,6 +1750,9 @@ namespace EpgTimer
             cautionManyNum = 10;
             cautionOnRecChange = true;
             cautionOnRecMarginMin = 5;
+            syncResAutoAddChange = false;
+            syncResAutoAddChgNewRes = false;
+            syncResAutoAddDelete = false;
             keyDeleteDisplayItemNum = 10;
             displayNotifyEpgChange = false;
             displayNotifyJumpTime = 3;
@@ -1680,6 +1761,9 @@ namespace EpgTimer
             infoWindowTopMost = true;
             infoWindowEnabled = false;
             tryEpgSetting = true;
+            laterTimeUse = false;
+            laterTimeHour = 28 - 24;
+            displayPresetOnSearch = false;
         }
 
         [NonSerialized()]
@@ -1881,45 +1965,78 @@ namespace EpgTimer
                 }
                 if (Instance.reserveListColumn.Count == 0)
                 {
-                    Instance.reserveListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("EventName", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("Comment", double.NaN));
-                    Instance.reserveListColumn.Add(new ListColumnInfo("RecFileName", double.NaN));
+                    var obj = new ReserveItem();
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.StartTime), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.NetworkName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ServiceName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecMode), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Priority), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Tuijyu), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Comment), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecFileName), double.NaN));
+                    Instance.resColumnHead = "StartTime";
+                    Instance.resSortDirection = ListSortDirection.Ascending;
                 }
                 if (Instance.recInfoListColumn.Count == 0)
                 {
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("IsProtect", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("StartTime", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("NetworkName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("ServiceName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("EventName", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Drops", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Scrambles", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("Result", double.NaN));
-                    Instance.recInfoListColumn.Add(new ListColumnInfo("RecFilePath", double.NaN));
+                    var obj = new RecInfoItem();
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.IsProtect), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.StartTime), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.NetworkName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ServiceName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Drops), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Scrambles), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Result), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecFilePath), double.NaN));
+                    Instance.recInfoColumnHead = "StartTime";
+                    Instance.recInfoSortDirection = ListSortDirection.Ascending;
                 }
                 if (Instance.autoAddEpgColumn.Count == 0)
                 {
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("AndKey", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("NotKey", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RegExp", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Priority", double.NaN));
-                    Instance.autoAddEpgColumn.Add(new ListColumnInfo("Tuijyu", double.NaN));
+                    var obj = new EpgAutoDataItem();
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.NotKey), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RegExp), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecMode), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Priority), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Tuijyu), double.NaN));
                 }
                 if (Instance.autoAddManualColumn.Count == 0)
                 {
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("DayOfWeek", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Time", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Title", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("StationName", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("RecMode", double.NaN));
-                    Instance.autoAddManualColumn.Add(new ListColumnInfo("Priority", double.NaN));
+                    var obj = new ManualAutoAddDataItem();
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.DayOfWeek), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.StartTime), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ServiceName), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecMode), double.NaN));
+                    Instance.reserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Priority), double.NaN));
+                }
+                if (Instance.epgListColumn.Count == 0)
+                {
+                    var obj = new SearchItem();
+                    Instance.epgListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Status), double.NaN));
+                    Instance.epgListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.StartTime), double.NaN));
+                    Instance.epgListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.NetworkName), double.NaN));
+                    Instance.epgListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ServiceName), double.NaN));
+                    Instance.epgListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
+                    Instance.epgListColumnHead = "StartTime";
+                    Instance.epgListSortDirection = ListSortDirection.Ascending;
+                }
+                if (Instance.searchWndColumn.Count == 0)
+                {
+                    var obj = new SearchItem();
+                    Instance.searchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Status), double.NaN));
+                    Instance.searchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.StartTime), double.NaN));
+                    Instance.searchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ProgramDuration), double.NaN));
+                    Instance.searchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
+                    Instance.searchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.NetworkName), double.NaN));
+                    Instance.searchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ServiceName), double.NaN));
+                    Instance.searchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ProgramContent), double.NaN));
+                    Instance.searchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.JyanruKey), double.NaN));
+                    Instance.searchColumnHead = "StartTime";
+                    Instance.searchSortDirection = ListSortDirection.Ascending;
                 }
                 if (Instance.recInfoDropExclude.Count == 0)
                 {

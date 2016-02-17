@@ -111,12 +111,33 @@ namespace EpgTimer
         }
         protected override void mc_ChangeRecSetting(object sender, ExecutedRoutedEventArgs e)
         {
-            if (mcc_chgRecSetting(dataList.RecSettingList(), e, this.Owner) == false) return;
+            if (mcc_chgRecSetting(e) == false) return;
             IsCommandExecuted = mutil.ReserveChange(dataList);
+        }
+        protected override void mc_ChgResMode(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (dataList.Count == 0) return;
+
+            var data = CmdExeUtil.ReadObjData(e) as Type;
+            uint id = (uint)CmdExeUtil.ReadIdData(e);
+
+            if (data == null)
+            {
+                //通常の変更
+                IsCommandExecuted = mutil.ReserveChangeResMode(dataList, id);
+            }
+
+            if (dataList.Count != 1) return;//通常はここに引っかかることは無いはず
+
+            AutoAddData autoAdd = AutoAddData.AutoAddList(data, id);
+            if (autoAdd != null)
+            {
+                IsCommandExecuted = mutil.ReserveChangeResModeAutoAdded(dataList, autoAdd);
+            }
         }
         protected override void mc_ChgBulkRecSet(object sender, ExecutedRoutedEventArgs e)
         {
-            var mList = dataList.Where(info => info.EventID == 0xFFFF).ToList();
+            var mList = dataList.FindAll(info => info.IsEpgReserve == false);
             if (mutil.ChangeBulkSet(dataList.RecSettingList(), this.Owner, mList.Count == dataList.Count) == false) return;
             IsCommandExecuted = mutil.ReserveChange(dataList);
         }
@@ -136,14 +157,6 @@ namespace EpgTimer
                 }
                 IsCommandExecuted = mutil.ReserveDelete(dataList);
             }
-        }
-        protected override void mc_JumpReserve(object sender, ExecutedRoutedEventArgs e)
-        {
-            mcs_JumpTab(CtxmCode.ReserveView, true);
-        }
-        protected override void mc_JumpTuner(object sender, ExecutedRoutedEventArgs e)
-        {
-            mcs_JumpTab(CtxmCode.TunerReserveView, true, Settings.Instance.TunerDisplayOffReserve == false);
         }
         protected override void mc_JumpTable(object sender, ExecutedRoutedEventArgs e)
         {
@@ -165,17 +178,7 @@ namespace EpgTimer
                 mcs_JumpTab(CtxmCode.EpgView);
             }
         }
-        protected void mcs_JumpTab(CtxmCode code, bool reserveOnly = false, bool onReserveOnly = false)
-        {
-            if (reserveOnly && dataList.Count == 0) return;
-            if (onReserveOnly && dataList[0].RecSetting.RecMode == 5) return;
-
-            mcs_SetBlackoutWindow();
-            var mainWindow = Application.Current.MainWindow as MainWindow;
-            mainWindow.moveTo_tabItem(code);
-            IsCommandExecuted = true;
-        }
-        protected void mcs_SetBlackoutWindow()
+        protected override void mcs_SetBlackoutWindow(SearchItem item = null)
         {
             if (dataList.Count != 0)//予約情報優先
             {
@@ -186,16 +189,30 @@ namespace EpgTimer
                 BlackoutWindow.SelectedItem = new SearchItem(eventList[0]);
             }
         }
+        protected override ReserveData mcs_GetNextReserve()
+        {
+            return headData as ReserveData;
+        }
         protected override void mc_ToAutoadd(object sender, ExecutedRoutedEventArgs e)
         {
-            if (eventList.Count != 0)//番組情報優先
+            ReserveData resData = null;
+            if (eventList.Count != 0)
             {
-                mutil.SendAutoAdd(eventList[0], this.Owner, CmdExeUtil.IsKeyGesture(e));
+                resData = CtrlCmdDefEx.ConvertEpgToReserveData(eventList[0]);
+                if (dataList.Count != 0)
+                {
+                    resData.RecSetting = dataList[0].RecSetting.Clone();
+                }
+                else
+                {
+                    resData.RecSetting = Settings.Instance.RecPresetList[0].RecPresetData.Clone();
+                }
             }
             else if (dataList.Count != 0)
             {
-                mutil.SendAutoAdd(dataList[0], this.Owner, CmdExeUtil.IsKeyGesture(e));
+                resData = dataList[0];
             }
+            mutil.SendAutoAdd(resData, CmdExeUtil.IsKeyGesture(e));
             IsCommandExecuted = true;
         }
         protected override void mc_Play(object sender, ExecutedRoutedEventArgs e)
@@ -210,11 +227,11 @@ namespace EpgTimer
         {
             if (eventList.Count != 0)//番組情報優先
             {
-                mutil.CopyTitle2Clipboard(eventList[0].Title(), CmdExeUtil.IsKeyGesture(e));
+                mutil.CopyTitle2Clipboard(eventList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
             }
             else if (dataList.Count != 0)
             {
-                mutil.CopyTitle2Clipboard(dataList[0].Title, CmdExeUtil.IsKeyGesture(e));
+                mutil.CopyTitle2Clipboard(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
             }
             IsCommandExecuted = true; //itemCount!=0 だが、この条件はこの位置では常に満たされている。
         }
@@ -234,11 +251,11 @@ namespace EpgTimer
         {
             if (eventList.Count != 0)//番組情報優先
             {
-                mutil.SearchTextWeb(eventList[0].Title(), CmdExeUtil.IsKeyGesture(e));
+                mutil.SearchTextWeb(eventList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
             }
             else if (dataList.Count != 0)
             {
-                mutil.SearchTextWeb(dataList[0].Title, CmdExeUtil.IsKeyGesture(e));
+                mutil.SearchTextWeb(dataList[0].DataTitle, CmdExeUtil.IsKeyGesture(e));
             }
             IsCommandExecuted = true;
         }
@@ -268,7 +285,7 @@ namespace EpgTimer
                     if (view == CtxmCode.SearchWindow)
                     {
                         RecPresetItem preset = (this.Owner as SearchWindow).GetRecSetting().LookUpPreset();
-                        string text = preset.ID == 0xFFFFFFFF ? "カスタム設定" : string.Format("プリセット'{0}'", preset.DisplayName);
+                        string text = preset.IsCustom == true ? "カスタム設定" : string.Format("プリセット'{0}'", preset.DisplayName);
                         menu.ToolTip = string.Format("このダイアログの録画設定({0})で予約する", text);
                     }
                     else
@@ -298,8 +315,7 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmdsEx.ChgMenu)
             {
-                List<int> mList = dataList.Select(info => info.EventID == 0xFFFF ? 1 : 0).ToList();
-                mcs_chgMenuOpening(menu, dataList.RecSettingList(), mList.Sum() == dataList.Count, mList);
+                mcs_chgMenuOpening(menu);
             }
             else if (menu.Tag == EpgCmdsEx.ShowAutoAddDialogMenu)
             {
@@ -307,16 +323,7 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmds.JumpReserve || menu.Tag == EpgCmds.JumpTuner)
             {
-                //メニュー実行時に選択されるアイテムが予約でないときは無効
-                menu.IsEnabled = (headData as ReserveData != null);
-                menu.ToolTip = null;
- 
-                if (menu.Tag == EpgCmds.JumpTuner && Settings.Instance.TunerDisplayOffReserve == false && menu.IsEnabled == true)
-                {
-                    //無効予約を回避
-                    menu.IsEnabled = dataList[0].RecSetting.RecMode != 5;
-                    menu.ToolTip = "無効予約は使用予定チューナー画面に表示されない設定になっています。";
-                }
+                mcs_jumpTabMenuOpening(menu);
             }
             else if (menu.Tag == EpgCmds.JumpTable)
             {
@@ -328,12 +335,16 @@ namespace EpgTimer
                     menu.Visibility = Visibility.Collapsed;
                 }
             }
+            else if (menu.Tag == EpgCmdsEx.ShowAutoAddDialogMenu)
+            {
+                menu.IsEnabled = mm.CtxmGenerateChgAutoAdd(menu, headData as IAutoAddTargetData);
+            }
             else if (menu.Tag == EpgCmds.Play)
             {
                 menu.IsEnabled = false;
                 menu.ToolTip = null;
                 var info = headData as ReserveData;
-                if (info != null && info.RecSetting.RecMode != 5)
+                if (info != null && info.IsEnabled == true)
                 {
                     if (info.IsOnRec() == true)
                     {

@@ -46,9 +46,7 @@ namespace EpgTimer
         {
             set
             {
-                //選択されている場合、複数選択時に1回の通信で処理するため、ウインドウ側に処理を渡す。
-                MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
-                mainWindow.recInfoView.ChgProtectRecInfoFromCheckbox(this);
+                EpgCmds.ChgOnOffCheck.Execute(this, null);
             }
             get
             {
@@ -102,13 +100,13 @@ namespace EpgTimer
                 return CommonManager.ConvertTimeText(RecInfo.StartTime, RecInfo.DurationSecond, Settings.Instance.RecInfoNoYear, Settings.Instance.RecInfoNoSecond);
             }
         }
-        public DateTime StartTimeValue
+        public long StartTimeValue
         {
             get
             {
-                if (RecInfo == null) return new DateTime();
+                if (RecInfo == null) return long.MinValue;
                 //
-                return RecInfo.StartTime;
+                return RecInfo.StartTime.Ticks;
             }
         }
         public String Drops

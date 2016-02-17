@@ -190,6 +190,9 @@ namespace EpgTimer.Setting
                 setButtonColors(Settings.Instance.StatCustColors, grid_StatColors);
 
                 textBox_DisplayJumpTime.Text = Settings.Instance.DisplayNotifyJumpTime.ToString();
+                checkBox_LaterTimeUse.IsChecked = Settings.Instance.LaterTimeUse;
+                textBox_LaterTimeHour.Text = (Settings.Instance.LaterTimeHour + 24).ToString();
+                checkBox_displayPresetOnSearch.IsChecked = Settings.Instance.DisplayPresetOnSearch;
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -382,7 +385,9 @@ namespace EpgTimer.Setting
                 getButtonColors(Settings.Instance.StatCustColors, grid_StatColors);
 
                 Settings.Instance.DisplayNotifyJumpTime = mutil.MyToNumerical(textBox_DisplayJumpTime, Convert.ToDouble, Double.MaxValue, 0, 3);
-
+                Settings.Instance.LaterTimeUse = (checkBox_LaterTimeUse.IsChecked == true);
+                Settings.Instance.LaterTimeHour = mutil.MyToNumerical(textBox_LaterTimeHour, Convert.ToInt32, 36, 24, 28) - 24;
+                Settings.Instance.DisplayPresetOnSearch = (checkBox_displayPresetOnSearch.IsChecked == true);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }

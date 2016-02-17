@@ -217,6 +217,9 @@ namespace EpgTimer.Setting
 
             checkBox_cautionOnRecChange.IsChecked = Settings.Instance.CautionOnRecChange;
             textBox_cautionOnRecMarginMin.Text = Settings.Instance.CautionOnRecMarginMin.ToString();
+            checkBox_SyncResAutoAddChange.IsChecked = Settings.Instance.SyncResAutoAddChange;
+            checkBox_SyncResAutoAddChgNewRes.IsChecked = Settings.Instance.SyncResAutoAddChgNewRes;
+            checkBox_SyncResAutoAddDelete.IsChecked = Settings.Instance.SyncResAutoAddDelete;
 
             // button_autoDel
             if (IniFileHandler.CanReadInifile)
@@ -597,6 +600,9 @@ namespace EpgTimer.Setting
 
             Settings.Instance.CautionOnRecChange = (checkBox_cautionOnRecChange.IsChecked != false);
             Settings.Instance.CautionOnRecMarginMin = mutil.MyToNumerical(textBox_cautionOnRecMarginMin, Convert.ToInt32, Settings.Instance.CautionOnRecMarginMin); 
+            Settings.Instance.SyncResAutoAddChange = (checkBox_SyncResAutoAddChange.IsChecked != false);
+            Settings.Instance.SyncResAutoAddDelete = (checkBox_SyncResAutoAddDelete.IsChecked != false);
+            Settings.Instance.SyncResAutoAddChgNewRes = (checkBox_SyncResAutoAddChgNewRes.IsChecked != false);
         }
 
         private void SaveSetting_tabItem3()

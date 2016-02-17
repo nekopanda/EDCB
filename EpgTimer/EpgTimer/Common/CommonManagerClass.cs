@@ -33,6 +33,12 @@ namespace EpgTimer
         { get; set; }
         public Dictionary<UInt16, UInt16> HourDictionary
         { get; set; }
+        public Dictionary<UInt16, UInt16> HourDictionary28
+        { get; set; }
+        public Dictionary<UInt16, UInt16> HourDictionarySelect
+        {
+            get { return Settings.Instance.LaterTimeUse == true ? HourDictionary28 : HourDictionary; }
+        }
         public Dictionary<UInt16, UInt16> MinDictionary
         { get; set; }
         public Dictionary<byte, RecModeInfo> RecModeDictionary
@@ -420,6 +426,14 @@ namespace EpgTimer
                     HourDictionary.Add(i, i);
                 }
             }
+            if (HourDictionary28 == null)
+            {
+                HourDictionary28 = new Dictionary<UInt16, UInt16>();
+                for (UInt16 i = 0; i <= 36; i++)
+                {
+                    HourDictionary28.Add(i, i);
+                }
+            }
             if (MinDictionary == null)
             {
                 MinDictionary = new Dictionary<UInt16, UInt16>();
@@ -478,14 +492,12 @@ namespace EpgTimer
 
         public static UInt64 Create64Key(UInt16 ONID, UInt16 TSID, UInt16 SID)
         {
-            UInt64 key = ((UInt64)ONID) << 32 | ((UInt64)TSID) << 16 | (UInt64)SID;
-            return key;
+            return ((UInt64)ONID) << 32 | ((UInt64)TSID) << 16 | (UInt64)SID;
         }
 
         public static UInt64 Create64PgKey(UInt16 ONID, UInt16 TSID, UInt16 SID, UInt16 EventID)
         {
-            UInt64 key = ((UInt64)ONID) << 48 | ((UInt64)TSID) << 32 | ((UInt64)SID) << 16 | (UInt64)EventID;
-            return key;
+            return ((UInt64)ONID) << 48 | ((UInt64)TSID) << 32 | ((UInt64)SID) << 16 | (UInt64)EventID;
         }
 
         public static EpgServiceInfo ConvertChSet5To(ChSet5Item item)
@@ -663,16 +675,59 @@ namespace EpgTimer
             return false;
         }
 
+        public static String ConvertTimeText(EpgEventInfo info)
+        {
+            if (info.StartTimeFlag != 1) return "未定 ～ 未定";
+            //
+            string reftxt = ConvertTimeText(info.start_time, info.PgDurationSecond, false, false, false, false);
+            return info.DurationFlag == 1 ? reftxt : reftxt.Split(new char[] { '～' })[0] + "～ 未定";
+        }
+        public static String ConvertTimeText(EpgSearchDateInfo info)
+        {
+            //超手抜き。書式が変ったら、巻き込まれて死ぬ。
+            var start = new DateTime(2000, 1, 2 + info.startDayOfWeek, info.startHour, info.startMin, 0);
+            var end = new DateTime(2000, 1, 2 + info.endDayOfWeek, info.endHour, info.endMin, 0);
+            string reftxt = ConvertTimeText(start, (uint)(end - start).TotalSeconds, true, true, false, false);
+            string[] src = reftxt.Split(new char[] { ' ', '～' });
+            return src[0].Substring(6, 1) + " " + src[1] + " ～ " + src[2].Substring(6, 1) + " " + src[3];
+        }
         public static String ConvertTimeText(DateTime start, uint duration, bool isNoYear, bool isNoSecond, bool isNoEndDay = true, bool isNoStartDay = false)
         {
-            return ConvertTimeText(start, isNoYear, isNoSecond, isNoStartDay) 
+            DateTime end = start + TimeSpan.FromSeconds(duration);
+
+            if (Settings.Instance.LaterTimeUse == true)
+            {
+                bool over1Day = duration >= 24 * 60 * 60;
+                bool? isStartLate = (isNoEndDay == false && over1Day == true) ? (bool?)false : null;
+                bool isEndLate = (isNoEndDay == false || isNoStartDay == true && over1Day == false
+                    ? over1Day == false && DateTime28.JudgeLateHour(end, start)
+                    : DateTime28.JudgeLateHour(end, start, 99));
+                DateTime28 ref_start = (isEndLate == true && isNoEndDay == true && isNoStartDay == false) ? new DateTime28(start) : null;
+
+                return ConvertTimeText(start, isNoYear, isNoSecond, isNoStartDay, isStartLate)
+                    + (isNoSecond == true ? "～" : " ～ ")
+                    + ConvertTimeText(end, isNoYear, isNoSecond, isNoEndDay, isEndLate, ref_start);
+            }
+            else
+            {
+                return ConvertTimeText(start, isNoYear, isNoSecond, isNoStartDay)
                 + (isNoSecond == true ? "～" : " ～ ")
-                + ConvertTimeText(start + TimeSpan.FromSeconds(duration), isNoYear, isNoSecond, isNoEndDay);
+                + ConvertTimeText(end, isNoYear, isNoSecond, isNoEndDay);
+            }
         }
-        public static String ConvertTimeText(DateTime start, bool isNoYear, bool isNoSecond, bool isNoDay = false)
+        public static String ConvertTimeText(DateTime time, bool isNoYear, bool isNoSecond, bool isNoDay = false, bool? isUse28 = null, DateTime28 ref_start = null)
         {
-            return start.ToString((isNoDay == true ? "" :
+            if (Settings.Instance.LaterTimeUse == true)
+            {
+                var time28 = new DateTime28(time, isUse28, ref_start);
+                return time28.DateTimeMod.ToString((isNoDay == true ? "" : (isNoYear == true ? "MM/dd(ddd) " : "yyyy/MM/dd(ddd) "))
+                 + time28.HourMod.ToString("00:") + (isNoSecond == true ? "mm" : "mm:ss"));
+            }
+            else
+            {
+                return time.ToString((isNoDay == true ? "" :
                 (isNoYear == true ? "MM/dd(ddd) " : "yyyy/MM/dd(ddd) ")) + (isNoSecond == true ? "HH:mm" : "HH:mm:ss"));
+            }
         }
         public static String ConvertDurationText(uint duration, bool isNoSecond)
         {
@@ -681,6 +736,17 @@ namespace EpgTimer
                 + (isNoSecond == true ? "" : (duration % 60).ToString(":00"));
         }
 
+        public static String ConvertResModeText(ReserveMode? mode)
+        {
+            switch (mode)
+            {
+                case ReserveMode.KeywordAuto: return "キーワード予約";
+                case ReserveMode.ManualAuto : return "プログラム自動予約";
+                case ReserveMode.EPG        : return "個別予約(EPG)";
+                case ReserveMode.Program    : return "個別予約(プログラム)";
+                default                     : return "";
+            }
+        }
         public String ConvertReserveText(ReserveData reserveInfo)
         {
             String view = ConvertTimeText(reserveInfo.StartTime, reserveInfo.DurationSecond, false, false, false) + "\r\n";
@@ -818,23 +884,7 @@ namespace EpgTimer
                     basicInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + "\r\n";
                 }
 
-                if (eventInfo.StartTimeFlag == 1)
-                {
-                    basicInfo += ConvertTimeText(eventInfo.start_time, false, false) + " ～ ";
-                }
-                else
-                {
-                    basicInfo += "未定 ～ ";
-                }
-                if (eventInfo.DurationFlag == 1)
-                {
-                    DateTime endTime = eventInfo.start_time + TimeSpan.FromSeconds(eventInfo.durationSec);
-                    basicInfo += ConvertTimeText(endTime, false, false) + "\r\n";
-                }
-                else
-                {
-                    basicInfo += "未定\r\n";
-                }
+                basicInfo += ConvertTimeText(eventInfo) + "\r\n";
 
                 if (eventInfo.ShortInfo != null)
                 {
@@ -1392,7 +1442,7 @@ namespace EpgTimer
 
         public void FilePlay(ReserveData data)
         {
-            if (data == null || data.RecSetting == null || data.RecSetting.RecMode == 5) return;
+            if (data == null || data.RecSetting == null || data.IsEnabled == false) return;
             if (data.IsOnRec() == false)
             {
                 MessageBox.Show("まだ録画が開始されていません。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);

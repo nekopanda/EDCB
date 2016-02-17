@@ -11,8 +11,8 @@ namespace EpgTimer
     //設定画面用
     public static class MenuSettingDataEx
     {
-        public static List<MenuSettingData> Clone(this List<MenuSettingData> src) { return MenuSettingData.Clone(src); }
-        public static List<MenuSettingData.CmdSaveData> Clone(this List<MenuSettingData.CmdSaveData> src) { return MenuSettingData.CmdSaveData.Clone(src); }
+        public static List<MenuSettingData> Clone(this IEnumerable<MenuSettingData> src) { return MenuSettingData.Clone(src); }
+        public static List<MenuSettingData.CmdSaveData> Clone(this IEnumerable<MenuSettingData.CmdSaveData> src) { return MenuSettingData.CmdSaveData.Clone(src); }
     }
     public class MenuSettingData
     {
@@ -26,7 +26,7 @@ namespace EpgTimer
             public List<ShortCutData> ShortCuts { get; set; }
 
             public CmdSaveData() { ShortCuts = new List<ShortCutData>(); }
-            public static List<CmdSaveData> Clone(List<CmdSaveData> src) { return CopyObj.Clone(src, CmdSaveData.CopyData); }
+            public static List<CmdSaveData> Clone(IEnumerable<CmdSaveData> src) { return CopyObj.Clone(src, CopyData); }
             public CmdSaveData Clone() { return CopyObj.Clone(this, CopyData); }
             protected static void CopyData(CmdSaveData src, CmdSaveData dest)
             {
@@ -125,6 +125,7 @@ namespace EpgTimer
         public bool NoMessageDelete2 { get; set; }
         public bool NoMessageAdjustRes { get; set; }
         public bool CancelAutoAddOff { get; set; }
+        public bool AutoAddFazySerach { get; set; }
         public bool Keyword_Trim { get; set; }
         public bool CopyTitle_Trim { get; set; }
         public bool CopyContentBasic { get; set; }
@@ -142,6 +143,7 @@ namespace EpgTimer
             NoMessageDelete2 = false;
             NoMessageAdjustRes = false;
             CancelAutoAddOff = false;
+            AutoAddFazySerach = false;
             Keyword_Trim = true;
             CopyTitle_Trim = false;
             CopyContentBasic = false;
@@ -151,7 +153,7 @@ namespace EpgTimer
             EasyMenuItems = new List<CmdSaveData>();
             ManualMenuItems = new List<CtxmSetting>();
         }
-        public static List<MenuSettingData> Clone(List<MenuSettingData> src) { return CopyObj.Clone(src, MenuSettingData.CopyData); }
+        public static List<MenuSettingData> Clone(IEnumerable<MenuSettingData> src) { return CopyObj.Clone(src, CopyData); }
         public MenuSettingData Clone() { return CopyObj.Clone(this, CopyData); }
         protected static void CopyData(MenuSettingData src, MenuSettingData dest)
         {
@@ -161,6 +163,7 @@ namespace EpgTimer
             dest.NoMessageDelete2 = src.NoMessageDelete2;
             dest.NoMessageAdjustRes = src.NoMessageAdjustRes;
             dest.CancelAutoAddOff = src.CancelAutoAddOff;
+            dest.AutoAddFazySerach = src.AutoAddFazySerach;
             dest.Keyword_Trim = src.Keyword_Trim;
             dest.CopyTitle_Trim = src.CopyTitle_Trim;
             dest.CopyContentBasic = src.CopyContentBasic;
@@ -190,7 +193,7 @@ namespace EpgTimer
             data.Items.ForEach(item => Items.Add(item.Header));
         }
 
-        public static List<CtxmSetting> Clone(List<CtxmSetting> src) { return CopyObj.Clone(src, CtxmSetting.CopyData); }
+        public static List<CtxmSetting> Clone(IEnumerable<CtxmSetting> src) { return CopyObj.Clone(src, CopyData); }
         public CtxmSetting Clone() { return CopyObj.Clone(this, CopyData); }
         protected static void CopyData(CtxmSetting src, CtxmSetting dest)
         {
@@ -201,7 +204,7 @@ namespace EpgTimer
 
     public static class CtxmSettingEx
     {
-        public static List<CtxmSetting> Clone(this List<CtxmSetting> src) { return CtxmSetting.Clone(src); }
+        public static List<CtxmSetting> Clone(this IEnumerable<CtxmSetting> src) { return CtxmSetting.Clone(src); }
         public static CtxmSetting FindData(this List<CtxmSetting> list, CtxmCode code)
         { return list.Find(data => data.ctxmCode == code); }
     }

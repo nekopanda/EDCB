@@ -15,6 +15,7 @@ namespace EpgTimer
         public static RoutedUICommand AddOnPreset { get; private set; }
         public static RoutedUICommand ChgOnOff { get; private set; }
         public static RoutedUICommand ChgOnPreset { get; private set; }
+        public static RoutedUICommand ChgResMode { get; private set; }
         public static RoutedUICommand ChgBulkRecSet { get; private set; }
         public static RoutedUICommand ChgGenre { get; private set; }
         public static RoutedUICommand ChgRecmode { get; private set; }
@@ -30,14 +31,13 @@ namespace EpgTimer
         public static RoutedUICommand ChgOnOffKeyEnabled { get; private set; }
         public static RoutedUICommand Delete { get; private set; }
         public static RoutedUICommand Delete2 { get; private set; }
-        public static RoutedUICommand Delete3 { get; private set; }
         public static RoutedUICommand DeleteAll { get; private set; }
         public static RoutedUICommand AdjustReserve { get; private set; }
         public static RoutedUICommand ShowDialog { get; private set; }
-        public static RoutedUICommand ShowAutoAddDialog { get; private set; }
         public static RoutedUICommand JumpReserve { get; private set; }
         public static RoutedUICommand JumpTuner { get; private set; }
         public static RoutedUICommand JumpTable { get; private set; }
+        public static RoutedUICommand ShowAutoAddDialog { get; private set; }
         public static RoutedUICommand ToAutoadd { get; private set; }
         public static RoutedUICommand ReSearch { get; private set; }
         public static RoutedUICommand ReSearch2 { get; private set; }
@@ -56,6 +56,7 @@ namespace EpgTimer
         public static RoutedUICommand AddInDialog { get; private set; }
         public static RoutedUICommand ChangeInDialog { get; private set; }
         public static RoutedUICommand DeleteInDialog { get; private set; }
+        public static RoutedUICommand Delete2InDialog { get; private set; }
         public static RoutedUICommand Search { get; private set; }
         public static RoutedUICommand UpItem { get; private set; }
         public static RoutedUICommand DownItem { get; private set; }
@@ -63,6 +64,7 @@ namespace EpgTimer
         public static RoutedUICommand RestoreOrder { get; private set; }
         public static RoutedUICommand DragCancel { get; private set; }
         public static RoutedUICommand Cancel { get; private set; }
+        public static RoutedUICommand ChgOnOffCheck { get; private set; }
 
         static EpgCmds() { EpgCmdsEx.InitCommands(typeof(EpgCmds)); }
     }
@@ -82,6 +84,7 @@ namespace EpgTimer
         public static RoutedUICommand ChgMarginEndMenu { get; private set; }
         public static RoutedUICommand ChgKeyEnabledMenu { get; private set; }
         public static RoutedUICommand ChgOnPresetMenu { get; private set; }
+        public static RoutedUICommand ChgResModeMenu { get; private set; }
         public static RoutedUICommand OpenFolderMenu { get; private set; }
         public static RoutedUICommand ViewMenu { get; private set; }
         public static RoutedUICommand Separator { get; private set; }
