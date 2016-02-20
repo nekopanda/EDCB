@@ -123,12 +123,12 @@
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=ReserveInfo}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="該当自動予約" Tag="ReserveInfo" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="該当自動予約" Uid="ReserveInfo" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=FileExist}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Content="存在" Tag="FileExist" HorizontalContentAlignment="Left"/>
+                            <GridViewColumnHeader Content="存在" Uid="FileExist" HorizontalContentAlignment="Left"/>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=RecFilePath}">
