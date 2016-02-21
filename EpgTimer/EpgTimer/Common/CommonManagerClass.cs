@@ -1407,29 +1407,24 @@ namespace EpgTimer
                 }
                 else
                 {
-                    if (CommonManager.Instance.NWMode == false)
+                    if (CommonManager.Instance.NWMode == true)
                     {
-                        if (System.IO.File.Exists(folder_path) != true)
+                        // ネットワーク接続のときはUNCに変換する
+                        if (CommonManager.Instance.CtrlCmd.SendGetRecFileNetworkPath(folder_path, ref folder_path) != ErrCode.CMD_SUCCESS)
                         {
-                            String folderPath = GetDirectoryName2(folder_path);
-                            System.Diagnostics.Process.Start("EXPLORER.EXE", folderPath);
+                            MessageBox.Show("共有名が公開されていないため開けません");
+                            return;
                         }
-                        else
-                        {
-                            String cmdline = "/select,";
-                            cmdline += "\"" + folder_path + "\"";
-                            
-                            System.Diagnostics.Process.Start("EXPLORER.EXE", cmdline);
-                        }
+                    }
+                    if (File.Exists(folder_path) != true)
+                    {
+                        String folderPath = GetDirectoryName2(folder_path);
+                        System.Diagnostics.Process.Start("EXPLORER.EXE", folderPath);
                     }
                     else
                     {
-                        String nPath = "";
-                        CommonManager.Instance.CtrlCmd.SendGetRecFileNetworkPath(folder_path, ref nPath); 
-
                         String cmdline = "/select,";
-                        cmdline += "\"" + nPath + "\"";
-                        
+                        cmdline += "\"" + folder_path + "\"";
                         System.Diagnostics.Process.Start("EXPLORER.EXE", cmdline);
                     }
                 }
