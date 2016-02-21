@@ -259,13 +259,15 @@ namespace EpgTimer
         protected virtual void mc_Delete2(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_AdjustReserve(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e) { }
-#if false
-        protected virtual void mc_ShowAutoAddDialog(object sender, ExecutedRoutedEventArgs e) {
+#if true
+        // nekopanda版
+        protected virtual void mc_ShowAutoAddDialog(object sender, ExecutedRoutedEventArgs e)
+        {
             var basicInfo = CmdExeUtil.ReadObjData(e) as EpgAutoAddBasicInfo;
             EpgAutoAddData data;
-            if(CommonManager.Instance.DB.EpgAutoAddList.TryGetValue(basicInfo.dataID, out data))
+            if (CommonManager.Instance.DB.EpgAutoAddList.TryGetValue(basicInfo.dataID, out data))
             {
-                IsCommandExecuted = true == mutil.OpenChangeEpgAutoAddDialog(data, this.Owner);
+                IsCommandExecuted = true == mutil.OpenChangeEpgAutoAddDialog(data);
             }
             else
             {
@@ -299,6 +301,8 @@ namespace EpgTimer
             BlackoutWindow.SelectedItem = item;
         }
         protected virtual ReserveData mcs_GetNextReserve() { return new ReserveData(); }
+#if false
+        // tkntrec版
         protected virtual void mc_ShowAutoAddDialog(object sender, ExecutedRoutedEventArgs e)
         {
             AutoAddData autoAdd = AutoAddData.AutoAddList(CmdExeUtil.ReadObjData(e) as Type, (uint)CmdExeUtil.ReadIdData(e));
@@ -311,6 +315,7 @@ namespace EpgTimer
                 IsCommandExecuted = true == mutil.OpenChangeManualAutoAddDialog(autoAdd as ManualAutoAddData, this.Owner);
             }
         }
+#endif
         protected virtual void mc_ToAutoadd(object sender, ExecutedRoutedEventArgs e)
         {
             mutil.SendAutoAdd(dataList[0] as IBasicPgInfo, CmdExeUtil.IsKeyGesture(e));

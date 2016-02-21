@@ -66,8 +66,11 @@ namespace EpgTimer
             }
             else if (menu.Tag == EpgCmdsEx.ShowAutoAddDialogMenu)
             {
-                mcs_chgAutoAddMenuOpening(menu, (dataList.Count) == 0 ? null : dataList[0].AutoAddInfo);
-                menu.IsEnabled = mm.CtxmGenerateChgAutoAdd(menu, dataList[0]);
+                // nekopanda版
+                mcs_chgAutoAddMenuOpening(menu, (dataList.Count) == 0 ? null : dataList[0].AutoAddInfo);                
+
+                // tkntrec版
+                //menu.IsEnabled = mm.CtxmGenerateChgAutoAdd(menu, dataList[0]);
             }
             else if (menu.Tag == EpgCmds.OpenFolder)
             {
