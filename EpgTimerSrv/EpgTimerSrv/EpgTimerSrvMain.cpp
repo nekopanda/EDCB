@@ -1,6 +1,5 @@
 #include "StdAfx.h"
 #include "EpgTimerSrvMain.h"
-#include "HttpServer.h"
 #include "SyoboiCalUtil.h"
 #include "UpnpSsdpServer.h"
 #include "../../Common/PipeServer.h"
@@ -129,6 +128,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 		TIMER_RETRY_ADD_TRAY,
 		TIMER_SET_RESUME,
 		TIMER_CHECK,
+		TIMER_RESET_HTTP_SERVER,
 	};
 
 	MAIN_WINDOW_CONTEXT* ctx = (MAIN_WINDOW_CONTEXT*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -179,73 +179,18 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 			unsigned short tcpPort_;
 			DWORD tcpResTo;
 			wstring tcpAcl;
-			wstring httpPorts_;
-			wstring httpPublicFolder_;
-			wstring httpAcl;
-			bool httpSaveLog_ = false;
-			bool enableSsdpServer_;
 			{
 				CBlockLock lock(&ctx->sys->settingLock);
 				tcpPort_ = ctx->sys->tcpPort;
 				tcpResTo = ctx->sys->tcpResponseTimeoutSec * 1000;
 				tcpAcl = ctx->sys->tcpAccessControlList;
-				httpPorts_ = ctx->sys->httpPorts;
-				httpPublicFolder_ = ctx->sys->httpPublicFolder;
-				httpAcl = ctx->sys->httpAccessControlList;
-				httpSaveLog_ = ctx->sys->httpSaveLog;
-				enableSsdpServer_ = ctx->sys->enableSsdpServer;
 			}
 			if( tcpPort_ == 0 ){
 				ctx->tcpServer.StopServer();
 			}else{
 				ctx->tcpServer.StartServer(tcpPort_, tcpResTo ? tcpResTo : MAXDWORD, tcpAcl.c_str(), CtrlCmdTcpCallback, ctx->sys);
 			}
-			ctx->upnpServer.Stop();
-			if( httpPorts_.empty() ){
-				ctx->httpServer.StopServer();
-			}else{
-				if( ctx->httpServer.StartServer(httpPorts_.c_str(), httpPublicFolder_.c_str(), InitLuaCallback, ctx->sys, httpSaveLog_, httpAcl.c_str()) ){
-					if( enableSsdpServer_ ){
-						//"ddd.xml"の先頭から2KB以内に"<UDN>uuid:{UUID}</UDN>"が必要
-						char dddBuf[2048] = {};
-						HANDLE hFile = CreateFile((httpPublicFolder_ + L"\\dlna\\dms\\ddd.xml").c_str(),
-						                          GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-						if( hFile != INVALID_HANDLE_VALUE ){
-							DWORD dwRead;
-							ReadFile(hFile, dddBuf, sizeof(dddBuf) - 1, &dwRead, NULL);
-							CloseHandle(hFile);
-						}
-						string dddStr = dddBuf;
-						size_t udnFrom = dddStr.find("<UDN>uuid:");
-						if( udnFrom != string::npos && dddStr.size() > udnFrom + 10 + 36 && dddStr.compare(udnFrom + 10 + 36, 6, "</UDN>") == 0 ){
-							string notifyUuid(dddStr, udnFrom + 5, 41);
-							//最後にみつかった':'より後ろか先頭を_wtoiした結果を通知ポートとする
-							unsigned short notifyPort = (unsigned short)_wtoi(httpPorts_.c_str() +
-								(httpPorts_.find_last_of(':') == wstring::npos ? 0 : httpPorts_.find_last_of(':') + 1));
-							//UPnPのUDP(Port1900)部分を担当するサーバ
-							LPCSTR targetArray[] = { "upnp:rootdevice", UPNP_URN_DMS_1, UPNP_URN_CDS_1, UPNP_URN_CMS_1, UPNP_URN_AVT_1 };
-							vector<CUpnpSsdpServer::SSDP_TARGET_INFO> targetList(2 + _countof(targetArray));
-							targetList[0].target = notifyUuid;
-							Format(targetList[0].location, "http://$HOST$:%d/dlna/dms/ddd.xml", notifyPort);
-							targetList[0].usn = targetList[0].target;
-							targetList[0].notifyFlag = true;
-							targetList[1].target = "ssdp:all";
-							targetList[1].location = targetList[0].location;
-							targetList[1].usn = notifyUuid + "::" + "upnp:rootdevice";
-							targetList[1].notifyFlag = false;
-							for( size_t i = 2; i < targetList.size(); i++ ){
-								targetList[i].target = targetArray[i - 2];
-								targetList[i].location = targetList[0].location;
-								targetList[i].usn = notifyUuid + "::" + targetList[i].target;
-								targetList[i].notifyFlag = true;
-							}
-							ctx->upnpServer.Start(targetList);
-						}else{
-							OutputDebugString(L"Invalid ddd.xml\r\n");
-						}
-					}
-				}
-			}
+			SetTimer(hwnd, TIMER_RESET_HTTP_SERVER, 200, NULL);
 		}
 		break;
 	case WM_RELOAD_EPG_CHK:
@@ -562,6 +507,60 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				}
 			}
 			break;
+		case TIMER_RESET_HTTP_SERVER:
+			ctx->upnpServer.Stop();
+			if( ctx->httpServer.StopServer(true) ){
+				KillTimer(hwnd, TIMER_RESET_HTTP_SERVER);
+				CHttpServer::SERVER_OPTIONS op;
+				bool enableSsdpServer_;
+				{
+					CBlockLock lock(&ctx->sys->settingLock);
+					op = ctx->sys->httpOptions;
+					enableSsdpServer_ = ctx->sys->enableSsdpServer;
+				}
+				if( op.ports.empty() == false &&
+				    ctx->httpServer.StartServer(op, InitLuaCallback, ctx->sys) &&
+				    enableSsdpServer_ ){
+					//"ddd.xml"の先頭から2KB以内に"<UDN>uuid:{UUID}</UDN>"が必要
+					char dddBuf[2048] = {};
+					HANDLE hFile = CreateFile((op.rootPath + L"\\dlna\\dms\\ddd.xml").c_str(),
+					                          GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+					if( hFile != INVALID_HANDLE_VALUE ){
+						DWORD dwRead;
+						ReadFile(hFile, dddBuf, sizeof(dddBuf) - 1, &dwRead, NULL);
+						CloseHandle(hFile);
+					}
+					string dddStr = dddBuf;
+					size_t udnFrom = dddStr.find("<UDN>uuid:");
+					if( udnFrom != string::npos && dddStr.size() > udnFrom + 10 + 36 && dddStr.compare(udnFrom + 10 + 36, 6, "</UDN>") == 0 ){
+						string notifyUuid(dddStr, udnFrom + 5, 41);
+						//最後にみつかった':'より後ろか先頭を_wtoiした結果を通知ポートとする
+						unsigned short notifyPort = (unsigned short)_wtoi(op.ports.c_str() +
+							(op.ports.find_last_of(':') == wstring::npos ? 0 : op.ports.find_last_of(':') + 1));
+						//UPnPのUDP(Port1900)部分を担当するサーバ
+						LPCSTR targetArray[] = { "upnp:rootdevice", UPNP_URN_DMS_1, UPNP_URN_CDS_1, UPNP_URN_CMS_1, UPNP_URN_AVT_1 };
+						vector<CUpnpSsdpServer::SSDP_TARGET_INFO> targetList(2 + _countof(targetArray));
+						targetList[0].target = notifyUuid;
+						Format(targetList[0].location, "http://$HOST$:%d/dlna/dms/ddd.xml", notifyPort);
+						targetList[0].usn = targetList[0].target;
+						targetList[0].notifyFlag = true;
+						targetList[1].target = "ssdp:all";
+						targetList[1].location = targetList[0].location;
+						targetList[1].usn = notifyUuid + "::" + "upnp:rootdevice";
+						targetList[1].notifyFlag = false;
+						for( size_t i = 2; i < targetList.size(); i++ ){
+							targetList[i].target = targetArray[i - 2];
+							targetList[i].location = targetList[0].location;
+							targetList[i].usn = notifyUuid + "::" + targetList[i].target;
+							targetList[i].notifyFlag = true;
+						}
+						ctx->upnpServer.Start(targetList);
+					}else{
+						OutputDebugString(L"Invalid ddd.xml\r\n");
+					}
+				}
+			}
+			break;
 		}
 		break;
 	case WM_COMMAND:
@@ -673,32 +672,30 @@ void CEpgTimerSrvMain::ReloadNetworkSetting()
 	GetModuleIniPath(iniPath);
 	this->tcpPort = 0;
 	if( GetPrivateProfileInt(L"SET", L"EnableTCPSrv", 0, iniPath.c_str()) != 0 ){
-		WCHAR buff[512];
-		GetPrivateProfileString(L"SET", L"TCPAccessControlList", L"+127.0.0.1,+192.168.0.0/16", buff, 512, iniPath.c_str());
-		this->tcpAccessControlList = buff;
+		this->tcpAccessControlList = GetPrivateProfileToString(L"SET", L"TCPAccessControlList", L"+127.0.0.1,+192.168.0.0/16", iniPath.c_str());
 		this->tcpResponseTimeoutSec = GetPrivateProfileInt(L"SET", L"TCPResponseTimeoutSec", 120, iniPath.c_str());
 		this->tcpPort = (unsigned short)GetPrivateProfileInt(L"SET", L"TCPPort", 4510, iniPath.c_str());
 	}
-	this->httpPorts.clear();
+	this->httpOptions.ports.clear();
 	int enableHttpSrv = GetPrivateProfileInt(L"SET", L"EnableHttpSrv", 0, iniPath.c_str());
 	if( enableHttpSrv != 0 ){
-		WCHAR buff[512];
-		GetPrivateProfileString(L"SET", L"HttpPublicFolder", L"", buff, 512, iniPath.c_str());
-		this->httpPublicFolder = buff;
-		if( this->httpPublicFolder.empty() ){
-			GetModuleFolderPath(this->httpPublicFolder);
-			this->httpPublicFolder += L"\\HttpPublic";
+		this->httpOptions.rootPath = GetPrivateProfileToString(L"SET", L"HttpPublicFolder", L"", iniPath.c_str());
+		if(this->httpOptions.rootPath.empty() ){
+			GetModuleFolderPath(this->httpOptions.rootPath);
+			this->httpOptions.rootPath += L"\\HttpPublic";
 		}
-		ChkFolderPath(this->httpPublicFolder);
-		if( this->dmsPublicFileList.empty() || CompareNoCase(this->httpPublicFolder, this->dmsPublicFileList[0].second) != 0 ){
+		ChkFolderPath(this->httpOptions.rootPath);
+		if( this->dmsPublicFileList.empty() || CompareNoCase(this->httpOptions.rootPath, this->dmsPublicFileList[0].second) != 0 ){
 			//公開フォルダの場所が変わったのでクリア
 			this->dmsPublicFileList.clear();
 		}
-		GetPrivateProfileString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", buff, 512, iniPath.c_str());
-		this->httpAccessControlList = buff;
-		GetPrivateProfileString(L"SET", L"HttpPort", L"5510", buff, 512, iniPath.c_str());
-		this->httpPorts = buff;
-		this->httpSaveLog = enableHttpSrv == 2;
+		this->httpOptions.accessControlList = GetPrivateProfileToString(L"SET", L"HttpAccessControlList", L"+127.0.0.1", iniPath.c_str());
+		this->httpOptions.authenticationDomain = GetPrivateProfileToString(L"SET", L"HttpAuthenticationDomain", L"", iniPath.c_str());
+		this->httpOptions.numThreads = GetPrivateProfileInt(L"SET", L"HttpNumThreads", 3, iniPath.c_str());
+		this->httpOptions.requestTimeout = GetPrivateProfileInt(L"SET", L"HttpRequestTimeoutSec", 120, iniPath.c_str()) * 1000;
+		this->httpOptions.keepAlive = GetPrivateProfileInt(L"SET", L"HttpKeepAlive", 0, iniPath.c_str()) != 0;
+		this->httpOptions.ports = GetPrivateProfileToString(L"SET", L"HttpPort", L"5510", iniPath.c_str());
+		this->httpOptions.saveLog = enableHttpSrv == 2;
 	}
 	this->enableSsdpServer = GetPrivateProfileInt(L"SET", L"EnableDMS", 0, iniPath.c_str()) != 0;
 
@@ -751,9 +748,8 @@ void CEpgTimerSrvMain::ReloadSetting()
 	for( int i = 0; i < count; i++ ){
 		WCHAR key[16];
 		wsprintf(key, L"%d", i);
-		WCHAR buff[256];
-		GetPrivateProfileString(L"NO_SUSPEND", key, L"", buff, 256, iniPath.c_str());
-		if( buff[0] != L'\0' ){
+		wstring buff = GetPrivateProfileToString(L"NO_SUSPEND", key, L"", iniPath.c_str());
+		if( buff.empty() == false ){
 			this->noSuspendExeList.push_back(buff);
 		}
 	}
@@ -763,9 +759,8 @@ void CEpgTimerSrvMain::ReloadSetting()
 	for( int i = 0; i < count; i++ ){
 		WCHAR key[16];
 		wsprintf(key, L"%d", i);
-		WCHAR buff[256];
-		GetPrivateProfileString(L"TVTEST", key, L"", buff, 256, iniPath.c_str());
-		if( buff[0] != L'\0' ){
+		wstring buff = GetPrivateProfileToString(L"TVTEST", key, L"", iniPath.c_str());
+		if( buff.empty() == false ){
 			this->tvtestUseBon.push_back(buff);
 		}
 	}
@@ -775,25 +770,23 @@ pair<wstring, REC_SETTING_DATA> CEpgTimerSrvMain::LoadRecSetData(WORD preset) co
 {
 	wstring iniPath;
 	GetModuleIniPath(iniPath);
-	WCHAR buff[512];
+	WCHAR defIndex[32];
 	WCHAR defName[32];
 	WCHAR defFolderName[2][32];
-	buff[preset == 0 ? 0 : wsprintf(buff, L"%d", preset)] = L'\0';
-	wsprintf(defName, L"REC_DEF%s", buff);
-	wsprintf(defFolderName[0], L"REC_DEF_FOLDER%s", buff);
-	wsprintf(defFolderName[1], L"REC_DEF_FOLDER_1SEG%s", buff);
+	defIndex[preset == 0 ? 0 : wsprintf(defIndex, L"%d", preset)] = L'\0';
+	wsprintf(defName, L"REC_DEF%s", defIndex);
+	wsprintf(defFolderName[0], L"REC_DEF_FOLDER%s", defIndex);
+	wsprintf(defFolderName[1], L"REC_DEF_FOLDER_1SEG%s", defIndex);
 
 	pair<wstring, REC_SETTING_DATA> ret;
-	GetPrivateProfileString(defName, L"SetName", L"", buff, 512, iniPath.c_str());
-	ret.first = preset == 0 ? L"デフォルト" : buff;
+	ret.first = preset == 0 ? wstring(L"デフォルト") : GetPrivateProfileToString(defName, L"SetName", L"", iniPath.c_str());
 	REC_SETTING_DATA& rs = ret.second;
 	rs.recMode = (BYTE)GetPrivateProfileInt(defName, L"RecMode", 1, iniPath.c_str());
 	rs.priority = (BYTE)GetPrivateProfileInt(defName, L"Priority", 2, iniPath.c_str());
 	rs.tuijyuuFlag = (BYTE)GetPrivateProfileInt(defName, L"TuijyuuFlag", 1, iniPath.c_str());
 	rs.serviceMode = (BYTE)GetPrivateProfileInt(defName, L"ServiceMode", 0, iniPath.c_str());
 	rs.pittariFlag = (BYTE)GetPrivateProfileInt(defName, L"PittariFlag", 0, iniPath.c_str());
-	GetPrivateProfileString(defName, L"BatFilePath", L"", buff, 512, iniPath.c_str());
-	rs.batFilePath = buff;
+	rs.batFilePath = GetPrivateProfileToString(defName, L"BatFilePath", L"", iniPath.c_str());
 	for( int i = 0; i < 2; i++ ){
 		vector<REC_FILE_SET_INFO>& recFolderList = i == 0 ? rs.recFolderList : rs.partialRecFolder;
 		int count = GetPrivateProfileInt(defFolderName[i], L"Count", 0, iniPath.c_str());
@@ -801,14 +794,11 @@ pair<wstring, REC_SETTING_DATA> CEpgTimerSrvMain::LoadRecSetData(WORD preset) co
 			recFolderList.resize(j + 1);
 			WCHAR key[32];
 			wsprintf(key, L"%d", j);
-			GetPrivateProfileString(defFolderName[i], key, L"", buff, 512, iniPath.c_str());
-			recFolderList[j].recFolder = buff;
+			recFolderList[j].recFolder = GetPrivateProfileToString(defFolderName[i], key, L"", iniPath.c_str());
 			wsprintf(key, L"WritePlugIn%d", j);
-			GetPrivateProfileString(defFolderName[i], key, L"Write_Default.dll", buff, 512, iniPath.c_str());
-			recFolderList[j].writePlugIn = buff;
+			recFolderList[j].writePlugIn = GetPrivateProfileToString(defFolderName[i], key, L"Write_Default.dll", iniPath.c_str());
 			wsprintf(key, L"RecNamePlugIn%d", j);
-			GetPrivateProfileString(defFolderName[i], key, L"", buff, 512, iniPath.c_str());
-			recFolderList[j].recNamePlugIn = buff;
+			recFolderList[j].recNamePlugIn = GetPrivateProfileToString(defFolderName[i], key, L"", iniPath.c_str());
 		}
 	}
 	rs.suspendMode = (BYTE)GetPrivateProfileInt(defName, L"SuspendMode", 0, iniPath.c_str());
@@ -2263,6 +2253,7 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	LuaHelp::reg_function(L, "ChgReserveData", LuaChgReserveData, sys);
 	LuaHelp::reg_function(L, "DelReserveData", LuaDelReserveData, sys);
 	LuaHelp::reg_function(L, "GetReserveData", LuaGetReserveData, sys);
+	LuaHelp::reg_function(L, "GetRecFilePath", LuaGetRecFilePath, sys);
 	LuaHelp::reg_function(L, "GetRecFileInfo", LuaGetRecFileInfo, sys);
 	LuaHelp::reg_function(L, "DelRecFileInfo", LuaDelRecFileInfo, sys);
 	LuaHelp::reg_function(L, "GetTunerReserveAll", LuaGetTunerReserveAll, sys);
@@ -2406,8 +2397,7 @@ int CEpgTimerSrvMain::LuaGetPrivateProfile(lua_State* L)
 					GetModuleFolderPath(path);
 					strFile = path + L"\\" + strFile;
 				}
-				WCHAR buff[8192];
-				GetPrivateProfileString(strApp.c_str(), strKey.c_str(), strDef.c_str(), buff, 8192, strFile.c_str());
+				wstring buff = GetPrivateProfileToString(strApp.c_str(), strKey.c_str(), strDef.c_str(), strFile.c_str());
 				lua_pushstring(L, ws.WtoUTF8(buff));
 			}
 			return 1;
@@ -2792,6 +2782,21 @@ int CEpgTimerSrvMain::LuaGetReserveData(lua_State* L)
 	return 0;
 }
 
+int CEpgTimerSrvMain::LuaGetRecFilePath(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	if( lua_gettop(L) == 1 ){
+		wstring filePath;
+		DWORD ctrlID;
+		DWORD processID;
+		if( ws.sys->reserveManager.GetRecFilePath((DWORD)lua_tointeger(L, 1), filePath, &ctrlID, &processID) ){
+			lua_pushstring(L, ws.WtoUTF8(filePath));
+			return 1;
+		}
+	}
+	return 0;
+}
+
 int CEpgTimerSrvMain::LuaGetRecFileInfo(lua_State* L)
 {
 	CLuaWorkspace ws(L);
@@ -2871,9 +2876,7 @@ int CEpgTimerSrvMain::LuaEnumRecPresetInfo(lua_State* L)
 	lua_newtable(L);
 	wstring iniPath;
 	GetModuleIniPath(iniPath);
-	WCHAR buff[512];
-	GetPrivateProfileString(L"SET", L"PresetID", L"", buff, 512, iniPath.c_str());
-	wstring parseBuff = buff;
+	wstring parseBuff = GetPrivateProfileToString(L"SET", L"PresetID", L"", iniPath.c_str());
 	vector<WORD> idList(1, 0);
 	while( parseBuff.empty() == false ){
 		wstring presetID;
@@ -3065,14 +3068,14 @@ int CEpgTimerSrvMain::LuaListDmsPublicFile(lua_State* L)
 	CLuaWorkspace ws(L);
 	CBlockLock lock(&ws.sys->settingLock);
 	WIN32_FIND_DATA findData;
-	HANDLE hFind = FindFirstFile((ws.sys->httpPublicFolder + L"\\dlna\\dms\\PublicFile\\*").c_str(), &findData);
+	HANDLE hFind = FindFirstFile((ws.sys->httpOptions.rootPath + L"\\dlna\\dms\\PublicFile\\*").c_str(), &findData);
 	vector<pair<int, WIN32_FIND_DATA>> newList;
 	if( hFind == INVALID_HANDLE_VALUE ){
 		ws.sys->dmsPublicFileList.clear();
 	}else{
 		if( ws.sys->dmsPublicFileList.empty() ){
 			//要素0には公開フォルダの場所と次のIDを格納する
-			ws.sys->dmsPublicFileList.push_back(std::make_pair(0, ws.sys->httpPublicFolder));
+			ws.sys->dmsPublicFileList.push_back(std::make_pair(0, ws.sys->httpOptions.rootPath));
 		}
 		do{
 			//TODO: 再帰的にリストしほうがいいがとりあえず…
