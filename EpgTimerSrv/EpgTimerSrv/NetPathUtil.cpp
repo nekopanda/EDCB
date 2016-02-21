@@ -6,6 +6,7 @@
 #include <wchar.h>
 #include <shlwapi.h>
 #include <Lm.h>
+#include "../../Common/StringUtil.h"
 
 #pragma comment(lib, "netapi32.lib")
 #pragma comment(lib, "shlwapi.lib")
@@ -42,9 +43,15 @@ BOOL GetNetworkPath(const wstring strPath, wstring& strNetPath)
 					if (PathIsDirectory(p->shi502_path))
 					{
 						TCHAR tmp[MAX_PATH];
-						if (PathRelativePathTo(tmp, p->shi502_path, FILE_ATTRIBUTE_DIRECTORY, strPath.c_str(), 0))
+						if (CompareNoCase(p->shi502_path, strPath) == 0)
 						{
-							if (relative.empty() || relative.length() > _tcslen(tmp))
+							// shi502_pathとstrPath が同じ時に PathRelativePathTo が "." の代わりに "..\\<folder>" を返すので別処理をする
+							relative = _T(".");
+							netname = p->shi502_netname;
+						}
+						else if (PathRelativePathTo(tmp, p->shi502_path, FILE_ATTRIBUTE_DIRECTORY, strPath.c_str(), 0))
+						{
+							if (wcsncmp(tmp, _T("..\\"), 3) != 0 && (relative.empty() || relative.length() > _tcslen(tmp)))
 							{
 								relative = tmp;
 								netname = p->shi502_netname;
@@ -58,7 +65,7 @@ BOOL GetNetworkPath(const wstring strPath, wstring& strNetPath)
 		}
 	} while (res==ERROR_MORE_DATA);
 
-	if (relative.length() <= 1) return FALSE;
+	if (relative.length() < 1) return FALSE;
 
 	strNetPath = _T("\\\\") + wstring(computername) + _T("\\") + netname + relative.substr(1);
 
