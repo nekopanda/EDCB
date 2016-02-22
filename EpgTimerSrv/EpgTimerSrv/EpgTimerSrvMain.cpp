@@ -3,6 +3,7 @@
 #include "HttpServer.h"
 #include "SyoboiCalUtil.h"
 #include "UpnpSsdpServer.h"
+#include "NetPathUtil.h"
 #include "../../Common/PipeServer.h"
 #include "../../Common/TCPServer.h"
 #include "../../Common/SendCtrlCmd.h"
@@ -1747,6 +1748,17 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) &&
 			    sys->reserveManager.GetRecFilePath(val, resVal.filePath, &ctrlID, &processID) &&
 			    sys->streamingManager.OpenTimeShift(resVal.filePath.c_str(), processID, ctrlID, &resVal.ctrlID) ){
+				resParam->data = NewWriteVALUE(&resVal, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
+			}
+		}
+		break;
+	case CMD2_EPG_SRV_GET_NETWORK_PATH:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_GET_NETWORK_PATH");
+			wstring val, resVal;
+			if (ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) &&
+				GetNetworkPath(val, resVal)) {
 				resParam->data = NewWriteVALUE(&resVal, resParam->dataSize);
 				resParam->param = CMD_SUCCESS;
 			}
