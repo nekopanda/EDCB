@@ -435,6 +435,15 @@ HttpNumThreads[=3]
 HttpRequestTimeoutSec[=120]
   リクエストタイムアウト(秒)
   # Civetwebのrequest_timeout_msに相当
+HttpKeepAlive[=0]
+  Keep-Aliveを有効にするかどうか
+  # Civetwebのenable_keep_aliveに相当
+  # 有効にする[=1]ときは以下に注意:
+  # ・本家ドキュメントによると"Experimental feature"(実験的な機能)
+  # ・HttpNumThreadsを大きめ(同時閲覧ブラウザ数×6)にすべき
+  # ・最大HttpRequestTimeoutSecまでEpgTimerSrv.exeの終了処理が滞るかもしれない
+  # ・mg.keep_alive(true)メソッドを呼んだLuaスクリプトは持続的接続になるかもしれない。
+  #   このメソッドがtrueを返したときは"Content-Length"を必ず送り、"Connection: close"しない
 
 加えて、以下の設定をCivetwebのデフォルトから変更しています:
   extra_mime_types: "ContentTypeText.txt"に追加したMIMEタイプ(従来通り)
@@ -578,6 +587,10 @@ DelReserveData( 予約ID:I )
   予約を取得する(reserveIDソート)
   無引数のときは全予約を取得する。
   1引数のときは指定予約を取得する。なければnilが返る。
+
+S|nil GetRecFilePath( 予約ID:I )
+  予約の録画ファイルパスを取得する
+  録画中でなかったり視聴予約などで取得できなければnilが返る。
 
 <録画済み情報>のリスト GetRecFileInfo()
 <録画済み情報>|nil GetRecFileInfo( 情報ID:I )

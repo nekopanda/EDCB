@@ -25,6 +25,7 @@ int CEpgTimerSrvMain::InitLuaCallback(lua_State* L)
 	LuaHelp::reg_function(L, "ChgReserveData", LuaChgReserveData, sys);
 	LuaHelp::reg_function(L, "DelReserveData", LuaDelReserveData, sys);
 	LuaHelp::reg_function(L, "GetReserveData", LuaGetReserveData, sys);
+	LuaHelp::reg_function(L, "GetRecFilePath", LuaGetRecFilePath, sys);
 	LuaHelp::reg_function(L, "GetRecFileInfo", LuaGetRecFileInfo, sys);
 	LuaHelp::reg_function(L, "DelRecFileInfo", LuaDelRecFileInfo, sys);
 	LuaHelp::reg_function(L, "GetTunerReserveAll", LuaGetTunerReserveAll, sys);
@@ -339,7 +340,7 @@ void CEpgTimerSrvMain::LuaEnumEventInfoCallback(const vector<EPGDB_EVENT_INFO>* 
 				continue;
 			}
 			__int64 startTime = ConvertI64Time((*pval)[i].start_time);
-			if (startTime < ep.startTime || ep.endTime <= startTime) {
+			if( startTime < ep.startTime || ep.endTime <= startTime ){
 				continue;
 			}
 		}
@@ -547,6 +548,21 @@ int CEpgTimerSrvMain::LuaGetReserveData(lua_State* L)
 		if( ws.sys->reserveManager.GetReserveData((DWORD)lua_tointeger(L, 1), &r) ){
 			lua_newtable(L);
 			PushReserveData(ws, r);
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int CEpgTimerSrvMain::LuaGetRecFilePath(lua_State* L)
+{
+	CLuaWorkspace ws(L);
+	if( lua_gettop(L) == 1 ){
+		wstring filePath;
+		DWORD ctrlID;
+		DWORD processID;
+		if( ws.sys->reserveManager.GetRecFilePath((DWORD)lua_tointeger(L, 1), filePath, &ctrlID, &processID) ){
+			lua_pushstring(L, ws.WtoUTF8(filePath));
 			return 1;
 		}
 	}
@@ -827,14 +843,14 @@ int CEpgTimerSrvMain::LuaListDmsPublicFile(lua_State* L)
 	CLuaWorkspace ws(L);
 	CBlockLock lock(&ws.sys->settingLock);
 	WIN32_FIND_DATA findData;
-	HANDLE hFind = FindFirstFile((ws.sys->httpPublicFolder + L"\\dlna\\dms\\PublicFile\\*").c_str(), &findData);
+	HANDLE hFind = FindFirstFile((ws.sys->httpOptions.rootPath + L"\\dlna\\dms\\PublicFile\\*").c_str(), &findData);
 	vector<pair<int, WIN32_FIND_DATA>> newList;
 	if( hFind == INVALID_HANDLE_VALUE ){
 		ws.sys->dmsPublicFileList.clear();
 	}else{
 		if( ws.sys->dmsPublicFileList.empty() ){
 			//要素0には公開フォルダの場所と次のIDを格納する
-			ws.sys->dmsPublicFileList.push_back(std::make_pair(0, ws.sys->httpPublicFolder));
+			ws.sys->dmsPublicFileList.push_back(std::make_pair(0, ws.sys->httpOptions.rootPath));
 		}
 		do{
 			//TODO: 再帰的にリストしほうがいいがとりあえず…
