@@ -69,7 +69,8 @@ bool CTunerBankCtrl::AddReserve(const TUNER_RESERVE& reserve)
 	    reserve.recMode > RECMODE_VIEW ){
 		return false;
 	}
-	TUNER_RESERVE& r = this->reserveMap.insert(std::make_pair(reserve.reserveID, reserve)).first->second;
+	TUNER_RESERVE_WORK& r = this->reserveMap.insert(std::make_pair(reserve.reserveID, TUNER_RESERVE_WORK())).first->second;
+	static_cast<TUNER_RESERVE&>(r) = reserve;
 	r.startOrder = (r.startTime - r.startMargin) / I64_1SEC << 16 | r.reserveID & 0xFFFF;
 	r.effectivePriority = (this->backPriority ? -1 : 1) * ((__int64)((this->backPriority ? r.priority : ~r.priority) & 7) << 60 | r.startOrder);
 	r.state = TR_IDLE;
@@ -79,10 +80,9 @@ bool CTunerBankCtrl::AddReserve(const TUNER_RESERVE& reserve)
 
 bool CTunerBankCtrl::ChgCtrlReserve(TUNER_RESERVE* reserve)
 {
-	map<DWORD, TUNER_RESERVE>::iterator itr = this->reserveMap.find(reserve->reserveID);
+	auto itr = this->reserveMap.find(reserve->reserveID);
 	if( itr != this->reserveMap.end() && itr->second.state != TR_IDLE ){
-		//内部パラメータを退避
-		TUNER_RESERVE save = itr->second;
+		const TUNER_RESERVE& save = itr->second;
 		//変更できないフィールドを上書き
 		reserve->onid = save.onid;
 		reserve->tsid = save.tsid;
@@ -107,19 +107,11 @@ bool CTunerBankCtrl::ChgCtrlReserve(TUNER_RESERVE* reserve)
 				reserve->startMargin = save.startMargin;
 			}
 		}
-		TUNER_RESERVE& r = itr->second = *reserve;
-		//内部パラメータを復元
+		TUNER_RESERVE_WORK& r = itr->second;
+		static_cast<TUNER_RESERVE&>(r) = *reserve;
+		//内部パラメータを再計算
 		r.startOrder = (r.startTime - r.startMargin) / I64_1SEC << 16 | r.reserveID & 0xFFFF;
 		r.effectivePriority = (this->backPriority ? -1 : 1) * ((__int64)((this->backPriority ? r.priority : ~r.priority) & 7) << 60 | r.startOrder);
-		r.state = save.state;
-		r.retryOpenCount = save.retryOpenCount;
-		r.ctrlID[0] = save.ctrlID[0];
-		r.ctrlID[1] = save.ctrlID[1];
-		r.notStartHead = save.notStartHead;
-		r.appendPgInfo = save.appendPgInfo;
-		r.savedPgInfo = save.savedPgInfo;
-		r.epgStartTime = save.epgStartTime;
-		r.epgEventName = save.epgEventName;
 		return true;
 	}
 	return false;
@@ -127,7 +119,7 @@ bool CTunerBankCtrl::ChgCtrlReserve(TUNER_RESERVE* reserve)
 
 bool CTunerBankCtrl::DelReserve(DWORD reserveID)
 {
-	map<DWORD, TUNER_RESERVE>::iterator itr = this->reserveMap.find(reserveID);
+	auto itr = this->reserveMap.find(reserveID);
 	if( itr != this->reserveMap.end() ){
 		if( itr->second.state != TR_IDLE ){
 			//hTunerProcessは必ず!NULL
@@ -159,7 +151,7 @@ bool CTunerBankCtrl::DelReserve(DWORD reserveID)
 
 void CTunerBankCtrl::ClearNoCtrl(__int64 startTime)
 {
-	for( map<DWORD, TUNER_RESERVE>::iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); ){
+	for( auto itr = this->reserveMap.begin(); itr != this->reserveMap.end(); ){
 		if( itr->second.state == TR_IDLE && itr->second.startTime - itr->second.startMargin >= startTime ){
 			this->reserveMap.erase(itr++);
 		}else{
@@ -172,7 +164,7 @@ vector<DWORD> CTunerBankCtrl::GetReserveIDList() const
 {
 	vector<DWORD> list;
 	list.reserve(this->reserveMap.size());
-	for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+	for( auto itr = this->reserveMap.cbegin(); itr != this->reserveMap.end(); itr++ ){
 		list.push_back(itr->first);
 	}
 	return list;
@@ -187,7 +179,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 		CloseTuner();
 		this->specialState = TR_IDLE;
 		//TR_IDLEでない全予約を葬る
-		for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); ){
+		for( auto itr = this->reserveMap.cbegin(); itr != this->reserveMap.end(); ){
 			if( itr->second.state != TR_IDLE ){
 				CHECK_RESULT ret;
 				ret.type = CHECK_ERR_REC;
@@ -253,7 +245,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 				CloseTuner();
 			}
 			//TR_IDLEでない全予約を葬る
-			for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); ){
+			for( auto itr = this->reserveMap.cbegin(); itr != this->reserveMap.end(); ){
 				if( itr->second.state != TR_IDLE ){
 					CHECK_RESULT ret;
 					ret.type = CHECK_ERR_REC;
@@ -286,8 +278,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 	//終了時間を過ぎた予約を回収し、TR_IDLE->TR_READY以外の遷移をする
 	vector<pair<__int64, DWORD>> idleList;
 	bool ngResetLock = false;
-	for( map<DWORD, TUNER_RESERVE>::iterator itrRes = this->reserveMap.begin(); itrRes != this->reserveMap.end(); ){
-		TUNER_RESERVE& r = itrRes->second;
+	for( auto itrRes = this->reserveMap.begin(); itrRes != this->reserveMap.end(); ){
+		TUNER_RESERVE_WORK& r = itrRes->second;
 		CHECK_RESULT ret;
 		ret.type = 0;
 		switch( r.state ){
@@ -321,8 +313,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 					r.state = TR_REC;
 					if( r.recMode == RECMODE_VIEW ){
 						//視聴予約でない予約が1つでもあれば「視聴モード」にしない
-						map<DWORD, TUNER_RESERVE>::const_iterator itr;
-						for( itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+						auto itr = this->reserveMap.cbegin();
+						for( ; itr != this->reserveMap.end(); itr++ ){
 							if( itr->second.state != TR_IDLE && itr->second.recMode != RECMODE_VIEW ){
 								break;
 							}
@@ -333,6 +325,15 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 							this->tunerChLocked = false;
 							if( this->recView ){
 								ctrlCmd.SendViewExecViewApp();
+							}
+						}
+					}else{
+						//録画ファイルパス取得
+						for( int i = 0; i < 2; i++ ){
+							if( r.ctrlID[i] != 0 ){
+								//ぴったり録画は取得成功が遅れる
+								//たとえサブ録画が発生してもこのコマンドで得られるパスは変化しない
+								ctrlCmd.SendViewGetRecFilePath(r.ctrlID[i], &r.recFilePath[i]);
 							}
 						}
 					}
@@ -351,7 +352,11 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 				DWORD status;
 				if( r.recMode != RECMODE_VIEW && ctrlCmd.SendViewGetStatus(&status) == CMD_SUCCESS && status != VIEW_APP_ST_REC ){
 					//キャンセルされた？
-					ret.type = CHECK_ERR_REC;
+					ret.type = CHECK_END_CANCEL;
+					ret.recFilePath = r.ctrlID[0] != 0 ? r.recFilePath[0] : r.recFilePath[1];
+					ret.continueRec = false;
+					ret.drops = 0;
+					ret.scrambles = 0;
 					this->tunerResetLock = true;
 				}else if( r.startTime + r.endMargin + r.durationSecond * I64_1SEC < now ){
 					ret.type = CHECK_ERR_REC;
@@ -392,6 +397,12 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 					//録画終了に伴ってGUIキープが解除されたかもしれない
 					this->tunerResetLock = true;
 				}else{
+					//録画ファイルパス取得
+					for( int i = 0; i < 2; i++ ){
+						if( r.recMode != RECMODE_VIEW && r.ctrlID[i] != 0 && r.recFilePath[i].empty() ){
+							ctrlCmd.SendViewGetRecFilePath(r.ctrlID[i], &r.recFilePath[i]);
+						}
+					}
 					//番組情報確認
 					if( r.savedPgInfo == false && r.recMode != RECMODE_VIEW ){
 						GET_EPG_PF_INFO_PARAM val;
@@ -413,9 +424,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 							Replace(r.epgEventName, L"\r\n", L"");
 							if( this->saveProgramInfo ){
 								for( int i = 0; i < 2; i++ ){
-									wstring recPath;
-									if( r.ctrlID[i] != 0 && ctrlCmd.SendViewGetRecFilePath(r.ctrlID[i], &recPath) == CMD_SUCCESS ){
-										SaveProgramInfo(recPath.c_str(), resVal, r.appendPgInfo);
+									if( r.recFilePath[i].empty() == false ){
+										SaveProgramInfo(r.recFilePath[i].c_str(), resVal, r.appendPgInfo);
 									}
 								}
 							}
@@ -441,8 +451,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 
 	//TR_IDLE->TR_READY(TR_REC)の遷移をする
 	for( vector<pair<__int64, DWORD>>::const_iterator itrIdle = idleList.begin(); itrIdle != idleList.end(); itrIdle++ ){
-		map<DWORD, TUNER_RESERVE>::iterator itrRes = this->reserveMap.find(itrIdle->second);
-		TUNER_RESERVE& r = itrRes->second;
+		auto itrRes = this->reserveMap.find(itrIdle->second);
+		TUNER_RESERVE_WORK& r = itrRes->second;
 		CHECK_RESULT ret;
 		ret.type = 0;
 		if( this->hTunerProcess == NULL ){
@@ -501,8 +511,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 			}
 			if( this->tunerONID != r.onid || this->tunerTSID != r.tsid ){
 				//チャンネル違うので、TR_IDLEでない全予約の優先度を比べる
-				map<DWORD, TUNER_RESERVE>::const_iterator itr;
-				for( itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+				auto itr = this->reserveMap.cbegin();
+				for( ; itr != this->reserveMap.end(); itr++ ){
 					if( itr->second.state != TR_IDLE && itr->second.effectivePriority < r.effectivePriority ){
 						break;
 					}
@@ -576,7 +586,7 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 				if( this->tunerChLocked ){
 					//同一チャンネルなので録画制御を作成できる
 					bool continueRec = false;
-					for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+					for( auto itr = this->reserveMap.cbegin(); itr != this->reserveMap.end(); itr++ ){
 						if( itr->second.continueRecFlag &&
 						    itr->second.state == TR_REC &&
 						    itr->second.sid == r.sid &&
@@ -601,7 +611,8 @@ vector<CTunerBankCtrl::CHECK_RESULT> CTunerBankCtrl::Check(vector<DWORD>* starte
 							retOther.scrambles = 0;
 							for( int i = 0; i < 2; i++ ){
 								if( itr->second.ctrlID[i] != 0 ){
-									if( ctrlCmd.SendViewGetRecFilePath(itr->second.ctrlID[i], &retOther.recFilePath) == CMD_SUCCESS ){
+									if( itr->second.recFilePath[i].empty() == false ){
+										retOther.recFilePath = itr->second.recFilePath[i];
 										retOther.type = itr->second.notStartHead ? CHECK_END_NOT_START_HEAD :
 										                itr->second.savedPgInfo == false ? CHECK_END_NOT_FIND_PF : CHECK_END;
 										retOther.epgStartTime = itr->second.epgStartTime;
@@ -655,7 +666,7 @@ bool CTunerBankCtrl::IsNeedOpenTuner() const
 	}
 	//戻り値の振動を防ぐためdelayTimeを考慮してはいけない
 	__int64 now = GetNowI64Time();
-	for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+	for( auto itr = this->reserveMap.cbegin(); itr != this->reserveMap.end(); itr++ ){
 		if( itr->second.state != TR_IDLE || (itr->second.startTime - itr->second.startMargin - this->recWakeTime) / I64_1SEC < now / I64_1SEC ){
 			return true;
 		}
@@ -665,8 +676,7 @@ bool CTunerBankCtrl::IsNeedOpenTuner() const
 
 bool CTunerBankCtrl::FindPartialService(WORD onid, WORD tsid, WORD sid, WORD* partialSID, wstring* serviceName) const
 {
-	vector<CH_DATA4>::const_iterator itr;
-	for( itr = this->chList.begin(); itr != this->chList.end(); itr++ ){
+	for( auto itr = this->chList.cbegin(); itr != this->chList.end(); itr++ ){
 		if( itr->originalNetworkID == onid && itr->transportStreamID == tsid && itr->partialFlag != FALSE ){
 			if( itr->serviceID != sid ){
 				if( partialSID != NULL ){
@@ -785,7 +795,7 @@ void CTunerBankCtrl::SaveProgramInfo(LPCWSTR recPath, const EPGDB_EVENT_INFO& in
 	}
 }
 
-bool CTunerBankCtrl::RecStart(const TUNER_RESERVE& reserve, __int64 now) const
+bool CTunerBankCtrl::RecStart(const TUNER_RESERVE_WORK& reserve, __int64 now) const
 {
 	if( this->hTunerProcess == NULL ){
 		return false;
@@ -849,16 +859,16 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE& reserve, __int64 now) const
 						wcscpy_s(info.bonDriverName, this->bonFileName.c_str());
 						info.bonDriverID = this->tunerID >> 16;
 						info.tunerID = this->tunerID & 0xFFFF;
-						EPG_EVENT_INFO* epgInfo = NULL;
+						std::unique_ptr<EPG_EVENT_INFO> epgInfo;
 						if( info.EventID != 0xFFFF ){
 							EPGDB_EVENT_INFO epgDBInfo;
 							if( this->epgDBManager.SearchEpg(info.ONID, info.TSID, info.SID, info.EventID, &epgDBInfo) != FALSE ){
-								epgInfo = new EPG_EVENT_INFO;
-								CopyEpgInfo(epgInfo, &epgDBInfo);
+								epgInfo.reset(new EPG_EVENT_INFO);
+								CopyEpgInfo(epgInfo.get(), &epgDBInfo);
 							}
 						}
 						info.reserveID = reserve.reserveID;
-						info.epgInfo = epgInfo;
+						info.epgInfo = epgInfo.get();
 						info.sizeOfStruct = 0;
 						WCHAR name[512];
 						DWORD size = 512;
@@ -866,7 +876,6 @@ bool CTunerBankCtrl::RecStart(const TUNER_RESERVE& reserve, __int64 now) const
 							param.saveFolder[j].recFileName = name;
 							CheckFileName(param.saveFolder[j].recFileName, this->recNameNoChkYen);
 						}
-						delete epgInfo;
 					}
 					param.saveFolder[j].recNamePlugIn.clear();
 				}
@@ -918,7 +927,7 @@ CTunerBankCtrl::TR_STATE CTunerBankCtrl::GetState() const
 		if( this->specialState != TR_IDLE ){
 			state = this->specialState;
 		}else{
-			for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+			for( auto itr = this->reserveMap.cbegin(); itr != this->reserveMap.end(); itr++ ){
 				if( itr->second.state == TR_REC ){
 					state = TR_REC;
 					break;
@@ -934,7 +943,7 @@ CTunerBankCtrl::TR_STATE CTunerBankCtrl::GetState() const
 __int64 CTunerBankCtrl::GetNearestReserveTime() const
 {
 	__int64 minTime = LLONG_MAX;
-	for( map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.begin(); itr != this->reserveMap.end(); itr++ ){
+	for( auto itr = this->reserveMap.cbegin(); itr != this->reserveMap.end(); itr++ ){
 		minTime = min(itr->second.startTime - itr->second.startMargin, minTime);
 	}
 	return minTime;
@@ -1052,16 +1061,12 @@ void CTunerBankCtrl::CloseNWTV()
 
 bool CTunerBankCtrl::GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* ctrlID, DWORD* processID) const
 {
-	map<DWORD, TUNER_RESERVE>::const_iterator itr = this->reserveMap.find(reserveID);
-	if( itr != this->reserveMap.end() && itr->second.state == TR_REC && itr->second.recMode != RECMODE_VIEW ){
-		CWatchBlock watchBlock(&this->watchContext);
-		CSendCtrlCmd ctrlCmd;
-		ctrlCmd.SetPipeSetting(CMD2_VIEW_CTRL_WAIT_CONNECT, CMD2_VIEW_CTRL_PIPE, this->tunerPid);
-		wstring recFilePath;
-		DWORD mainCtrlID = itr->second.ctrlID[0] ? itr->second.ctrlID[0] : itr->second.ctrlID[1];
-		if( ctrlCmd.SendViewGetRecFilePath(mainCtrlID, &recFilePath) == CMD_SUCCESS ){
-			filePath = recFilePath;
-			*ctrlID = mainCtrlID;
+	auto itr = this->reserveMap.find(reserveID);
+	if( itr != this->reserveMap.end() && itr->second.state == TR_REC ){
+		int i = itr->second.ctrlID[0] != 0 ? 0 : 1;
+		if( itr->second.recFilePath[i].empty() == false ){
+			filePath = itr->second.recFilePath[i];
+			*ctrlID = itr->second.ctrlID[i];
 			*processID = this->tunerPid;
 			return true;
 		}

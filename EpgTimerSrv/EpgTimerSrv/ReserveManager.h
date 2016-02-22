@@ -167,7 +167,7 @@ private:
 
 	CRecEventDB recEventDB;
 
-	map<DWORD, CTunerBankCtrl*> tunerBankMap;
+	map<DWORD, std::unique_ptr<CTunerBankCtrl>> tunerBankMap;
 
 	DWORD ngCapTimeSec;
 	DWORD ngCapTunerTimeSec;

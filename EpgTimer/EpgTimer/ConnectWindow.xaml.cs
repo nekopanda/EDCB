@@ -30,7 +30,7 @@ namespace EpgTimer
 
                 btn_edit.Visibility = Visibility.Collapsed;
 
-                ConnectionList = new ObservableCollection<NWPresetItem>(Settings.Instance.NWPerset);
+                ConnectionList = new ObservableCollection<NWPresetItem>(Settings.Instance.NWPreset);
                 var nowSet = new NWPresetItem(DefPresetStr, Settings.Instance.NWServerIP, Settings.Instance.NWServerPort, Settings.Instance.NWWaitPort, Settings.Instance.NWMacAdd, Settings.Instance.NWPassword);
                 int pos = ConnectionList.ToList().FindIndex(item => item.EqualsTo(nowSet, true));
                 if (pos == -1)
@@ -101,7 +101,7 @@ namespace EpgTimer
             int count = ConnectionList.Count - 1 - start;
             if (start >= 0 && count >= 0)
             {
-                Settings.Instance.NWPerset = ConnectionList.Skip(start).Take(count).ToList();
+                Settings.Instance.NWPreset = ConnectionList.Skip(start).Take(count).ToList();
                 IsTouchedPreset = true;
             }
         }

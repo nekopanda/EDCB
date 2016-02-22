@@ -4,5 +4,7 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <!-- アプリケーション レベルでスコープされたリソースは、ここで定義する必要があります。 -->
+        <Style TargetType="{x:Type ListBoxItem}" />
+        <Style TargetType="{x:Type ListViewItem}" />
     </Application.Resources>
 </Application>
