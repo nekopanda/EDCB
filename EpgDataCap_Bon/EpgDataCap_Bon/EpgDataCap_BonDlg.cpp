@@ -37,9 +37,7 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 	this->initONID = GetPrivateProfileInt( L"Set", L"LastONID", -1, this->moduleIniPath.c_str() );
 	this->initTSID = GetPrivateProfileInt( L"Set", L"LastTSID", -1, this->moduleIniPath.c_str() );
 	this->initSID = GetPrivateProfileInt( L"Set", L"LastSID", -1, this->moduleIniPath.c_str() );
-	WCHAR buff[512]=L"";
-	GetPrivateProfileString( L"Set", L"LastBon", L"", buff, 512, this->moduleIniPath.c_str() );
-	this->iniBonDriver = buff;
+	this->iniBonDriver = GetPrivateProfileToString( L"Set", L"LastBon", L"", this->moduleIniPath.c_str() );
 
 	iniView = FALSE;
 	iniNetwork = TRUE;
@@ -54,8 +52,7 @@ CEpgDataCap_BonDlg::CEpgDataCap_BonDlg()
 			this->initONID = GetPrivateProfileInt( L"Set", L"FixONID", -1, this->moduleIniPath.c_str() );
 			this->initTSID = GetPrivateProfileInt( L"Set", L"FixTSID", -1, this->moduleIniPath.c_str() );
 			this->initSID = GetPrivateProfileInt( L"Set", L"FixSID", -1, this->moduleIniPath.c_str() );
-			GetPrivateProfileString( L"Set", L"FixBon", L"", buff, 512, this->moduleIniPath.c_str() );
-			this->iniBonDriver = buff;
+			this->iniBonDriver = GetPrivateProfileToString( L"Set", L"FixBon", L"", this->moduleIniPath.c_str() );
 		}else{
 			this->initONID = -1;
 			this->initTSID = -1;
@@ -740,8 +737,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			Button_SetCheck(GetDlgItem(IDC_CHECK_REC_SET), BST_UNCHECKED);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
-			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
-			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
 			break;
 		case GUI_CANCEL_ONLY:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -755,8 +750,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, TRUE);
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
-			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
-			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
 			break;
 		case GUI_OPEN_FAIL:
 			ENABLE_ITEM(IDC_COMBO_TUNER, TRUE);
@@ -770,8 +763,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
-			ENABLE_ITEM(IDC_CHECK_UDP, FALSE);
-			ENABLE_ITEM(IDC_CHECK_TCP, FALSE);
 			break;
 		case GUI_REC:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -786,8 +777,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			Button_SetCheck(GetDlgItem(IDC_CHECK_REC_SET), BST_UNCHECKED);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, TRUE);
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
-			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
-			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
 			break;
 		case GUI_REC_SET_TIME:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -801,8 +790,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_CHECK_REC_SET, TRUE);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, TRUE);
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
-			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
-			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
 			break;
 		case GUI_OTHER_CTRL:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -816,8 +803,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, TRUE);
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
-			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
-			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
 			break;
 		case GUI_REC_STANDBY:
 			ENABLE_ITEM(IDC_COMBO_TUNER, FALSE);
@@ -831,8 +816,6 @@ void CEpgDataCap_BonDlg::BtnUpdate(DWORD guiMode)
 			ENABLE_ITEM(IDC_CHECK_REC_SET, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_CANCEL, FALSE);
 			ENABLE_ITEM(IDC_BUTTON_VIEW, TRUE);
-			ENABLE_ITEM(IDC_CHECK_UDP, TRUE);
-			ENABLE_ITEM(IDC_CHECK_TCP, TRUE);
 			break;
 		default:
 			break;

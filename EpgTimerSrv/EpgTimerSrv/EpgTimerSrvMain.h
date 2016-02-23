@@ -4,10 +4,8 @@
 #include "ReserveManager.h"
 #include "FileStreamingManager.h"
 #include "NotifyManager.h"
+#include "HttpServer.h"
 #include "../../Common/ParseTextInstances.h"
-
-struct lua_State;
-struct _UPNP_MSEARCH_REQUEST_INFO;
 
 //各種サーバと自動予約の管理をおこなう
 //必ずオブジェクト生成→Main()→…→破棄の順番で利用しなければならない
@@ -87,6 +85,7 @@ private:
 	static int LuaChgReserveData(lua_State* L);
 	static int LuaDelReserveData(lua_State* L);
 	static int LuaGetReserveData(lua_State* L);
+	static int LuaGetRecFilePath(lua_State* L);
 	static int LuaGetRecFileInfo(lua_State* L);
 	static int LuaDelRecFileInfo(lua_State* L);
 	static int LuaGetTunerReserveAll(lua_State* L);
@@ -125,10 +124,7 @@ private:
 	unsigned short tcpPort;
 	DWORD tcpResponseTimeoutSec;
 	wstring tcpAccessControlList;
-	wstring httpPorts;
-	wstring httpPublicFolder;
-	wstring httpAccessControlList;
-	bool httpSaveLog;
+	CHttpServer::SERVER_OPTIONS httpOptions;
 	bool enableSsdpServer;
 	vector<pair<int, wstring>> dmsPublicFileList;
 	int autoAddHour;
