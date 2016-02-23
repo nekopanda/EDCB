@@ -365,7 +365,7 @@
                                         <TextBox Name="textBox_tuner_width" Width="55" Height="24" VerticalContentAlignment="Center" />
                                     </StackPanel>
                                     <CheckBox Name="checkBox_tuner_popup" Content="予約をポップアップ表示する" Margin="4" VerticalAlignment="Center" Click="checkBox_tuner_popup_Click" />
-                                    <CheckBox Name="checkBox_tuner_popup_recInfo" Margin="4" VerticalAlignment="Center">
+                                    <CheckBox Name="checkBox_tuner_popup_recInfo" Margin="25,0,0,4" VerticalAlignment="Center">
                                         <TextBlock Text="ポップアップに優先度と録画モードを表示する" TextWrapping="Wrap" />
                                     </CheckBox>
                                     <CheckBox Name="checkBox_tunerSingleOpen" Margin="4" VerticalAlignment="Center">

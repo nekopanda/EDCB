@@ -107,7 +107,7 @@
                     <WrapPanel>
                         <CheckBox Name="checkBox_cautionOnRecChange" Content="録画中または開始直前の予約を変更・削除するとき警告する" Margin="8,8,0,8" />
                         <StackPanel Orientation="Horizontal" >
-                            <TextBox Name="textBox_cautionOnRecMarginMin" Margin="30,0,0,0" Width="62" Height="25" />
+                            <TextBox Name="textBox_cautionOnRecMarginMin" Margin="30,0,0,0" Width="62" Height="25" VerticalContentAlignment="Center" />
                             <Label Content="分以内" VerticalAlignment="Center" />
                         </StackPanel >
                     </WrapPanel>
@@ -229,7 +229,7 @@
                             <PasswordBox Name="passwordBox_tcpPassword" Margin="0,0,15,0" Width="175" Height="21" VerticalContentAlignment="Center" />
                         </StackPanel>
                         <StackPanel Margin="0,0,-20,0" Orientation="Horizontal">
-                            <Label Name="label_tcpResTo" Content="無通信タイムアウト(秒)" Margin="20,0,0,0" Padding="0" Width="120" Height="21" VerticalContentAlignment="Center" />
+                            <Label Name="label_tcpResTo" Content="無通信タイムアウト(秒)" Margin="20,0,0,0" Padding="0" Width="140" Height="21" VerticalContentAlignment="Center" />
                             <TextBox Name="textBox_tcpResTo" Margin="0,0,15,0" Width="50" Height="21" VerticalContentAlignment="Center" />
                         </StackPanel>
                     </WrapPanel>
