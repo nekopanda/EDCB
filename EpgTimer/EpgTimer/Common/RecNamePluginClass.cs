@@ -25,13 +25,14 @@ namespace EpgTimer
         public void Setting(String dllFilePath, IntPtr parentWnd)
         {
             IntPtr module = LoadLibrary(dllFilePath);
-
-            IntPtr func = GetProcAddress(module, "Setting");
-            _Setting settingDelegate = Marshal.GetDelegateForFunctionPointer(func, typeof(_Setting)) as _Setting;
-            settingDelegate(parentWnd);
-
             if (module != IntPtr.Zero)
             {
+                IntPtr func = GetProcAddress(module, "Setting");
+                if (func != IntPtr.Zero)
+                {
+                    _Setting settingDelegate = Marshal.GetDelegateForFunctionPointer(func, typeof(_Setting)) as _Setting;
+                    settingDelegate(parentWnd);
+                }
                 FreeLibrary(module);
             }
         }

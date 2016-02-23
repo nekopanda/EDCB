@@ -191,7 +191,7 @@ namespace EpgTimer.Setting
 
             checkBox_recname.IsEnabled = IniFileHandler.CanUpdateInifile; // 録画時のファイル名にPlugInを使用する
             comboBox_recname.IsEnabled = IniFileHandler.CanUpdateInifile;
-            button_recname.IsEnabled = IniFileHandler.CanUpdateInifile; // 設定
+            button_recname.IsEnabled = !Settings.Instance.NWMode; // 設定
 
             // 読める設定のみ項目に反映させる
             if (IniFileHandler.CanReadInifile)
