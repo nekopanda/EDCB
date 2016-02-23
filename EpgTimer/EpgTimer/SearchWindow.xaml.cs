@@ -212,6 +212,9 @@ namespace EpgTimer
             autoAddID = data.dataID;
             SetSearchKey(data.searchInfo);
             SetRecSetting(data.recSetting);
+
+            //nekopanda版(8beae159)
+            SetRecFileList(data.recFileList);
         }
 
         private void ChangeAutoAddData(EpgAutoAddData data, bool refresh = true)
@@ -219,6 +222,10 @@ namespace EpgTimer
             this.SetViewMode(SearchMode.Change);
             this.SetAutoAddData(data);
             this.UpdateEpgAutoAddViewSelection();
+
+            //EPG自動予約登録と、登録された予約、および録画済みファイルとの関連付けを実装
+            this.SetRecFileList(data.recFileList);
+
             if (refresh == true) UpdateInfo();
         }
 
@@ -227,6 +234,9 @@ namespace EpgTimer
             winMode = md;
             button_chg_epgAutoAdd.Visibility = (winMode == SearchMode.Change ? Visibility.Visible : Visibility.Hidden);
             button_del_epgAutoAdd.Visibility = button_chg_epgAutoAdd.Visibility;
+            button_up_epgAutoAdd.Visibility = button_chg_epgAutoAdd.Visibility;
+            button_down_epgAutoAdd.Visibility = button_chg_epgAutoAdd.Visibility;
+            recFileTabItem.Visibility = (winMode == SearchMode.Change ? Visibility.Visible : Visibility.Collapsed);
             WindowTitleSet();
         }
 
