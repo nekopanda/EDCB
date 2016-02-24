@@ -800,7 +800,7 @@ namespace EpgTimer
         public SerializableDictionary<string, WINDOWPLACEMENT> Placement { get; set; }
         public bool InfoWindowTopMost { get; set; }
         public bool InfoWindowEnabled { get; set; }
-        
+
         public Settings()
         {
             UseCustomEpgView = false;
@@ -967,7 +967,7 @@ namespace EpgTimer
             LaterTimeUse = false;
             LaterTimeHour = 28 - 24;
             DisplayPresetOnSearch = false;
-        
+
             recPresetList = null;
             ApplyMultiInstance = false;
             ReserveMinHeight = 2;
@@ -1194,7 +1194,7 @@ namespace EpgTimer
                     Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Tuijyu), double.NaN));
                     Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Comment), double.NaN));
                     Instance.ReserveListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecFileName), double.NaN));
-                    Instance.ResColumnHead = "StartTime";
+                    Instance.ResColumnHead = CommonUtil.GetMemberName(() => obj.StartTime);
                     Instance.ResSortDirection = ListSortDirection.Ascending;
                 }
                 if (Instance.RecInfoListColumn.Count == 0)
@@ -1209,8 +1209,8 @@ namespace EpgTimer
                     Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Scrambles), double.NaN));
                     Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Result), double.NaN));
                     Instance.RecInfoListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.RecFilePath), double.NaN));
-                    Instance.RecInfoColumnHead = "StartTime";
-                    Instance.RecInfoSortDirection = ListSortDirection.Ascending;
+                    Instance.RecInfoColumnHead = CommonUtil.GetMemberName(() => obj.StartTime);
+                    Instance.RecInfoSortDirection = ListSortDirection.Descending;
                 }
                 if (Instance.AutoAddEpgColumn.Count == 0)
                 {
@@ -1240,7 +1240,7 @@ namespace EpgTimer
                     Instance.EpgListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.NetworkName), double.NaN));
                     Instance.EpgListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ServiceName), double.NaN));
                     Instance.EpgListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
-                    Instance.EpgListColumnHead = "StartTime";
+                    Instance.EpgListColumnHead = CommonUtil.GetMemberName(() => obj.StartTime);
                     Instance.EpgListSortDirection = ListSortDirection.Ascending;
                 }
                 if (Instance.SearchWndColumn.Count == 0)
@@ -1254,7 +1254,7 @@ namespace EpgTimer
                     Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ServiceName), double.NaN));
                     Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ProgramContent), double.NaN));
                     Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.JyanruKey), double.NaN));
-                    Instance.SearchColumnHead = "StartTime";
+                    Instance.SearchColumnHead = CommonUtil.GetMemberName(() => obj.StartTime);
                     Instance.SearchSortDirection = ListSortDirection.Ascending;
                 }
                 if (Instance.RecInfoDropExclude.Count == 0)

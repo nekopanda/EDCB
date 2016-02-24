@@ -56,6 +56,7 @@ namespace EpgTimer
 
             CommonManager.Instance.MM.ReloadWorkData();
             CommonManager.Instance.ReloadCustContentColorList();
+            Settings.Instance.ReloadOtherOptions();
 
             if (Settings.Instance.NoStyle == 0)
             {
@@ -84,7 +85,7 @@ namespace EpgTimer
 
             SemaphoreSecurity ss = new SemaphoreSecurity();
             ss.AddAccessRule(new SemaphoreAccessRule("Everyone", SemaphoreRights.FullControl, AccessControlType.Allow));
-            semaphore = new Semaphore(int.MaxValue, int.MaxValue, "Global\\EpgTimer_Bon2", out firstInstance, ss);
+            semaphore = new Semaphore(int.MaxValue, int.MaxValue, "Global\\EpgTimer_Bon3", out firstInstance, ss);
             semaphore.WaitOne(0);
             if (!firstInstance)
             {
@@ -102,6 +103,10 @@ namespace EpgTimer
             }
 
             InitializeComponent();
+
+#if DEBUG
+            appName += "(debug)";
+#endif
 
             initExe = true;
 

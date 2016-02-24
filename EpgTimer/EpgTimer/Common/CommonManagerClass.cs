@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Collections;
 using System.IO;
+using System.Diagnostics;
 
 namespace EpgTimer
 {
@@ -687,6 +688,7 @@ namespace EpgTimer
             //超手抜き。書式が変ったら、巻き込まれて死ぬ。
             var start = new DateTime(2000, 1, 2 + info.startDayOfWeek, info.startHour, info.startMin, 0);
             var end = new DateTime(2000, 1, 2 + info.endDayOfWeek, info.endHour, info.endMin, 0);
+            if (end < start) end = end.AddDays(7);
             string reftxt = ConvertTimeText(start, (uint)(end - start).TotalSeconds, true, true, false, false);
             string[] src = reftxt.Split(new char[] { ' ', '～' });
             return src[0].Substring(6, 1) + " " + src[1] + " ～ " + src[2].Substring(6, 1) + " " + src[3];
@@ -1323,6 +1325,7 @@ namespace EpgTimer
                     System.Windows.Forms.OpenFileDialog dlg = new System.Windows.Forms.OpenFileDialog();
                     dlg.Title = Description;
                     dlg.CheckFileExists = false;
+                    dlg.DereferenceLinks = false;
                     dlg.FileName = "(任意ファイル名)";
                     dlg.InitialDirectory = GetDirectoryName2(InitialPath);
                     if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
@@ -1397,42 +1400,40 @@ namespace EpgTimer
             return path;
         }
 
-        public void OpenFolder(string folder_path, string msg = "存在しません")
+        public String GetRecPath(String path)
+        {
+            var nwPath = "";
+            try
+            {
+                if (String.IsNullOrWhiteSpace(path) == true) return "";
+                if (CommonManager.Instance.NWMode != true) return path;
+                CtrlCmd.SendGetRecFileNetworkPath(path, ref nwPath);
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            return nwPath;
+        }
+
+        public void OpenFolder(String folderPath, String title = "フォルダを開く")
         {
             try
             {
-                if (folder_path == null || folder_path.Length == 0)
+                String path1 = GetRecPath(folderPath);
+                bool isFile = File.Exists(path1) == true;//録画結果から開く場合
+                String path = isFile == true ? path1 : GetDirectoryName2(path1);//録画フォルダ未作成への対応
+                bool noParent = path.TrimEnd('\\').CompareTo(path1.TrimEnd('\\')) != 0;//フォルダを遡った場合の特例
+
+                if (String.IsNullOrWhiteSpace(path) == true)
                 {
-                    MessageBox.Show(msg);
+                    MessageBox.Show("パスが見つかりません。\r\n\r\n" + folderPath, title, MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    if (CommonManager.Instance.NWMode == true)
-                    {
-                        // ネットワーク接続のときはUNCに変換する
-                        if (CommonManager.Instance.CtrlCmd.SendGetRecFileNetworkPath(folder_path, ref folder_path) != ErrCode.CMD_SUCCESS)
-                        {
-                            MessageBox.Show("共有名が公開されていないため開けません");
-                            return;
-                        }
-                    }
-                    if (File.Exists(folder_path) != true)
-                    {
-                        String folderPath = GetDirectoryName2(folder_path);
-                        System.Diagnostics.Process.Start("EXPLORER.EXE", folderPath);
-                    }
-                    else
-                    {
-                        String cmdline = "/select,";
-                        cmdline += "\"" + folder_path + "\"";
-                        System.Diagnostics.Process.Start("EXPLORER.EXE", cmdline);
-                    }
+                    //オプションに応じて一つ上のフォルダから対象フォルダを選択した状態で開く。
+                    String cmd = isFile == true || noParent == false && Settings.Instance.MenuSet.OpenParentFolder == true ? "/select," : "";
+                    Process.Start("EXPLORER.EXE", cmd + "\"" + path + "\"");
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         public void FilePlay(ReserveData data)
@@ -1443,13 +1444,13 @@ namespace EpgTimer
                 MessageBox.Show("まだ録画が開始されていません。", "追っかけ再生", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
-
             if (data.RecSetting.RecMode == 4)//視聴モード
             {
-                CommonManager.Instance.TVTestCtrl.SetLiveCh(data.OriginalNetworkID, data.TransportStreamID, data.ServiceID);
+                TVTestCtrl.SetLiveCh(data.OriginalNetworkID, data.TransportStreamID, data.ServiceID);
                 return;
             }
-            else if (Settings.Instance.FilePlayOnAirWithExe && (NWMode == false || Settings.Instance.FilePlayExe.Length != 0))
+
+            if (Settings.Instance.FilePlayOnAirWithExe && NWMode == false)
             {
                 //ファイルパスを取得するため開いてすぐ閉じる
                 var info = new NWPlayTimeShiftInfo();
@@ -1475,58 +1476,50 @@ namespace EpgTimer
             {
                 if (string.IsNullOrWhiteSpace(filePath) == true) return;
 
-                System.Diagnostics.Process process;
-                if (NWMode == false)
+                //録画フォルダと保存・共有フォルダが異なる場合($FileNameExt$運用など)で、
+                //コマンドラインの一部になるときは、ファイルの確認を未チェックとする。
+                String path = GetRecPath(filePath);
+                String cmdLine = Settings.Instance.FilePlayCmd == "" ? "$FilePath$" : Settings.Instance.FilePlayCmd;
+                bool chkExist = cmdLine.Contains("$FilePath$") == true && cmdLine.Contains("$FileNameExt$") == false;
+
+                String title = "録画ファイルの再生";
+                String msg1 = "録画ファイルが見つかりません。\r\n\r\n" + filePath;
+                String msg2 = "再生アプリが見つかりません。\r\n設定を確認してください。\r\n\r\n" + Settings.Instance.FilePlayExe;
+
+                if (File.Exists(path) == false)
                 {
-                    if (Settings.Instance.FilePlayExe.Length == 0)
+                    if (chkExist == true)
                     {
-                        process = System.Diagnostics.Process.Start(filePath);
+                        MessageBox.Show(msg1, title, MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
                     }
-                    else
+                    path = filePath;
+                }
+
+                //'$'->'\t'は再帰的な展開を防ぐため
+                cmdLine = cmdLine.Replace("$FileNameExt$", Path.GetFileName(path).Replace('$', '\t'));
+                cmdLine = cmdLine.Replace("$FilePath$", path).Replace('\t', '$');
+
+                if (Settings.Instance.FilePlayExe.Length == 0)
+                {
+                    if (File.Exists(cmdLine) == false)
                     {
-                        String cmdLine = Settings.Instance.FilePlayCmd;
-                        //'$'->'\t'は再帰的な展開を防ぐため
-                        cmdLine = cmdLine.Replace("$FileNameExt$", Path.GetFileName(filePath).Replace('$', '\t'));
-                        cmdLine = cmdLine.Replace("$FilePath$", filePath).Replace('\t', '$');
-                        process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
+                        MessageBox.Show(msg1, title, MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
                     }
+                    Process.Start(cmdLine);
                 }
                 else
                 {
-                    if (Settings.Instance.FilePlayExe.Length == 0)
+                    if (File.Exists(Settings.Instance.FilePlayExe) == false)
                     {
-                        TVTestCtrl.StartStreamingPlay(filePath, NW.ConnectedIP, NW.ConnectedPort);
+                        MessageBox.Show(msg2, title, MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
                     }
-                    else
-                    {
-                        String nPath = "";
-                        ErrCode err = CtrlCmd.SendGetRecFileNetworkPath(filePath, ref nPath);
-                        if (err == ErrCode.CMD_SUCCESS)
-                        {
-                            if (File.Exists(nPath) == true)
-                            {
-                                String cmdLine = Settings.Instance.FilePlayCmd;
-                                //'$'->'\t'は再帰的な展開を防ぐため
-                                cmdLine = cmdLine.Replace("$FileNameExt$", Path.GetFileName(nPath).Replace('$', '\t'));
-                                cmdLine = cmdLine.Replace("$FilePath$", nPath).Replace('\t', '$');
-                                process = System.Diagnostics.Process.Start(Settings.Instance.FilePlayExe, cmdLine);
-                            }
-                            else
-                            {
-                                MessageBox.Show(nPath + "\nが見つかりません");
-                            }
-                        }
-                        else
-                        {
-                            TVTestCtrl.StartStreamingPlay(filePath, NW.ConnectedIP, NW.ConnectedPort);
-                        }
-                    }
+                    Process.Start(Settings.Instance.FilePlayExe, cmdLine);
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
         
         //ReloadCustContentColorList()用のコンバートメソッド
@@ -1617,15 +1610,13 @@ namespace EpgTimer
         {
             if (Settings.Instance.AutoSaveNotifyLog == 1)
             {
-                String filePath = SettingPath.ModulePath;
-                filePath += "\\Log";
+                String filePath = SettingPath.ModulePath + "\\Log";
                 Directory.CreateDirectory(filePath);
                 filePath += "\\EpgTimerNotify_" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
-                StreamWriter file = new StreamWriter(filePath, true, System.Text.Encoding.GetEncoding("shift_jis"));
-                NotifySrvInfoItem info = new NotifySrvInfoItem();
-                info.NotifyInfo = notifyInfo;
-                file.Write(info.FileLogText);
-                file.Close();
+                using (var file = new StreamWriter(filePath, true))
+                {
+                    file.Write((new NotifySrvInfoItem(notifyInfo)).FileLogText);
+                }
             }
         }
 
