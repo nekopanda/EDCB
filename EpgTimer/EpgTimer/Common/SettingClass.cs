@@ -733,10 +733,7 @@ namespace EpgTimer
         public UInt32 NWWaitPort { get; set; }
         public string NWMacAdd { get; set; }
         public SerializableSecureString NWPassword { get; set; }
-        //public List<NWPresetItem> NWPerset {
-        //    get { return NWPreset; }
-        //    set { NWPreset = value; }
-        //}
+        public List<NWPresetItem> NWPerset { get; set; }            // obsolete because of typo of 'NWPreset'
         public List<NWPresetItem> NWPreset { get; set; }
         public bool WakeReconnectNW { get; set; }
         public bool SuspendCloseNW { get; set; }
@@ -911,6 +908,7 @@ namespace EpgTimer
             NWWaitPort = 4520;
             NWMacAdd = "";
             NWPassword = new SerializableSecureString();
+            NWPerset = new List<NWPresetItem>();
             NWPreset = new List<NWPresetItem>();
             WakeReconnectNW = false;
             SuspendCloseNW = false;
@@ -1044,6 +1042,13 @@ namespace EpgTimer
                     MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
                 }
             }
+
+            // typo のXMLデータの引っ越し
+            if (Instance.NWPerset.Count > 0 && Instance.NWPreset.Count == 0)
+            {
+                Instance.NWPreset = Instance.NWPerset;
+            }
+            Instance.NWPerset = null; // Serializeはしない
 
             try
             {
