@@ -1943,7 +1943,7 @@ UINT WINAPI CReserveManager::WatchdogThread_(LPVOID param)
 void CReserveManager::WatchdogThread()
 {
 	while( WaitForSingleObject(this->watchdogStopEvent, 2000) == WAIT_TIMEOUT ){
-		for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.end(); itr++ ){
+		for( auto itr = this->tunerBankMap.cbegin(); itr != this->tunerBankMap.cend(); itr++ ){
 			itr->second->Watch();
 		}
 	}
