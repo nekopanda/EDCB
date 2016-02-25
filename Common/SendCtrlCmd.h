@@ -561,7 +561,7 @@ public:
 		wstring val,
 		wstring* resVal
 		){
-		return SendAndReceiveCmdData(CMD2_EPG_SRV_NWPLAY_TF_OPEN, val, resVal);
+		return SendAndReceiveCmdData(CMD2_EPG_SRV_GET_NETWORK_PATH, val, resVal);
 	}
 
 //コマンドバージョン対応版
