@@ -2,6 +2,7 @@
 #include "EpgDBManager.h"
 #include <process.h>
 
+#include "../../Common/CommonDef.h"
 #include "../../Common/TimeUtil.h"
 #include "../../Common/BlockLock.h"
 #include "../../Common/StringUtil.h"
@@ -93,7 +94,7 @@ UINT WINAPI CEpgDBManager::LoadThread(LPVOID param)
 				//見つかったファイルを一覧に追加
 				//名前順。ただしTSID==0xFFFFの場合は同じチャンネルの連続によりストリームがクリアされない可能性があるので後ろにまとめる
 				WCHAR prefix = fileTime + 7*24*60*60*I64_1SEC < GetNowI64Time() ? L'0' :
-				               Tolower(findData.cFileName).find(L"ffff_epg.dat") == wstring::npos ? L'1' : L'2';
+				               lstrlen(findData.cFileName) < 12 || _wcsicmp(findData.cFileName + lstrlen(findData.cFileName) - 12, L"ffff_epg.dat") ? L'1' : L'2';
 				wstring item = prefix + epgDataPath + L'\\' + findData.cFileName;
 				epgFileList.insert(std::lower_bound(epgFileList.begin(), epgFileList.end(), item), item);
 			}
@@ -382,6 +383,47 @@ BOOL CEpgDBManager::SearchEpg(vector<EPGDB_SEARCH_KEY_INFO>* key, void (*enumPro
 	return ret;
 }
 
+BOOL CEpgDBManager::SearchEpgByKey(vector<EPGDB_SEARCH_KEY_INFO>* key, void (*enumProc)(vector<SEARCH_RESULT_EVENT>*, void*), void* param)
+{
+	CBlockLock lock(&this->epgMapLock);
+
+	BOOL ret = TRUE;
+	vector<SEARCH_RESULT_EVENT> result;
+	
+	SEARCH_RESULT_EVENT dummy;
+	EPGDB_EVENT_INFO dummyinfo;
+
+	dummyinfo.original_network_id = 0;
+	dummyinfo.transport_stream_id = 0;
+	dummyinfo.service_id = 0;
+	dummyinfo.event_id = 0;
+	dummyinfo.shortInfo = NULL; //無くてもコンストラクタが初期化する
+	GetSystemTime(&dummyinfo.start_time);//途中にコンバート関数があるので、まともな値を入れておく。
+	dummy.info = &dummyinfo;
+
+	CoInitialize(NULL);
+	{
+		IRegExpPtr regExp;
+		for( size_t i=0; i<key->size(); i++ ){
+			map<ULONGLONG, SEARCH_RESULT_EVENT> resultMap;
+			SearchEvent( &(*key)[i], &resultMap, regExp );
+
+			map<ULONGLONG, SEARCH_RESULT_EVENT>::iterator itr;
+			for( itr = resultMap.begin(); itr != resultMap.end(); itr++ ){
+				result.push_back(itr->second);
+			}
+
+			result.push_back(dummy);
+		}
+	}
+	CoUninitialize();
+
+	//ここはロック状態なのでコールバック先で排他制御すべきでない
+	enumProc(&result, param);
+
+	return ret;
+}
+
 void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARCH_RESULT_EVENT>* resultMap, IRegExpPtr& regExp)
 {
 	if( key == NULL || resultMap == NULL ){
@@ -399,10 +441,11 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 		andKey.erase(0, 7);
 		caseFlag = TRUE;
 	}
-	if( andKey.size() == 0 && key->notKey.size() == 0 && key->contentList.size() == 0 && key->videoList.size() == 0 && key->audioList.size() == 0){
-		//キーワードもジャンル指定もないので検索しない
-		return ;
-	}
+// 処理は重いが、キーワード無し検索もしたい場合がある(特定局の検索や番組表など)ので条件を外す。
+//	if( andKey.size() == 0 && key->notKey.size() == 0 && key->contentList.size() == 0 && key->videoList.size() == 0 && key->audioList.size() == 0){
+//		//キーワードもジャンル指定もないので検索しない
+//		return ;
+//	}
 	
 	//キーワード分解
 	vector<wstring> andKeyList;
@@ -446,72 +489,7 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 		}
 	}
 
-	//時間分解
-	vector<TIME_SEARCH> timeList;
-	for( size_t i=0; i<key->dateList.size(); i++ ){
-		DWORD start = key->dateList[i].startHour*60 + key->dateList[i].startMin;
-		DWORD end = key->dateList[i].endHour*60 + key->dateList[i].endMin;
-		if( key->dateList[i].startDayOfWeek == key->dateList[i].endDayOfWeek ){
-			if( start < end ){
-				//通常
-				TIME_SEARCH item;
-				item.week = key->dateList[i].startDayOfWeek;
-				item.start = start;
-				item.end = end;
-				timeList.push_back(item);
-			}else{
-				//1週間回す
-				for( BYTE j=0; j<7; j++ ){
-					if( j== key->dateList[i].startDayOfWeek){
-						TIME_SEARCH item1;
-						item1.week = j;
-						item1.start = 0;
-						item1.end = end;
-						timeList.push_back(item1);
-						TIME_SEARCH item2;
-						item2.week = j;
-						item2.start = start;
-						item2.end = 23*60+59;
-						timeList.push_back(item2);
-					}else{
-						TIME_SEARCH item;
-						item.week = j;
-						item.start = 0;
-						item.end = 23*60+59;
-						timeList.push_back(item);
-					}
-				}
-			}
-		}else{
-			BYTE chkWeek = key->dateList[i].startDayOfWeek;
-			for( BYTE j=0; j<7; j++ ){
-				if( chkWeek == key->dateList[i].startDayOfWeek ){
-					TIME_SEARCH item;
-					item.week = chkWeek;
-					item.start = start;
-					item.end = 23*60+59;
-					timeList.push_back(item);
-				}else if( chkWeek == key->dateList[i].endDayOfWeek ){
-					TIME_SEARCH item;
-					item.week = chkWeek;
-					item.start = 0;
-					item.end = end;
-					timeList.push_back(item);
-					break;
-				}else{
-					TIME_SEARCH item;
-					item.week = chkWeek;
-					item.start = 0;
-					item.end = 23*60+59;
-					timeList.push_back(item);
-				}
-				chkWeek++;
-				if( chkWeek >= 7 ){
-					chkWeek = 0;
-				}
-			}
-		}
-	}
+	wstring targetWord;
 	
 	//サービスごとに検索
 	for( size_t i=0; i<key->serviceList.size(); i++ ){
@@ -621,12 +599,12 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 				}
 
 				//時間確認
-				if( timeList.size() > 0 ){
+				if( key->dateList.size() > 0 ){
 					if( itrEvent->second->StartTimeFlag == FALSE ){
 						//開始時間不明なので対象外
 						continue;
 					}
-					BOOL inTime = IsInDateTime(&timeList, itrEvent->second->start_time);
+					BOOL inTime = IsInDateTime(key->dateList, itrEvent->second->start_time);
 					if( key->notDateFlag == 0 ){
 						if( inTime == FALSE ){
 							//時間範囲外なので対象外
@@ -640,41 +618,55 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 					}
 				}
 
-				//キーワード確認
-				if( notKeyList.size() != 0 ){
-					if( IsFindKeyword(key->regExpFlag, regExp, key->titleOnlyFlag, caseFlag, &notKeyList, itrEvent->second->shortInfo.get(), itrEvent->second->extInfo.get(), FALSE) == TRUE ){
-						//notキーワード見つかったので対象外
+				//番組長で絞り込み
+				if( key->chkDurationMin != 0 ){
+					if( (LONGLONG)key->chkDurationMin * 60 > itrEvent->second->durationSec){
 						continue;
 					}
-
-					//if( key->regExpFlag == FALSE && key->aimaiFlag == 1){
-					//	//あいまい検索
-					//	if( IsFindLikeKeyword(key->titleOnlyFlag, &notKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, FALSE) == TRUE ){
-					//		//notキーワード見つかったので対象外
-					//		continue;
-					//	}
-					//}else{
-					//	if( IsFindKeyword(key->regExpFlag, key->titleOnlyFlag, &notKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, FALSE) == TRUE ){
-					//		//notキーワード見つかったので対象外
-					//		continue;
-					//	}
-					//}
 				}
-				if( andKeyList.size() != 0 ){
-					//if( IsFindKeyword(key->regExpFlag, key->titleOnlyFlag, &andKeyList, itrEvent->second->shortInfo, itrEvent->second->extInfo, TRUE) == FALSE ){
-					//	//andキーワード見つからなかったので対象外
-					//	continue;
-					//}
-					if( key->regExpFlag == FALSE && key->aimaiFlag == 1){
-						//あいまい検索
-						if( IsFindLikeKeyword(key->titleOnlyFlag, caseFlag, &andKeyList, itrEvent->second->shortInfo.get(), itrEvent->second->extInfo.get(), TRUE, &matchKey) == FALSE ){
-							//andキーワード見つからなかったので対象外
+				if( key->chkDurationMax != 0 ){
+					if( (LONGLONG)key->chkDurationMax * 60 < itrEvent->second->durationSec){
+						continue;
+					}
+				}
+
+				//キーワード確認
+				if( itrEvent->second->shortInfo == NULL ){
+					if( andKeyList.size() != 0 ){
+						//内容にかかわらず対象外
+						continue;
+					}
+				}else if( andKeyList.size() != 0 || notKeyList.size() != 0 ){
+					//検索対象の文字列作成
+					targetWord = itrEvent->second->shortInfo->event_name;
+					if( key->titleOnlyFlag == FALSE ){
+						targetWord += L"\r\n";
+						targetWord += itrEvent->second->shortInfo->text_char;
+						if( itrEvent->second->extInfo != NULL ){
+							targetWord += L"\r\n";
+							targetWord += itrEvent->second->extInfo->text_char;
+						}
+					}
+					ConvertSearchText(targetWord);
+
+					if( notKeyList.size() != 0 ){
+						if( IsFindKeyword(key->regExpFlag, regExp, caseFlag, &notKeyList, targetWord, FALSE) != FALSE ){
+							//notキーワード見つかったので対象外
 							continue;
 						}
-					}else{
-						if( IsFindKeyword(key->regExpFlag, regExp, key->titleOnlyFlag, caseFlag, &andKeyList, itrEvent->second->shortInfo.get(), itrEvent->second->extInfo.get(), TRUE, &matchKey) == FALSE ){
-							//andキーワード見つからなかったので対象外
-							continue;
+					}
+					if( andKeyList.size() != 0 ){
+						if( key->regExpFlag == FALSE && key->aimaiFlag == 1 ){
+							//あいまい検索
+							if( IsFindLikeKeyword(caseFlag, &andKeyList, targetWord, TRUE, &matchKey) == FALSE ){
+								//andキーワード見つからなかったので対象外
+								continue;
+							}
+						}else{
+							if( IsFindKeyword(key->regExpFlag, regExp, caseFlag, &andKeyList, targetWord, TRUE, &matchKey) == FALSE ){
+								//andキーワード見つからなかったので対象外
+								continue;
+							}
 						}
 					}
 				}
@@ -717,9 +709,45 @@ BOOL CEpgDBManager::IsEqualContent(vector<EPGDB_CONTENT_DATA>* searchKey, vector
 {
 	for( size_t i=0; i<searchKey->size(); i++ ){
 		for( size_t j=0; j<eventData->size(); j++ ){
+
+			/*本来の比較コード(CS用ジャンルコード対応に修正済))
 			if( (*searchKey)[i].content_nibble_level_1 == (*eventData)[j].content_nibble_level_1 ){
 				if( (*searchKey)[i].content_nibble_level_2 != 0xFF ){
 					if( (*searchKey)[i].content_nibble_level_2 == (*eventData)[j].content_nibble_level_2 ){
+						if( (*eventData)[j].content_nibble_level_1 == 0x0e && (*eventData)[j].content_nibble_level_2 == 0x01 )
+						{
+							if( (*searchKey)[i].user_nibble_1 == (*eventData)[j].user_nibble_1 ){
+								if( (*searchKey)[i].user_nibble_2 != 0xFF ){
+									if( (*searchKey)[i].user_nibble_2 == (*eventData)[j].user_nibble_2 ){
+										return TRUE;
+									}
+								}else{
+									return TRUE;
+								}
+							}
+						}else{
+							return TRUE;
+						}
+					}
+				}else{
+					return TRUE;
+				}
+			}
+			*/
+
+			//CS用ジャンルコードへの仮対応版
+			BYTE event_nibble_level_1=(*eventData)[j].content_nibble_level_1;
+			BYTE event_nibble_level_2=(*eventData)[j].content_nibble_level_2;
+
+			if( event_nibble_level_1 == 0x0e && event_nibble_level_2 == 0x01 )
+			{
+				event_nibble_level_1=(*eventData)[j].user_nibble_1 | 0x70;
+				event_nibble_level_2=(*eventData)[j].user_nibble_2;
+			}
+
+			if( (*searchKey)[i].content_nibble_level_1 == event_nibble_level_1 ){
+				if( (*searchKey)[i].content_nibble_level_2 != 0xFF ){
+					if( (*searchKey)[i].content_nibble_level_2 == event_nibble_level_2 ){
 						return TRUE;
 					}
 				}else{
@@ -731,16 +759,18 @@ BOOL CEpgDBManager::IsEqualContent(vector<EPGDB_CONTENT_DATA>* searchKey, vector
 	return FALSE;
 }
 
-BOOL CEpgDBManager::IsInDateTime(vector<TIME_SEARCH>* timeList, SYSTEMTIME startTime)
+BOOL CEpgDBManager::IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList, const SYSTEMTIME& time)
 {
-	if( timeList == NULL ){
-		return FALSE;
-	}
-
-	DWORD start = startTime.wHour*60 + startTime.wMinute;
-	for( size_t i=0; i<timeList->size(); i++){
-		if( (*timeList)[i].week == startTime.wDayOfWeek ){
-			if( (*timeList)[i].start <= start && start <= (*timeList)[i].end ){
+	int weekMin = (time.wDayOfWeek * 24 + time.wHour) * 60 + time.wMinute;
+	for( size_t i=0; i<dateList.size(); i++ ){
+		int start = (dateList[i].startDayOfWeek * 24 + dateList[i].startHour) * 60 + dateList[i].startMin;
+		int end = (dateList[i].endDayOfWeek * 24 + dateList[i].endHour) * 60 + dateList[i].endMin;
+		if( start >= end ){
+			if( start <= weekMin || weekMin <= end ){
+				return TRUE;
+			}
+		}else{
+			if( start <= weekMin && weekMin <= end ){
 				return TRUE;
 			}
 		}
@@ -749,31 +779,16 @@ BOOL CEpgDBManager::IsInDateTime(vector<TIME_SEARCH>* timeList, SYSTEMTIME start
 	return FALSE;
 }
 
-struct IGNORE_CASE_COMPARATOR{
-	bool operator()(wchar_t l, wchar_t r){
-		return (L'a' <= l && l <= L'z' ? l - L'a' + L'A' : l) == (L'a' <= r && r <= L'z' ? r - L'a' + L'A' : r);
-	}
-};
-
-BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titleOnlyFlag, BOOL caseFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey)
+static wstring::const_iterator SearchKeyword(const wstring& str, const wstring& key, BOOL caseFlag)
 {
-	if( shortInfo == NULL ){
-		//基本情報ないので対象外
-		return FALSE;
-	}
+	return caseFlag ?
+		std::search(str.begin(), str.end(), key.begin(), key.end()) :
+		std::search(str.begin(), str.end(), key.begin(), key.end(),
+			[](wchar_t l, wchar_t r) { return (L'a' <= l && l <= L'z' ? l - L'a' + L'A' : l) == (L'a' <= r && r <= L'z' ? r - L'a' + L'A' : r); });
+}
 
-	//検索対象の文字列作成
-	wstring word = shortInfo->event_name;
-	if( titleOnlyFlag == FALSE ){
-		word += L"\r\n";
-		word += shortInfo->text_char;
-		if( extInfo != NULL ){
-			word += L"\r\n";
-			word += extInfo->text_char;
-		}
-	}
-	ConvertSearchText(word);
-
+BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey)
+{
 	if( regExpFlag == TRUE ){
 		//正規表現モード
 		try{
@@ -808,8 +823,7 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 		//通常
 		if( andMode == TRUE ){
 			for( size_t i=0; i<keyList->size(); i++ ){
-				if( caseFlag != FALSE && word.find((*keyList)[i]) == string::npos ||
-				    caseFlag == FALSE && search(word.begin(), word.end(), (*keyList)[i].begin(), (*keyList)[i].end(), IGNORE_CASE_COMPARATOR()) == word.end() ){
+				if( SearchKeyword(word, (*keyList)[i], caseFlag) == word.end() ){
 					//見つからなかったので終了
 					return FALSE;
 				}else{
@@ -824,8 +838,7 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 			return TRUE;
 		}else{
 			for( size_t i=0; i<keyList->size(); i++ ){
-				if( caseFlag != FALSE && word.find((*keyList)[i]) != string::npos ||
-				    caseFlag == FALSE && search(word.begin(), word.end(), (*keyList)[i].begin(), (*keyList)[i].end(), IGNORE_CASE_COMPARATOR()) != word.end() ){
+				if( SearchKeyword(word, (*keyList)[i], caseFlag) != word.end() ){
 					//見つかったので終了
 					return TRUE;
 				}
@@ -835,24 +848,8 @@ BOOL CEpgDBManager::IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL titl
 	}
 }
 
-BOOL CEpgDBManager::IsFindLikeKeyword(BOOL titleOnlyFlag, BOOL caseFlag, vector<wstring>* keyList, EPGDB_SHORT_EVENT_INFO* shortInfo, EPGDB_EXTENDED_EVENT_INFO* extInfo, BOOL andMode, wstring* findKey)
+BOOL CEpgDBManager::IsFindLikeKeyword(BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey)
 {
-	if( shortInfo == NULL ){
-		//基本情報ないので対象外
-		return FALSE;
-	}
-
-	//検索対象の文字列作成
-	wstring word = shortInfo->event_name;
-	if( titleOnlyFlag == FALSE ){
-		word += L"\r\n";
-		word += shortInfo->text_char;
-		if( extInfo != NULL ){
-			word += L"\r\n";
-			word += extInfo->text_char;
-		}
-	}
-	ConvertSearchText(word);
 	BOOL ret = FALSE;
 
 	DWORD hitCount = 0;
@@ -861,12 +858,10 @@ BOOL CEpgDBManager::IsFindLikeKeyword(BOOL titleOnlyFlag, BOOL caseFlag, vector<
 		wstring key= L"";
 		for( size_t j=0; j<(*keyList)[i].size(); j++ ){
 			key += (*keyList)[i].at(j);
-			if( caseFlag != FALSE && word.find(key) == string::npos ||
-			    caseFlag == FALSE && search(word.begin(), word.end(), key.begin(), key.end(), IGNORE_CASE_COMPARATOR()) == word.end() ){
+			if( SearchKeyword(word, key, caseFlag) == word.end() ){
 				missCount+=1;
 				key = (*keyList)[i].at(j);
-				if( caseFlag != FALSE && word.find(key) == string::npos ||
-				    caseFlag == FALSE && search(word.begin(), word.end(), key.begin(), key.end(), IGNORE_CASE_COMPARATOR()) == word.end() ){
+				if( SearchKeyword(word, key, caseFlag) == word.end() ){
 					missCount+=1;
 					key = L"";
 				}else{
