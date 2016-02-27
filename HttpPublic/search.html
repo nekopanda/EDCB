@@ -2,7 +2,7 @@ dofile(mg.document_root..'\\string.lua')
 dofile(mg.document_root..'\\util.lua')
 
 path='Setting\\HttpPublic.ini'
-tkntrec=0+edcb.GetPrivateProfile('SET','tkntrec',false,path)~=0
+tkntrec=0+edcb.GetPrivateProfile('SET','tkntrec',true,path)~=0
 subGenreoption=edcb.GetPrivateProfile('SET','subGenreoption','ALL',path)
 
 PAGE_COUNT=30
