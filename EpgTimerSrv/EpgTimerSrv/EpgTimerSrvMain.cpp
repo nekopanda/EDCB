@@ -1221,6 +1221,17 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			}
 		}
 		break;
+	case CMD2_EPG_SRV_ISREGIST_GUI_TCP:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_ISREGIST_GUI_TCP\r\n");
+			REGIST_TCP_INFO val;
+			if( ReadVALUE(&val, cmdParam->data, cmdParam->dataSize, NULL) ){
+				BOOL registered = sys->notifyManager.IsRegistTCP(val);
+				resParam->data = NewWriteVALUE(registered, resParam->dataSize);
+				resParam->param = CMD_SUCCESS;
+			}
+		}
+		break;
 	case CMD2_EPG_SRV_ENUM_RESERVE:
 		OutputDebugString(L"CMD2_EPG_SRV_ENUM_RESERVE\r\n");
 		resParam->data = NewWriteVALUE(sys->reserveManager.GetReserveDataAll(), resParam->dataSize);
