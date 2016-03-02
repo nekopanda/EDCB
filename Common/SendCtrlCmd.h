@@ -551,6 +551,19 @@ public:
 		return SendAndReceiveCmdData(CMD2_EPG_SRV_NWPLAY_TF_OPEN, val, resVal);
 	}
 
+	//録画ファイルのネットワークパスを取得
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]ローカルパス
+	// resVal			[OUT]ネットワークパス
+	DWORD SendGetRecFileNetworkPath(
+		wstring val,
+		wstring* resVal
+		){
+		return SendAndReceiveCmdData(CMD2_EPG_SRV_GET_NETWORK_PATH, val, resVal);
+	}
+
 //コマンドバージョン対応版
 	//予約一覧を取得する
 	//戻り値：
