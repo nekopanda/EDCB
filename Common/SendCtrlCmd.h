@@ -385,6 +385,19 @@ public:
 		DWORD* resValSize
 		);
 
+	//指定ファイルをまとめて転送する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// list			[IN]ファイル名のリスト
+	// resVal		[OUT]ファイルデータのリスト
+	DWORD SendFileCopy2(
+		const vector<EPGDB_SEARCH_KEY_INFO>& list,
+		vector<FILE_DATA>* resVal
+		){
+		return SendAndReceiveCmdData2(CMD2_EPG_SRV_FILE_COPY2, list, resVal);
+	}
+
 	//PlugInファイルの一覧を取得する
 	//戻り値：
 	// エラーコード
