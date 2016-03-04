@@ -84,7 +84,7 @@ namespace EpgTimer.EpgView
             }
             else
             {
-                popupItem.MinHeight = Math.Min(scroll.ContentVerticalOffset + scroll.ActualHeight - viewInfo.TopPos - 18, viewInfo.Height);
+                popupItem.MinHeight = Math.Max(0, Math.Min(scroll.ContentVerticalOffset + scroll.ActualHeight - viewInfo.TopPos - 18, viewInfo.Height));
             }
 
             double sizeMin = Settings.Instance.FontSizeTitle - 1;

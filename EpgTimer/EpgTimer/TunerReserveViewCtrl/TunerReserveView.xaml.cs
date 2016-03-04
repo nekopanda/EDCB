@@ -71,7 +71,7 @@ namespace EpgTimer.TunerReserveViewCtrl
             }
             else
             {
-                popupItem.MinHeight = Math.Min(scroll.ContentVerticalOffset + scroll.ActualHeight - viewInfo.TopPos - 18, viewInfo.Height);
+                popupItem.MinHeight = Math.Max(0, Math.Min(scroll.ContentVerticalOffset + scroll.ActualHeight - viewInfo.TopPos - 18, viewInfo.Height));
             }
             //popupItemTextArea.Margin = new Thickness(2, -1, 0, 0);
             popupItemTextArea.Margin = new Thickness(1, -1, 5, 1);
