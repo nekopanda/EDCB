@@ -569,6 +569,7 @@ namespace EpgTimer
                 CommonManager.Instance.DB.ReloadReserveInfo();
                 CommonManager.Instance.DB.ReloadEpgData();
                 reserveView.UpdateInfo();
+                infoWindowViewModel.UpdateInfo();
                 tunerReserveView.UpdateInfo();
                 autoAddView.UpdateAutoAddInfo();
                 recInfoView.UpdateInfo();
@@ -1448,6 +1449,7 @@ namespace EpgTimer
                         if (Settings.Instance.DisplayReserveAutoAddMissing == true)
                         {
                             reserveView.UpdateInfo();
+                            infoWindowViewModel.UpdateInfo();
                             tunerReserveView.UpdateInfo();
                             epgView.UpdateReserveData();
                             SearchWindow.UpdatesInfo(true);
@@ -1466,6 +1468,7 @@ namespace EpgTimer
                         if (Settings.Instance.DisplayReserveAutoAddMissing == true)
                         {
                             reserveView.UpdateInfo();
+                            infoWindowViewModel.UpdateInfo();
                             tunerReserveView.UpdateInfo();
                             epgView.UpdateReserveData();
                             SearchWindow.UpdatesInfo(true);
