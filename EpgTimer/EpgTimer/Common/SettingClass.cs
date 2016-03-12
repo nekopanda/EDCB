@@ -178,8 +178,8 @@ namespace EpgTimer
         }
 #endif
 
-        public static bool CanReadInifile { get { return CommonManager.Instance.NW.IsConnected == false || IniSetting.Instance.CanReadInifile == true; } }
-        public static bool CanUpdateInifile { get { return CommonManager.Instance.NW.IsConnected == false || IniSetting.Instance.CanUpdateInifile == true; } }
+        public static bool CanReadInifile { get { return IniSetting.Instance.CanReadInifile == true || CommonManager.Instance.NWMode == false; } }
+        public static bool CanUpdateInifile { get { return IniSetting.Instance.CanUpdateInifile == true || CommonManager.Instance.NWMode == false; } }
     }
 
     // サーバーから取得したINIファイルをパースして構造体で保持する
