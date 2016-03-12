@@ -473,7 +473,18 @@ namespace EpgTimer
             // サーバー側のINIファイルの直接参照をしなくなったので、IniPath が必要になるのは
             // INIファイル更新の非対応サーバーに対してローカル接続(PIPE接続)した場合のみ。
             // ローカル接続する EpgTimer.exe と EpgTimerSrv.exe のバージョンは揃えるべきだとは思う。
-            get { return ModulePath; }
+            get
+            {
+                if (CommonManager.Instance.NWMode == false)
+                {
+                    var TimerSrv = System.Diagnostics.Process.GetProcessesByName("EpgTimerSrv");
+                    if (TimerSrv.Count() > 0)
+                    {
+                        return Path.GetDirectoryName(TimerSrv[0].MainModule.FileName);
+                    }
+                }
+                return ModulePath;
+            }
         }
         public static string CommonIniPath
         {
