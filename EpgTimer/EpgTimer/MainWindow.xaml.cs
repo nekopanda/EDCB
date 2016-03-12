@@ -112,6 +112,8 @@ namespace EpgTimer
 
             try
             {
+                infoWindowViewModel = new InfoWindowViewModel();
+
                 // 多重起動時は最小化しない
                 if (firstInstance && Settings.Instance.WakeMin == true)
                 {
@@ -193,8 +195,6 @@ namespace EpgTimer
 
                 CheckCmdLine();
 
-                // 設定から情報を読み取るので設定をロードした後作る
-                infoWindowViewModel = new InfoWindowViewModel();
                 if(Settings.Instance.InfoWindowEnabled)
                 {
                     ShowInfoWindow();
