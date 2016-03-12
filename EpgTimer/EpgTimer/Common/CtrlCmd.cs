@@ -460,13 +460,15 @@ namespace EpgTimer
     /// <summary>CtrlCmdコマンド送信クラス(SendCtrlCmd.h/cppから移植)</summary>
     public class CtrlCmdUtil
     {
+        // 未接続時にNamedPipeやlocalhostに送信しないように初期値を設定する
+        private bool tcpFlag = true;
+        private string ip = "";
+        private uint port = 0;
+
         private const ushort CMD_VER = 6;
-        private bool tcpFlag = false;
         private int connectTimeOut = 15000;
         private string eventName = "Global\\EpgTimerSrvConnect";
         private string pipeName = "EpgTimerSrvPipe";
-        private string ip = "127.0.0.1";
-        private uint port = 5678;
         // TODO: 本来この排他用オブジェクトは不要だが、このクラスの利用側がマルチスレッドを考慮していないようなので念のため従来仕様に合わせる
         private object thisLock = new object();
 
