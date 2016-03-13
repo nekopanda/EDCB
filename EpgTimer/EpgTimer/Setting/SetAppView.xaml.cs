@@ -285,6 +285,8 @@ namespace EpgTimer.Setting
 
                 checkBox_timeSync.IsEnabled = false; // EPG取得時に放送波時間でPC時計を同期する
                 checkBox_srvResident.IsEnabled = false; // EpgTimerSrvを常駐させる
+                checkBox_srvShowTray.IsEnabled = false; // タスクトレイアイコンを表示する
+                checkBox_srvNoBalloonTip.IsEnabled = false; // バルーンチップでの動作通知を抑制する
 
                 checkBox_wakeReconnect.IsEnabled = true; // 起動時に前回接続サーバーに接続する
                 checkBox_suspendClose.IsEnabled = true; // 休止／スタンバイ移行時にEpgTimerNWを終了する
@@ -292,6 +294,10 @@ namespace EpgTimer.Setting
                 checkBox_keepTCPConnect.IsEnabled = true; // EpgTimerSrvとの接続維持を試みる
                 textBox_keepTCPConnect.IsEnabled = true;
                 label_keepTCPConnect.IsEnabled = true; // 分間隔
+            }
+            if (ServiceCtrlClass.IsStarted("EpgTimer Service") == true)
+            {
+                checkBox_srvResident.IsEnabled = false;
             }
 
             checkBox_autoDelRecInfo.IsEnabled = IniFileHandler.CanUpdateInifile; // 録画結果を自動的に削除する
@@ -323,17 +329,10 @@ namespace EpgTimer.Setting
                     checkBox_timeSync.IsChecked = true;
                 }
 
-                if (ServiceCtrlClass.IsStarted("EpgTimer Service") == true)
-                {
-                    checkBox_srvResident.IsEnabled = false;
-                }
-                else if (checkBox_srvResident.IsEnabled)
-                {
-                    int residentMode = IniFileHandler.GetPrivateProfileInt("SET", "ResidentMode", 0, SettingPath.TimerSrvIniPath);
-                    checkBox_srvResident.IsChecked = residentMode >= 1;
-                    checkBox_srvShowTray.IsChecked = residentMode >= 2;
-                    checkBox_srvNoBalloonTip.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "NoBalloonTip", 0, SettingPath.TimerSrvIniPath) != 0;
-                }
+                int residentMode = IniFileHandler.GetPrivateProfileInt("SET", "ResidentMode", 0, SettingPath.TimerSrvIniPath);
+                checkBox_srvResident.IsChecked = residentMode >= 1;
+                checkBox_srvShowTray.IsChecked = residentMode >= 2;
+                checkBox_srvNoBalloonTip.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "NoBalloonTip", 0, SettingPath.TimerSrvIniPath) == 1;
 
                 if (IniFileHandler.GetPrivateProfileInt("SET", "EnableTCPSrv", 0, SettingPath.TimerSrvIniPath) == 1)
                 {
