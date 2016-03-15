@@ -253,6 +253,8 @@ namespace EpgTimer.Setting
             }
         }
 
+        private string TimerSrvFolder { get { return System.IO.Path.GetDirectoryName(SettingPath.TimerSrvIniPath); } }
+
         private void SetBasicView_tabItem4()
         {
             // tabItem4 - サーバー設定
@@ -269,7 +271,7 @@ namespace EpgTimer.Setting
                 textBox_httpPort.LostKeyboardFocus += textBox_httpPort_LostFocus;
                 checkBox_dlnaServer.Click += checkBox_dlnaServer_Click;
 
-                document_root = System.IO.Path.GetDirectoryName(SettingPath.TimerSrvIniPath) + "\\HttpPublic";
+                document_root = TimerSrvFolder + "\\HttpPublic";
 
                 string httppublicIniPath = SettingPath.SettingFolderPath + "\\HttpPublic.ini";
                 textBox_ffmpegPath.Text = IniFileHandler.GetPrivateProfileString("SET", "ffmpeg", "", httppublicIniPath);
@@ -287,16 +289,16 @@ namespace EpgTimer.Setting
                 checkBox_httpLog.IsChecked = enableHttpSrv == 2;
 
                 textBox_httpPort.Text = IniFileHandler.GetPrivateProfileString("SET", "HttpPort", "5510", SettingPath.TimerSrvIniPath);
+                textBox_opensslPath.Text = IniFileHandler.GetPrivateProfileString("SET", "OpensslExeFile", "", SettingPath.TimerSrvIniPath);
 
                 textBox_httpAcl.Text = IniFileHandler.GetPrivateProfileString("SET", "HttpAccessControlList", "+127.0.0.1", SettingPath.TimerSrvIniPath);
                 textBox_httpThreads.Text = IniFileHandler.GetPrivateProfileInt("SET", "HttpNumThreads", 3, SettingPath.TimerSrvIniPath).ToString();
                 textBox_httpTimeout.Text = IniFileHandler.GetPrivateProfileInt("SET", "HttpRequestTimeoutSec", 120, SettingPath.TimerSrvIniPath).ToString();
-                textBox_httpAuthDom.Text = IniFileHandler.GetPrivateProfileString("SET", "HttpAuthenticationDomain", "mydomain.com", SettingPath.TimerSrvIniPath);
 
                 textBox_docrootPath.Text = IniFileHandler.GetPrivateProfileString("SET", "HttpPublicFolder", document_root, SettingPath.TimerSrvIniPath);
 
-                string srvPath = System.IO.Path.GetDirectoryName(SettingPath.TimerSrvIniPath);
-                checkBox_httpAuth.IsChecked = File.Exists(srvPath + "\\glpasswd");
+                checkBox_httpAuth.IsChecked = File.Exists(TimerSrvFolder + "\\glpasswd");
+                textBox_httpAuthDom.Text = IniFileHandler.GetPrivateProfileString("SET", "HttpAuthenticationDomain", "mydomain.com", SettingPath.TimerSrvIniPath);
 
                 checkBox_dlnaServer.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "EnableDMS", 0, SettingPath.TimerSrvIniPath) == 1;
             }
@@ -310,10 +312,10 @@ namespace EpgTimer.Setting
             else
             {
                 // ネットワーク接続時は警告を出さない
-                textBlock_httpWarn.Visibility = Visibility.Collapsed;
-                textBlock_opensslWarn.Visibility = Visibility.Collapsed;
-                textBlock_pemWarn.Visibility = Visibility.Collapsed;
-                textBlock_dlnaWarn.Visibility = Visibility.Collapsed;
+                warn_http.Visibility = Visibility.Collapsed;
+                warn_ssldll.Visibility = Visibility.Collapsed;
+                warn_sslcertpem.Visibility = Visibility.Collapsed;
+                warn_dlna.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -485,6 +487,7 @@ namespace EpgTimer.Setting
             {
                 IniFileHandler.WritePrivateProfileString("SET", "HttpPort", textBox_httpPort.Text, SettingPath.TimerSrvIniPath);
             }
+
             if (textBox_httpAcl.IsEnabled)
             {
                 IniFileHandler.WritePrivateProfileString("SET", "HttpAccessControlList", textBox_httpAcl.Text, SettingPath.TimerSrvIniPath);
@@ -520,7 +523,6 @@ namespace EpgTimer.Setting
             {
                 IniFileHandler.WritePrivateProfileString("SET", "EnableDMS", checkBox_dlnaServer.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
             }
-
         }
 
         private void button_setPath_Click(object sender, RoutedEventArgs e)
@@ -838,25 +840,28 @@ namespace EpgTimer.Setting
 
         private bool CheckHttpFiles()
         {
-            string srvPath = System.IO.Path.GetDirectoryName(SettingPath.TimerSrvIniPath);
-            bool bRet = checkBox_httpServer.IsChecked == false || Directory.Exists(textBox_docrootPath.Text) && File.Exists(srvPath + "\\lua52.dll");
-            textBlock_httpWarn.Visibility = bRet ? Visibility.Collapsed : Visibility.Visible;
+            bool bRet = checkBox_httpServer.IsChecked == false || Directory.Exists(textBox_docrootPath.Text) && File.Exists(TimerSrvFolder + "\\lua52.dll");
+            warn_http.IsEnabled = bRet == false;
+            warn_http.Visibility = bRet ? Visibility.Collapsed : Visibility.Visible;
             return bRet;
         }
+
         private bool CheckHttpsFiles()
         {
             bool bFile = checkBox_httpServer.IsChecked == false || textBox_httpPort.Text.IndexOf("s") < 0;
             bool bPem = true;
             if (!bFile)
             {
-                string srvPath = System.IO.Path.GetDirectoryName(SettingPath.TimerSrvIniPath);
-                bFile = File.Exists(srvPath + "\\ssleay32.dll") && File.Exists(srvPath + "\\libeay32.dll");
-                bPem = bFile && File.Exists(srvPath + "\\ssl_cert.pem");
+                bFile = File.Exists(TimerSrvFolder + "\\ssleay32.dll") && File.Exists(TimerSrvFolder + "\\libeay32.dll");
+                bPem = bFile && File.Exists(TimerSrvFolder + "\\ssl_cert.pem");
             }
-            textBlock_opensslWarn.Visibility = bFile? Visibility.Collapsed : Visibility.Visible;
-            textBlock_pemWarn.Visibility = bPem ? Visibility.Collapsed : Visibility.Visible;
+            warn_ssldll.IsEnabled = bFile == false;
+            warn_ssldll.Visibility = bFile? Visibility.Collapsed : Visibility.Visible;
+            warn_sslcertpem.IsEnabled = bPem == false;
+            warn_sslcertpem.Visibility = bPem ? Visibility.Collapsed : Visibility.Visible;
             return bFile && bPem;
         }
+
         private bool CheckDlnaFiles()
         {
             bool bRet = checkBox_httpServer.IsChecked == false || checkBox_dlnaServer.IsChecked == false;
@@ -864,7 +869,8 @@ namespace EpgTimer.Setting
             {
                 bRet = Directory.Exists(textBox_docrootPath.Text + "\\dlna");
             }
-            textBlock_dlnaWarn.Visibility = bRet ? Visibility.Collapsed : Visibility.Visible;
+            warn_dlna.IsEnabled = bRet == false;
+            warn_dlna.Visibility = bRet ? Visibility.Collapsed : Visibility.Visible;
             return bRet;
         }
 
@@ -884,14 +890,17 @@ namespace EpgTimer.Setting
                 CheckDlnaFiles();
             }
         }
+
         private void textBox_httpPort_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (!CheckHttpsFiles())
-            {
-                MessageBox.Show("SSL 用のファイルが足りません", "確認");
-                checkBox_httpServer.IsChecked = false;
-            }
+            CheckHttpsFiles();
         }
+
+        private void textBox_opensslPath_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            button_generatePem.IsEnabled = File.Exists(textBox_opensslPath.Text);
+        }
+
         private void checkBox_dlnaServer_Click(object sender, RoutedEventArgs e)
         {
             if (!CheckDlnaFiles())
@@ -900,6 +909,72 @@ namespace EpgTimer.Setting
                 checkBox_dlnaServer.IsChecked = false;
             }
         }
+
+        private void button_opensslPath_Click(object sender, RoutedEventArgs e)
+        {
+            string path = CommonManager.Instance.GetFileNameByDialog(textBox_opensslPath.Text, "openssl.exe の場所", ".exe");
+            if (path != null)
+            {
+                textBox_opensslPath.Text = path;
+
+                // クローズ時 TextBox が IsEnabled=false の場合があるためここで保存しておく
+                IniFileHandler.WritePrivateProfileString("SET", "OpensslExeFile", textBox_opensslPath.Text, SettingPath.TimerSrvIniPath);
+            }
+        }
+
+        private void button_generatePem_Click(object sender, RoutedEventArgs e)
+        {
+            string cnfFile = "";
+            string keyFile = "";
+            string csrFile = "";
+            string pemFile = TimerSrvFolder + "\\ssl_cert.pem";
+            try
+            {
+                cnfFile = System.IO.Path.GetTempFileName();
+                keyFile = System.IO.Path.GetTempFileName();
+                csrFile = System.IO.Path.GetTempFileName();
+            
+                // openssl configuation file を用意する
+                StreamWriter cnf = File.CreateText(cnfFile);
+                cnf.WriteLine("[req]");
+                cnf.WriteLine("distinguished_name=a");
+                cnf.WriteLine("prompt=no");
+                cnf.WriteLine("[a]");
+                cnf.WriteLine("C=JP");
+                cnf.WriteLine("CN=" + Environment.MachineName);
+                cnf.Close();
+
+                // openssl.exe を使って ssl_cert.pem を生成する
+                System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo(textBox_opensslPath.Text);
+                startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+
+                // 秘密鍵(private key)を生成する
+                startInfo.Arguments = "genrsa -out " + keyFile + " 2048";
+                System.Diagnostics.Process.Start(startInfo).WaitForExit();
+                // 証明書署名要求(certificate signing request)を生成する
+                startInfo.Arguments = "req -config " + cnfFile + " -utf8 -new -key " + keyFile + " -out " + csrFile;
+                System.Diagnostics.Process.Start(startInfo).WaitForExit();
+                // 自己署名証明書(self signed root certificate)を生成する
+                startInfo.Arguments = "x509 -req -days 3650 -sha256 -in " + csrFile + " -signkey " + keyFile + " -out " + pemFile;
+                System.Diagnostics.Process.Start(startInfo).WaitForExit();
+
+                // 自己署名証明書に秘密鍵を追加する
+                StreamReader key = File.OpenText(keyFile);
+                StreamWriter pem = File.AppendText(pemFile);
+                pem.Write(key.ReadToEnd());
+                key.Close();
+                pem.Close();
+            }
+            catch { }
+            finally
+            {
+                File.Delete(cnfFile);
+                File.Delete(keyFile);
+                File.Delete(csrFile);
+            }
+            CheckHttpsFiles();
+        }
+
         private void button_docrootPath_Click(object sender, RoutedEventArgs e)
         {
             string path = CommonManager.Instance.GetFolderNameByDialog(textBox_docrootPath.Text, "document rootフォルダの選択");

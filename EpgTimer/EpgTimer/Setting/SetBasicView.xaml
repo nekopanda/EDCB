@@ -274,7 +274,7 @@
                     <WrapPanel Margin="0,4,0,0">
                         <CheckBox Name="checkBox_httpServer" Content="WebUI を使用する" Margin="6,4,-20,0" Width="150" VerticalAlignment="Center" />
                         <CheckBox Name="checkBox_httpLog" Content="ログを保存する" Margin="20,4,-20,0" Width="150" VerticalAlignment="Center" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_httpServer}" />
-                        <TextBlock Name="textBlock_httpWarn" Margin="20,4,0,4" Width="10000" TextWrapping="Wrap" Foreground="Red">
+                        <TextBlock Name="warn_http" Margin="20,4,0,4" Width="10000" TextWrapping="Wrap" Foreground="Red">
                             WebUI を利用するには EpgTimerSrv.exe と同じフォルダに lua52.dll が必要です。<LineBreak/>
                             入手先：<Hyperlink>https://sourceforge.net/projects/luabinaries/files/5.2.3/Windows%20Libraries/Dynamic/</Hyperlink>
                         </TextBlock>
@@ -284,14 +284,27 @@
                             <Label Content="ポート" Margin="20,0,0,0" Padding="0" Width="100" VerticalContentAlignment="Center" ToolTip="'s' を付けると HTTPS のポート指定になります。&#13;&#10;'r'をつけると HTTPS にリダイレクトします。&#13;&#10;例: 80r,443s" />
                             <TextBox Name="textBox_httpPort" Margin="0,0,30,0" Width="150" Height="25" VerticalContentAlignment="Center" />
                         </StackPanel>
-                        <TextBlock Name="textBlock_opensslWarn" Margin="20,4,0,4" Width="10000" TextWrapping="Wrap" Foreground="Red">
+                        <TextBlock Name="warn_ssldll" Margin="20,4,0,4" Width="10000" TextWrapping="Wrap" Foreground="Red">
                             HTTPS を利用するには EpgTimerSrv.exe と同じフォルダに ssleay32.dll と libeay32.dll が必要です。<LineBreak/>
                             入手先例：<Hyperlink>https://wiki.openssl.org/index.php/Binaries</Hyperlink> にある <Hyperlink>http://indy.fulgan.com/SSL</Hyperlink> など
                         </TextBlock>
-                        <TextBlock Name="textBlock_pemWarn" Margin="20,4,0,4" Width="10000" TextWrapping="Wrap" Foreground="Red">
-                            HTTPS を利用するには EpgTimerSrv.exe と同じフォルダに  ssl_cert.pem が必要です。<LineBreak/>
-                            作成方法については Document\Readme_Mod.txt を参照してください。
-                        </TextBlock>
+                        <StackPanel Name="warn_sslcertpem">
+                            <TextBlock Margin="20,4,0,0" Width="10000" TextWrapping="Wrap" Foreground="Red">
+                                HTTPS を利用するには EpgTimerSrv.exe と同じフォルダに ssl_cert.pem（秘密鍵+自己署名証明書）が必要です。
+                            </TextBlock>
+                            <Grid Margin="20,4,12,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="auto"/>
+                                    <ColumnDefinition Width="auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Grid.Column="0" Content="openssl の場所"/>
+                                <TextBox Grid.Column="1" Name="textBox_opensslPath" Height="25" VerticalContentAlignment="Center" TextChanged="textBox_opensslPath_TextChanged" />
+                                <Button Grid.Column="2" Name="button_opensslPath" Content="開く" Margin="20,0,0,0" Width="50" Height="25" Click="button_opensslPath_Click" />
+                                <Button Grid.Column="3" Name="button_generatePem" Content="秘密鍵+自己署名証明書を生成する" Margin="20,0,0,0" Width="220" Height="25" Click="button_generatePem_Click"/>
+                            </Grid>
+                        </StackPanel>
                         <StackPanel Margin="0,4,-20,0" Orientation="Horizontal">
                             <Label Content="アクセス制御" Margin="20,0,0,0" Padding="0" Width="100" VerticalContentAlignment="Center" />
                             <TextBox Name="textBox_httpAcl" Margin="0,0,30,0" Width="200" Height="25" VerticalContentAlignment="Center" />
@@ -337,7 +350,7 @@
                     </WrapPanel>
                     <WrapPanel Margin="0,4,0,0">
                         <CheckBox Name="checkBox_dlnaServer" Content="DLNA の DMS ぽい機能を使用する" Margin="6,4,-20,0" Width="220" VerticalAlignment="Center" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_httpServer}" />
-                        <TextBlock Name="textBlock_dlnaWarn" Margin="20,4,0,8" Width="10000" TextWrapping="Wrap" Foreground="Red">
+                        <TextBlock Name="warn_dlna" Margin="20,4,0,8" Width="10000" TextWrapping="Wrap" Foreground="Red">
                             DLNA の DMS ぽい機能を利用するには ini\HttpPublic フォルダにある dlna 以下のフォルダを公開フォルダにコピーしてください。
                         </TextBlock>
                     </WrapPanel>
