@@ -244,10 +244,76 @@ namespace EpgTimer.Setting
                     textBox_ngCapMin.Text = IniFileHandler.GetPrivateProfileInt("SET", "NGEpgCapTime", 20, SettingPath.TimerSrvIniPath).ToString();
                     textBox_ngTunerMin.Text = IniFileHandler.GetPrivateProfileInt("SET", "NGEpgCapTunerTime", 20, SettingPath.TimerSrvIniPath).ToString();
                 }
+
+                SetBasicView_tabItem4();
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+            }
+        }
+
+        private void SetBasicView_tabItem4()
+        {
+            // tabItem4 - サーバー設定
+            string document_root = "";
+
+            // 保存できない項目は IsEnabled = false にする
+            if (CommonManager.Instance.NWMode == true)
+            {
+                CommonManager.Instance.VUtil.DisableControlChildren(tabItem4);
+            }
+            else
+            {
+                checkBox_httpServer.Click += checkBox_httpServer_Click;
+                textBox_httpPort.LostKeyboardFocus += textBox_httpPort_LostFocus;
+                checkBox_dlnaServer.Click += checkBox_dlnaServer_Click;
+
+                document_root = System.IO.Path.GetDirectoryName(SettingPath.TimerSrvIniPath) + "\\HttpPublic";
+
+                string httppublicIniPath = SettingPath.SettingFolderPath + "\\HttpPublic.ini";
+                textBox_ffmpegPath.Text = IniFileHandler.GetPrivateProfileString("SET", "ffmpeg", "", httppublicIniPath);
+                textBox_readexPath.Text = IniFileHandler.GetPrivateProfileString("SET", "readex", "", httppublicIniPath);
+
+                // 認証部分は実装するまで非表示
+                TBD_auth.Visibility = Visibility.Collapsed;
+            }
+
+            // 読める設定のみ項目に反映させる
+            if (IniFileHandler.CanReadInifile)
+            {
+                int enableHttpSrv = IniFileHandler.GetPrivateProfileInt("SET", "EnableHttpSrv", 0, SettingPath.TimerSrvIniPath);
+                checkBox_httpServer.IsChecked = enableHttpSrv > 0;
+                checkBox_httpLog.IsChecked = enableHttpSrv == 2;
+
+                textBox_httpPort.Text = IniFileHandler.GetPrivateProfileString("SET", "HttpPort", "5510", SettingPath.TimerSrvIniPath);
+
+                textBox_httpAcl.Text = IniFileHandler.GetPrivateProfileString("SET", "HttpAccessControlList", "+127.0.0.1", SettingPath.TimerSrvIniPath);
+                textBox_httpThreads.Text = IniFileHandler.GetPrivateProfileInt("SET", "HttpNumThreads", 3, SettingPath.TimerSrvIniPath).ToString();
+                textBox_httpTimeout.Text = IniFileHandler.GetPrivateProfileInt("SET", "HttpRequestTimeoutSec", 120, SettingPath.TimerSrvIniPath).ToString();
+                textBox_httpAuthDom.Text = IniFileHandler.GetPrivateProfileString("SET", "HttpAuthenticationDomain", "mydomain.com", SettingPath.TimerSrvIniPath);
+
+                textBox_docrootPath.Text = IniFileHandler.GetPrivateProfileString("SET", "HttpPublicFolder", document_root, SettingPath.TimerSrvIniPath);
+
+                string srvPath = System.IO.Path.GetDirectoryName(SettingPath.TimerSrvIniPath);
+                checkBox_httpAuth.IsChecked = File.Exists(srvPath + "\\glpasswd");
+
+                checkBox_dlnaServer.IsChecked = IniFileHandler.GetPrivateProfileInt("SET", "EnableDMS", 0, SettingPath.TimerSrvIniPath) == 1;
+            }
+            if (CommonManager.Instance.NWMode == false)
+            {
+                // ローカル接続時はファイルやフォルダの存在確認をしておく
+                CheckHttpFiles();
+                CheckHttpsFiles();
+                CheckDlnaFiles();
+            }
+            else
+            {
+                // ネットワーク接続時は警告を出さない
+                textBlock_httpWarn.Visibility = Visibility.Collapsed;
+                textBlock_opensslWarn.Visibility = Visibility.Collapsed;
+                textBlock_pemWarn.Visibility = Visibility.Collapsed;
+                textBlock_dlnaWarn.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -386,11 +452,75 @@ namespace EpgTimer.Setting
                 {
                     IniFileHandler.WritePrivateProfileString("SET", "NGEpgCapTunerTime", textBox_ngTunerMin.Text, SettingPath.TimerSrvIniPath);
                 }
+
+                // tabItem4
+                SaveSetting_tabItem4();
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
+        }
+
+        private void SaveSetting_tabItem4()
+        {
+            // tabItem4
+            if (checkBox_httpServer.IsEnabled)
+            {
+                if (checkBox_httpServer.IsChecked == false)
+                {
+                    IniFileHandler.WritePrivateProfileString("SET", "EnableHttpSrv", "0", SettingPath.TimerSrvIniPath);
+                }
+                else if (checkBox_httpLog.IsChecked == false)
+                {
+                    IniFileHandler.WritePrivateProfileString("SET", "EnableHttpSrv", "1", SettingPath.TimerSrvIniPath);
+                }
+                else
+                {
+                    IniFileHandler.WritePrivateProfileString("SET", "EnableHttpSrv", "2", SettingPath.TimerSrvIniPath);
+                }
+            }
+
+            if (textBox_httpPort.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "HttpPort", textBox_httpPort.Text, SettingPath.TimerSrvIniPath);
+            }
+            if (textBox_httpAcl.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "HttpAccessControlList", textBox_httpAcl.Text, SettingPath.TimerSrvIniPath);
+            }
+            if (textBox_httpThreads.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "HttpNumThreads", textBox_httpThreads.Text, SettingPath.TimerSrvIniPath).ToString();
+            }
+            if (textBox_httpTimeout.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "HttpRequestTimeoutSec", textBox_httpTimeout.Text, SettingPath.TimerSrvIniPath).ToString();
+            }
+            if (textBox_httpAuthDom.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "HttpAuthenticationDomain", textBox_httpAuthDom.Text, SettingPath.TimerSrvIniPath);
+            }
+
+            if (textBox_docrootPath.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "HttpPublicFolder", textBox_docrootPath.Text, SettingPath.TimerSrvIniPath);
+            }
+            string httppublicIniPath = SettingPath.SettingFolderPath + "\\HttpPublic.ini";
+            if (textBox_ffmpegPath.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "ffmpeg", textBox_ffmpegPath.Text, httppublicIniPath);
+            }
+            if (textBox_readexPath.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "readex", textBox_readexPath.Text, httppublicIniPath);
+            }
+
+            if (checkBox_dlnaServer.IsEnabled)
+            {
+                IniFileHandler.WritePrivateProfileString("SET", "EnableDMS", checkBox_dlnaServer.IsChecked == false ? "0" : "1", SettingPath.TimerSrvIniPath);
+            }
+
         }
 
         private void button_setPath_Click(object sender, RoutedEventArgs e)
@@ -706,5 +836,95 @@ namespace EpgTimer.Setting
             }
         }
 
+        private bool CheckHttpFiles()
+        {
+            string srvPath = System.IO.Path.GetDirectoryName(SettingPath.TimerSrvIniPath);
+            bool bRet = checkBox_httpServer.IsChecked == false || Directory.Exists(textBox_docrootPath.Text) && File.Exists(srvPath + "\\lua52.dll");
+            textBlock_httpWarn.Visibility = bRet ? Visibility.Collapsed : Visibility.Visible;
+            return bRet;
+        }
+        private bool CheckHttpsFiles()
+        {
+            bool bFile = checkBox_httpServer.IsChecked == false || textBox_httpPort.Text.IndexOf("s") < 0;
+            bool bPem = true;
+            if (!bFile)
+            {
+                string srvPath = System.IO.Path.GetDirectoryName(SettingPath.TimerSrvIniPath);
+                bFile = File.Exists(srvPath + "\\ssleay32.dll") && File.Exists(srvPath + "\\libeay32.dll");
+                bPem = bFile && File.Exists(srvPath + "\\ssl_cert.pem");
+            }
+            textBlock_opensslWarn.Visibility = bFile? Visibility.Collapsed : Visibility.Visible;
+            textBlock_pemWarn.Visibility = bPem ? Visibility.Collapsed : Visibility.Visible;
+            return bFile && bPem;
+        }
+        private bool CheckDlnaFiles()
+        {
+            bool bRet = checkBox_httpServer.IsChecked == false || checkBox_dlnaServer.IsChecked == false;
+            if (!bRet)
+            {
+                bRet = Directory.Exists(textBox_docrootPath.Text + "\\dlna");
+            }
+            textBlock_dlnaWarn.Visibility = bRet ? Visibility.Collapsed : Visibility.Visible;
+            return bRet;
+        }
+
+        private void checkBox_httpServer_Click(object sender, RoutedEventArgs e)
+        {
+            if (!CheckHttpFiles())
+            {
+                MessageBox.Show("lua52.dll ファイルが見つかりません。", "確認");
+                checkBox_httpServer.IsChecked = false;
+            }
+            else
+            {
+                if (!CheckHttpsFiles())
+                {
+                    textBox_httpPort.Focus();
+                }
+                CheckDlnaFiles();
+            }
+        }
+        private void textBox_httpPort_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (!CheckHttpsFiles())
+            {
+                MessageBox.Show("SSL 用のファイルが足りません", "確認");
+                checkBox_httpServer.IsChecked = false;
+            }
+        }
+        private void checkBox_dlnaServer_Click(object sender, RoutedEventArgs e)
+        {
+            if (!CheckDlnaFiles())
+            {
+                MessageBox.Show("dlna フォルダが見つかりません。", "確認");
+                checkBox_dlnaServer.IsChecked = false;
+            }
+        }
+        private void button_docrootPath_Click(object sender, RoutedEventArgs e)
+        {
+            string path = CommonManager.Instance.GetFolderNameByDialog(textBox_docrootPath.Text, "document rootフォルダの選択");
+            if (path != null)
+            {
+                textBox_docrootPath.Text = path;
+            }
+        }
+
+        private void button_ffmpegPath_Click(object sender, RoutedEventArgs e)
+        {
+            string path = CommonManager.Instance.GetFileNameByDialog(textBox_ffmpegPath.Text, "ffmpeg.exe の場所", ".exe");
+            if (path != null)
+            {
+                textBox_ffmpegPath.Text = path;
+            }
+        }
+
+        private void button_readexPath_Click(object sender, RoutedEventArgs e)
+        {
+            string path = CommonManager.Instance.GetFileNameByDialog(textBox_readexPath.Text, "readex.exe の場所", ".exe");
+            if (path != null)
+            {
+                textBox_readexPath.Text = path;
+            }
+        }
     }
 }
