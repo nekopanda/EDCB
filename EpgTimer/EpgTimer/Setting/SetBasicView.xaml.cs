@@ -258,7 +258,6 @@ namespace EpgTimer.Setting
         private void SetBasicView_tabItem4()
         {
             // tabItem4 - サーバー設定
-            string document_root = "";
 
             // 保存できない項目は IsEnabled = false にする
             if (CommonManager.Instance.NWMode == true)
@@ -267,12 +266,6 @@ namespace EpgTimer.Setting
             }
             else
             {
-                checkBox_httpServer.Click += checkBox_httpServer_Click;
-                textBox_httpPort.LostKeyboardFocus += textBox_httpPort_LostFocus;
-                checkBox_dlnaServer.Click += checkBox_dlnaServer_Click;
-
-                document_root = TimerSrvFolder + "\\HttpPublic";
-
                 string httppublicIniPath = SettingPath.SettingFolderPath + "\\HttpPublic.ini";
                 textBox_ffmpegPath.Text = IniFileHandler.GetPrivateProfileString("SET", "ffmpeg", "", httppublicIniPath);
                 textBox_readexPath.Text = IniFileHandler.GetPrivateProfileString("SET", "readex", "", httppublicIniPath);
@@ -299,6 +292,7 @@ namespace EpgTimer.Setting
                 textBox_httpThreads.Text = IniFileHandler.GetPrivateProfileInt("SET", "HttpNumThreads", 3, SettingPath.TimerSrvIniPath).ToString();
                 textBox_httpTimeout.Text = IniFileHandler.GetPrivateProfileInt("SET", "HttpRequestTimeoutSec", 120, SettingPath.TimerSrvIniPath).ToString();
 
+                string document_root = CommonManager.Instance.NWMode ? "" : TimerSrvFolder + "\\HttpPublic";
                 textBox_docrootPath.Text = IniFileHandler.GetPrivateProfileString("SET", "HttpPublicFolder", document_root, SettingPath.TimerSrvIniPath);
 
                 checkBox_httpAuth.IsChecked = File.Exists(TimerSrvFolder + "\\glpasswd");
@@ -857,7 +851,7 @@ namespace EpgTimer.Setting
             if (!bFile)
             {
                 bFile = File.Exists(TimerSrvFolder + "\\ssleay32.dll") && File.Exists(TimerSrvFolder + "\\libeay32.dll");
-                bPem = bFile && File.Exists(TimerSrvFolder + "\\ssl_cert.pem");
+                bPem = File.Exists(TimerSrvFolder + "\\ssl_cert.pem");
             }
             warn_ssldll.IsEnabled = bFile == false;
             warn_ssldll.Visibility = bFile? Visibility.Collapsed : Visibility.Visible;
@@ -895,7 +889,7 @@ namespace EpgTimer.Setting
             }
         }
 
-        private void textBox_httpPort_LostFocus(object sender, RoutedEventArgs e)
+        private void textBox_httpPort_TextChanged(object sender, RoutedEventArgs e)
         {
             CheckHttpsFiles();
         }

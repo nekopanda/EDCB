@@ -272,7 +272,7 @@
             <TabItem Header="HTTPサーバー" Name="tabItem4">
                 <StackPanel Margin="8">
                     <WrapPanel Margin="0,4,0,0">
-                        <CheckBox Name="checkBox_httpServer" Content="WebUI を使用する" Margin="6,4,-20,0" Width="150" VerticalAlignment="Center" />
+                        <CheckBox Name="checkBox_httpServer" Content="WebUI を使用する" Margin="6,4,-20,0" Width="150" VerticalAlignment="Center" Click="checkBox_httpServer_Click" />
                         <CheckBox Name="checkBox_httpLog" Content="ログを保存する" Margin="20,4,-20,0" Width="150" VerticalAlignment="Center" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_httpServer}" />
                         <TextBlock Name="warn_http" Margin="20,4,0,4" Width="10000" TextWrapping="Wrap" Foreground="Red">
                             WebUI を利用するには EpgTimerSrv.exe と同じフォルダに lua52.dll が必要です。<LineBreak/>
@@ -282,7 +282,7 @@
                     <WrapPanel Margin="0,4,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_httpServer}">
                         <StackPanel Margin="0,4,-20,0" Orientation="Horizontal">
                             <Label Content="ポート" Margin="20,0,0,0" Padding="0" Width="100" VerticalContentAlignment="Center" ToolTip="'s' を付けると HTTPS のポート指定になります。&#13;&#10;'r'をつけると HTTPS にリダイレクトします。&#13;&#10;例: 80r,443s" />
-                            <TextBox Name="textBox_httpPort" Margin="0,0,30,0" Width="150" Height="25" VerticalContentAlignment="Center" />
+                            <TextBox Name="textBox_httpPort" Margin="0,0,30,0" Width="150" Height="25" VerticalContentAlignment="Center" TextChanged="textBox_httpPort_TextChanged" />
                         </StackPanel>
                         <TextBlock Name="warn_ssldll" Margin="20,4,0,4" Width="10000" TextWrapping="Wrap" Foreground="Red">
                             HTTPS を利用するには EpgTimerSrv.exe と同じフォルダに ssleay32.dll と libeay32.dll が必要です。<LineBreak/>
@@ -349,7 +349,7 @@
                         <Button Name="button_register" Content="ユーザー登録" Margin="20,4,30,0" Width="100" Height="25" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_httpAuth}" />
                     </WrapPanel>
                     <WrapPanel Margin="0,4,0,0">
-                        <CheckBox Name="checkBox_dlnaServer" Content="DLNA の DMS ぽい機能を使用する" Margin="6,4,-20,0" Width="220" VerticalAlignment="Center" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_httpServer}" />
+                        <CheckBox Name="checkBox_dlnaServer" Content="DLNA の DMS ぽい機能を使用する" Margin="6,4,-20,0" Width="220" VerticalAlignment="Center" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_httpServer}" Click="checkBox_dlnaServer_Click" />
                         <TextBlock Name="warn_dlna" Margin="20,4,0,8" Width="10000" TextWrapping="Wrap" Foreground="Red">
                             DLNA の DMS ぽい機能を利用するには ini\HttpPublic フォルダにある dlna 以下のフォルダを公開フォルダにコピーしてください。
                         </TextBlock>
