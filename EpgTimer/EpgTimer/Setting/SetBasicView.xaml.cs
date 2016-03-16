@@ -289,7 +289,11 @@ namespace EpgTimer.Setting
                 checkBox_httpLog.IsChecked = enableHttpSrv == 2;
 
                 textBox_httpPort.Text = IniFileHandler.GetPrivateProfileString("SET", "HttpPort", "5510", SettingPath.TimerSrvIniPath);
-                textBox_opensslPath.Text = IniFileHandler.GetPrivateProfileString("SET", "OpensslExeFile", "", SettingPath.TimerSrvIniPath);
+
+                string gitdir = Environment.GetEnvironmentVariable("git_install_root");
+                string opensslExe = string.IsNullOrEmpty(gitdir) ? "" : gitdir + "\\usr\\bin\\openssl.exe";
+                button_generatePem.IsEnabled = false;
+                textBox_opensslPath.Text = IniFileHandler.GetPrivateProfileString("SET", "OpensslExeFile", opensslExe, SettingPath.TimerSrvIniPath);
 
                 textBox_httpAcl.Text = IniFileHandler.GetPrivateProfileString("SET", "HttpAccessControlList", "+127.0.0.1", SettingPath.TimerSrvIniPath);
                 textBox_httpThreads.Text = IniFileHandler.GetPrivateProfileInt("SET", "HttpNumThreads", 3, SettingPath.TimerSrvIniPath).ToString();
