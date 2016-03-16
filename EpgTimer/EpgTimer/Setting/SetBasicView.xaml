@@ -276,7 +276,7 @@
                         <CheckBox Name="checkBox_httpLog" Content="ログを保存する" Margin="20,4,-20,0" Width="150" VerticalAlignment="Center" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_httpServer}" />
                         <TextBlock Name="warn_http" Margin="20,4,0,4" Width="10000" TextWrapping="Wrap" Foreground="Red">
                             WebUI を利用するには EpgTimerSrv.exe と同じフォルダに lua52.dll が必要です。<LineBreak/>
-                            入手先：<Hyperlink>https://sourceforge.net/projects/luabinaries/files/5.2.3/Windows%20Libraries/Dynamic/</Hyperlink>
+                            入手先：<Hyperlink Click="hyperLink_Click">https://sourceforge.net/projects/luabinaries/files/5.2.4/Windows%20Libraries/Dynamic/</Hyperlink>
                         </TextBlock>
                     </WrapPanel>
                     <WrapPanel Margin="0,4,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_httpServer}">
@@ -286,7 +286,7 @@
                         </StackPanel>
                         <TextBlock Name="warn_ssldll" Margin="20,4,0,4" Width="10000" TextWrapping="Wrap" Foreground="Red">
                             HTTPS を利用するには EpgTimerSrv.exe と同じフォルダに ssleay32.dll と libeay32.dll が必要です。<LineBreak/>
-                            入手先例：<Hyperlink>https://wiki.openssl.org/index.php/Binaries</Hyperlink> にある <Hyperlink>http://indy.fulgan.com/SSL</Hyperlink> など
+                            入手先例：<Hyperlink Click="hyperLink_Click">https://wiki.openssl.org/index.php/Binaries</Hyperlink> にある <Hyperlink NavigateUri="http://indy.fulgan.com/SSL?C=N;O=D" Click="hyperLink_Click">http://indy.fulgan.com/SSL</Hyperlink> など
                         </TextBlock>
                         <StackPanel Name="warn_sslcertpem">
                             <TextBlock Margin="20,4,0,0" Width="10000" TextWrapping="Wrap" Foreground="Red">

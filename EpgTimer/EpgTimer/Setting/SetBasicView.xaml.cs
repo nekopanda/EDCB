@@ -1001,5 +1001,30 @@ namespace EpgTimer.Setting
                 textBox_readexPath.Text = path;
             }
         }
+
+        private void hyperLink_Click(object sender, RoutedEventArgs e)
+        {
+            Hyperlink link = sender as Hyperlink;
+            if (link == null)
+                return;
+
+            string uri = null;
+            if (link.NavigateUri != null)
+            {
+                uri = link.NavigateUri.AbsoluteUri;
+            }
+            if (string.IsNullOrEmpty(uri))
+            {
+                Run r = link.Inlines.FirstInline as Run;
+                if (r != null)
+                {
+                    uri = r.Text;
+                }
+            }
+            if (!string.IsNullOrEmpty(uri))
+            {
+                System.Diagnostics.Process.Start(uri);
+            }
+        }
     }
 }
