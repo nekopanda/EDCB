@@ -477,11 +477,15 @@ namespace EpgTimer
             {
                 if (CommonManager.Instance.NWMode == false)
                 {
-                    var TimerSrv = System.Diagnostics.Process.GetProcessesByName("EpgTimerSrv");
-                    if (TimerSrv.Count() > 0)
+                    try
                     {
-                        return Path.GetDirectoryName(TimerSrv[0].MainModule.FileName);
+                        var TimerSrv = System.Diagnostics.Process.GetProcessesByName("EpgTimerSrv");
+                        if (TimerSrv.Count() > 0)
+                        {
+                            return Path.GetDirectoryName(TimerSrv[0].MainModule.FileName);
+                        }
                     }
+                    catch { }
                 }
                 return ModulePath;
             }
