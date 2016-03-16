@@ -340,13 +340,13 @@
                         <TextBox Grid.Row="2" Grid.Column="1" Name="textBox_readexPath" Height="25" Margin="0,4,0,0" VerticalContentAlignment="Center" ToolTip="ini\HttpPublic\video\readtool.zip の中にあります。展開して保存した場所を指定してください。" />
                         <Button Grid.Row="2" Grid.Column="2" Name="button_readexPath" Content="開く" Margin="12,4,12,0" Width="44" Height="25" Click="button_readexPath_Click" />
                     </Grid>
-                    <WrapPanel Name="TBD_auth" Margin="0,4,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_httpServer}">
-                        <CheckBox Name="checkBox_httpAuth" Content="認証を使用する" Margin="20,4,-20,0" Width="150" VerticalAlignment="Center" />
+                    <WrapPanel Margin="0,4,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_httpServer}">
+                        <CheckBox Name="checkBox_httpAuth" Content="認証を使用する" Margin="20,4,-20,0" Width="150" VerticalAlignment="Center" Click="checkBox_httpAuth_Click"/>
                         <StackPanel Margin="0,4,-20,0" Orientation="Horizontal" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_httpAuth}">
                             <Label Content="認証ドメイン" Margin="20,0,0,0" Padding="0" Width="100" VerticalContentAlignment="Center" />
                             <TextBox Name="textBox_httpAuthDom" Margin="0,0,30,0" Width="200" Height="25" VerticalContentAlignment="Center" />
                         </StackPanel>
-                        <Button Name="button_register" Content="ユーザー登録" Margin="20,4,30,0" Width="100" Height="25" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_httpAuth}" />
+                        <Button Name="button_register" Content="ユーザー管理" Margin="20,4,30,0" Width="100" Height="25" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_httpAuth}" Click="button_register_Click"/>
                     </WrapPanel>
                     <WrapPanel Margin="0,4,0,0">
                         <CheckBox Name="checkBox_dlnaServer" Content="DLNA の DMS ぽい機能を使用する" Margin="6,4,-20,0" Width="220" VerticalAlignment="Center" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_httpServer}" Click="checkBox_dlnaServer_Click" />

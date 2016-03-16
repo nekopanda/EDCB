@@ -269,9 +269,6 @@ namespace EpgTimer.Setting
                 string httppublicIniPath = SettingPath.SettingFolderPath + "\\HttpPublic.ini";
                 textBox_ffmpegPath.Text = IniFileHandler.GetPrivateProfileString("SET", "ffmpeg", "", httppublicIniPath);
                 textBox_readexPath.Text = IniFileHandler.GetPrivateProfileString("SET", "readex", "", httppublicIniPath);
-
-                // 認証部分は実装するまで非表示
-                TBD_auth.Visibility = Visibility.Collapsed;
             }
 
             // 読める設定のみ項目に反映させる
@@ -899,6 +896,21 @@ namespace EpgTimer.Setting
             button_generatePem.IsEnabled = File.Exists(textBox_opensslPath.Text);
         }
 
+        private void checkBox_httpAuth_Click(object sender, RoutedEventArgs e)
+        {
+            string glpasswdFile = TimerSrvFolder + "\\glpasswd";
+            if (checkBox_httpAuth.IsChecked == false && File.Exists(glpasswdFile))
+            {
+
+                string msg = "認証を止めるにはすべてのユーザーを削除する必要があります。\r\nユーザーの確認をせずに削除しますか？ 削除すると戻せません。";
+                if (MessageBox.Show(msg, "確認", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                {
+                    File.Delete(glpasswdFile);
+                }
+                checkBox_httpAuth.IsChecked = true;
+            }
+        }
+
         private void checkBox_dlnaServer_Click(object sender, RoutedEventArgs e)
         {
             if (!CheckDlnaFiles())
@@ -1023,6 +1035,18 @@ namespace EpgTimer.Setting
             {
                 System.Diagnostics.Process.Start(uri);
             }
+        }
+
+        private void button_register_Click(object sender, RoutedEventArgs e)
+        {
+            RegisterWebUserWindow dlg = new RegisterWebUserWindow(textBox_httpAuthDom.Text);
+            PresentationSource topWindow = PresentationSource.FromVisual(this);
+            if (topWindow != null)
+            {
+                dlg.Owner = (Window)topWindow.RootVisual;
+            }
+            dlg.ShowDialog();
+            checkBox_httpAuth.IsChecked = File.Exists(TimerSrvFolder + "\\glpasswd");
         }
     }
 }
