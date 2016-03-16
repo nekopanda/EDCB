@@ -1006,9 +1006,8 @@ namespace EpgTimer.Setting
 
         private void button_uninst_Click(object sender, RoutedEventArgs e)
         {
-            String exePath = SettingPath.ModulePath + "\\EpgTimerSrv.exe";
             bool started = ServiceCtrlClass.IsStarted("EpgTimer Service");
-            if (ServiceCtrlClass.Uninstall("EpgTimer Service", exePath) == false)
+            if (ServiceCtrlClass.Uninstall("EpgTimer Service") == false)
             {
                 MessageBox.Show("アンインストールに失敗しました。");
             }

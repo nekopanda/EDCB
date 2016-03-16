@@ -482,10 +482,14 @@ namespace EpgTimer
                         var TimerSrv = System.Diagnostics.Process.GetProcessesByName("EpgTimerSrv");
                         if (TimerSrv.Count() > 0)
                         {
-                            return Path.GetDirectoryName(TimerSrv[0].MainModule.FileName);
+                            string exePath = ServiceCtrlClass.QueryServiceExePath("EpgTimer Service");
+                            return Path.GetDirectoryName(exePath ?? TimerSrv[0].MainModule.FileName);
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                    }
                 }
                 return ModulePath;
             }
