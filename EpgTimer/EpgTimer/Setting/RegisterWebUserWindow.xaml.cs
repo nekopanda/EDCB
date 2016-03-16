@@ -107,7 +107,7 @@ namespace EpgTimer.Setting
             {
                 try
                 {
-                    if (UserList.Count > 0)
+                    if (UserList.Count > 1)
                     {
                         using (StreamWriter sw = File.CreateText(glpasswdFile))
                         {

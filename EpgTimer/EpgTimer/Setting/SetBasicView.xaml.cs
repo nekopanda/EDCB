@@ -907,7 +907,10 @@ namespace EpgTimer.Setting
                 {
                     File.Delete(glpasswdFile);
                 }
-                checkBox_httpAuth.IsChecked = true;
+                else
+                {
+                    checkBox_httpAuth.IsChecked = true;
+                }
             }
         }
 
