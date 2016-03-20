@@ -597,6 +597,9 @@
   <PropertyGroup>
     <PreBuildEvent>$(SolutionDir)..\bin\pre-build.cmd $(ConfigurationName) $(ProjectDir)</PreBuildEvent>
   </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>cp $(OutDir)EpgTimer.exe $(OutDir)EpgTimerNW.exe</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
