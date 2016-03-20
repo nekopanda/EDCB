@@ -482,6 +482,7 @@ namespace EpgTimer
         {
             lock (thisLock)
             {
+                this.tcpFlag = false;
                 this.eventName = eventName;
                 this.pipeName = pipeName.Substring(pipeName.StartsWith("\\\\.\\pipe\\", StringComparison.OrdinalIgnoreCase) ? 9 : 0);
             }
