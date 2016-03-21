@@ -735,7 +735,7 @@ namespace EpgTimer
         /// <summary>識別用IDの設定</summary>
         //public ErrCode SendViewSetID(int id) { return SendCmdData(CtrlCmd.CMD_VIEW_APP_SET_ID, id); }
         /// <summary>識別用IDの取得</summary>
-        //public ErrCode SendViewGetID(int* id) { return ReceiveCmdData(CtrlCmd.CMD_VIEW_APP_GET_ID, id); }
+        public ErrCode SendViewGetID(ref int val) { object o = val; var ret = ReceiveCmdData(CtrlCmd.CMD_VIEW_APP_GET_ID, ref o); val = (int)o; return ret; }
         /// <summary>予約録画用にGUIキープ</summary>
         //public ErrCode SendViewSetStandbyRec(uint keepFlag) { return SendCmdData(CtrlCmd.CMD_VIEW_APP_SET_STANDBY_REC, keepFlag); }
         /// <summary>Viewボタン登録アプリ起動</summary>

@@ -16,74 +16,96 @@
                 <Grid MinWidth="370" MinHeight="360">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="auto"/>
-                        <RowDefinition Height="auto"/>
-                        <RowDefinition Height="auto"/>
                         <RowDefinition />
                         <RowDefinition Height="auto"/>
-                        <RowDefinition Height="auto"/>
-                        <RowDefinition Height="auto"/>
                     </Grid.RowDefinitions>
-                    <Grid Grid.Row="0" Margin="0,8,0,4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="140"/>
-                            <ColumnDefinition/>
-                            <ColumnDefinition Width="auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Label Grid.Column="0" Name="label1" Content="設定関係保存フォルダ" Margin="12,0,0,0" />
-                        <TextBox Grid.Column="1" Name="textBox_setPath" Margin="12,0,0,0" VerticalContentAlignment="Center" />
-                        <Button Grid.Column="2" Name="button_setPath" Content="開く" Width="44" Margin="12,0" Click="button_setPath_Click" />
-                    </Grid>
-                    <Grid Grid.Row="1" Margin="0,4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="140"/>
-                            <ColumnDefinition/>
-                            <ColumnDefinition Width="auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Label Grid.Column="0" Name="label2" Content="録画用アプリのexe" Margin="12,0,0,0" />
-                        <TextBox Grid.Column="1" Name="textBox_exe" Margin="12,0,0,0" VerticalContentAlignment="Center" ToolTip="{Binding ElementName=textBox_exe, Path=Text}" />
-                        <Button Grid.Column="2" Name="button_exe" Content="開く" Margin="12,0" Width="44" Click="button_exe_Click" />
-                    </Grid>
-                    <Label Grid.Row="2" Name="label3" Margin="12,4">
-                        <TextBlock TextWrapping="Wrap">録画保存フォルダ　（空き容量が少ない場合、上から順に録画対象のフォルダとします）</TextBlock>
-                    </Label>
-                    <Grid Grid.Row="3" Margin="0,4">
+                    <StackPanel Grid.Row="0">
+                        <Grid Margin="12,8,12,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="140"/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" Name="label1" Content="設定関係保存フォルダ" />
+                            <TextBox Grid.Column="1" Name="textBox_setPath" VerticalContentAlignment="Center" />
+                            <Button Grid.Column="2" Name="button_setPath" Content="開く" Width="44" Margin="12,0,0,0" Click="button_setPath_Click" />
+                        </Grid>
+                        <Grid Margin="12,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="140"/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" Name="label2" Content="録画用アプリのexe" />
+                            <TextBox Grid.Column="1" Name="textBox_exe" VerticalContentAlignment="Center" ToolTip="{Binding ElementName=textBox_exe, Path=Text}" />
+                            <Button Grid.Column="2" Name="button_exe" Content="開く" Margin="12,0,0,0" Width="44" Click="button_exe_Click" />
+                        </Grid>
+                        <WrapPanel Margin="12,4">
+                            <StackPanel Orientation="Horizontal">
+                                <Label Name="label_cmdBon" Content="コマンドライン引数" Width="140" Height="28" VerticalContentAlignment="Center" />
+                                <TextBox Name="textBox_cmdBon" Width="96" VerticalContentAlignment="Center" />
+                                <Label Content="{}{BonDriver}" IsEnabled="False" VerticalContentAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="60,4,0,0">
+                                <Label Name="label_cmdMin" Content="最小化" Width="80" VerticalContentAlignment="Center" />
+                                <TextBox Name="textBox_cmdMin" Width="64" VerticalContentAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="60,4,0,0">
+                                <Label Name="label_cmdViewOff" Content="非視聴時" Width="80" VerticalContentAlignment="Center" />
+                                <TextBox Name="textBox_cmdViewOff" Width="64" VerticalContentAlignment="Center" />
+                            </StackPanel>
+                        </WrapPanel>
+                        <Label Name="label3" Margin="12,4,0,0">
+                            <TextBlock TextWrapping="Wrap">録画保存フォルダ　（空き容量が少ない場合、上から順に録画対象のフォルダとします）</TextBlock>
+                        </Label>
+                    </StackPanel>
+
+                    <Grid Grid.Row="1" Margin="45,0,12,4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="auto"/>
                             <ColumnDefinition Width="auto"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="auto"/>
                             <RowDefinition Height="auto"/>
                             <RowDefinition Height="*"/>
-                            <RowDefinition Height="auto"/>
                         </Grid.RowDefinitions>
-                        <ListBox Grid.ColumnSpan="2" Grid.RowSpan="3" Name="listBox_recFolder" Margin="45,0,0,0" HorizontalContentAlignment="Stretch" />
-                        <Button Grid.Column="2" Grid.Row="0" Name="button_rec_up" Content="↑" Margin="12,4" Width="44" Height="25" />
-                        <Button Grid.Column="2" Grid.Row="1" Name="button_rec_down" Content="↓" Margin="12,4" Width="44" Height="25" />
-                        <Button Grid.Column="2" Grid.Row="2" Name="button_rec_del" Content="削除" Margin="12,4" Width="44" Height="25" Click="button_rec_del_Click" VerticalAlignment="Bottom" />
-                        <TextBox Grid.Row="3" Name="textBox_recFolder" Margin="45,4,0,0" Height="25" VerticalContentAlignment="Center" />
-                        <Button Grid.Column="1" Grid.Row="3" Name="button_rec_open" Content="開く" Margin="12,4,0,0" Width="44" Height="25" Click="button_rec_open_Click" HorizontalAlignment="Right" />
-                        <Button Grid.Column="2" Grid.Row="3" Name="button_rec_add" Content="追加" Margin="12,4,12,0" Width="44" Height="25" Click="button_rec_add_Click" />
+                        <ListBox Grid.RowSpan="3" Name="listBox_recFolder" HorizontalContentAlignment="Stretch" />
+                        <Button Grid.Column="1" Grid.Row="0" Name="button_rec_up" Content="↑" Margin="12,4,0,4" Width="44" Height="25" />
+                        <Button Grid.Column="1" Grid.Row="1" Name="button_rec_down" Content="↓" Margin="12,4,0,4" Width="44" Height="25" />
+                        <Button Grid.Column="1" Grid.Row="2" Name="button_rec_del" Content="削除" Margin="12,4,0,4" Width="44" Height="25" Click="button_rec_del_Click" VerticalAlignment="Bottom" />
                     </Grid>
-                    <Grid Grid.Row="4" Margin="0,4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="140"/>
-                            <ColumnDefinition/>
-                            <ColumnDefinition Width="auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Label Grid.Column="0" Content="録画情報保存フォルダ" Margin="12,0,0,0" ToolTip="未指定の場合は録画ファイルと同じ場所に保存されます。" ToolTipService.ShowOnDisabled="True" />
-                        <TextBox Grid.Column="1" Name="textBox_recInfoFolder" Margin="12,0,0,0" VerticalContentAlignment="Center" ToolTip="{Binding ElementName=textBox_recInfoFolder, Path=Text}" ToolTipService.ShowOnDisabled="True" />
-                        <Button Grid.Column="2" Name="button_recInfoFolder" Content="開く" Margin="12,0" Width="44" Click="button_recInfoFolder_Click" />
-                    </Grid>
-                    <Label Grid.Row="5" Name="label4" Margin="12,8" Foreground="Red">
-                        <TextBlock TextWrapping="Wrap">※ 録画中やEPG取得中に設定を変更すると正常動作しなくなる可能性があります。</TextBlock>
-                    </Label>
-                    <WrapPanel Grid.Row="6" Margin="0,0,0,10">
-                        <Label Name="label5" Content="スタートアップにショートカットを作成する" Margin="12,0"/>
-                        <Button Name="button_shortCut" Content="EpgTimer.exe" Height="25" Width="160" Margin="12,0" Click="button_shortCut_Click" ToolTip="※ 削除時は手動で行ってください" />
-                        <Button Name="button_shortCutSrv" Content="EpgTimerSrv.exe" Height="25" Width="160" Margin="12,0" Click="button_shortCutSrv_Click" ToolTip="※ 削除時は手動で行ってください" />
-                    </WrapPanel>
+
+                    <StackPanel Grid.Row="2">
+                        <Grid Grid.Row="1" Margin="45,4,12,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="auto"/>
+                                <ColumnDefinition Width="auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Name="textBox_recFolder" Height="25" VerticalContentAlignment="Center" />
+                            <Button Grid.Column="1" Name="button_rec_open" Content="開く" Margin="12,0,0,0" Width="44" Height="25" Click="button_rec_open_Click" HorizontalAlignment="Right" />
+                            <Button Grid.Column="2" Name="button_rec_add" Content="追加" Margin="12,0,0,0" Width="44" Height="25" Click="button_rec_add_Click" />
+                        </Grid>
+                        <Grid Margin="12,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="140"/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" Content="録画情報保存フォルダ" ToolTip="未指定の場合は録画ファイルと同じ場所に保存されます。" ToolTipService.ShowOnDisabled="True" />
+                            <TextBox Grid.Column="1" Name="textBox_recInfoFolder" VerticalContentAlignment="Center" ToolTip="{Binding ElementName=textBox_recInfoFolder, Path=Text}" ToolTipService.ShowOnDisabled="True" />
+                            <Button Grid.Column="2" Name="button_recInfoFolder" Content="開く" Margin="12,0,0,0" Width="44" Click="button_recInfoFolder_Click" />
+                        </Grid>
+                        <Label Name="label4" Margin="12,8" Foreground="Red">
+                            <TextBlock TextWrapping="Wrap">※ 録画中やEPG取得中に設定を変更すると正常動作しなくなる可能性があります。</TextBlock>
+                        </Label>
+                        <WrapPanel Margin="0,0,0,10">
+                            <Label Name="label5" Content="スタートアップにショートカットを作成する" Margin="12,0"/>
+                            <Button Name="button_shortCut" Content="EpgTimer.exe" Height="25" Width="160" Margin="12,0" Click="button_shortCut_Click" ToolTip="※ 削除時は手動で行ってください" />
+                            <Button Name="button_shortCutSrv" Content="EpgTimerSrv.exe" Height="25" Width="160" Margin="12,0" Click="button_shortCutSrv_Click" ToolTip="※ 削除時は手動で行ってください" />
+                        </WrapPanel>
+                    </StackPanel>
                 </Grid>
             </TabItem>
             <TabItem Header="チューナー" Name="tabItem2">

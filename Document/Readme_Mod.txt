@@ -110,6 +110,12 @@ EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
 ◇設定
   ●基本設定タブ
     ●保存フォルダ
+      ・コマンドライン引数【追加】
+        録画用アプリの引数をカスタマイズします。EpgDataCap_Bon.exeの場合は弄る必
+        要ありません。
+        ・最小化: EPG取得や「最小化で起動する」設定の録画時に付加される
+        ・非視聴時: 視聴時以外や「視聴時はViewを起動する」にチェックしていないと
+                    きに付加される
       ・録画情報保存フォルダ【追加】
         .program.txt/.errの保存先を指定します(Common.iniのRecInfoFolderに相当)。
     ●チューナー

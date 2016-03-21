@@ -55,10 +55,17 @@ namespace EpgTimer.Setting
                     label2.IsEnabled = false; // 録画用アプリのexe
                     textBox_exe.IsEnabled = false;
                     button_exe.IsEnabled = false; // 開く
+                    label_cmdBon.IsEnabled = false; // コマンドライン引数
+                    textBox_cmdBon.IsEnabled = false;
+                    label_cmdMin.IsEnabled = false; // 最小化
+                    textBox_cmdMin.IsEnabled = false;
+                    label_cmdViewOff.IsEnabled = false; // 非視聴時
+                    textBox_cmdViewOff.IsEnabled = false;
                     label3.IsEnabled = false; //録画保存フォルダ
                     label4.IsEnabled = false; //※ 録画中やEPG取得中に設定を変更すると正常動作しなくなる可能性があります。
                     button_shortCutSrv.IsEnabled = false;
                 }
+
                 listBox_recFolder.IsEnabled = IniFileHandler.CanUpdateInifile;
                 button_rec_up.IsEnabled = IniFileHandler.CanUpdateInifile; // ↑
                 button_rec_down.IsEnabled = IniFileHandler.CanUpdateInifile; // ↓
@@ -76,6 +83,13 @@ namespace EpgTimer.Setting
                     textBox_recInfoFolder.Text = IniFileHandler.GetPrivateProfileString("SET", "RecInfoFolder", "", SettingPath.CommonIniPath);
 
                     Settings.Instance.DefRecFolders.ForEach(folder => listBox_recFolder.Items.Add(new UserCtrlView.BGBarListBoxItem(folder)));
+                }
+                if (CommonManager.Instance.NWMode == false)
+                {
+                    string viewAppIniPath = SettingPath.ModulePath.TrimEnd('\\') + "\\ViewApp.ini";
+                    textBox_cmdBon.Text = IniFileHandler.GetPrivateProfileString("APP_CMD_OPT", "Bon", "-d", viewAppIniPath);
+                    textBox_cmdMin.Text = IniFileHandler.GetPrivateProfileString("APP_CMD_OPT", "Min", "-min", viewAppIniPath);
+                    textBox_cmdViewOff.Text = IniFileHandler.GetPrivateProfileString("APP_CMD_OPT", "ViewOff", "-noview", viewAppIniPath);
                 }
 
                 // tabItem2 - チューナー
@@ -334,6 +348,30 @@ namespace EpgTimer.Setting
                 {
                     IniFileHandler.WritePrivateProfileString("SET", "RecExePath", textBox_exe.Text, SettingPath.CommonIniPath);
                 }
+
+                string viewAppIniPath = SettingPath.ModulePath.TrimEnd('\\') + "\\ViewApp.ini";
+                if (textBox_cmdBon.IsEnabled)
+                {
+                    if (IniFileHandler.GetPrivateProfileString("APP_CMD_OPT", "Bon", "-d", viewAppIniPath) != textBox_cmdBon.Text)
+                    {
+                        IniFileHandler.WritePrivateProfileString("APP_CMD_OPT", "Bon", textBox_cmdBon.Text, viewAppIniPath);
+                    }
+                }
+                if (textBox_cmdMin.IsEnabled)
+                {
+                    if (IniFileHandler.GetPrivateProfileString("APP_CMD_OPT", "Min", "-min", viewAppIniPath) != textBox_cmdMin.Text)
+                    {
+                        IniFileHandler.WritePrivateProfileString("APP_CMD_OPT", "Min", textBox_cmdMin.Text, viewAppIniPath);
+                    }
+                }
+                if (textBox_cmdViewOff.IsEnabled)
+                {
+                    if (IniFileHandler.GetPrivateProfileString("APP_CMD_OPT", "ViewOff", "-noview", viewAppIniPath) != textBox_cmdViewOff.Text)
+                    {
+                        IniFileHandler.WritePrivateProfileString("APP_CMD_OPT", "ViewOff", textBox_cmdViewOff.Text, viewAppIniPath);
+                    }
+                }
+
                 if (listBox_recFolder.IsEnabled)
                 {
                     int recFolderCount = listBox_recFolder.Items.Count;

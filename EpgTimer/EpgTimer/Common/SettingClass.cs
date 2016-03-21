@@ -523,10 +523,7 @@ namespace EpgTimer
         }
         public static string DefSettingFolderPath
         {
-            get
-            {
-                return ModulePath.TrimEnd('\\') + "\\Setting"; // + (CommonManager.Instance.NWMode == false ? "" : "NW");
-            }
+            get { return ModulePath.TrimEnd('\\') + "\\Setting"; }
         }
         public static string SettingFolderPath
         {
@@ -545,10 +542,7 @@ namespace EpgTimer
         }
         public static string ModulePath
         {
-            get
-            {
-                return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            }
+            get { return Path.GetDirectoryName(Assembly.GetEntryAssembly().Location); }
         }
         public static string ModuleName
         {
@@ -819,6 +813,7 @@ namespace EpgTimer
         public SerializableDictionary<string, WINDOWPLACEMENT> Placement { get; set; }
         public bool InfoWindowTopMost { get; set; }
         public bool InfoWindowEnabled { get; set; }
+        //public string SettingFolderPathNW { get; set; }
 
         public Settings()
         {
@@ -995,6 +990,7 @@ namespace EpgTimer
             Placement = new SerializableDictionary<string, WINDOWPLACEMENT>();
             InfoWindowTopMost = true;
             InfoWindowEnabled = false;
+            //SettingFolderPathNW = "";
         }
 
         [NonSerialized()]
