@@ -813,7 +813,7 @@ namespace EpgTimer
         public SerializableDictionary<string, WINDOWPLACEMENT> Placement { get; set; }
         public bool InfoWindowTopMost { get; set; }
         public bool InfoWindowEnabled { get; set; }
-        //public string SettingFolderPathNW { get; set; }
+        public bool RecItemToolTip { get; set; }
 
         public Settings()
         {
@@ -990,7 +990,7 @@ namespace EpgTimer
             Placement = new SerializableDictionary<string, WINDOWPLACEMENT>();
             InfoWindowTopMost = true;
             InfoWindowEnabled = false;
-            //SettingFolderPathNW = "";
+            RecItemToolTip = false;
         }
 
         [NonSerialized()]
