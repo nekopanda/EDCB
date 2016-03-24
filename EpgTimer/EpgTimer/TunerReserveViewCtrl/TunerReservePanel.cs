@@ -182,8 +182,8 @@ namespace EpgTimer.TunerReserveViewCtrl
 
                     double x = info.LeftPos;
                     double y = info.TopPos;
-                    double height = Math.Max(info.Height, 0);
-                    double width = info.Width - 2;
+                    double height = Math.Max(info.Height, 0) + 1;
+                    double width = info.Width + 1;
 
                     dc.DrawRectangle(info.BorderBrushTuner, null, new Rect(x, y, width, height));
                     if (height > 2)
@@ -204,7 +204,7 @@ namespace EpgTimer.TunerReserveViewCtrl
 
                         // margin 設定
                         x += 2;
-                        width -= 4;
+                        width -= 6;
 
                         double useHeight = 0;
 
