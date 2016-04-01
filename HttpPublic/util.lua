@@ -505,7 +505,7 @@ function SerchTemplate(si)
     ..'<option value="0"'..(si.freeCAFlag==0 and ' selected' or '')..'>無料、有料番組を対象とする\n'
     ..'<option value="1"'..(si.freeCAFlag==1 and ' selected' or '')..'>無料番組を対象とする\n'
     ..'<option value="2"'..(si.freeCAFlag==2 and ' selected' or '')..'>有料番組を対象とする\n'
-    ..'</select></div></div>\n'
+    ..'</select></div>\n'
     ..(tkntrec and '<div class="'..(si.search and 'advanced ' or '')..'mdl-cell mdl-cell--12-col mdl-grid mdl-grid--no-spacing">\n<div class="mdl-cell mdl-cell--3-col">番組長で絞り込み</div><div><input type="number" name="chkDurationMin" value="'..si.chkDurationMin..'" min="0">分以上</div><div><input type="number" name="chkDurationMax" value="'..si.chkDurationMax..'" min="0">分以下</div></div></div><div><div>※それぞれ0分で絞り込み無し</div></div>\n' or '')
 
   if si.search then
@@ -517,5 +517,6 @@ function SerchTemplate(si)
       ..'<div class="checkbox-textfield mdl-cell mdl-cell--6-col mdl-cell--9-col-desktop mdl-grid mdl-grid--no-spacing mdl-cell--middle"><div><label for="chkRecEnd" class="mdl-checkbox mdl-js-checkbox"><input id="chkRecEnd" class="mdl-checkbox__input" type="checkbox" name="chkRecEnd" value="1"'..(si.chkRecEnd and ' checked' or '')..'><span class="textfield-container mdl-checkbox__label"><div class="mdl-textfield mdl-js-textfield"><input class="mdl-textfield__input" type="number" name="chkRecDay" value="'..si.chkRecDay..'" min="0" id="chkRecDay"><label class="mdl-textfield__label" for="chkRecDay"></label><span class="mdl-textfield__error">Input is not a number!</span></div>日前までの録画結果</span></label></div></div></div>\n'
   end
 
+  s=s..'</div>\n'
   return s
 end
