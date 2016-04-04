@@ -1450,7 +1450,7 @@ namespace EpgTimer
                 return;
             }
 
-            if (Settings.Instance.FilePlayOnAirWithExe && NWMode == false)
+            if (Settings.Instance.FilePlayOnAirWithExe)
             {
                 //ファイルパスを取得するため開いてすぐ閉じる
                 var info = new NWPlayTimeShiftInfo();
