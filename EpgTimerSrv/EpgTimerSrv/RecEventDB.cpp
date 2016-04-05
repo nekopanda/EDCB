@@ -109,7 +109,7 @@ vector<DWORD> CRecEventDB::SearchRecFile(const EPGDB_SEARCH_KEY_INFO& item, bool
 	return SearchRecFile_(item, serviceMap);
 }
 
-void CRecEventDB::UpdateFileExist() {
+void CRecEventDB::UpdateFileExist() const {
 	DWORD time = GetTickCount();
 
 	directoryCache.UpdateDirectoryInfo();
@@ -139,7 +139,7 @@ bool CRecEventDB::HasEpgInfo(DWORD id) const {
 	return false;
 }
 
-vector<REC_EVENT_INFO*> CRecEventDB::GetAll() {
+vector<REC_EVENT_INFO*> CRecEventDB::GetAll() const {
 	vector<REC_EVENT_INFO*> v;
 	v.reserve(eventMap.size() + eventMapNew.size());
 	for (auto& entry : eventMap) v.push_back(entry.second);

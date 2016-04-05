@@ -607,6 +607,17 @@ S|nil GetRecFilePath( 予約ID:I )
   無引数のときは全情報を取得する。
   1引数のときは指定情報を取得する。なければnilが返る。
 
+<録画済み情報>のリスト GetRecFileInfoBasic()
+<録画済み情報>|nil GetRecFileInfoBasic( 情報ID:I )
+  基本的な録画済み情報を取得する(idソート)
+  programInfoとerrInfoが常に空文字列になる以外はGetRecFileInfo()と同じ。
+  programInfoとerrInfoを取得するためのファイルアクセスのコストが無い。
+  例：このメソッドが存在するならこれを使ってリストを取得する
+      a=edcb.GetRecFileInfoBasic and edcb.GetRecFileInfoBasic() or edcb.GetRecFileInfo()
+
+ChgProtectRecFileInfo( 情報ID:I, プロテクト:B )
+  録画済み情報のプロテクトを変更する
+
 DelRecFileInfo( 情報ID:I )
   録画済み情報を削除する
 

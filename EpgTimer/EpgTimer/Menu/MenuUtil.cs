@@ -1038,6 +1038,7 @@ namespace EpgTimer
             {
                 var dlg = new RecInfoDescWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
+                cmd.SendGetRecInfo(info.ID, ref info);
                 dlg.SetRecInfo(info);
                 return dlg.ShowDialog();
             }
