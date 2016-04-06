@@ -66,6 +66,8 @@ private:
 	void UpdateRecFileInfo();
 	bool RemoveNolinkedReserve(vector<DWORD> beforeReserveIds);
 
+	void OutputDebugCmd(DWORD cmd, DWORD result, LONGLONG ticks);
+
 	//外部制御コマンド関係
 	static int CALLBACK CtrlCmdPipeCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
 	static int CALLBACK CtrlCmdTcpCallback(void* param, CMD_STREAM* cmdParam, CMD_STREAM* resParam);
