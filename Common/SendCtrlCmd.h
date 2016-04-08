@@ -743,6 +743,18 @@ public:
 		return ReceiveCmdData2(CMD2_EPG_SRV_ENUM_RECINFO2, val);
 	}
 
+	//録画済み情報一覧取得
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val			[OUT]録画済み情報一覧
+	DWORD SendGetRecInfoList2(
+		const vector<DWORD>& idList,
+		vector<REC_FILE_INFO>* val
+		){
+		return SendAndReceiveCmdData2(CMD2_EPG_SRV_GET_RECINFO_LIST2, idList, val);
+	}
+
 	//録画済み情報のプロテクト変更
 	//戻り値：
 	// エラーコード
