@@ -506,6 +506,8 @@ main {
     .clicked .end {
       opacity: 1; }
 
+.content>div:nth-child(2) { width:18px; }
+
 .startTime {
   width: 18px;
   text-align: center; }
