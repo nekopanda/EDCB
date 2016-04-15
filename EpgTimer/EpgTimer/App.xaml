@@ -6,5 +6,41 @@
         <!-- アプリケーション レベルでスコープされたリソースは、ここで定義する必要があります。 -->
         <Style TargetType="{x:Type ListBoxItem}" />
         <Style TargetType="{x:Type ListViewItem}" />
+        <Style TargetType="{x:Type TextBox}">
+            <Setter Property="InputMethod.PreferredImeState" Value="Off" />
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style TargetType="{x:Type PasswordBox}">
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style TargetType="{x:Type Label}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style TargetType="{x:Type CheckBox}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style TargetType="{x:Type RadioButton}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="10,2" />
+        </Style>
+        <Style TargetType="{x:Type ComboBox}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style TargetType="{x:Type ScrollViewer}">
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+        </Style>
     </Application.Resources>
 </Application>
