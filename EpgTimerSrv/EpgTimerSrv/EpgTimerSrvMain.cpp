@@ -1080,16 +1080,12 @@ vector<EPG_AUTO_ADD_DATA> CEpgTimerSrvMain::GetAutoAddList()
 
 bool CEpgTimerSrvMain::DelAutoAdd(vector<DWORD>& val) {
 	bool modified = false;
-	vector<DWORD> reserveList;
 
 	CBlockLock lock(&settingLock);
 
 	for (size_t i = 0; i < val.size(); i++) {
 		auto it = epgAutoAdd.GetMap().find(val[i]);
 		if (it != epgAutoAdd.GetMap().end()) {
-			for (const RESERVE_BASIC_DATA& rsv : it->second.reserveList) {
-				reserveList.push_back(rsv.reserveID);
-			}
 			reserveManager.AutoAddDeleted(it->second);
 			epgAutoAdd.DelData(val[i]);
 			modified = true;
@@ -1097,7 +1093,6 @@ bool CEpgTimerSrvMain::DelAutoAdd(vector<DWORD>& val) {
 	}
 	if (modified) {
 		epgAutoAdd.SaveText();
-		RemoveNolinkedReserve(reserveList);
 		notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
 	}
 	return modified;
@@ -1137,7 +1132,6 @@ bool CEpgTimerSrvMain::ChgAutoAdd(vector<EPG_AUTO_ADD_DATA>& val) {
 }
 
 bool CEpgTimerSrvMain::AddAutoAdd(vector<EPG_AUTO_ADD_DATA>& val) {
-	vector<DWORD> reserveList;
 	{
 		CBlockLock lock(&settingLock);
 		for (size_t i = 0; i < val.size(); i++) {
