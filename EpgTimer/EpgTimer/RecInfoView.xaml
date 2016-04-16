@@ -136,11 +136,11 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <StackPanel Grid.Column="1" Name="stackPanel_button">
-            <Button Name="button_play" Content="再生" Margin="0,10,0,10" />
-            <Button Name="button_del" Content="削除" Margin="0,10,0,10" />
-            <Button Name="button_delAll" Content="全クリア" Margin="0,10,0,10" />
-            <Button Name="button_reload" Content="リスト更新" Margin="0,10,0,10" Click="button_reload_Click" />
+        <StackPanel Grid.Column="1" Name="stackPanel_button" Margin="0,0,10,0">
+            <Button Name="button_play" Content="再生" Margin="0,10" />
+            <Button Name="button_del" Content="削除" Margin="0,10" />
+            <Button Name="button_delAll" Content="全クリア" Margin="0,10" />
+            <Button Name="button_reload" Content="リスト更新" Margin="0,10" Click="button_reload_Click" />
         </StackPanel>
     </Grid>
 </local:DataViewBase>

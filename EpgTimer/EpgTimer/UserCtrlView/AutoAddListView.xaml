@@ -121,7 +121,7 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="auto" />
         </Grid.ColumnDefinitions>
-        <ListView Margin="10" x:Name="listView_key" Style="{StaticResource DataListViewStyle}" >
+        <ListView x:Name="listView_key" Margin="10" Style="{StaticResource DataListViewStyle}" >
             <ListView.Resources>
                 <Style TargetType="ListViewItem" BasedOn="{StaticResource DataListItemStyle}" >
                     <EventSetter Event="PreviewMouseLeftButtonDown" Handler="listViewItem_PreviewMouseLeftButtonDown"/>
@@ -132,8 +132,8 @@
                 <GridView x:Name="gridView_key" />
             </ListView.View>
         </ListView>
-        <StackPanel Grid.Column="1">
-            <Button Name="button_add" Content="追加" Margin="10,10,10,5" />
+        <StackPanel Grid.Column="1" Margin="0,5,10,0">
+            <Button Name="button_add" Content="追加" Margin="10,5" />
             <Button Name="button_change" Content="変更" Margin="10,5" />
             <Button Name="button_del" Content="削除" Margin="10,5" />
             <Button Name="button_del2" Content="予約ごと削除" Margin="10,5" />
