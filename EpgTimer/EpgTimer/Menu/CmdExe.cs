@@ -299,7 +299,7 @@ namespace EpgTimer
         {
             ReserveData resinfo = mcs_GetNextReserve();
             if (reserveOnly && resinfo == null) return;
-            if (onReserveOnly && resinfo.IsEnabled == false) return;
+            if (onReserveOnly && resinfo != null && resinfo.IsEnabled == false) return;
 
             mcs_SetBlackoutWindow(new ReserveItem(resinfo));
             var mainWindow = Application.Current.MainWindow as MainWindow;
