@@ -47,6 +47,47 @@ BOOL ReadVALUE( WORD ver, wstring* val, const BYTE* buff, DWORD buffSize, DWORD*
 	return TRUE;
 }
 
+DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const FILE_DATA& val )
+{
+	DWORD pos = buffOffset + sizeof(DWORD);
+	pos += WriteVALUE(ver, buff, pos, val.Name);
+	pos += WriteVALUE(ver, buff, pos, val.Size);
+	pos += WriteVALUE(ver, buff, pos, val.Status);
+	if( val.Size != 0 ){
+		if( buff != NULL ) memcpy(buff + pos, val.Data, val.Size);
+		pos += val.Size;
+	}
+	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
+	return pos - buffOffset;
+}
+
+BOOL ReadVALUE( WORD ver, FILE_DATA* val, const BYTE* buff, DWORD buffSize, DWORD* readSize )
+{
+	DWORD pos = 0;
+	DWORD size = 0;
+	DWORD valSize = 0;
+	READ_VALUE_OR_FAIL( 0, buff, buffSize, pos, size, &valSize );
+	if( valSize < pos || buffSize < valSize ){
+		return FALSE;
+	}
+	buffSize = valSize;
+
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->Name );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->Size );
+	READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->Status );
+	delete val->Data;
+	val->Data=NULL;
+	if( val->Size != 0 ){
+		if( buffSize < pos + val->Size ) return FALSE;
+		val->Data = new BYTE[val->Size];
+		memcpy( val->Data, buff + pos, val->Size );
+		pos += val->Size;
+	}
+
+	*readSize = valSize;
+	return TRUE;
+}
+
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const REC_SETTING_DATA& val )
 {
 	DWORD pos = buffOffset + sizeof(DWORD);
@@ -691,6 +732,11 @@ DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const EPGDB_SEARCH_KEY
 		pos += WriteVALUE(ver, buff, pos, val.chkRecEnd);
 		pos += WriteVALUE(ver, buff, pos, val.chkRecDay);
 	}
+	if( ver >= 5 ){
+		pos += WriteVALUE(ver, buff, pos, val.chkRecNoService);
+		pos += WriteVALUE(ver, buff, pos, val.chkDurationMin);
+		pos += WriteVALUE(ver, buff, pos, val.chkDurationMax);
+	}
 	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
 	return pos - buffOffset;
 }
@@ -723,6 +769,11 @@ BOOL ReadVALUE( WORD ver, EPGDB_SEARCH_KEY_INFO* val, const BYTE* buff, DWORD bu
 		if( ver >= 3 ){
 			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chkRecEnd );
 			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chkRecDay );
+		}
+		if( ver >= 5 ){
+			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chkRecNoService );
+			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chkDurationMin );
+			READ_VALUE_OR_FAIL( ver, buff, buffSize, pos, size, &val->chkDurationMax );
 		}
 	}
 
