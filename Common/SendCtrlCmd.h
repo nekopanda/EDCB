@@ -1119,17 +1119,19 @@ protected:
 	wstring pipeName;
 	wstring ip;
 	DWORD port;
+#ifndef SEND_CTRL_CMD_NO_TCP
 	CCryptUtil hmac;
+#endif
 	typedef DWORD(PFUNCSEND)(CSendCtrlCmd *t, CMD_STREAM* sendCmd, CMD_STREAM* resCmd);
 	PFUNCSEND *pfnSend;
 
 protected:
 	static DWORD SendPipe(CSendCtrlCmd *t, CMD_STREAM* send, CMD_STREAM* res);
-	static DWORD SendTCP(CSendCtrlCmd *t, CMD_STREAM* sendCmd, CMD_STREAM* resCmd);
-	DWORD Authenticate(SOCKET sock, BYTE** pbdata, DWORD* pndata);
 	DWORD SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut, CMD_STREAM* send, CMD_STREAM* res);
 #ifndef SEND_CTRL_CMD_NO_TCP
+	static DWORD SendTCP(CSendCtrlCmd *t, CMD_STREAM* sendCmd, CMD_STREAM* resCmd);
 	DWORD SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* sendCmd, CMD_STREAM* resCmd);
+	DWORD Authenticate(SOCKET sock, BYTE** pbdata, DWORD* pndata);
 #endif
 
 	DWORD SendCmdStream(CMD_STREAM* send, CMD_STREAM* res);
