@@ -32,7 +32,7 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto" />
-                    <RowDefinition Height="auto" />
+                    <RowDefinition />
                     <RowDefinition Height="auto" />
                 </Grid.RowDefinitions>
 
@@ -163,9 +163,15 @@
                                 <ColumnDefinition />
                                 <ColumnDefinition Width="auto"/>
                             </Grid.ColumnDefinitions>
-                            <Label Grid.Column="0" Name="label16" Content="録画後実行bat" Margin="0,0,20,0" VerticalAlignment="Top" />
-                            <TextBox Grid.Column="1" Name="textBox_bat" Margin="0,0,10,0"/>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto" />
+                                <RowDefinition Height="auto" />
+                            </Grid.RowDefinitions>
+                            <Label Grid.Column="0" Name="label16" Content="録画後実行bat" Margin="0,0,20,0" />
+                            <TextBox Grid.Column="1" Name="textBox_bat" Margin="0,0,10,0" />
                             <Button Grid.Column="2" Name="button_bat" Content="開く" Click="button_bat_Click" />
+                            <Label Grid.Column="0" Grid.Row="1" Name="label17" Content="録画タグ" ToolTip="録画タグの内容はバッチファイル内のマクロ $RecTag$ で参照できます。" />
+                            <TextBox Grid.Column="1" Grid.Row="1" Name="textBox_recTag" Margin="0,0,10,0" ToolTip="録画タグの内容はバッチファイル内のマクロ $RecTag$ で参照できます。" />
                         </Grid>
                     </StackPanel>
                 </Grid>
