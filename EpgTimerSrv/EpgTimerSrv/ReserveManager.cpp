@@ -39,10 +39,14 @@ void CReserveManager::Initialize()
 	this->reserveText.ParseText((settingPath + L"\\" + RESERVE_TEXT_NAME).c_str());
 
 	ReloadSetting();
-
+	wstring iniPath;
+	GetModuleIniPath(iniPath);
+	DWORD shiftID = GetPrivateProfileInt(L"SET", L"RecInfoShiftID", 100000, iniPath.c_str());
+	if( shiftID != 0 ){
+		this->recInfoText.SetNextID(shiftID + 1);
+		WritePrivateProfileInt(L"SET", L"RecInfoShiftID", shiftID % 900000 + 100000, iniPath.c_str());
+	}
 	this->recInfoText.ParseText((settingPath + L"\\" + REC_INFO_TEXT_NAME).c_str());
-	this->recInfoText.ReadSupplementFileAll();
-
 	this->recInfo2Text.ParseText((settingPath + L"\\" + REC_INFO2_TEXT_NAME).c_str());
 	
 	this->recEventDB.Load(settingPath + L"\\" + REC_EPG_DATA_NAME, recInfoText.GetMap());
@@ -146,7 +150,7 @@ void CReserveManager::ReloadSetting()
 	this->recInfoText.SetRecInfoFolder(GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", commonIniPath.c_str()).c_str());
 
 	this->recInfo2Text.SetKeepCount(GetPrivateProfileInt(L"SET", L"RecInfo2Max", 1000, iniPath.c_str()));
-	this->recInfo2DropChk = GetPrivateProfileInt(L"SET", L"RecInfo2DropChk", 15, iniPath.c_str());
+	this->recInfo2DropChk = GetPrivateProfileInt(L"SET", L"RecInfo2DropChk", 2, iniPath.c_str());
 	this->recInfo2RegExp = GetPrivateProfileToString(L"SET", L"RecInfo2RegExp", L"", iniPath.c_str());
 
 	this->defEnableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, viewIniPath.c_str()) != 0;
@@ -490,32 +494,71 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 	}
 }
 
-vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll()
+vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll(bool getExtraInfo) const
 {
-	CBlockLock lock(&this->managerLock);
-
-	// 存在確認を更新
-	recEventDB.UpdateFileExist();
-
 	vector<REC_FILE_INFO> infoList;
-	infoList.reserve(this->recInfoText.GetMap().size());
-	for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().begin(); itr != this->recInfoText.GetMap().end(); itr++ ){
-		infoList.push_back(itr->second);
+	wstring folder;
+	{
+		CBlockLock lock(&this->managerLock);
+		
+		// 存在確認を更新
+		recEventDB.UpdateFileExist();
 
-		// 追加データ
-		REC_FILE_INFO& info = infoList.back();
+		infoList.reserve(this->recInfoText.GetMap().size());
+		for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().begin(); itr != this->recInfoText.GetMap().end(); itr++ ){
+			infoList.push_back(itr->second);
+		}
+		if( getExtraInfo ){
+			folder = this->recInfoText.GetRecInfoFolder();
+		}
+	}
+	for( size_t i = 0; i < infoList.size(); i++ ){
+		auto& info = infoList[i];
+		if( getExtraInfo ){
+			if( info.programInfo.empty() ){
+				info.programInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".program.txt", folder);
+			}
+			if( info.errInfo.empty() ){
+				info.errInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".err", folder);
+			}
+		}
+
 		const REC_EVENT_INFO* extra_info = recEventDB.Get(info.id);
-		if (extra_info != NULL) {
+		if( extra_info != NULL ){
 			info.fileExist = extra_info->fileExist;
 			info.autoAddInfoFlag = extra_info->HasEpgInfo();
-		}
-		else {
+		}else{
 			info.fileExist = false;
 			info.autoAddInfoFlag = false;
 		}
 	}
 
 	return infoList;
+}
+
+bool CReserveManager::GetRecFileInfo(DWORD id, REC_FILE_INFO* recInfo, bool getExtraInfo) const
+{
+	wstring folder;
+	{
+		CBlockLock lock(&this->managerLock);
+		map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().find(id);
+		if( itr == this->recInfoText.GetMap().end() ){
+			return false;
+		}
+		*recInfo = itr->second;
+		if( getExtraInfo ){
+			folder = this->recInfoText.GetRecInfoFolder();
+		}
+	}
+	if( getExtraInfo ){
+		if( recInfo->programInfo.empty() ){
+			recInfo->programInfo = CParseRecInfoText::GetExtraInfo(recInfo->recFilePath.c_str(), L".program.txt", folder);
+		}
+		if( recInfo->errInfo.empty() ){
+			recInfo->errInfo = CParseRecInfoText::GetExtraInfo(recInfo->recFilePath.c_str(), L".err", folder);
+		}
+	}
+	return true;
 }
 
 void CReserveManager::DelRecFileInfo(const vector<DWORD>& idList)
@@ -2030,7 +2073,7 @@ bool CReserveManager::AutoAddReserveEPG(
 					if (data.searchInfo.chkRecEnd != 0 && IsFindRecEventInfo(info, data.searchInfo)) {
 						item.recSetting.recMode = RECMODE_NO;
 					}
-					item.comment = L"EPG自動予約";
+					item.comment = EPG_AUTO_ADD_TEXT;
 					if (resultList[i].findKey.empty() == false) {
 						item.comment += L"(" + resultList[i].findKey + L")";
 						Replace(item.comment, L"\r", L"");

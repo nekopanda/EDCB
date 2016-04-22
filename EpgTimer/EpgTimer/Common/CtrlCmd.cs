@@ -360,6 +360,10 @@ namespace EpgTimer
         CMD_EPG_SRV_ENUM_RECINFO2 = 2017,
         /// <summary>録画済み情報のプロテクト変更</summary>
         CMD_EPG_SRV_CHG_PROTECT_RECINFO2 = 2019,
+        /// <summary>録画済み情報一覧取得（programInfoとerrInfoを除く）</summary>
+        CMD_EPG_SRV_ENUM_RECINFO_BASIC2 = 2020,
+        /// <summary>録画済み情報取得</summary>
+        CMD_EPG_SRV_GET_RECINFO2 = 2024,
         /// <summary>サーバー連携用　予約追加できるかのチェック（戻り値 0:追加不可 1:追加可能 2:追加可能だが開始か終了が重なるものあり 3:すでに同じ物がある）</summary>
         CMD_EPG_SRV_ADDCHK_RESERVE2 = 2030,
         /// <summary>サーバー連携用　EPGデータファイルのタイムスタンプ取得</summary>
@@ -482,6 +486,7 @@ namespace EpgTimer
         {
             lock (thisLock)
             {
+                this.tcpFlag = false;
                 this.eventName = eventName;
                 this.pipeName = pipeName.Substring(pipeName.StartsWith("\\\\.\\pipe\\", StringComparison.OrdinalIgnoreCase) ? 9 : 0);
             }
@@ -548,8 +553,6 @@ namespace EpgTimer
         //public ErrCode SendChgReserve(List<RESERVE_DATA> val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_CHG_RESERVE, val); }
         /// <summary>チューナーごとの予約一覧を取得する</summary>
         public ErrCode SendEnumTunerReserve(ref List<TunerReserveInfo> val) { object o = val; return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_TUNER_RESERVE, ref o); }
-        /// <summary>録画済み情報一覧取得</summary>
-        //public ErrCode SendEnumRecInfo(ref List<REC_FILE_INFO> val) { object o = val; return ReceiveCmdData(CtrlCmd.CMD_EPG_SRV_ENUM_RECINFO, ref o); }
         /// <summary>録画済み情報を削除する</summary>
         public ErrCode SendDelRecInfo(List<uint> val) { return SendCmdData(CtrlCmd.CMD_EPG_SRV_DEL_RECINFO, val); }
         /// <summary>サービス一覧を取得する</summary>
@@ -643,6 +646,10 @@ namespace EpgTimer
         public ErrCode SendChgReserve(List<ReserveData> val) { return SendCmdData2(CtrlCmd.CMD_EPG_SRV_CHG_RESERVE2, val); }
         /// <summary>録画済み情報一覧取得</summary>
         public ErrCode SendEnumRecInfo(ref List<RecFileInfo> val) { object o = val; return ReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_ENUM_RECINFO2, ref o); }
+        /// <summary>録画済み情報一覧取得（programInfoとerrInfoを除く）</summary>
+        public ErrCode SendEnumRecInfoBasic(ref List<RecFileInfo> val) { object o = val; return ReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_ENUM_RECINFO_BASIC2, ref o); }
+        /// <summary>録画済み情報取得</summary>
+        public ErrCode SendGetRecInfo(uint id, ref RecFileInfo val) { object o = val; return SendAndReceiveCmdData2(CtrlCmd.CMD_EPG_SRV_GET_RECINFO2, id, ref o); }
         /// <summary>録画済み情報のプロテクト変更</summary>
         public ErrCode SendChgProtectRecInfo(List<RecFileInfo> val) { return SendCmdData2(CtrlCmd.CMD_EPG_SRV_CHG_PROTECT_RECINFO2, val); }
         /// <summary>予約追加が可能か確認する</summary>
@@ -734,7 +741,7 @@ namespace EpgTimer
         /// <summary>識別用IDの設定</summary>
         //public ErrCode SendViewSetID(int id) { return SendCmdData(CtrlCmd.CMD_VIEW_APP_SET_ID, id); }
         /// <summary>識別用IDの取得</summary>
-        //public ErrCode SendViewGetID(int* id) { return ReceiveCmdData(CtrlCmd.CMD_VIEW_APP_GET_ID, id); }
+        public ErrCode SendViewGetID(ref int val) { object o = val; var ret = ReceiveCmdData(CtrlCmd.CMD_VIEW_APP_GET_ID, ref o); val = (int)o; return ret; }
         /// <summary>予約録画用にGUIキープ</summary>
         //public ErrCode SendViewSetStandbyRec(uint keepFlag) { return SendCmdData(CtrlCmd.CMD_VIEW_APP_SET_STANDBY_REC, keepFlag); }
         /// <summary>Viewボタン登録アプリ起動</summary>

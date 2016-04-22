@@ -907,6 +907,7 @@ namespace EpgTimer
                     SearchWindow.UpdatesInfo(true);
                     ResetButtonView();
                     ResetTaskMenu();
+                    taskTray.Text = GetTaskTrayReserveInfoText();
                     RefreshMenu(false);
                 }
             }

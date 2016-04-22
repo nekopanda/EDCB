@@ -527,7 +527,7 @@ namespace EpgTimer
             {
                 var dlg = new Setting.SetDefRecSettingWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(owner).RootVisual;
-                dlg.SetSettingMode("まとめて変更");
+                dlg.SetSettingMode("まとめて録画設定を変更");
                 dlg.recSettingView.SetDefSetting(infoList[0], pgAll == true);
                 dlg.recSettingView.SetViewMode(pgAll != true);
 
@@ -780,14 +780,17 @@ namespace EpgTimer
         {
             return AutoAddDelete(itemlist, Settings.Instance.SyncResAutoAddDelete, false, false);
         }
-        public bool AutoAddDelete(IEnumerable<AutoAddData> itemlist, bool SyncDelete, bool SyncAll, bool cautionManyRes)
+        public bool AutoAddDelete(IEnumerable<AutoAddData> itemlist, bool SyncDelete, bool SyncAll, bool cautionManyRes, bool deleteItems = true)
         {
             try
             {
-                bool ret = ReserveCmdSend(itemlist.OfType<EpgAutoAddData>().Select(item => item.DataID).ToList(), cmd.SendDelEpgAutoAdd, "キーワード予約の削除")
+                if (deleteItems == true)
+                {
+                    bool ret = ReserveCmdSend(itemlist.OfType<EpgAutoAddData>().Select(item => item.DataID).ToList(), cmd.SendDelEpgAutoAdd, "キーワード予約の削除")
                     && ReserveCmdSend(itemlist.OfType<ManualAutoAddData>().Select(item => item.DataID).ToList(), cmd.SendDelManualAdd, "プログラム自動予約の削除");
 
-                if (ret == false || SyncDelete == false) return ret;
+                    if (ret == false || SyncDelete == false) return ret;
+                }
 
                 return AutoAddDeleteSyncReserve(itemlist, SyncAll, cautionManyRes);
             }
@@ -1038,6 +1041,7 @@ namespace EpgTimer
             {
                 var dlg = new RecInfoDescWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(Owner).RootVisual;
+                cmd.SendGetRecInfo(info.ID, ref info);
                 dlg.SetRecInfo(info);
                 return dlg.ShowDialog();
             }

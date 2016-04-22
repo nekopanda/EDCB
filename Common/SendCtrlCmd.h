@@ -13,12 +13,14 @@ public:
 	CSendCtrlCmd(void);
 	~CSendCtrlCmd(void);
 
+#ifndef SEND_CTRL_CMD_NO_TCP
 	//コマンド送信方法の設定
 	//引数：
 	// tcpFlag		[IN] TRUE：TCP/IPモード、FALSE：名前付きパイプモード
 	void SetSendMode(
 		BOOL tcpFlag
 		);
+#endif
 
 	//名前付きパイプモード時の接続先を設定
 	//EpgTimerSrv.exeに対するコマンドは設定しなくても可（デフォルト値になっている）
@@ -411,7 +413,7 @@ public:
 	// list			[IN]ファイル名のリスト
 	// resVal		[OUT]ファイルデータのリスト
 	DWORD SendFileCopy2(
-		const vector<EPGDB_SEARCH_KEY_INFO>& list,
+		const vector<wstring>& list,
 		vector<FILE_DATA>* resVal
 		){
 		return SendAndReceiveCmdData2(CMD2_EPG_SRV_FILE_COPY2, list, resVal);
@@ -1126,7 +1128,9 @@ protected:
 	static DWORD SendTCP(CSendCtrlCmd *t, CMD_STREAM* sendCmd, CMD_STREAM* resCmd);
 	DWORD Authenticate(SOCKET sock, BYTE** pbdata, DWORD* pndata);
 	DWORD SendPipe(LPCWSTR pipeName, LPCWSTR eventName, DWORD timeOut, CMD_STREAM* send, CMD_STREAM* res);
+#ifndef SEND_CTRL_CMD_NO_TCP
 	DWORD SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* sendCmd, CMD_STREAM* resCmd);
+#endif
 
 	DWORD SendCmdStream(CMD_STREAM* send, CMD_STREAM* res);
 	DWORD SendCmdWithoutData(DWORD param, CMD_STREAM* res = NULL);
