@@ -500,6 +500,10 @@ vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll(bool getExtraInfo) cons
 	wstring folder;
 	{
 		CBlockLock lock(&this->managerLock);
+		
+		// 存在確認を更新
+		recEventDB.UpdateFileExist();
+
 		infoList.reserve(this->recInfoText.GetMap().size());
 		for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().begin(); itr != this->recInfoText.GetMap().end(); itr++ ){
 			infoList.push_back(itr->second);
@@ -508,14 +512,24 @@ vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll(bool getExtraInfo) cons
 			folder = this->recInfoText.GetRecInfoFolder();
 		}
 	}
-	if( getExtraInfo ){
-		for( size_t i = 0; i < infoList.size(); i++ ){
-			if( infoList[i].programInfo.empty() ){
-				infoList[i].programInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".program.txt", folder);
+	for( size_t i = 0; i < infoList.size(); i++ ){
+		auto& info = infoList[i];
+		if( getExtraInfo ){
+			if( info.programInfo.empty() ){
+				info.programInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".program.txt", folder);
 			}
-			if( infoList[i].errInfo.empty() ){
-				infoList[i].errInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".err", folder);
+			if( info.errInfo.empty() ){
+				info.errInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".err", folder);
 			}
+		}
+
+		const REC_EVENT_INFO* extra_info = recEventDB.Get(info.id);
+		if( extra_info != NULL ){
+			info.fileExist = extra_info->fileExist;
+			info.autoAddInfoFlag = extra_info->HasEpgInfo();
+		}else{
+			info.fileExist = false;
+			info.autoAddInfoFlag = false;
 		}
 	}
 
@@ -2062,7 +2076,7 @@ bool CReserveManager::AutoAddReserveEPG(
 					if (data.searchInfo.chkRecEnd != 0 && IsFindRecEventInfo(info, data.searchInfo)) {
 						item.recSetting.recMode = RECMODE_NO;
 					}
-					item.comment = L"EPG自動予約";
+					item.comment = EPG_AUTO_ADD_TEXT;
 					if (resultList[i].findKey.empty() == false) {
 						item.comment += L"(" + resultList[i].findKey + L")";
 						Replace(item.comment, L"\r", L"");
