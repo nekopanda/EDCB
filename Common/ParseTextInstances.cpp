@@ -648,8 +648,12 @@ bool CParseReserveText::ParseLine(const wstring& parseLine, pair<DWORD, RESERVE_
 	item.second.recSetting.recMode = (BYTE)_wtoi(NextToken(token));
 	item.second.recSetting.pittariFlag = _wtoi(NextToken(token)) != 0 && item.second.eventID != 0xFFFF;
 	NextToken(token);
-	if( item.second.recSetting.batFilePath.assign(token[0], token[1]) == L"0" ){
-		item.second.recSetting.batFilePath.clear();
+	{
+		wstring batFilePathAndRecTag;
+		if (batFilePathAndRecTag.assign(token[0], token[1]) == L"0") {
+			batFilePathAndRecTag.clear();
+		}
+		item.second.recSetting.setBatFilePathAndRecTag(batFilePathAndRecTag);
 	}
 	//«—ˆ—p
 	NextToken(token);
@@ -732,6 +736,7 @@ bool CParseReserveText::SaveLine(const pair<DWORD, RESERVE_DATA>& item, wstring&
 			item.second.recSetting.partialRecFolder[i].writePlugIn + L"*" +
 			item.second.recSetting.partialRecFolder[i].recNamePlugIn + L"\n";
 	}
+	wstring batFilePathAndRecTag = item.second.recSetting.getBatFilePathAndRecTag();
 	Format(saveLine, L"%04d/%02d/%02d\n%02d:%02d:%02d\n%02d:%02d:%02d\n%s\n%s\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%s\n%s\n%s\n%s\n%d\n%d\n%s\n%d\n%d\n%d\n%d\n%04d/%02d/%02d\n%02d:%02d:%02d\n%d\n%s%d\n%d\n%d\n%d\n%d\n%s",
 		item.second.startTime.wYear, item.second.startTime.wMonth, item.second.startTime.wDay,
 		item.second.startTime.wHour, item.second.startTime.wMinute, item.second.startTime.wSecond,
@@ -747,7 +752,7 @@ bool CParseReserveText::SaveLine(const pair<DWORD, RESERVE_DATA>& item, wstring&
 		item.second.reserveID,
 		item.second.recSetting.recMode,
 		item.second.recSetting.pittariFlag,
-		item.second.recSetting.batFilePath.empty() ? L"0" : item.second.recSetting.batFilePath.c_str(),
+		batFilePathAndRecTag.empty() ? L"0" : batFilePathAndRecTag.c_str(),
 		L"0",
 		item.second.comment.c_str(),
 		item.second.recSetting.recFolderList.empty() ? L"" : (
@@ -1003,7 +1008,11 @@ bool CParseEpgAutoAddText::ParseLine(const wstring& parseLine, pair<DWORD, EPG_A
 	item.second.recSetting.serviceMode = _wtoi(NextToken(token));
 	item.second.recSetting.pittariFlag = _wtoi(NextToken(token)) != 0;
 	NextToken(token);
-	item.second.recSetting.batFilePath.assign(token[0], token[1]);
+	{
+		wstring batFilePathAndRecTag;
+		batFilePathAndRecTag.assign(token[0], token[1]);
+		item.second.recSetting.setBatFilePathAndRecTag(batFilePathAndRecTag);
+	}
 	item.second.recSetting.suspendMode = (BYTE)_wtoi(NextToken(token));
 	if( token[0] == token[1] ){
 		item.second.recSetting.suspendMode = 4;
@@ -1121,7 +1130,7 @@ bool CParseEpgAutoAddText::SaveLine(const pair<DWORD, EPG_AUTO_ADD_DATA>& item, 
 		item.second.recSetting.tuijyuuFlag,
 		item.second.recSetting.serviceMode,
 		item.second.recSetting.pittariFlag,
-		item.second.recSetting.batFilePath.c_str(),
+		item.second.recSetting.getBatFilePathAndRecTag().c_str(),
 		item.second.recSetting.suspendMode,
 		item.second.recSetting.rebootFlag,
 		item.second.recSetting.useMargineFlag,
@@ -1234,7 +1243,11 @@ bool CParseManualAutoAddText::ParseLine(const wstring& parseLine, pair<DWORD, MA
 	item.second.recSetting.serviceMode = _wtoi(NextToken(token));
 	item.second.recSetting.pittariFlag = _wtoi(NextToken(token)) != 0;
 	NextToken(token);
-	item.second.recSetting.batFilePath.assign(token[0], token[1]);
+	{
+		wstring batFilePathAndRecTag;
+		batFilePathAndRecTag.assign(token[0], token[1]);
+		item.second.recSetting.setBatFilePathAndRecTag(batFilePathAndRecTag);
+	}
 	item.second.recSetting.suspendMode = (BYTE)_wtoi(NextToken(token));
 	if( token[0] == token[1] ){
 		item.second.recSetting.suspendMode = 4;
@@ -1307,7 +1320,7 @@ bool CParseManualAutoAddText::SaveLine(const pair<DWORD, MANUAL_AUTO_ADD_DATA>& 
 		item.second.recSetting.tuijyuuFlag,
 		item.second.recSetting.serviceMode,
 		item.second.recSetting.pittariFlag,
-		item.second.recSetting.batFilePath.c_str(),
+		item.second.recSetting.getBatFilePathAndRecTag().c_str(),
 		item.second.recSetting.suspendMode,
 		item.second.recSetting.rebootFlag,
 		item.second.recSetting.useMargineFlag,

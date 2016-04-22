@@ -118,6 +118,7 @@ function RecSettingTemplate(rs)
   end
   s=s..(#b>0 and b or '<ul><li>フォルダ</li><li>－</li></ul>\n<ul><li>出力PlugIn</li><li>－</li></ul>\n<ul><li>ファイル名PlugIn</li><li>－</li></ul>')
   s=s..'</div><input type=hidden name="recFolderCount" value="0">\n'
+    ..'<ul class="bottom"><li>録画タグ</li><li><input type="text" name="recTag" value="'..rs.recTag..'" size="30"></li></ul>\n'
     ..'<ul class="bottom"><li>部分受信サービス</li><li class="sp"><input id="partial" type="checkbox" name="partialRecFlag" value="1"'..(rs.partialRecFlag~=0 and ' checked' or '')..'><label for="partial">別ファイルに同時出力する</label></li></ul>\n'
     ..'<p class="bottom partial"'..(rs.partialRecFlag==0 and ' style="display: none;"' or '')..'>※プリセットによる変更のみ</p>\n'
 

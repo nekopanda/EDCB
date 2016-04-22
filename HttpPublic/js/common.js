@@ -617,7 +617,7 @@ $(function(){
 						}
 
 						$("[name=tunerID]").val($(this).find('tunerID').text());		//チューナー
-						
+
 						var batfile;
 						if($(this).find('batFilePath').text().length>0){			//bat
 							batfile=$(this).find('batFilePath').text();
@@ -625,7 +625,9 @@ $(function(){
 							batfile='－'
 						}
 						$("#preset").empty().append('<ul><li>録画後実行bat</li><li id="batFile">' + batfile + '</li></ul>\n');
-						
+
+						$("[name=recTag]").val($(this).find('recTag').text());			//録画タグ
+
 						if($(this).find('recFolderList').text().length>0){			//プリセット
 							$(this).find('recFolderList').find('recFolderInfo').each(function(){
 								var folderval=$(this).find('recFolder').text();
