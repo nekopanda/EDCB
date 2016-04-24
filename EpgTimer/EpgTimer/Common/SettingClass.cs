@@ -805,6 +805,9 @@ namespace EpgTimer
         public bool LaterTimeUse { get; set; }
         public int LaterTimeHour { get; set; }
         public bool DisplayPresetOnSearch { get; set; }
+        public bool RecInfoExtraDataCache { get; set; }
+        public bool RecInfoExtraDataCacheOptimize { get; set; }
+        public bool RecInfoExtraDataCacheKeepConnect { get; set; }
 
         public bool ApplyMultiInstance { get; set; }
         public double ReserveMinHeight { get; set; }
@@ -981,6 +984,9 @@ namespace EpgTimer
             LaterTimeUse = false;
             LaterTimeHour = 28 - 24;
             DisplayPresetOnSearch = false;
+            RecInfoExtraDataCache = true;
+            RecInfoExtraDataCacheOptimize = true;
+            RecInfoExtraDataCacheKeepConnect = false;
 
             recPresetList = null;
             ApplyMultiInstance = false;
