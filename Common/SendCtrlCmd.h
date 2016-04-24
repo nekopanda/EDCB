@@ -652,6 +652,18 @@ public:
 		return SendCmdData2(CMD2_EPG_SRV_CHG_PROTECT_RECINFO2, val);
 	}
 
+	//録画済み情報一覧取得（指定IDリスト） (tkntrec氏版)
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val			[OUT]録画済み情報一覧
+	DWORD SendGetRecInfoList2(
+		const vector<DWORD>& idList,
+		vector<REC_FILE_INFO>* val
+		){
+		return SendAndReceiveCmdData2(CMD2_EPG_SRV_GET_RECINFO_LIST2, idList, val);
+	}
+
 	//予約追加が可能か確認する
 	//戻り値：
 	// エラーコード
