@@ -94,6 +94,7 @@ function RecSettingTemplate(rs)
     s=s..'<tr><td>'..v.recFolder..'</td><td>'..v.writePlugIn..'</td><td>'..v.recNamePlugIn..'</td></tr>\n'
   end
   s=s..'</table>'
+    ..'録画タグ: <input type="text" name="recTag" value="'..rs.recTag..'"><br>\n'
     ..'部分受信サービス:<br><input type="checkbox" name="partialRecFlag" value="1"'..(rs.partialRecFlag~=0 and ' checked="checked"' or '')..'>別ファイルに同時出力する<br>\n'
     ..'録画フォルダ、使用プラグイン（プリセットによる変更のみ対応）:<table border="1">'
     ..'<tr><td>フォルダ</td><td>出力PlugIn</td><td>ファイル名PlugIn</td></tr>\n'
