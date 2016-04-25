@@ -302,6 +302,10 @@ namespace EpgTimer
             {
                 ConnectCmd(true);
             }
+            else if (String.Compare("予約簡易表示", tag) == 0)
+            {
+                ShowInfoWindow();
+            }
         }
 
         private void ResetTaskMenu()
