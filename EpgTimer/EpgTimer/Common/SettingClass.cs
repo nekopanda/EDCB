@@ -814,6 +814,8 @@ namespace EpgTimer
         public bool ReservePopup { get; set; }
         public bool AlwaysSaveEpgSetting { get; set; }
         public SerializableDictionary<string, WINDOWPLACEMENT> Placement { get; set; }
+        public List<ListColumnInfo> InfoWindowListColumn { get; set; }
+        public bool InfoWindowHeaderIsVisible { get; set; }
         public bool InfoWindowTopMost { get; set; }
         public bool InfoWindowEnabled { get; set; }
         public bool RecItemToolTip { get; set; }
@@ -994,6 +996,8 @@ namespace EpgTimer
             ReservePopup = false;
             AlwaysSaveEpgSetting = false;
             Placement = new SerializableDictionary<string, WINDOWPLACEMENT>();
+            InfoWindowListColumn = new List<ListColumnInfo>();
+            InfoWindowHeaderIsVisible = true;
             InfoWindowTopMost = true;
             InfoWindowEnabled = false;
             RecItemToolTip = false;
@@ -1277,6 +1281,17 @@ namespace EpgTimer
                     Instance.SearchWndColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.JyanruKey), double.NaN));
                     Instance.SearchColumnHead = CommonUtil.GetMemberName(() => obj.StartTime);
                     Instance.SearchSortDirection = ListSortDirection.Ascending;
+                }
+                if (Instance.InfoWindowListColumn.Count == 0)
+                {
+                    var obj = new ReserveItem();
+                    Instance.InfoWindowListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.Status), double.NaN));
+                    Instance.InfoWindowListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.StartTime), double.NaN));
+                    Instance.InfoWindowListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ServiceName), double.NaN));
+                    Instance.InfoWindowListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.EventName), double.NaN));
+                    Instance.InfoWindowListColumn.Add(new ListColumnInfo(CommonUtil.GetMemberName(() => obj.ReserveTuner), double.NaN));
+                    Instance.ResColumnHead = CommonUtil.GetMemberName(() => obj.StartTime);
+                    Instance.ResSortDirection = ListSortDirection.Ascending;
                 }
                 if (Instance.RecInfoDropExclude.Count == 0)
                 {
