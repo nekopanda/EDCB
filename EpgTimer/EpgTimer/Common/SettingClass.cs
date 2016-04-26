@@ -17,7 +17,7 @@ namespace EpgTimer
     class IniFileHandler
     {
         [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true)]
-        public static extern uint
+        private static extern uint
           GetPrivateProfileStringW(string lpAppName,
           string lpKeyName, string lpDefault,
           StringBuilder lpReturnedString, uint nSize,
@@ -48,7 +48,7 @@ namespace EpgTimer
         // 現在使われていないようなので、コメントアウトしておく。
         [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true,
             EntryPoint = "GetPrivateProfileStringW")]
-        public static extern uint
+        private static extern uint
             GetPrivateProfileStringByByteArray(string lpAppName,
             string lpKeyName, string lpDefault,
             byte[] lpReturnedString, uint nSize,
@@ -56,7 +56,7 @@ namespace EpgTimer
         */
 
         [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true)]
-        public static extern int
+        private static extern int
           GetPrivateProfileIntW(string lpAppName,
           string lpKeyName, int nDefault, string lpFileName);
 
@@ -89,7 +89,7 @@ namespace EpgTimer
         }
 
         [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true)]
-        public static extern uint WritePrivateProfileStringW(
+        private static extern uint WritePrivateProfileStringW(
           string lpAppName,
           string lpKeyName,
           string lpString,
@@ -420,6 +420,8 @@ namespace EpgTimer
             }
         }
 
+        [DllImport("KERNEL32.DLL", CharSet = CharSet.Unicode, ExactSpelling = true)]
+        private static extern uint WritePrivateProfileStringW(string lpAppName, string lpKeyName, string lpString, string lpFileName);
         public void UpToDate()
         {
             if (_files != null && CanReadInifile)
@@ -445,7 +447,7 @@ namespace EpgTimer
                                     foreach (string lpKeyName in _files[lpFileName][lpAppName].UpdatedKeys)
                                     {
                                         string lpString = _files[lpFileName][lpAppName][lpKeyName];
-                                        IniFileHandler.WritePrivateProfileStringW(lpAppName, lpKeyName, lpString, lpFileName);
+                                        WritePrivateProfileStringW(lpAppName, lpKeyName, lpString, lpFileName);
                                     }
                                 }
                             }
