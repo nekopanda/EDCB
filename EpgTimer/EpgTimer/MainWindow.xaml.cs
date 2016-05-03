@@ -58,6 +58,15 @@ namespace EpgTimer
             CommonManager.Instance.ReloadCustContentColorList();
             Settings.Instance.ReloadOtherOptions();
 
+            // デザイン用スタイルをテーマをマージする前に削除しておく
+            foreach (var delObj in App.Current.Resources.Keys)
+            {
+                Style s = App.Current.Resources[delObj] as Style;
+                if (s != null && s.BasedOn != null)
+                {
+                    App.Current.Resources.Remove(delObj);
+                }
+            }
             if (Settings.Instance.NoStyle == 0)
             {
                 if (System.IO.File.Exists(System.Reflection.Assembly.GetEntryAssembly().Location + ".rd.xaml"))
@@ -82,6 +91,8 @@ namespace EpgTimer
                         );
                 }
             }
+            // MainWindow.xaml に定義してあるスタイルをアプリ全体のデフォルトとして使う
+            App.Current.Resources.MergedDictionaries.Add(Application.Current.MainWindow.Resources);
 
             SemaphoreSecurity ss = new SemaphoreSecurity();
             ss.AddAccessRule(new SemaphoreAccessRule("Everyone", SemaphoreRights.FullControl, AccessControlType.Allow));
