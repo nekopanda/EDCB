@@ -186,8 +186,6 @@
                                             <ComboBox Tag="1" />
                                             <Button   Tag="1" />
                                         </StackPanel>
-                                    </WrapPanel>
-                                    <WrapPanel>
                                         <StackPanel Orientation="Horizontal" Margin="20,2,0,2">
                                             <Label    Content="情報／ワイドショー" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
                                             <ComboBox Tag="2" />
@@ -198,8 +196,6 @@
                                             <ComboBox Tag="3" />
                                             <Button   Tag="3" />
                                         </StackPanel>
-                                    </WrapPanel>
-                                    <WrapPanel>
                                         <StackPanel Orientation="Horizontal" Margin="20,2,0,2">
                                             <Label    Content="音楽" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
                                             <ComboBox Tag="4" />
@@ -210,8 +206,6 @@
                                             <ComboBox Tag="5" />
                                             <Button   Tag="5" />
                                         </StackPanel>
-                                    </WrapPanel>
-                                    <WrapPanel>
                                         <StackPanel Orientation="Horizontal" Margin="20,2,0,2">
                                             <Label    Content="映画" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
                                             <ComboBox Tag="6" />
@@ -222,8 +216,6 @@
                                             <ComboBox Tag="7" />
                                             <Button   Tag="7" />
                                         </StackPanel>
-                                    </WrapPanel>
-                                    <WrapPanel>
                                         <StackPanel Orientation="Horizontal" Margin="20,2,0,2">
                                             <Label    Content="ドキュメンタリー／教養" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
                                             <ComboBox Tag="8" />
@@ -234,8 +226,6 @@
                                             <ComboBox Tag="9" />
                                             <Button   Tag="9" />
                                         </StackPanel>
-                                    </WrapPanel>
-                                    <WrapPanel>
                                         <StackPanel Orientation="Horizontal" Margin="20,2,0,2">
                                             <Label    Content="趣味／教育" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
                                             <ComboBox Tag="10" />
@@ -246,8 +236,6 @@
                                             <ComboBox Tag="11" />
                                             <Button   Tag="11" />
                                         </StackPanel>
-                                    </WrapPanel>
-                                    <WrapPanel>
                                         <StackPanel Orientation="Horizontal" Margin="20,2,0,2">
                                             <Label    Content="その他" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
                                             <ComboBox Tag="15" />
@@ -274,8 +262,6 @@
                                             <ComboBox Name="comboBox_reserveNo" />
                                             <Button Tag="18" />
                                         </StackPanel>
-                                    </WrapPanel>
-                                    <WrapPanel>
                                         <StackPanel Orientation="Horizontal" Margin="20,2,0,2">
                                             <Label Content="チューナー不足" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
                                             <ComboBox Name="comboBox_reserveNoTuner" />
@@ -286,8 +272,6 @@
                                             <ComboBox Name="comboBox_reserveWarning" />
                                             <Button Tag="20" />
                                         </StackPanel>
-                                    </WrapPanel>
-                                    <WrapPanel>
                                         <StackPanel Orientation="Horizontal" Margin="20,2,0,2">
                                             <TextBlock Padding="5,0,0,0" ToolTip="[動作設定]-[予約情報管理]画面参照" Width="{Binding ActualWidth, ElementName=label_MaxWidth}">自動予約登録不明<LineBreak/>(オプション有効時のみ)</TextBlock>
                                             <ComboBox Name="comboBox_reserveAutoAddMissing" />
@@ -327,8 +311,6 @@
                                             <ComboBox Tag="1" />
                                             <Button   Tag="1" />
                                         </StackPanel>
-                                    </WrapPanel>
-                                    <WrapPanel>
                                         <StackPanel Orientation="Horizontal" Margin="20,2,0,2">
                                             <Label Content="12～17時" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
                                             <ComboBox Tag="2" />
@@ -658,7 +640,7 @@
                                 </StackPanel>
                                 <StackPanel Margin="8,0" Orientation="Horizontal" >
                                     <CheckBox Name="checkBox_LaterTimeUse" Content="深夜時間表示をする" />
-                                    <TextBox Name="textBox_LaterTimeHour" Width="55" Margin="12,0" />
+                                    <TextBox Name="textBox_LaterTimeHour" Width="55" Margin="12,0,0,0" />
                                     <Label Content="時まで" />
                                 </StackPanel>
                                 <CheckBox Name="checkBox_displayPresetOnSearch" Margin="8,4" >
@@ -704,8 +686,6 @@
                                             <ComboBox Tag="2" />
                                             <Button   Tag="2" />
                                         </StackPanel>
-                                    </WrapPanel>
-                                    <WrapPanel>
                                         <StackPanel Orientation="Horizontal" Margin="20,1,0,1">
                                             <Label Content="指定サービス" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
                                             <ComboBox Tag="1" />
@@ -716,8 +696,6 @@
                                             <ComboBox Tag="3" />
                                             <Button   Tag="3" />
                                         </StackPanel>
-                                    </WrapPanel>
-                                    <WrapPanel>
                                         <StackPanel Orientation="Horizontal" Margin="20,1,0,1">
                                             <Label Content="視聴" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
                                             <ComboBox Tag="4" />
@@ -744,8 +722,6 @@
                                             <ComboBox Tag="1" />
                                             <Button   Tag="1" />
                                         </StackPanel>
-                                    </WrapPanel>
-                                    <WrapPanel>
                                         <StackPanel Orientation="Horizontal" Margin="20,1,0,1">
                                             <Label Content="チューナー不足" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
                                             <ComboBox Tag="2" />
@@ -756,12 +732,12 @@
                                             <ComboBox Tag="3" />
                                             <Button   Tag="3" />
                                         </StackPanel>
-                                    </WrapPanel>
                                         <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
                                             <TextBlock Text="自動予約登録不明&#x0d;&#x0a;(オプション有効時のみ)" Padding="5,0" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" ToolTip="[動作設定]-[予約情報管理]画面参照" />
                                             <ComboBox Tag="4" />
                                             <Button   Tag="4" />
                                         </StackPanel>
+                                    </WrapPanel>
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="状態表示列文字色" Margin="6,6,6,0">
@@ -777,12 +753,12 @@
                                             <ComboBox Tag="1" />
                                             <Button   Tag="1" />
                                         </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="20,1,0,1">
+                                            <Label Content="放送中" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
+                                            <ComboBox Tag="2" />
+                                            <Button   Tag="2" />
+                                        </StackPanel>
                                     </WrapPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="20,1,0,1">
-                                        <Label Content="放送中" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
-                                        <ComboBox Tag="2" />
-                                        <Button   Tag="2" />
-                                    </StackPanel>
                                 </StackPanel>
                             </GroupBox>
                         </StackPanel>

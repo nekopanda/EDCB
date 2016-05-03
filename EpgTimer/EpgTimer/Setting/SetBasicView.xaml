@@ -300,7 +300,8 @@
                                 <Label Content="ポート" MinWidth="100" ToolTip="'s' を付けると HTTPS のポート指定になります。&#13;&#10;'r'をつけると HTTPS にリダイレクトします。&#13;&#10;例: 80r,443s" />
                                 <TextBox Name="textBox_httpPort" Width="150" TextChanged="textBox_httpPort_TextChanged" />
                             </StackPanel>
-                            <StackPanel Margin="20,4,0,8">
+                            <StackPanel Name="warn_ssl" Margin="20,4,0,8">
+                                <!-- 親のWrapPanelの呪縛から逃れるため --><Grid Width="{Binding ActualWidth, ElementName=tabControl1}" />
                                 <TextBlock Name="warn_ssldll" TextWrapping="Wrap" Foreground="Red">
                                     HTTPS を利用するには EpgTimerSrv.exe と同じフォルダに ssleay32.dll と libeay32.dll が必要です。<LineBreak/>
                                     入手先例：<Hyperlink Click="hyperLink_Click">https://wiki.openssl.org/index.php/Binaries</Hyperlink> にある <Hyperlink NavigateUri="http://indy.fulgan.com/SSL?C=N;O=D" Click="hyperLink_Click">http://indy.fulgan.com/SSL</Hyperlink> など
@@ -332,6 +333,10 @@
                                 <TextBox Name="textBox_httpTimeout" Width="50" />
                                 <Label Content="秒" />
                             </StackPanel>
+                            <StackPanel Name="label_httpSSLVersion"  Margin="0,4,20,0" Orientation="Horizontal" ToolTip="受け入れるSSL/TLSプロトコルのバージョン&#x0d;&#x0a;値が大きいほど安全。ガラケーなどでSSL3.0が必要な場合は1にする">
+                                <Label Content="SSL/TLSバージョン" MinWidth="100" />
+                                <TextBox Name="textBox_httpSSLVersion" Width="50" />
+                            </StackPanel>
                         </WrapPanel>
                         <Grid Name="grid_paths" Margin="20,0,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_httpServer}">
                             <Grid.ColumnDefinitions>
@@ -350,7 +355,7 @@
                             <Label Grid.Row="1" Grid.Column="0" Content="ffmpeg の場所" Margin="0,4,0,0" />
                             <TextBox Grid.Row="1" Grid.Column="1" Name="textBox_ffmpegPath" Margin="0,4,0,0" />
                             <Button Grid.Row="1" Grid.Column="2" Name="button_ffmpegPath" Content="開く" Margin="10,4,0,0" Click="button_ffmpegPath_Click" />
-                            <Label Grid.Row="2" Grid.Column="0" Content="readex の場所" Margin="0,4,0,0" ToolTip="ini\HttpPublic\video\readtool.zip の中にあります。展開して保存した場所を指定してください。" />
+                            <Label Grid.Row="2" Grid.Column="0" Content="readex の場所" Margin="0,4,0,0" ToolTip="{Binding ToolTip, ElementName=textBox_readexPath}"/>
                             <TextBox Grid.Row="2" Grid.Column="1" Name="textBox_readexPath" Margin="0,4,0,0" ToolTip="ini\HttpPublic\video\readtool.zip の中にあります。展開して保存した場所を指定してください。" />
                             <Button Grid.Row="2" Grid.Column="2" Name="button_readexPath" Content="開く" Margin="10,4,0,0" Click="button_readexPath_Click" />
                         </Grid>

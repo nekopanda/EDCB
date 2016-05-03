@@ -10,39 +10,39 @@
             <TabItem Name="tabItem1" Header="録画動作">
                 <ScrollViewer>
                     <StackPanel Margin="0,8">
-                        <GroupBox Name="groupBox1" Header="録画、EPG取得終了後のデフォルト動作" Margin="12,4">
+                        <GroupBox Header="録画、EPG取得終了後のデフォルト動作" Margin="12,4">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="auto"/>
                                     <ColumnDefinition/>
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="auto"/>
                                     <RowDefinition Height="auto"/>
                                 </Grid.RowDefinitions>
-                                <Label Grid.Column="0" Grid.Row="0" Name="label5" Content="録画後動作" Margin="8" VerticalAlignment="Top"/>
-                                <WrapPanel Grid.Column="1" Grid.Row="0">
-                                    <RadioButton Name="radioButton_none" Content="何もしない" Margin="4" MinWidth="90" />
-                                    <RadioButton Name="radioButton_standby" Content="スタンバイ" Margin="4" MinWidth="90" />
-                                    <RadioButton Name="radioButton_suspend" Content="休止" Margin="4" MinWidth="90" />
-                                    <RadioButton Name="radioButton_shutdown" Content="シャットダウン" Margin="4" MinWidth="90" />
+                                <Label Grid.Column="0" Grid.Row="0" Name="label_MaxWidth" Content="録画後動作" Margin="8" VerticalAlignment="Top"/>
+                                <WrapPanel Grid.Column="1" Grid.Row="0"  Margin="9,5">
+                                    <RadioButton Name="radioButton_none"     Content="何もしない"     Margin="4,4,10,4" Width="{Binding ActualWidth, ElementName=radioButton_shutdown}" />
+                                    <RadioButton Name="radioButton_standby"  Content="スタンバイ"     Margin="4,4,10,4" Width="{Binding ActualWidth, ElementName=radioButton_shutdown}" />
+                                    <RadioButton Name="radioButton_suspend"  Content="休止"           Margin="4,4,10,4" Width="{Binding ActualWidth, ElementName=radioButton_shutdown}" />
+                                    <RadioButton Name="radioButton_shutdown" Content="シャットダウン" Margin="4,4,10,4" />
                                     <WrapPanel>
                                         <CheckBox Name="checkBox_reboot" Content="スタンバイ or 休止復帰後に再起動を行う" Margin="4,4,40,4" />
-                                        <Button Name="button_standbyCtrl" Content="抑制条件" Margin="4,0,0,0" Width="75" Height="25" Click="button_standbyCtrl_Click" HorizontalAlignment="Right" />
+                                        <Button Name="button_standbyCtrl" Content="抑制条件" Margin="4,0" Click="button_standbyCtrl_Click" />
                                     </WrapPanel>
                                 </WrapPanel>
-                                <Label Grid.Column="0" Grid.Row="1" Name="label1" Content="復帰処理開始時間" Margin="8" VerticalAlignment="Top" />
+                                <Label Grid.Column="0" Grid.Row="1" Content="復帰処理開始時間" Margin="8" VerticalAlignment="Top" />
                                 <StackPanel Grid.Column="1" Grid.Row="1" Margin="8" Orientation="Horizontal">
-                                    <Label Name="label4" Content="録画開始" />
+                                    <Label Content="録画開始" />
                                     <TextBox Name="textBox_pcWakeTime" Width="42" />
-                                    <Label Name="label2" Content="分前 (再起動ありの場合は＋5分)" />
+                                    <Label Content="分前 (再起動ありの場合は＋5分)" />
                                 </StackPanel>
                             </Grid>
                         </GroupBox>
-                        <GroupBox Name="groupBox2" Header="録画時の処理" Margin="12,4">
+                        <GroupBox Header="録画時の処理" Margin="12,4">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="auto" />
                                     <ColumnDefinition/>
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
@@ -51,36 +51,36 @@
                                     <RowDefinition Height="auto"/>
                                     <RowDefinition Height="auto"/>
                                 </Grid.RowDefinitions>
-                                <Label Grid.Column="0" Grid.Row="0" Name="label8" Content="録画マージン" Margin="8" />
+                                <Label Grid.Column="0" Grid.Row="0" Content="録画マージン" Margin="8" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
                                 <WrapPanel Grid.Column="1" Grid.Row="0" Margin="8">
                                     <StackPanel Orientation="Horizontal">
-                                        <Label Name="label9" Content="開始" />
+                                        <Label Content="開始" />
                                         <TextBox Name="textBox_megine_start" Width="42" />
-                                        <Label Name="label10" Content="秒" Margin="0,0,30,0"/>
+                                        <Label Content="秒" Margin="0,0,30,0"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
-                                        <Label Name="label11" Content="終了"/>
+                                        <Label Content="終了"/>
                                         <TextBox Name="textBox_margine_end" Width="42" />
-                                        <Label Name="label12" Content="秒" />
+                                        <Label Content="秒" />
                                     </StackPanel>
                                 </WrapPanel>
-                                <Label Grid.Column="0" Grid.Row="1" Name="label13" Content="録画用アプリ" Margin="8" />
+                                <Label Grid.Column="0" Grid.Row="1" Content="録画用アプリ" Margin="8" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
                                 <StackPanel Grid.Column="1" Grid.Row="1" Margin="8" Orientation="Horizontal">
-                                    <Label Name="label14" Content="開始" />
+                                    <Label Content="開始" />
                                     <TextBox Name="textBox_appWakeTime" Width="42" />
-                                    <Label Name="label15" Content="分前に起動する" />
+                                    <Label Content="分前に起動する" />
                                 </StackPanel>
-                                <WrapPanel Grid.Column="1" Grid.Row="2" Margin="8" >
-                                    <CheckBox Name="checkBox_appMin" Content="最小化で起動する" Margin="10,4" Width="180"/>
-                                    <CheckBox Name="checkBox_appView" Content="視聴時はViewを起動する" Margin="10,4" Width="180"/>
-                                    <CheckBox Name="checkBox_appDrop" Content="ドロップログを出力する" Margin="10,4" Width="180"/>
-                                    <CheckBox Name="checkBox_addPgInfo" Content="番組情報を出力する" Margin="10,4" Width="180"/>
-                                    <CheckBox Name="checkBox_appNW" Content="UDP、TCP送信を行う" Margin="10,4" Width="180"/>
-                                    <CheckBox Name="checkBox_appKeepDisk" Content="録画ファイルの容量確保を行う" Margin="10,4" Width="190" />
-                                    <CheckBox Name="checkBox_appOverWrite" Content="同一ファイル名が存在した場合に上書きする" Margin="10,4" />
+                                <WrapPanel Grid.Column="1" Grid.Row="2" Margin="9,0" >
+                                    <CheckBox Name="checkBox_appMin"       Content="最小化で起動する"             Margin="4,4,10,4" Width="{Binding ActualWidth, ElementName=checkBox_appKeepDisk}" />
+                                    <CheckBox Name="checkBox_appView"      Content="視聴時はViewを起動する"       Margin="4,4,10,4" Width="{Binding ActualWidth, ElementName=checkBox_appKeepDisk}" />
+                                    <CheckBox Name="checkBox_appDrop"      Content="ドロップログを出力する"       Margin="4,4,10,4" Width="{Binding ActualWidth, ElementName=checkBox_appKeepDisk}" />
+                                    <CheckBox Name="checkBox_addPgInfo"    Content="番組情報を出力する"           Margin="4,4,10,4" Width="{Binding ActualWidth, ElementName=checkBox_appKeepDisk}" />
+                                    <CheckBox Name="checkBox_appNW"        Content="UDP、TCP送信を行う"           Margin="4,4,10,4" Width="{Binding ActualWidth, ElementName=checkBox_appKeepDisk}" />
+                                    <CheckBox Name="checkBox_appKeepDisk"  Content="録画ファイルの容量確保を行う" Margin="4,4,10,4" />
+                                    <CheckBox Name="checkBox_appOverWrite" Content="同一ファイル名が存在した場合に上書きする" Margin="4,4,10,4" />
                                 </WrapPanel>
-                                <Label Grid.Column="0" Grid.Row="3" Name="label16" Content="プロセス優先度" Margin="8" />
-                                <ComboBox Grid.Column="1" Grid.Row="3" Name="comboBox_process" Margin="8" Width="150" HorizontalAlignment="Left"/>
+                                <Label Grid.Column="0" Grid.Row="3" Content="プロセス優先度" Margin="8" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
+                                <ComboBox Grid.Column="1" Grid.Row="3" Name="comboBox_process" Margin="13,8" Width="150" HorizontalAlignment="Left"/>
                             </Grid>
                         </GroupBox>
                     </StackPanel>
@@ -88,31 +88,31 @@
             </TabItem>
             <TabItem Name="tabItem2" Header="予約情報管理">
                 <ScrollViewer>
-                    <StackPanel>
-                        <CheckBox Name="checkBox_back_priority" Content="優先度が同じで時間が重なった場合、後の予約を優先する" Margin="8,8,0,0" />
-                        <WrapPanel Margin="8,4,0,0">
+                    <StackPanel Margin="8">
+                        <CheckBox Name="checkBox_back_priority" Content="優先度が同じで時間が重なった場合、後の予約を優先する" Margin="0,4,0,0" />
+                        <WrapPanel Margin="0,4,0,0">
                             <CheckBox Name="checkBox_autoDel" Content="HDDの空きが少ない場合、古い録画ファイルを削除する(追加設定で対象フォルダを設定)" Margin="0,4,0,0" />
                             <Button Name="button_autoDel" Content="削除設定" Margin="30,4,0,0" Click="button_autoDel_Click" VerticalAlignment="Center" />
                         </WrapPanel>
-                        <WrapPanel Margin="8,4,0,0">
+                        <WrapPanel Margin="0,4,0,0">
                             <CheckBox Name="checkBox_recname" Content="録画時のファイル名にPlugInを使用する" Margin="0,4,0,0" />
                             <StackPanel Margin="30,4,0,0" Orientation="Horizontal">
                                 <ComboBox Name="comboBox_recname" Margin="0,0,10,0" Width="160" />
                                 <Button Name="button_recname" Content="設定" Click="button_recname_Click" />
                             </StackPanel>
                         </WrapPanel>
-                        <CheckBox Name="checkBox_noChkYen" Content="ファイル名の禁則文字の変換対象から「\」を除外する" Margin="8,8,0,0" />
-                        <WrapPanel Margin="8,4,0,0">
+                        <CheckBox Name="checkBox_noChkYen" Content="ファイル名の禁則文字の変換対象から「\」を除外する" Margin="0,8,0,0" />
+                        <WrapPanel Margin="0,4,0,0">
                             <CheckBox Name="checkBox_cautionOnRecChange" Content="録画中または開始直前の予約を変更・削除するとき警告する" Margin="0,4,0,0" />
                             <StackPanel Margin="30,4,0,0"  Orientation="Horizontal">
                                 <TextBox Name="textBox_cautionOnRecMarginMin" Width="62" />
                                 <Label Content="分以内" />
-                            </StackPanel >
+                            </StackPanel>
                         </WrapPanel>
-                        <WrapPanel Margin="8,4,0,0">
-                            <Label Content="自動予約登録の変更・削除に合わせて予約を変更・削除する" Margin="0,4,-10,0" ToolTipService.ShowDuration="600000" ToolTip="個別予約は対象外です。また、他の有効な自動予約登録の対象になっている予約は連動削除されません。&#10;＊右クリックメニューの「予約を自動登録に合わせる」「予約ごと削除」では、検索された予約は全て変更・削除されます。&#10;＊自動予約登録から外れた予約は、[各画面の設定][予約一覧・共通]のオプションで強調表示することができます。" />
-                            <CheckBox Name="checkBox_SyncResAutoAddChange" Content="変更時" Margin="30,4,-10,0" />
-                            <CheckBox Name="checkBox_SyncResAutoAddDelete" Content="削除時" Margin="30,4,-10,0" />
+                        <WrapPanel Margin="0,4,0,0">
+                            <Label Content="自動予約登録の変更・削除に合わせて予約を変更・削除する" Margin="0,4,0,0" Padding="0" ToolTipService.ShowDuration="600000" ToolTip="個別予約は対象外です。また、他の有効な自動予約登録の対象になっている予約は連動削除されません。&#10;＊右クリックメニューの「予約を自動登録に合わせる」「予約ごと削除」では、検索された予約は全て変更・削除されます。&#10;＊自動予約登録から外れた予約は、[各画面の設定][予約一覧・共通]のオプションで強調表示することができます。" />
+                            <CheckBox Name="checkBox_SyncResAutoAddChange" Content="変更時" Margin="30,4,0,0" />
+                            <CheckBox Name="checkBox_SyncResAutoAddDelete" Content="削除時" Margin="30,4,0,0" />
                             <CheckBox Name="checkBox_SyncResAutoAddChgNewRes" Margin="30,4,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_SyncResAutoAddChange, UpdateSourceTrigger=PropertyChanged}" ToolTipService.ShowDuration="600000" ToolTip="キーワード予約無効時や検索条件変更時など、対象外となった予約が削除されるので注意が必要です。&#10;また、「録画中または開始直前の予約を変更・削除するとき警告する」が有効の場合はその設定時間、&#10;それ以外の場合は録画開始1分以内の予約は削除せず、通常の変更のみを試みます。">
                                 <TextBlock TextWrapping="Wrap">変更時、予約を一度削除してから再登録する (無効の予約を除く)</TextBlock>
                             </CheckBox>
@@ -138,7 +138,7 @@
                                 <RowDefinition Height="auto" />
                                 <RowDefinition />
                             </Grid.RowDefinitions>
-                            <Label Grid.Column="0" Grid.Row="0" Name="label31" Content="表示ボタン" Margin="4" />
+                            <Label Grid.Column="0" Grid.Row="0" Content="表示ボタン" Margin="4" />
                             <ListBox Grid.Column="0" Grid.Row="1" Name="listBox_viewBtn" SelectionMode="Extended" Margin="4,0,0,0" />
                             <StackPanel Grid.Column="1" Grid.Row="1">
                                 <Button Name="button_btnUp" Content="↑" Margin="10,4" />
@@ -146,7 +146,7 @@
                                 <Button Name="button_btnAdd" Content="←" Margin="10,4" />
                                 <Button Name="button_btnDown" Content="↓" Margin="10,4" />
                             </StackPanel>
-                            <Label Grid.Column="2" Grid.Row="0" Name="label32" Content="項目" Margin="0,4" />
+                            <Label Grid.Column="2" Grid.Row="0" Content="項目" Margin="0,4" />
                             <ListBox Grid.Column="2" Grid.Row="1" Name="listBox_itemBtn" SelectionMode="Extended" Margin="0,0,4,0" />
                             <Grid Grid.Column="3" Grid.Row="1" Margin="4,0">
                                 <Grid.RowDefinitions>
@@ -161,7 +161,7 @@
                                 </CheckBox>
                                 <StackPanel Grid.Row="2" Margin="20,0,0,0" Orientation="Horizontal">
                                     <TextBox Name="textBox_suspendChkTime" Width="42" />
-                                    <Label Content="秒間" Name="labelTimer" />
+                                    <Label Content="秒間" />
                                 </StackPanel>
                                 <Grid Grid.Row="3">
                                     <Grid.ColumnDefinitions>
@@ -186,7 +186,7 @@
                                 <RowDefinition Height="auto" />
                                 <RowDefinition />
                             </Grid.RowDefinitions>
-                            <Label Grid.Column="0" Grid.Row="0" Name="label33" Content="表示ボタン" Margin="4" />
+                            <Label Grid.Column="0" Grid.Row="0" Content="表示ボタン" Margin="4" />
                             <ListBox Grid.Column="0" Grid.Row="1" Name="listBox_viewTask" SelectionMode="Extended" Margin="4,0,0,0" />
                             <StackPanel Grid.Column="1" Grid.Row="1">
                                 <Button Name="button_taskUp" Content="↑" Margin="10,4" />
@@ -194,7 +194,7 @@
                                 <Button Name="button_taskAdd" Content="←" Margin="10,4" />
                                 <Button Name="button_taskDown" Content="↓" Margin="10,4" />
                             </StackPanel>
-                            <Label Grid.Column="2" Grid.Row="0" Name="label34" Content="項目"  Margin="0,4" />
+                            <Label Grid.Column="2" Grid.Row="0" Content="項目"  Margin="0,4" />
                             <ListBox Grid.Column="2" Grid.Row="1" Name="listBox_itemTask" SelectionMode="Extended"  Margin="0,0,4,0" />
                         </Grid>
                     </GroupBox>
@@ -204,12 +204,12 @@
                 <ScrollViewer>
                     <StackPanel Margin="8">
                         <WrapPanel>
-                            <StackPanel>
-                                <CheckBox Name="checkBox_closeMin" Content="×ボタンで最小化する" Margin="0,4,0,0" MinWidth="200"/>
-                                <CheckBox Name="checkBox_minWake" Content="最小化で起動する" Margin="0,4,0,0" MinWidth="200"/>
-                                <CheckBox Name="checkBox_applyMulti" Content="多重起動を許す" Margin="0,4,0,0" MinWidth="200"/>
+                            <StackPanel MinWidth="200" Margin="0,0,20,0">
+                                <CheckBox Name="checkBox_closeMin" Content="×ボタンで最小化する" Margin="0,4,0,0" />
+                                <CheckBox Name="checkBox_minWake" Content="最小化で起動する" Margin="0,4,0,0" />
+                                <CheckBox Name="checkBox_applyMulti" Content="多重起動を許す" Margin="0,4,0,0" />
                             </StackPanel>
-                            <StackPanel>
+                            <StackPanel MinWidth="200" Margin="0,0,20,0">
                                 <CheckBox Name="checkBox_showTray" Content="タスクトレイアイコンを表示する" Margin="0,4,0,0" />
                                 <CheckBox Name="checkBox_minHide" Content="最小化時にタスクトレイに格納する" Margin="0,4,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_showTray, UpdateSourceTrigger=PropertyChanged}" />
                             </StackPanel>
@@ -220,29 +220,29 @@
                         </WrapPanel>
                         <WrapPanel>
                             <CheckBox Name="checkBox_tcpServer" Content="ネットワーク接続を許可する" Margin="0,4,0,0" />
-                            <StackPanel Margin="20,4,0,0" Orientation="Horizontal">
-                                <Label Name="label41" Content="ポート" Margin="0,0,10,0" MinWidth="80" />
-                                <TextBox Name="textBox_tcpPort" Width="50" />
+                            <StackPanel Margin="20,4,0,0" Orientation="Horizontal" IsEnabled="{Binding IsChecked, ElementName=checkBox_tcpServer}">
+                                <Label Content="ポート" Margin="0,0,10,0" MinWidth="80" IsEnabled="{Binding IsEnabled, ElementName=checkBox_tcpServer}" />
+                                <TextBox Name="textBox_tcpPort" Width="50" IsEnabled="{Binding IsEnabled, ElementName=checkBox_tcpServer}" />
                             </StackPanel>
-                            <StackPanel Margin="20,4,0,0" Orientation="Horizontal">
-                                <Label Name="label_tcpAcl" Content="アクセス制御" Margin="0,0,10,0" MinWidth="80" />
-                                <TextBox Name="textBox_tcpAcl" Width="175" />
+                            <StackPanel Margin="20,4,0,0" Orientation="Horizontal" IsEnabled="{Binding IsChecked, ElementName=checkBox_tcpServer}">
+                                <Label Content="アクセス制御" Margin="0,0,10,0" MinWidth="80" IsEnabled="{Binding IsEnabled, ElementName=checkBox_tcpServer}" />
+                                <TextBox Name="textBox_tcpAcl" Width="175" IsEnabled="{Binding IsEnabled, ElementName=checkBox_tcpServer}" />
                             </StackPanel>
-                            <StackPanel Margin="20,4,0,0" Orientation="Horizontal">
-                                <Label Name="label_tcpPassword" Content="パスワード" Margin="0,0,10,0" MinWidth="80" />
-                                <PasswordBox Name="passwordBox_tcpPassword" Width="175" />
+                            <StackPanel Margin="20,4,0,0" Orientation="Horizontal" IsEnabled="{Binding IsChecked, ElementName=checkBox_tcpServer}">
+                                <Label Content="パスワード" Margin="0,0,10,0" MinWidth="80" IsEnabled="{Binding IsEnabled, ElementName=checkBox_tcpServer}" />
+                                <PasswordBox Name="passwordBox_tcpPassword" Width="175" IsEnabled="{Binding IsEnabled, ElementName=checkBox_tcpServer}" />
                             </StackPanel>
-                            <StackPanel Margin="20,4,0,0" Orientation="Horizontal">
-                                <Label Name="label_tcpResTo" Content="無通信タイムアウト(秒)" Margin="0,0,10,0" MinWidth="80" />
-                                <TextBox Name="textBox_tcpResTo" Width="50" />
+                            <StackPanel Margin="20,4,0,0" Orientation="Horizontal" IsEnabled="{Binding IsChecked, ElementName=checkBox_tcpServer}">
+                                <Label Content="無通信タイムアウト(秒)" Margin="0,0,10,0" MinWidth="80" IsEnabled="{Binding IsEnabled, ElementName=checkBox_tcpServer}" />
+                                <TextBox Name="textBox_tcpResTo" Width="50" IsEnabled="{Binding IsEnabled, ElementName=checkBox_tcpServer}" />
                             </StackPanel>
                         </WrapPanel>
                         <WrapPanel>
                             <CheckBox Name="checkBox_autoDelRecInfo" Content="録画結果を自動的に削除する" Margin="0,4,10,0" />
-                            <CheckBox Name="checkBox_autoDelRecFile" Content="録画ファイルも削除する" Margin="0,4,10,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_autoDelRecInfo, UpdateSourceTrigger=PropertyChanged}" />
-                            <StackPanel Margin="20,4,0,0" Orientation="Horizontal">
-                                <Label Name="label42" Content="保持件数" Margin="0,0,10,0" />
-                                <TextBox Name="textBox_autoDelRecInfo" Width="50" />
+                            <CheckBox Name="checkBox_autoDelRecFile" Content="録画ファイルも削除する" Margin="20,4,10,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_autoDelRecInfo, UpdateSourceTrigger=PropertyChanged}" />
+                            <StackPanel Margin="20,4,0,0" Orientation="Horizontal" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_autoDelRecInfo}">
+                                <Label Content="保持件数" Margin="0,0,10,0" IsEnabled="{Binding Path=IsEnabled, ElementName=checkBox_autoDelRecInfo}" />
+                                <TextBox Name="textBox_autoDelRecInfo" Width="50" IsEnabled="{Binding Path=IsEnabled, ElementName=checkBox_autoDelRecInfo}" />
                             </StackPanel>
                         </WrapPanel>
                         <CheckBox Name="checkBox_timeSync" Margin="0,4,0,0" VerticalContentAlignment="Top">
@@ -263,17 +263,19 @@
                                 <CheckBox Name="checkBox_suspendClose" Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Margin="0,4,0,0" IsEnabled="False" />
                                 <CheckBox Name="checkBox_ngAutoEpgLoad" Content="EPGデータを自動的に読み込まない" Margin="0,4,0,0" IsEnabled="False" />
                                 <StackPanel Orientation="Horizontal">
-                                    <CheckBox Name="checkBox_keepTCPConnect" Content="EpgTimerSrvとの接続維持を試みる" Margin="0,4,10,0" IsEnabled="False" />
-                                    <TextBox Name="textBox_keepTCPConnect" Width="50" IsEnabled="False" />
-                                    <Label Name="label_keepTCPConnect" Content="分間隔" Margin="0,4,0,0" Padding="0" IsEnabled="False" />
+                                    <CheckBox Name="checkBox_keepTCPConnect" Content="EpgTimerSrvとの接続維持を試みる" IsEnabled="False" />
+                                    <StackPanel Orientation="Horizontal" IsEnabled="{Binding IsChecked, ElementName=checkBox_keepTCPConnect}">
+                                        <TextBox Name="textBox_keepTCPConnect" Margin="10,0,0,0" Width="50" IsEnabled="{Binding IsEnabled, ElementName=checkBox_keepTCPConnect}" />
+                                        <Label Content="分間隔" IsEnabled="{Binding IsEnabled, ElementName=checkBox_keepTCPConnect}" />
+                                    </StackPanel>
                                 </StackPanel>
                             </StackPanel>
                         </WrapPanel>
                         <WrapPanel>
-                            <CheckBox Name="checkBox_cautionManyChange" Content="多数の項目を処理するとき警告する" Margin="0,4,0,0" />
-                            <StackPanel Orientation="Horizontal">
-                                <TextBox Name="textBox_cautionManyChange" Margin="20,4,0,0" Width="50" />
-                                <Label Content="以上" Margin="0,4,0,0" Padding="0" />
+                            <CheckBox Name="checkBox_cautionManyChange" Content="多数の項目を処理するとき警告する" />
+                            <StackPanel Orientation="Horizontal" IsEnabled="{Binding IsChecked, ElementName=checkBox_cautionManyChange}">
+                                <TextBox Name="textBox_cautionManyChange" Margin="10,0,0,0" Width="50" />
+                                <Label Content="以上" />
                             </StackPanel>
                         </WrapPanel>
                         <CheckBox Name="checkBox_srvSaveNotifyLog" Content="情報通知ログをファイルに保存する" Margin="0,4,0,0" />
@@ -297,12 +299,12 @@
                                     <RowDefinition />
                                     <RowDefinition />
                                 </Grid.RowDefinitions>
-                                <Label Grid.Column="0" Grid.Row="0" Name="label51" Content="表示名" Margin="5" />
+                                <Label Grid.Column="0" Grid.Row="0" Content="表示名" Margin="5" />
                                 <TextBox Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="0" Name="textBox_name1" Margin="5" />
-                                <Label Grid.Column="0" Grid.Row="1" Name="label52" Content="実行exe" Margin="5" />
+                                <Label Grid.Column="0" Grid.Row="1" Content="実行exe" Margin="5" />
                                 <TextBox Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" Name="textBox_exe1" Margin="5" />
                                 <Button Grid.Column="3" Grid.Row="1" Name="button_exe1" Content="開く" Margin="10,0" Click="button_exe1_Click" />
-                                <Label Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="2" Name="label53" Content="コマンドラインオプション" Margin="5" />
+                                <Label Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="2" Content="コマンドラインオプション" Margin="5" />
                                 <TextBox Grid.Column="2" Grid.Row="2" Name="textBox_opt1" Margin="5" />
                             </Grid>
                         </GroupBox>
@@ -319,12 +321,12 @@
                                     <RowDefinition />
                                     <RowDefinition />
                                 </Grid.RowDefinitions>
-                                <Label Grid.Column="0" Grid.Row="0" Name="label54" Content="表示名" Margin="5" />
+                                <Label Grid.Column="0" Grid.Row="0" Content="表示名" Margin="5" />
                                 <TextBox Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="0" Name="textBox_name2" Margin="5" />
-                                <Label Grid.Column="0" Grid.Row="1" Name="label55" Content="実行exe" Margin="5" />
+                                <Label Grid.Column="0" Grid.Row="1" Content="実行exe" Margin="5" />
                                 <TextBox Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" Name="textBox_exe2" Margin="5" />
                                 <Button Grid.Column="3" Grid.Row="1" Name="button_exe2" Content="開く" Margin="10,0" Click="button_exe2_Click" />
-                                <Label Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="2" Name="label56" Content="コマンドラインオプション" Margin="5" />
+                                <Label Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="2" Content="コマンドラインオプション" Margin="5" />
                                 <TextBox Grid.Column="2" Grid.Row="2" Name="textBox_opt2" Margin="5" />
                             </Grid>
                         </GroupBox>
@@ -344,8 +346,8 @@
                         <RowDefinition />
                         <RowDefinition Height="auto"/>
                     </Grid.RowDefinitions>
-                    <Label Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="0" Name="label62" Content="iEPG Version 1用の設定です。Version 2では必要ありません" Foreground="Red" />
-                    <Label Grid.Column="0" Grid.Row="1" Name="label61" Content="サービス一覧" Margin="15,0" />
+                    <Label Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="0" Content="iEPG Version 1用の設定です。Version 2では必要ありません" Foreground="Red" />
+                    <Label Grid.Column="0" Grid.Row="1" Content="サービス一覧" Margin="15,0" />
                     <ListBox Grid.Column="0" Grid.Row="2" Grid.RowSpan="2" Name="listBox_service" Margin="15,0,15,10" ItemsSource="{Binding}"  DisplayMemberPath="ServiceName" SelectionChanged="listBox_service_SelectionChanged">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="{x:Type ListBoxItem}">
@@ -354,7 +356,7 @@
                             </Style>
                         </ListBox.ItemContainerStyle>
                     </ListBox>
-                    <Label Grid.Column="1" Grid.Row="1" Name="label63" Content="iEPG放送局名" Margin="15,0" />
+                    <Label Grid.Column="1" Grid.Row="1" Content="iEPG放送局名" Margin="15,0" />
                     <ListBox  Grid.Column="1" Grid.Row="2" Name="listBox_iEPG" Margin="15,0" />
                     <TextBox Grid.Column="1" Grid.Row="3" Name="textBox_station" Margin="15,10" />
                     <Button Grid.Column="2" Grid.Row="2" Name="button_del" Content="削除" Click="button_del_iepg_Click" VerticalAlignment="Top" />

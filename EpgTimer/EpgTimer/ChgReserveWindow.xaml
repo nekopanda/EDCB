@@ -82,10 +82,10 @@
                 </ScrollViewer>
             </TabItem>
         </TabControl>
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="8">
-            <Button Name="button_chg_reserve" Content="変更" Margin="20,0" />
-            <Button Name="button_del_reserve" Content="削除" Margin="20,0" />
-            <Button Name="button_cancel" Content="キャンセル" Margin="20,0" />
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,-8,12,12">
+            <Button Name="button_chg_reserve" Content="変更" Margin="0,0,30,0" />
+            <Button Name="button_del_reserve" Content="削除" Margin="0,0,30,0" />
+            <Button Name="button_cancel" Content="キャンセル" />
         </StackPanel>
     </Grid>
 </Window>

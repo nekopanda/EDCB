@@ -9,7 +9,7 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
-        <TextBox Name="textBox_info" IsReadOnly="True" TextWrapping="Wrap" />
+        <TextBox Name="textBox_info" IsReadOnly="True" TextWrapping="Wrap" VerticalAlignment="Stretch"/>
         <TabControl Grid.Row="1" Name="tabControl" TabStripPlacement="Bottom" >
             <TabItem Header="予約" Name="tabItem_reserve">
                 <ScrollViewer>
@@ -22,9 +22,9 @@
                 </ScrollViewer>
             </TabItem>
         </TabControl>
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="12">
-            <Button Name="button_add_reserve" Content="予約" Margin="20,0" />
-            <Button Name="button_cancel" Content="キャンセル" Margin="20,0" />
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,-8,12,12">
+            <Button Name="button_add_reserve" Content="予約" Margin="0,0,30,0" />
+            <Button Name="button_cancel" Content="キャンセル" />
         </StackPanel>
     </Grid>
 </Window>

@@ -353,9 +353,12 @@ namespace EpgTimer
             {
                 if (String.Compare(info, "（空白）") == 0)
                 {
-                    Label space = new Label();
-                    space.Width = 15;
-                    stackPanel_button.Children.Add(space);
+                    if (!Settings.Instance.ViewButtonShowAsTab)
+                    {
+                        Label space = new Label();
+                        space.Width = 15;
+                        stackPanel_button.Children.Add(space);
+                    }
                 }
                 else
                 {
@@ -369,7 +372,6 @@ namespace EpgTimer
                         {
                             buttonList[info].Content = Settings.Instance.Cust2BtnName;
                         }
-                        stackPanel_button.Children.Add(buttonList[info]);
 
                         if (Settings.Instance.ViewButtonShowAsTab)
                         {
@@ -409,11 +411,13 @@ namespace EpgTimer
                             }
                             tabControl_main.Items.Add(ti);
                         }
+                        else
+                        {
+                            stackPanel_button.Children.Add(buttonList[info]);
+                        }
                     }
                 }
             }
-            //タブとして表示するかボタンが1つもないときは行を隠す
-            rowDefinition_row0.Height = new GridLength(Settings.Instance.ViewButtonShowAsTab || stackPanel_button.Children.Count == 0 ? 0 : 30);
         }
 
         void DisconnectServer()

@@ -34,7 +34,7 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <GridSplitter Grid.Row="0" Height="2" HorizontalAlignment="Stretch" Name="gridSplitter1" VerticalAlignment="Bottom" BorderBrush="DarkGray" Background="DarkGray" />
+        <GridSplitter Grid.Row="0" Name="gridSplitter1" Height="5" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" BorderBrush="DarkGray" Background="DarkGray" />
         <StackPanel Grid.Row="1" Name="stackPanel_button" Orientation="Horizontal" Margin="0,3,0,0">
             <Button Name="button_search" Content="検索" Margin="10,0,0,0" />
             <Button Name="button_add_reserve" Content="予約" Margin="20,0,0,0" />

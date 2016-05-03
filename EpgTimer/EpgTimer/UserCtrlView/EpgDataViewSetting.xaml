@@ -103,8 +103,8 @@
                                         </TabItem>
                                     </TabControl>
                                 </Grid>
-                                <TextBox Grid.Column="0" Grid.Row="1" IsReadOnly="True" Margin="6" Name="textBox_serviceView1" TextWrapping="Wrap" VerticalScrollBarVisibility="Visible" />
-                                <TextBox Grid.Column="1" Grid.Row="1" IsReadOnly="True" Margin="6" Name="textBox_serviceView2" TextWrapping="Wrap" VerticalScrollBarVisibility="Visible" />
+                                <TextBox Grid.Column="0" Grid.Row="1" IsReadOnly="True" Margin="6" Name="textBox_serviceView1" TextWrapping="Wrap" VerticalAlignment="Stretch" VerticalScrollBarVisibility="Visible" />
+                                <TextBox Grid.Column="1" Grid.Row="1" IsReadOnly="True" Margin="6" Name="textBox_serviceView2" TextWrapping="Wrap" VerticalAlignment="Stretch" VerticalScrollBarVisibility="Visible" />
                             </Grid>
                         </TabItem>
                         <TabItem Header="表示ジャンル" Name="tabItem_content">
