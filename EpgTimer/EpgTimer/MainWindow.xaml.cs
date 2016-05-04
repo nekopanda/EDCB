@@ -657,6 +657,7 @@ namespace EpgTimer
                 if (infoWindowViewModel != null)
                 {
                     Settings.Instance.InfoWindowTopMost = infoWindowViewModel.IsTopMost;
+                    Settings.Instance.InfoWindowBottomMost = infoWindowViewModel.IsBottomMost;
                 }
                 if (infoWindow != null)
                 {

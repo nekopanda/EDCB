@@ -820,6 +820,7 @@ namespace EpgTimer
         public bool InfoWindowTitleIsVisible { get; set; }
         public bool InfoWindowHeaderIsVisible { get; set; }
         public bool InfoWindowTopMost { get; set; }
+        public bool InfoWindowBottomMost { get; set; }
         public bool InfoWindowEnabled { get; set; }
         public bool RecItemToolTip { get; set; }
 
@@ -1003,6 +1004,7 @@ namespace EpgTimer
             InfoWindowTitleIsVisible = true;
             InfoWindowHeaderIsVisible = true;
             InfoWindowTopMost = true;
+            InfoWindowBottomMost = false;
             InfoWindowEnabled = false;
             RecItemToolTip = false;
         }

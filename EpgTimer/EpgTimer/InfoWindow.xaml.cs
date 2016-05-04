@@ -10,7 +10,7 @@ namespace EpgTimer
     /// <summary>
     /// InfoWindow.xaml の相互作用ロジック
     /// </summary>
-    public partial class InfoWindow : RestorableWindow
+    public partial class InfoWindow : InfoWindowBase
     {
         private NotifyIcon notifyIcon = new NotifyIcon();
         private bool trueClosing = false;
