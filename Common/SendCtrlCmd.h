@@ -119,6 +119,16 @@ public:
 		return SendCmdData(CMD2_EPG_SRV_UNREGIST_GUI_TCP, port);
 	}
 
+	//EpgTimerSrv.exeのTCP接続GUI登録状況を確認する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// port					[IN]ポート
+	// registerd			[OUT]登録済みの時true
+	DWORD SendIsRegistTCP(DWORD port, BOOL* registered){
+		return SendAndReceiveCmdData(CMD2_EPG_SRV_ISREGIST_GUI_TCP, port, registered);
+	}
+
 	//予約一覧を取得する
 	//戻り値：
 	// エラーコード
@@ -377,6 +387,19 @@ public:
 		DWORD* resValSize
 		);
 
+	//指定ファイルをまとめて転送する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// list			[IN]ファイル名のリスト
+	// resVal		[OUT]ファイルデータのリスト
+	DWORD SendFileCopy2(
+		const vector<wstring>& list,
+		vector<FILE_DATA>* resVal
+		){
+		return SendAndReceiveCmdData2(CMD2_EPG_SRV_FILE_COPY2, list, resVal);
+	}
+
 	//PlugInファイルの一覧を取得する
 	//戻り値：
 	// エラーコード
@@ -401,6 +424,11 @@ public:
 		TVTEST_CH_CHG_INFO* resVal
 		){
 		return SendAndReceiveCmdData(CMD2_EPG_SRV_GET_CHG_CH_TVTEST, val, resVal);
+	}
+
+	//設定ファイル(ini)の更新を通知させる
+	DWORD SendNotifyProfileUpdate(){
+		return SendCmdWithoutData(CMD2_EPG_SRV_PROFILE_UPDATE);
 	}
 
 	//ネットワークモードのEpgDataCap_Bonのチャンネルを切り替え
@@ -525,6 +553,19 @@ public:
 		return SendAndReceiveCmdData(CMD2_EPG_SRV_NWPLAY_TF_OPEN, val, resVal);
 	}
 
+	//録画ファイルのネットワークパスを取得
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val				[IN]ローカルパス
+	// resVal			[OUT]ネットワークパス
+	DWORD SendGetRecFileNetworkPath(
+		wstring val,
+		wstring* resVal
+		){
+		return SendAndReceiveCmdData(CMD2_EPG_SRV_GET_NETWORK_PATH, val, resVal);
+	}
+
 //コマンドバージョン対応版
 	//予約一覧を取得する
 	//戻り値：
@@ -598,6 +639,32 @@ public:
 		BYTE** resVal,
 		DWORD* resValSize
 		);
+
+	//指定キーワードで番組情報を検索する
+	//戻り値：
+	// エラーコード
+	//引数：
+	// key				[IN]検索キー（複数指定時はまとめて検索結果が返る）
+	// val				[OUT]番組情報一覧
+	DWORD SendSearchPg2(
+		const vector<EPGDB_SEARCH_KEY_INFO>& key,
+		vector<EPGDB_EVENT_INFO>* val
+		){
+		return SendAndReceiveCmdData2(CMD2_EPG_SRV_SEARCH_PG2, key, val);
+	}
+
+	//指定キーワードで番組情報を検索する(キーごと)
+	//戻り値：
+	// エラーコード
+	//引数：
+	// key				[IN]検索キー（複数指定時はまとめて検索結果が返る）
+	// val				[OUT]番組情報一覧（キーごとの全ての検索結果が返る）
+	DWORD SendSearchPgByKey2(
+		const vector<EPGDB_SEARCH_KEY_INFO>& key,
+		vector<EPGDB_EVENT_INFO>* val
+		){
+		return SendAndReceiveCmdData2(CMD2_EPG_SRV_SEARCH_PG_BYKEY2, key, val);
+	}
 
 	//自動予約登録条件一覧を取得する
 	//戻り値：
@@ -674,6 +741,18 @@ public:
 		vector<REC_FILE_INFO>* val
 		){
 		return ReceiveCmdData2(CMD2_EPG_SRV_ENUM_RECINFO2, val);
+	}
+
+	//録画済み情報一覧取得
+	//戻り値：
+	// エラーコード
+	//引数：
+	// val			[OUT]録画済み情報一覧
+	DWORD SendGetRecInfoList2(
+		const vector<DWORD>& idList,
+		vector<REC_FILE_INFO>* val
+		){
+		return SendAndReceiveCmdData2(CMD2_EPG_SRV_GET_RECINFO_LIST2, idList, val);
 	}
 
 	//録画済み情報のプロテクト変更
