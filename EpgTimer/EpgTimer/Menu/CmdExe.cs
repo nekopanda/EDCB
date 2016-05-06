@@ -14,6 +14,12 @@ namespace EpgTimer
         Delete3, //予約のみ削除
         AdjustReserve //予約を自動登録に合わせる
     }
+    public enum cmdDeleteType
+    {
+        Delete,  //削除
+        Delete2, //予約ごと削除
+        Delete3  //予約のみ削除
+    }
 
     public class CmdExe<T> where T : class, IRecWorkMainData, new()
     {
@@ -60,6 +66,7 @@ namespace EpgTimer
         protected MenuManager mm = CommonManager.Instance.MM;
 
         protected Control Owner;
+        protected static MainWindow mainWindow { get { return (MainWindow)Application.Current.MainWindow; } }
 
         protected Dictionary<ICommand, cmdOption> cmdList = new Dictionary<ICommand, cmdOption>();
 
@@ -298,11 +305,11 @@ namespace EpgTimer
         protected virtual void mcs_JumpTab(CtxmCode code, bool reserveOnly = false, bool onReserveOnly = false)
         {
             ReserveData resinfo = mcs_GetNextReserve();
+            reserveOnly |= onReserveOnly;
             if (reserveOnly && resinfo == null) return;
             if (onReserveOnly && resinfo != null && resinfo.IsEnabled == false) return;
 
             mcs_SetBlackoutWindow(new ReserveItem(resinfo));
-            var mainWindow = Application.Current.MainWindow as MainWindow;
             mainWindow.moveTo_tabItem(code);
             IsCommandExecuted = true;
         }
@@ -360,8 +367,6 @@ namespace EpgTimer
             {
                 Settings.Instance.MenuSet = dlg.info.Clone();
                 Settings.SaveToXmlFile();//メニュー設定の保存
-
-                var mainWindow = (MainWindow)Application.Current.MainWindow;
                 mainWindow.RefreshMenu(true);
             }
         }

@@ -40,7 +40,7 @@ namespace EpgTimer
         private bool closeFlag = false;
         private bool initExe = false;
 
-        private System.Windows.Threading.DispatcherTimer chkRegistTCPTimer = null;
+        private System.Windows.Threading.DispatcherTimer chkTimer = null;
 
         private bool idleShowBalloon = false;
 
@@ -194,11 +194,20 @@ namespace EpgTimer
 
                 //タスクトレイの表示
                 taskTray = new TaskTrayClass(this);
-                taskTray.Icon = Properties.Resources.TaskIconBlue;
+                if (CommonManager.Instance.NWMode == true && Settings.Instance.ChkSrvRegistTCP == true)
+                {
+                    taskTray.Icon = TaskIconSpec.TaskIconGray;
+                }
+                else
+                {
+                    taskTray.Icon = TaskIconSpec.TaskIconBlue;
+                }
                 taskTray.Visible = Settings.Instance.ShowTray;
                 taskTray.ContextMenuClick += new EventHandler(taskTray_ContextMenuClick);
                 taskTray.Text = GetTaskTrayReserveInfoText();
                 ResetTaskMenu();
+
+                ChkTimerWork();
             }
             catch (Exception ex)
             {
@@ -449,7 +458,7 @@ namespace EpgTimer
 
                 CommonManager.Instance.DB.ClearRecFileAppend(true);
                 CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
-                ChkRegistTCPTimerWork();
+                ChkTimerWork();
 
                 if (Settings.Instance.NWMode == false)
                 {
@@ -556,6 +565,10 @@ namespace EpgTimer
                         {
                             MessageBox.Show("サーバーへの接続に失敗しました");
                         }
+                        if (Settings.Instance.ChkSrvRegistTCP == true)
+                        {
+                            taskTray.Icon = TaskIconSpec.TaskIconGray;
+                        }
                         cmd.SetNWSetting("", 0);
                     }
                 }
@@ -575,7 +588,7 @@ namespace EpgTimer
                 reserveView.UpdateInfo();
                 infoWindowViewModel.UpdateInfo();
                 tunerReserveView.UpdateInfo();
-                autoAddView.UpdateAutoAddInfo();
+                autoAddView.UpdateInfo();
                 recInfoView.UpdateInfo();
                 epgView.UpdateEpgData();
                 SearchWindow.UpdatesInfo();
@@ -601,34 +614,51 @@ namespace EpgTimer
             return CommonManager.Instance.IsConnected;
         }
 
-        public void ChkRegistTCPTimerWork()
+        public void ChkTimerWork()
         {
             //オプション状態などが変っている場合もあるので、いったん破棄する。
-            if (chkRegistTCPTimer != null)
+            if (chkTimer != null)
             {
-                chkRegistTCPTimer.Stop();
-                chkRegistTCPTimer = null;
+                chkTimer.Stop();
+                chkTimer = null;
             }
 
-            if (CommonManager.Instance.NWMode == true && Settings.Instance.ChkSrvRegistTCP == true)
+            bool chkSrvRegistTCP = CommonManager.Instance.NWMode == true && Settings.Instance.ChkSrvRegistTCP == true;
+            bool updateTaskText = Settings.Instance.UpdateTaskText == true;
+
+            if (chkSrvRegistTCP == true || updateTaskText == true)
             {
-                chkRegistTCPTimer = new System.Windows.Threading.DispatcherTimer();
-                chkRegistTCPTimer.Interval = TimeSpan.FromMinutes(Math.Max(Settings.Instance.ChkSrvRegistInterval, 1));
-                chkRegistTCPTimer.Tick += (sender, e) =>
+                chkTimer = new System.Windows.Threading.DispatcherTimer();
+                chkTimer.Interval = TimeSpan.FromMinutes(Math.Max(Settings.Instance.ChkSrvRegistInterval, 1));
+                if (chkSrvRegistTCP == true)
                 {
-                    if (CommonManager.Instance.NW.IsConnected == true)
+                    chkTimer.Tick += (sender, e) =>
                     {
-                        bool registered = true;
-                        if ((ErrCode)cmd.SendIsRegistTCP(Settings.Instance.NWWaitPort, ref registered) == ErrCode.CMD_SUCCESS)
+                        if (CommonManager.Instance.NW.IsConnected == true)
                         {
-                            if (registered == false)
+                            var status = new NotifySrvInfo();
+                            var waitPort = Settings.Instance.NWWaitPort;
+                            bool registered = true;
+                            if (waitPort == 0 && cmd.SendGetNotifySrvStatus(ref status) == ErrCode.CMD_SUCCESS ||
+                                waitPort != 0 && cmd.SendIsRegistTCP(waitPort, ref registered)  == ErrCode.CMD_SUCCESS)
                             {
-                                ConnectCmd(false);
+                                if (waitPort == 0 && CommonManager.Instance.NW.OnPolling == false ||
+                                    waitPort != 0 && registered == false ||
+                                    taskTray.Icon == TaskIconSpec.TaskIconGray)//EpgTimerNW側の休止復帰も含む
+                                {
+                                    ConnectCmd(false);
+                                }
+                                return;
                             }
                         }
-                    }
-                };
-                chkRegistTCPTimer.Start();
+                        taskTray.Icon = TaskIconSpec.TaskIconGray;
+                    };
+                }
+                if (updateTaskText == true)
+                {
+                    chkTimer.Tick += (sender, e) => taskTray.Text = GetTaskTrayReserveInfoText();
+                }
+                chkTimer.Start();
             }
         }
 
@@ -670,6 +700,10 @@ namespace EpgTimer
                 {
                     SaveData();
                 }
+
+                bool exitServer = CommonManager.Instance.NWMode == false;
+                DisconnectServer();
+
                 if (semaphore!= null)
                 {
                     int n = semaphore.Release();
@@ -677,25 +711,25 @@ namespace EpgTimer
                     {
                         if (serviceMode == false && initExe == true)
                         {
-                            if (CommonManager.Instance.NWMode == false)
+                            if (exitServer == false && System.Diagnostics.Process.GetProcessesByName("EpgTimerSrv").Count() > 0)
                             {
-                                cmd.SendClose();
-                            }
-                            else if (System.Diagnostics.Process.GetProcessesByName("EpgTimerSrv").Count() > 0)
-                            {
-                                cmd.SetSendMode(false);
                                 IniSetting.Instance.Clear();
                                 int residentMode = IniFileHandler.GetPrivateProfileInt("SET", "ResidentMode", 0, SettingPath.TimerSrvIniPath);
                                 if (residentMode == 0 && MessageBox.Show("このコンピューター上で起動中の EpgTimerSrv.exe を終了させますか？", "確認", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                                 {
-                                    cmd.SendClose();
+                                    exitServer = true;
                                 }
+                            }
+                            if (exitServer == true)
+                            {
+                                CtrlCmdUtil cmd = new CtrlCmdUtil();
+                                cmd.SetSendMode(false);
+                                cmd.SendClose();
                             }
                         }
                     }
                     semaphore.Close();
                 }
-                DisconnectServer();
                 if (taskTray != null)
                 {
                     taskTray.Dispose();
@@ -899,18 +933,20 @@ namespace EpgTimer
                     if (CommonManager.Instance.NWMode == true)
                     {
                         CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
-                        ChkRegistTCPTimerWork();
                     }
                     else
                     {
                         cmd.SendReloadSetting();
                         cmd.SendNotifyProfileUpdate();
                     }
+
+                    ChkTimerWork();
+
                     reserveView.UpdateInfo();
                     infoWindowViewModel.UpdateInfo();
                     tunerReserveView.UpdateInfo();
                     recInfoView.UpdateInfo();
-                    autoAddView.UpdateAutoAddInfo();
+                    autoAddView.UpdateInfo();
                     epgView.UpdateSetting();
                     SearchWindow.UpdatesInfo(true);
                     ResetButtonView();
@@ -947,7 +983,43 @@ namespace EpgTimer
             //検索ボタン用。
             mBinds.ResetInputBindings(this);
         }
-
+        public enum UpdateViewMode { ReserveInfo, ReserveInfoNoTuner, ReserveInfoNoAutoAdd }
+        public void RefreshAllViewsReserveInfo(UpdateViewMode mode = UpdateViewMode.ReserveInfo)
+        {
+            reserveView.UpdateInfo();
+            infoWindowViewModel.UpdateInfo();
+            if (mode != UpdateViewMode.ReserveInfoNoTuner) tunerReserveView.UpdateInfo();
+            if (mode != UpdateViewMode.ReserveInfoNoAutoAdd) autoAddView.UpdateInfo();
+            epgView.UpdateReserveData();
+            SearchWindow.UpdatesInfo(true);
+        }
+        /*
+        public enum UpdateViewMode : uint
+        {
+            None =                  0x00000000,
+            All =                   0x11134002,
+          //SettingData =           0x11134001,//1回しか出てこないので未使用
+          //Connected =             0x11132002,//1回しか出てこないので未使用
+          //EpgData =               0x11012002,//1回しか出てこないので未使用
+            ReserveInfo =           0x11031001,
+            ReserveInfoNoTuner =    0x10031001,
+            ReserveInfoNoAutoAdd =  0x11001001
+        }
+        public void RefreshAllViewsReserveInfo(UpdateViewMode mode = UpdateViewMode.ReserveInfo) { UpdateViews(mode); }
+        public void UpdateViews(UpdateViewMode mode = UpdateViewMode.All)
+        {
+            if (((uint)mode & 0x10000000) != 0) reserveView.UpdateInfo();                       //ViewsResInfo
+            if (((uint)mode & 0x01000000) != 0) tunerReserveView.UpdateInfo();                  //ViewsResInfo
+            if (((uint)mode & 0x00100000) != 0) recInfoView.UpdateInfo();
+            if (((uint)mode & 0x00010000) != 0) autoAddView.epgAutoAddView.UpdateInfo();        //ViewsResInfo
+            if (((uint)mode & 0x00020000) != 0) autoAddView.manualAutoAddView.UpdateInfo();     //ViewsResInfo
+            if (((uint)mode & 0x00001000) != 0) epgView.UpdateReserveData();                    //ViewsResInfo
+            if (((uint)mode & 0x00002000) != 0) epgView.UpdateEpgData();
+            if (((uint)mode & 0x00004000) != 0) epgView.UpdateSetting();
+            if (((uint)mode & 0x00000001) != 0) SearchWindow.UpdatesInfo(true);                 //ViewsResInfo
+            if (((uint)mode & 0x00000002) != 0) SearchWindow.UpdatesInfo();
+        }
+        */
         void searchButton_Click(object sender, ExecutedRoutedEventArgs e)
         {
             // 最小化したSearchWindowを復帰
@@ -1247,13 +1319,14 @@ namespace EpgTimer
             }
         }
 
-        private System.Drawing.Icon GetTaskTrayIcon(uint status)
+        private TaskIconSpec GetTaskTrayIcon(uint status)
         {
+            //statusは0,1,2しか取らないはずだが、コード上は任意になっているので、一応変換をかませておく。
             switch(status)
             {
-                case 1: return Properties.Resources.TaskIconRed;
-                case 2: return Properties.Resources.TaskIconGreen;
-                default: return Properties.Resources.TaskIconBlue;
+                case 1: return TaskIconSpec.TaskIconRed;
+                case 2: return TaskIconSpec.TaskIconGreen;
+                default: return TaskIconSpec.TaskIconBlue;
             }
         }
 
@@ -1265,25 +1338,24 @@ namespace EpgTimer
                 .Where(info => info.IsEnabled == true && info.EndTimeWithMargin() > DateTime.Now)
                 .OrderBy(info => info.StartTimeWithMargin()).ToList();
 
-            if (sortList.Count == 0) return "次の予約なし";
+            string infoText = Settings.Instance.UpdateTaskText == true && taskTray.Icon == TaskIconSpec.TaskIconGray ? "[未接続]\r\n(?)" : "";
 
-            string infoText = "";
+            if (sortList.Count == 0) return infoText + "次の予約なし";
+
             int infoCount = 0;
             if (sortList[0].IsOnRec() == true)
             {
-                infoText = "録画中:";
+                infoText += "録画中:";
                 infoCount = sortList.Count(info => info.IsOnRec()) - 1;
             }
-            /* 予約情報が更新されないと走らないので無意味。
-             * テキスト更新用のタイマーでも走らせるなら別だが‥そこまでのものでもない。
-            else if (sortList[0].IsOnRec(60) == true) //1時間以内に開始されるもの
+            else if (Settings.Instance.UpdateTaskText == true && sortList[0].IsOnRec(60) == true) //1時間以内に開始されるもの
             {
-                infoText = "間もなく開始:";
+                infoText += "まもなく録画:";
                 infoCount = sortList.Count(info => info.IsOnRec(60)) - 1;
-            }*/
+            }
             else
             {
-                infoText = "次の予約:";
+                infoText += "次の予約:";
             }
 
             infoText += sortList[0].StationName + " " + new ReserveItem(sortList[0]).StartTimeShort + " " + sortList[0].Title;
@@ -1377,10 +1449,7 @@ namespace EpgTimer
                     break;
                 case UpdateNotifyItem.RecStart:
                     TaskTrayBaloonWork("録画開始", status.param4);
-                    reserveView.UpdateInfo();
-                    infoWindowViewModel.UpdateInfo();
-                    epgView.UpdateReserveData();
-                    SearchWindow.UpdatesInfo(true);
+                    RefreshAllViewsReserveInfo();
                     break;
                 case UpdateNotifyItem.RecEnd:
                     TaskTrayBaloonWork("録画終了", status.param4);
@@ -1425,12 +1494,7 @@ namespace EpgTimer
                         //というより後ろでタスクトレイのルーチンが取得をかけるので遅延の効果がない。
                         CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
                         CommonManager.Instance.DB.ReloadReserveInfo();
-                        reserveView.UpdateInfo();
-                        infoWindowViewModel.UpdateInfo();
-                        tunerReserveView.UpdateInfo();
-                        autoAddView.UpdateAutoAddInfo();
-                        epgView.UpdateReserveData();
-                        SearchWindow.UpdatesInfo(true);
+                        RefreshAllViewsReserveInfo();
                     }
                     break;
                 case UpdateNotifyItem.RecInfo:
@@ -1452,11 +1516,7 @@ namespace EpgTimer
 
                         if (Settings.Instance.DisplayReserveAutoAddMissing == true)
                         {
-                            reserveView.UpdateInfo();
-                            infoWindowViewModel.UpdateInfo();
-                            tunerReserveView.UpdateInfo();
-                            epgView.UpdateReserveData();
-                            SearchWindow.UpdatesInfo(true);
+                            RefreshAllViewsReserveInfo(UpdateViewMode.ReserveInfoNoAutoAdd);
                         }
                     }
                     break;
@@ -1469,11 +1529,7 @@ namespace EpgTimer
 
                         if (Settings.Instance.DisplayReserveAutoAddMissing == true)
                         {
-                            reserveView.UpdateInfo();
-                            infoWindowViewModel.UpdateInfo();
-                            tunerReserveView.UpdateInfo();
-                            epgView.UpdateReserveData();
-                            SearchWindow.UpdatesInfo(true);
+                            RefreshAllViewsReserveInfo(UpdateViewMode.ReserveInfoNoAutoAdd);
                         }
                     }
                     break;
@@ -1483,12 +1539,7 @@ namespace EpgTimer
                         if (CommonManager.Instance.NWMode == true)
                         {
                             IniFileHandler.UpdateSrvProfileIniNW();
-                            reserveView.UpdateInfo();
-                            infoWindowViewModel.UpdateInfo();
-                            tunerReserveView.UpdateInfo();
-                            autoAddView.UpdateAutoAddInfo();
-                            epgView.UpdateReserveData();
-                            SearchWindow.UpdatesInfo(true);
+                            RefreshAllViewsReserveInfo();
                         }
                     }
                     break;
@@ -1520,6 +1571,8 @@ namespace EpgTimer
                         cmd.SendChgEpgAutoAdd(DB.EpgAutoAddList.Values.ToList());
                     }
                 }
+                //追加データもクリアしておく。
+                DB.ClearEpgAutoAddDataAppend();
 
                 //EPG自動登録とは独立
                 DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
@@ -1543,12 +1596,7 @@ namespace EpgTimer
                     else
                     {
                         //更新しない場合でも、再描画だけはかけておく
-                        reserveView.UpdateInfo();
-                        infoWindowViewModel.UpdateInfo();
-                        tunerReserveView.UpdateInfo();
-                        autoAddView.UpdateAutoAddInfo();
-                        epgView.UpdateReserveData();
-                        SearchWindow.UpdatesInfo(true);
+                        RefreshAllViewsReserveInfo();
                     }
                 }
             }

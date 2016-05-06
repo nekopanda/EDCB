@@ -810,6 +810,7 @@ namespace EpgTimer
         public bool RecInfoExtraDataCache { get; set; }
         public bool RecInfoExtraDataCacheOptimize { get; set; }
         public bool RecInfoExtraDataCacheKeepConnect { get; set; }
+        public bool UpdateTaskText { get; set; }
 
         public bool ApplyMultiInstance { get; set; }
         public double ReserveMinHeight { get; set; }
@@ -1007,6 +1008,7 @@ namespace EpgTimer
             InfoWindowBottomMost = false;
             InfoWindowEnabled = false;
             RecItemToolTip = false;
+            UpdateTaskText = false;
         }
 
         [NonSerialized()]
@@ -1325,15 +1327,12 @@ namespace EpgTimer
                     System.IO.File.Copy(path, backPath, true);
                 }
 
-                FileStream fs = new FileStream(path,
-                    FileMode.Create,
-                    FileAccess.Write, FileShare.None);
-                System.Xml.Serialization.XmlSerializer xs =
-                    new System.Xml.Serialization.XmlSerializer(
-                    typeof(Settings));
-                //シリアル化して書き込む
-                xs.Serialize(fs, Instance);
-                fs.Close();
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    //シリアル化して書き込む
+                    var xs = new System.Xml.Serialization.XmlSerializer(typeof(Settings));
+                    xs.Serialize(fs, Instance);
+                }
             }
             catch (Exception ex)
             {

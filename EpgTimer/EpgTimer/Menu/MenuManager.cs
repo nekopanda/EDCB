@@ -456,10 +456,12 @@ namespace EpgTimer
             return cmManualMenuSetting;
         }
 
-        public bool IsGestureEnableOnView(ICommand icmd, CtxmCode code)
+        public bool IsGestureDisableOnView(ICommand icmd, CtxmCode code)
         {
             if (icmd == null) return false;
-            return WorkDelGesCmdList[code].Contains(icmd);
+
+            MenuSettingData.CmdSaveData cmdData = Settings.Instance.MenuSet.EasyMenuItems.Find(data => data.GetCommand() == icmd);
+            return cmdData != null && cmdData.IsGestureEnabled == false || WorkDelGesCmdList[code].Contains(icmd);
         }
 
         public List<ICommand> GetWorkGestureCmdList(CtxmCode code)
@@ -626,14 +628,26 @@ namespace EpgTimer
         {
             if (info != null)
             {
-                Action<object, string, uint> addSubMenuItem = (autoAdd, title, id) =>
+                Action<AutoAddData, string, uint> addSubMenuItem = (autoAdd, title, id) =>
                 {
                     var menuItem = new MenuItem();
+                    if (info is RecFileInfo && autoAdd is EpgAutoAddData)
+                    {
+                        menuItem.IsChecked = autoAdd.GetReserveList().FirstOrDefault(data => data.Create64Key() == info.Create64Key()) != null;
+                    }
+                    else
+                    {
+                        menuItem.IsChecked = autoAdd.CheckPgHit(info);
+                    }
                     string header = title;
                     if (header.Length > str_max)
                     {
                         header = header.Substring(0, str_max - 3) + "..."; // 長すぎる場合は省略
                         menuItem.ToolTip = title;
+                    }
+                    if (Settings.Instance.MenuSet.AutoAddSerachToolTip == true)
+                    {
+                        menuItem.ToolTip = AutoAddDataItemEx.CreateIncetance(autoAdd).ToolTipViewAutoAddSearch;
                     }
                     menuItem.Header = header;
                     menuItem.Command = cmd;
@@ -645,11 +659,11 @@ namespace EpgTimer
                     menu.Items.Add(menuItem);
                 };
 
-                foreach (var data in info.SearchEpgAutoAddList(IsAutoAddEnabled, ByFasy))
+                foreach (var data in info.SearchEpgAutoAddList(IsAutoAddEnabled, ByFasy).OrderBy(data => data.DataID))
                 {
                     addSubMenuItem(data, data.DataTitle == "" ? "(空白)" : data.DataTitle, data.dataID);
                 }
-                foreach (var data in info.GetManualAutoAddList(IsAutoAddEnabled))
+                foreach (var data in info.GetManualAutoAddList(IsAutoAddEnabled).OrderBy(data => data.DataID))
                 {
                     var view = new ManualAutoAddDataItem(data);
                     addSubMenuItem(data, string.Format("({0}){1} {2}", view.DayOfWeek, view.StartTimeShort, data.DataTitle == "" ? "(空白)" : data.DataTitle), data.dataID);
