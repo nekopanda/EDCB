@@ -259,17 +259,20 @@
                                 <CheckBox Name="checkBox_srvNoBalloonTip" Content="バルーンチップでの動作通知を抑制する" Margin="20,4,20,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
                             </StackPanel>
                             <StackPanel>
-                                <CheckBox Name="checkBox_wakeReconnect" Content="起動時に前回接続サーバーに接続する" Margin="0,4,0,0" IsEnabled="False" />
-                                <CheckBox Name="checkBox_suspendClose" Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Margin="0,4,0,0" IsEnabled="False" />
-                                <CheckBox Name="checkBox_ngAutoEpgLoad" Content="EPGデータを自動的に読み込まない" Margin="0,4,0,0" IsEnabled="False" />
-                                <StackPanel Orientation="Horizontal">
-                                    <CheckBox Name="checkBox_keepTCPConnect" Content="EpgTimerSrvとの接続維持を試みる" IsEnabled="False" />
-                                    <StackPanel Orientation="Horizontal" IsEnabled="{Binding IsChecked, ElementName=checkBox_keepTCPConnect}">
-                                        <TextBox Name="textBox_keepTCPConnect" Margin="10,0,0,0" Width="50" IsEnabled="{Binding IsEnabled, ElementName=checkBox_keepTCPConnect}" />
-                                        <Label Content="分間隔" IsEnabled="{Binding IsEnabled, ElementName=checkBox_keepTCPConnect}" />
-                                    </StackPanel>
-                                </StackPanel>
+                                <CheckBox Name="checkBox_wakeReconnect" Content="起動時に前回接続サーバーに接続する" Margin="0,4,20,0" IsEnabled="False" />
+                                <CheckBox Name="checkBox_suspendClose" Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Margin="0,4,20,0" IsEnabled="False" />
+                                <CheckBox Name="checkBox_ngAutoEpgLoad" Content="EPGデータを自動的に読み込まない" Margin="0,4,20,0" IsEnabled="False" />
                             </StackPanel>
+                            <WrapPanel Margin="0,4,0,0" MaxWidth="100">
+                                <WrapPanel VerticalAlignment="Center">
+                                    <CheckBox Name="checkBox_keepTCPConnect" Content="EpgTimerSrvとの接続維持を試みる" Margin="0,2,10,2" IsEnabled="False" ToolTip="EpgTimerNW使用時、EpgTimerSrv側の再起動時などに接続維持を試みます" />
+                                    <CheckBox Name="checkBox_upDateTaskText" Content="タスクトレイアイコンのツールチップを更新する" Margin="0,2,10,2" ToolTip="EpgTimerNWで「EpgTimerSrvとの接続維持を試みる」使用時以外はほとんど効果ありません" />
+                                </WrapPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox Name="textBox_chkTimerInterval" Margin="10,0,0,0" Width="50" />
+                                    <Label Content="分間隔" />
+                                </StackPanel>
+                            </WrapPanel>
                         </WrapPanel>
                         <WrapPanel>
                             <CheckBox Name="checkBox_cautionManyChange" Content="多数の項目を処理するとき警告する" />

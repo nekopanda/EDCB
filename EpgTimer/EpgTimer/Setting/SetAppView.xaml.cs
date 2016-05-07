@@ -344,7 +344,8 @@ namespace EpgTimer.Setting
             checkBox_cautionManyChange.IsChecked = Settings.Instance.CautionManyChange;
             textBox_cautionManyChange.Text = Settings.Instance.CautionManyNum.ToString();
             checkBox_keepTCPConnect.IsChecked = Settings.Instance.ChkSrvRegistTCP;
-            textBox_keepTCPConnect.Text = Settings.Instance.ChkSrvRegistInterval.ToString();
+            checkBox_upDateTaskText.IsChecked = Settings.Instance.UpdateTaskText;
+            textBox_chkTimerInterval.Text = Settings.Instance.ChkSrvRegistInterval.ToString();
 
             checkBox_wakeReconnect.IsChecked = Settings.Instance.WakeReconnectNW;
             checkBox_suspendClose.IsChecked = Settings.Instance.SuspendCloseNW;
@@ -663,7 +664,8 @@ namespace EpgTimer.Setting
             Settings.Instance.SuspendCloseNW = (checkBox_suspendClose.IsChecked == true);
             Settings.Instance.NgAutoEpgLoadNW = (checkBox_ngAutoEpgLoad.IsChecked == true);
             Settings.Instance.ChkSrvRegistTCP = (checkBox_keepTCPConnect.IsChecked != false);
-            Settings.Instance.ChkSrvRegistInterval = mutil.MyToNumerical(textBox_keepTCPConnect, Convert.ToDouble, 1440 * 7, 1, Settings.Instance.ChkSrvRegistInterval);
+            Settings.Instance.UpdateTaskText = (checkBox_upDateTaskText.IsChecked == true);
+            Settings.Instance.ChkSrvRegistInterval = mutil.MyToNumerical(textBox_chkTimerInterval, Convert.ToDouble, 1440 * 7, 1, Settings.Instance.ChkSrvRegistInterval);
 
             Settings.Instance.DefSearchKey = defSearchKey.Clone();
         }
