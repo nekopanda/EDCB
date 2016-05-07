@@ -41,7 +41,6 @@
                         <CheckBox Content="削除" />
                         <CheckBox Content="予約ごと削除" />
                         <CheckBox Content="予約のみ削除" />
-                        <CheckBox Margin="6,0,0,0" Content="自動予約変更" />
                         <CheckBox Content="予約を自動登録に合わせる" />
                         <CheckBox Content="プロテクト←→解除" />
                         <CheckBox Content="新規プログラム予約/自動登録..." />
@@ -73,7 +72,6 @@
                         <CheckBox Visibility="Hidden"/>
                         <CheckBox Visibility="Hidden"/>
                         <CheckBox Content="確認メッセージを表示しない" Name="checkBox_NoMessageDelete2" />
-                        <CheckBox Visibility="Hidden"/>
                         <CheckBox Visibility="Hidden"/>
                         <CheckBox Content="確認メッセージを表示しない" Name="checkBox_NoMessageAdjustRes" />
                         <CheckBox Visibility="Hidden"/>

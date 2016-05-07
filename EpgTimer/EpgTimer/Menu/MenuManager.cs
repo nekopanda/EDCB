@@ -609,7 +609,7 @@ namespace EpgTimer
             }
         }
 
-        public bool CtxmGenerateChgAutoAdd(MenuItem menu, IAutoAddTargetData info)
+        public bool CtxmGenerateChgAutoAdd(MenuItem menu, IAutoAddTargetData info, bool skipSubMenu = true)
         {
             CtxmClearItemMenu(menu, true);
 
@@ -619,8 +619,11 @@ namespace EpgTimer
 
             if (menu.Items.Count == 0) return false;
 
-            //候補が一つの時は直接メニューを実行出来るようにする
-            CtxmPullUpSubMenu(menu, true);
+            if (skipSubMenu == false)
+            {
+                //候補が一つの時は直接メニューを実行出来るようにする
+                CtxmPullUpSubMenu(menu, true);
+            }
             return true;
         }
 

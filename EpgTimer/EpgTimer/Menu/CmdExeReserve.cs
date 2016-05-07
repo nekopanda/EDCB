@@ -316,10 +316,6 @@ namespace EpgTimer
             {
                 mcs_chgMenuOpening(menu);
             }
-            else if (menu.Tag == EpgCmdsEx.ShowAutoAddDialogMenu)
-            {
-                mcs_chgAutoAddMenuOpening(menu, headData as ReserveData == null ? null : dataList[0].AutoAddInfo);
-            }
             else if (menu.Tag == EpgCmds.JumpReserve || menu.Tag == EpgCmds.JumpTuner)
             {
                 mcs_jumpTabMenuOpening(menu);

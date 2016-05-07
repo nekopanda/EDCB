@@ -111,11 +111,11 @@ namespace EpgTimer
             cmdList.Add(EpgCmds.DeleteAll, new cmdOption(mc_Delete, null, cmdExeType.AllItem, changeDB: true));
             cmdList.Add(EpgCmds.AdjustReserve, new cmdOption(mc_AdjustReserve, null, cmdExeType.MultiItem, changeDB: true));
             cmdList.Add(EpgCmds.ShowDialog, new cmdOption(mc_ShowDialog, null, cmdExeType.SingleItem, changeDB: true));
-            cmdList.Add(EpgCmds.ShowAutoAddDialog, new cmdOption(mc_ShowAutoAddDialog, null, cmdExeType.SingleItem, changeDB: true));
             cmdList.Add(EpgCmds.ShowAddDialog, new cmdOption(mc_ShowAddDialog, null, cmdExeType.NoSetItem, false, false, true, changeDB: true));
             cmdList.Add(EpgCmds.JumpReserve, new cmdOption(mc_JumpReserve, null, cmdExeType.SingleItem));
             cmdList.Add(EpgCmds.JumpTuner, new cmdOption(mc_JumpTuner, null, cmdExeType.SingleItem));
             cmdList.Add(EpgCmds.JumpTable, new cmdOption(mc_JumpTable, null, cmdExeType.SingleItem));
+            cmdList.Add(EpgCmds.ShowAutoAddDialog, new cmdOption(mc_ShowAutoAddDialog, null, cmdExeType.SingleItem, changeDB: true));
             cmdList.Add(EpgCmds.ToAutoadd, new cmdOption(mc_ToAutoadd, null, cmdExeType.SingleItem));
             cmdList.Add(EpgCmds.ReSearch, new cmdOption(null, null, cmdExeType.Direct));//個別に指定
             cmdList.Add(EpgCmds.ReSearch2, new cmdOption(null, null, cmdExeType.Direct));//個別に指定
@@ -276,22 +276,6 @@ namespace EpgTimer
         protected virtual void mc_Delete3(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_AdjustReserve(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e) { }
-#if true
-        // nekopanda版
-        protected virtual void mc_ShowAutoAddDialog(object sender, ExecutedRoutedEventArgs e)
-        {
-            var basicInfo = CmdExeUtil.ReadObjData(e) as EpgAutoAddBasicInfo;
-            EpgAutoAddData data;
-            if (CommonManager.Instance.DB.EpgAutoAddList.TryGetValue(basicInfo.dataID, out data))
-            {
-                IsCommandExecuted = true == mutil.OpenChangeEpgAutoAddDialog(data);
-            }
-            else
-            {
-                MessageBox.Show("対応するデータがありません。\r\n自動予約登録を開くと直るかも");
-            }
-        }
-#endif
         protected virtual void mc_ShowAddDialog(object sender, ExecutedRoutedEventArgs e) { }
         protected virtual void mc_JumpReserve(object sender, ExecutedRoutedEventArgs e)
         {
@@ -318,8 +302,6 @@ namespace EpgTimer
             BlackoutWindow.SelectedItem = item;
         }
         protected virtual ReserveData mcs_GetNextReserve() { return new ReserveData(); }
-#if false
-        // tkntrec版
         protected virtual void mc_ShowAutoAddDialog(object sender, ExecutedRoutedEventArgs e)
         {
             AutoAddData autoAdd = AutoAddData.AutoAddList(CmdExeUtil.ReadObjData(e) as Type, (uint)CmdExeUtil.ReadIdData(e));
@@ -332,7 +314,6 @@ namespace EpgTimer
                 IsCommandExecuted = true == mutil.OpenChangeManualAutoAddDialog(autoAdd as ManualAutoAddData, this.Owner);
             }
         }
-#endif
         protected virtual void mc_ToAutoadd(object sender, ExecutedRoutedEventArgs e)
         {
             mutil.SendAutoAdd(dataList[0] as IBasicPgInfo, CmdExeUtil.IsKeyGesture(e));
@@ -624,12 +605,6 @@ namespace EpgTimer
                     subMenu.Header = string.Format("終了マージン : {0} 秒", value == int.MaxValue ? "*" : value.ToString());
                 }
             }
-        }
-        protected void mcs_chgAutoAddMenuOpening(MenuItem menu, List<EpgAutoAddBasicInfo> autoAddInfo)
-        {
-            menu.Items.Clear();
-            menu.IsEnabled = (autoAddInfo == null) ? false : (autoAddInfo.Count > 0);
-            mm.CtxmGenerateChgAutoAdd(menu, autoAddInfo);
         }
     }
 
