@@ -95,6 +95,7 @@ namespace EpgTimer
         public SolidColorBrush StatResForeColor { get; private set; }
         public SolidColorBrush StatRecForeColor { get; private set; }
         public SolidColorBrush StatOnAirForeColor { get; private set; }
+        public List<SolidColorBrush> InfoWindowItemBgColors { get; private set; }
 
         private static CommonManager _instance;
         public static CommonManager Instance
@@ -488,6 +489,10 @@ namespace EpgTimer
             if (RecModeForeColor == null)
             {
                 RecModeForeColor = new List<SolidColorBrush>();
+            }
+            if (InfoWindowItemBgColors == null)
+            {
+                InfoWindowItemBgColors = new List<SolidColorBrush>();
             }
         }
 
@@ -1600,6 +1605,12 @@ namespace EpgTimer
                 StatResForeColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.StatColors[0], Settings.Instance.StatCustColors[0]);
                 StatRecForeColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.StatColors[1], Settings.Instance.StatCustColors[1]);
                 StatOnAirForeColor = (SolidColorBrush)_GetColorBrush(Settings.Instance.StatColors[2], Settings.Instance.StatCustColors[2]);
+
+                InfoWindowItemBgColors.Clear();
+                for (int i = 0; i < Settings.Instance.InfoWindowItemBgColors.Count; i++)
+                {
+                    InfoWindowItemBgColors.Add((SolidColorBrush)_GetColorBrush(Settings.Instance.InfoWindowItemBgColors[i], Settings.Instance.InfoWindowItemBgCustColors[i]));
+                }
             }
             catch (Exception ex)
             {

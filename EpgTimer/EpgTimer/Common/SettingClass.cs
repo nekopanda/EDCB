@@ -821,7 +821,15 @@ namespace EpgTimer
         public bool InfoWindowHeaderIsVisible { get; set; }
         public bool InfoWindowTopMost { get; set; }
         public bool InfoWindowBottomMost { get; set; }
+        public bool InfoWindowDisabledReserveItemVisible { get; set; }
         public bool InfoWindowEnabled { get; set; }
+        public int InfoWindowRefreshInterval { get; set; }
+        public bool InfoWindowBasedOnBroadcast { get; set; }
+        public int InfoWindowItemLevel1Seconds { get; set; }
+        public int InfoWindowItemLevel2Seconds { get; set; }
+        public int InfoWindowItemLevel3Seconds { get; set; }
+        public List<string> InfoWindowItemBgColors { get; set; }
+        public List<UInt32> InfoWindowItemBgCustColors { get; set; }
         public bool RecItemToolTip { get; set; }
 
         public Settings()
@@ -1000,12 +1008,22 @@ namespace EpgTimer
             ReservePopup = false;
             AlwaysSaveEpgSetting = false;
             Placement = new SerializableDictionary<string, WINDOWPLACEMENT>();
+
             InfoWindowListColumn = new List<ListColumnInfo>();
             InfoWindowTitleIsVisible = true;
             InfoWindowHeaderIsVisible = true;
             InfoWindowTopMost = true;
             InfoWindowBottomMost = false;
+            InfoWindowDisabledReserveItemVisible = false;
             InfoWindowEnabled = false;
+            InfoWindowRefreshInterval = 10;
+            InfoWindowBasedOnBroadcast = true;
+            InfoWindowItemLevel1Seconds = 0;
+            InfoWindowItemLevel2Seconds = 15 * 60;
+            InfoWindowItemLevel3Seconds = 8 * 60 * 60;
+            InfoWindowItemBgColors = new List<string>();
+            InfoWindowItemBgCustColors = new List<UInt32>();
+
             RecItemToolTip = false;
         }
 
@@ -1184,6 +1202,21 @@ namespace EpgTimer
                     _FillList(Instance.StatColors, defColors);
                 }
                 _FillList(Instance.StatCustColors, 0xFFFFFFFF, num);
+
+                //予約状態列文字色
+                num = 5;
+                if (Instance.InfoWindowItemBgColors.Count < num)
+                {
+                    defColors = new List<string>{
+                        "OrangeRed",    // ReserveItemLevel1
+                        "DarkOrange",   // ReserveItemLevel2
+                        "LightCyan",    // ReserveItemLevel3
+                        "LightGray",    // ReserveItemDisabled
+                        "LightPink",    // ReserveItemError
+                    };
+                    _FillList(Instance.InfoWindowItemBgColors, defColors);
+                }
+                _FillList(Instance.InfoWindowItemBgCustColors, 0xFFFFFFFF, num);
 
                 if (Instance.ViewButtonList.Count == 0)
                 {

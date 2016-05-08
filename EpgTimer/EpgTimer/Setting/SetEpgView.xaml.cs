@@ -200,6 +200,16 @@ namespace EpgTimer.Setting
                 textBox_LaterTimeHour.Text = (Settings.Instance.LaterTimeHour + 24).ToString();
                 checkBox_displayPresetOnSearch.IsChecked = Settings.Instance.DisplayPresetOnSearch;
                 checkBox_nekopandaToolTip.IsChecked = Settings.Instance.RecItemToolTip;
+
+                //予約簡易表示
+                textBox_iw_refresh_interval.Text = Settings.Instance.InfoWindowRefreshInterval.ToString();
+                radioButton_iw_based_on_bcst.IsChecked = Settings.Instance.InfoWindowBasedOnBroadcast;
+                radioButton_iw_based_on_rec.IsChecked = !Settings.Instance.InfoWindowBasedOnBroadcast;
+                textBox_iw_item_level1.Text = Settings.Instance.InfoWindowItemLevel1Seconds.ToString();
+                textBox_iw_item_level2.Text = Settings.Instance.InfoWindowItemLevel2Seconds.ToString();
+                textBox_iw_item_level3.Text = Settings.Instance.InfoWindowItemLevel3Seconds.ToString();
+                setComboColors(Settings.Instance.InfoWindowItemBgColors, grid_InfoWinItemBgColors);
+                setButtonColors(Settings.Instance.InfoWindowItemBgCustColors, grid_InfoWinItemBgColors);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -399,6 +409,14 @@ namespace EpgTimer.Setting
                 Settings.Instance.LaterTimeHour = mutil.MyToNumerical(textBox_LaterTimeHour, Convert.ToInt32, 36, 24, 28) - 24;
                 Settings.Instance.DisplayPresetOnSearch = (checkBox_displayPresetOnSearch.IsChecked == true);
                 Settings.Instance.RecItemToolTip = (checkBox_nekopandaToolTip.IsChecked == true);
+
+                Settings.Instance.InfoWindowRefreshInterval = mutil.MyToNumerical(textBox_iw_refresh_interval, Convert.ToInt32, 60, 1, 10);
+                Settings.Instance.InfoWindowBasedOnBroadcast = (radioButton_iw_based_on_bcst.IsChecked == true);
+                Settings.Instance.InfoWindowItemLevel1Seconds = mutil.MyToNumerical(textBox_iw_item_level1, Convert.ToInt32, 0);
+                Settings.Instance.InfoWindowItemLevel2Seconds = mutil.MyToNumerical(textBox_iw_item_level2, Convert.ToInt32, 900);
+                Settings.Instance.InfoWindowItemLevel3Seconds = mutil.MyToNumerical(textBox_iw_item_level3, Convert.ToInt32, 28800);
+                getComboColors(Settings.Instance.InfoWindowItemBgColors, grid_InfoWinItemBgColors);
+                getButtonColors(Settings.Instance.InfoWindowItemBgCustColors, grid_InfoWinItemBgColors);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }

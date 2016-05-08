@@ -4,14 +4,18 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:EpgTimer"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
         Title="EpgTimer" Height="100" Width="370"
         Topmost="{Binding Path=IsTopMost}" Bottommost="{Binding Path=IsBottomMost}"
         ShowInTaskbar="False" Closing="Window_Closing" WindowStyle="ToolWindow">
     <local:InfoWindowBase.Resources>
         <ResourceDictionary>
+            <sys:Double x:Key="ProgressBarHeight">4</sys:Double>
             <Style TargetType="{x:Type ListViewItem}">
                 <Setter Property="IsHitTestVisible" Value="False"/>
+                <Setter Property="BorderThickness" Value="0,0,0,0"/>
+                <Setter Property="Background" Value="{Binding Path=Background}"/>
             </Style>
             <Style x:Key="VisibleHeader" TargetType="{x:Type GridViewColumnHeader}">
                 <Setter Property="Visibility" Value="Visible" />
@@ -20,17 +24,175 @@
             <Style x:Key="HiddenHeader" TargetType="{x:Type GridViewColumnHeader}">
                 <Setter Property="Visibility" Value="Collapsed" />
             </Style>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="UserCtrlView\ReserveListViewStyles.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
+            <local:GridViewColumnList x:Key="ProgressStatusItemViewColumns">
+                <GridViewColumn Width="35">
+                    <GridViewColumn.Header>
+                        <GridViewColumnHeader Content="状態" Uid="Status" />
+                    </GridViewColumn.Header>
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Path=Status}" Foreground="{Binding Path=StatusColor}"/>
+                                <Control Height="{StaticResource ProgressBarHeight}" Visibility="{Binding Path=OnAirOrRecProgressVisibility}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+                <GridViewColumn>
+                    <GridViewColumn.Header>
+                        <GridViewColumnHeader Content="日時" Uid="StartTime"/>
+                    </GridViewColumn.Header>
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Path=StartTimeShort}"/>
+                                <ProgressBar Minimum="0" Maximum="100" Value="{Binding Path=OnAirOrRecProgress, Mode=OneWay}"
+                                             Height="{StaticResource ProgressBarHeight}" Visibility="{Binding Path=OnAirOrRecProgressVisibility}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+                <GridViewColumn>
+                    <GridViewColumn.Header>
+                        <GridViewColumnHeader Content="時間(長さ)" Uid="ProgramDuration"/>
+                    </GridViewColumn.Header>
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Path=ProgramDuration}" HorizontalAlignment="Right"/>
+                                <Control Height="{StaticResource ProgressBarHeight}" Visibility="{Binding Path=OnAirOrRecProgressVisibility}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+                <GridViewColumn>
+                    <GridViewColumn.Header>
+                        <GridViewColumnHeader Content="ネットワーク" Uid="NetworkName" />
+                    </GridViewColumn.Header>
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Path=NetworkName}"/>
+                                <Control Height="{StaticResource ProgressBarHeight}" Visibility="{Binding Path=OnAirOrRecProgressVisibility}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+                <GridViewColumn>
+                    <GridViewColumn.Header>
+                        <GridViewColumnHeader Content="サービス名" Uid="ServiceName" />
+                    </GridViewColumn.Header>
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Path=ServiceName}"/>
+                                <Control Height="{StaticResource ProgressBarHeight}" Visibility="{Binding Path=OnAirOrRecProgressVisibility}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+                <GridViewColumn>
+                    <GridViewColumn.Header>
+                        <GridViewColumnHeader Content="番組名" Uid="EventName" />
+                    </GridViewColumn.Header>
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Path=EventName}"/>
+                                <Control Height="{StaticResource ProgressBarHeight}" Visibility="{Binding Path=OnAirOrRecProgressVisibility}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+                <GridViewColumn>
+                    <GridViewColumn.Header>
+                        <GridViewColumnHeader Content="番組内容" Uid="ProgramContent" />
+                    </GridViewColumn.Header>
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Path=ProgramContent}"/>
+                                <Control Height="{StaticResource ProgressBarHeight}" Visibility="{Binding Path=OnAirOrRecProgressVisibility}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+                <GridViewColumn>
+                    <GridViewColumn.Header>
+                        <GridViewColumnHeader Content="ジャンル" Uid="JyanruKey" />
+                    </GridViewColumn.Header>
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Path=JyanruKey}"/>
+                                <Control Height="{StaticResource ProgressBarHeight}" Visibility="{Binding Path=OnAirOrRecProgressVisibility}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+                <GridViewColumn>
+                    <GridViewColumn.Header>
+                        <GridViewColumnHeader Content="有効" Tag="有効/無効" Uid="IsEnabled" />
+                    </GridViewColumn.Header>
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <CheckBox IsChecked="{Binding Path=IsEnabled}"/>
+                                <Control Height="{StaticResource ProgressBarHeight}" Visibility="{Binding Path=OnAirOrRecProgressVisibility}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+                <GridViewColumn>
+                    <GridViewColumn.Header>
+                        <GridViewColumnHeader Content="予約状況" Uid="Comment" />
+                    </GridViewColumn.Header>
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Path=Comment}"/>
+                                <Control Height="{StaticResource ProgressBarHeight}" Visibility="{Binding Path=OnAirOrRecProgressVisibility}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+                <GridViewColumn>
+                    <GridViewColumn.Header>
+                        <GridViewColumnHeader Content="予定ファイル名" Uid="RecFileName" />
+                    </GridViewColumn.Header>
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <ComboBox ItemsSource="{Binding Path=RecFileName}" SelectedIndex="0" Padding="6,0,5,0"></ComboBox>
+                                <Control Height="{StaticResource ProgressBarHeight}" Visibility="{Binding Path=OnAirOrRecProgressVisibility}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+                <GridViewColumn>
+                    <GridViewColumn.Header>
+                        <GridViewColumnHeader Content="使用予定チューナー" Uid="ReserveTuner" />
+                    </GridViewColumn.Header>
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Path=ReserveTuner}"/>
+                                <Control Height="{StaticResource ProgressBarHeight}" Visibility="{Binding Path=OnAirOrRecProgressVisibility}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+            </local:GridViewColumnList>
         </ResourceDictionary>
     </local:InfoWindowBase.Resources>
     <Grid>
         <Grid.ContextMenu>
             <ContextMenu>
+                <MenuItem Name="MenuItem_Header" Header="ヘッダーを表示" IsCheckable="True" Click="MenuItem_HeaderClick"/>
+                <MenuItem Header="無効な予約を表示" IsCheckable="True" IsChecked="{Binding Path=IsDisabledReserveItemVisible, Mode=TwoWay}"/>
+                <Separator/>
                 <MenuItem Header="最前面に表示" IsCheckable="True" IsChecked="{Binding Path=IsTopMost, Mode=TwoWay}"/>
                 <MenuItem Header="最背面に表示" IsCheckable="True" IsChecked="{Binding Path=IsBottomMost, Mode=TwoWay}"/>
-                <MenuItem Name="MenuItem_Header" Header="ヘッダーを表示" IsCheckable="True" Click="MenuItem_HeaderClick" />
                 <MenuItem Header="消す" Click="MenuItem_CloseClick"/>
             </ContextMenu>
         </Grid.ContextMenu>
