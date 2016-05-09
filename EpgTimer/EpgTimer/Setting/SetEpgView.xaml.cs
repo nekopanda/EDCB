@@ -197,12 +197,31 @@ namespace EpgTimer.Setting
                 textBox_LaterTimeHour.Text = (Settings.Instance.LaterTimeHour + 24).ToString();
                 checkBox_displayPresetOnSearch.IsChecked = Settings.Instance.DisplayPresetOnSearch;
                 checkBox_nekopandaToolTip.IsChecked = Settings.Instance.RecItemToolTip;
+
                 // [予約一覧・共通] - [色]
                 setComboColor1(Settings.Instance.ListDefColor, cmb_ListDefFontColor);
                 setButtonColor1(Settings.Instance.ListDefCustColor, btn_ListDefFontColor);
                 setColors(groupReserveRecModeColors, Settings.Instance.RecModeFontColors, Settings.Instance.RecModeFontCustColors);
                 setColors(groupReserveBackColors, Settings.Instance.ResBackColors, Settings.Instance.ResBackCustColors);
                 setColors(groupStatColors, Settings.Instance.StatColors, Settings.Instance.StatCustColors);
+
+                // [予約簡易表示]
+                textBox_iw_refresh_interval.Text = Settings.Instance.InfoWindowRefreshInterval.ToString();
+                radioButton_iw_based_on_bcst.IsChecked = Settings.Instance.InfoWindowBasedOnBroadcast;
+                radioButton_iw_based_on_rec.IsChecked = !Settings.Instance.InfoWindowBasedOnBroadcast;
+                switch(Settings.Instance.InfoWindowItemFilterLevel)
+                {
+                    default: radioButton_All.IsChecked = true; break;
+                    case 1: radioButton_Level1.IsChecked = true; break;
+                    case 2: radioButton_Level2.IsChecked = true; break;
+                    case 3: radioButton_Level3.IsChecked = true; break;
+                    case int.MaxValue: radioButton_TopN.IsChecked = true; break;
+                }
+                textBox_TopN.Text = Settings.Instance.InfoWindowItemTopN.ToString();
+                textBox_iw_item_level1.Text = (Settings.Instance.InfoWindowItemLevel1Seconds / 60.0).ToString();
+                textBox_iw_item_level2.Text = (Settings.Instance.InfoWindowItemLevel2Seconds / 60.0).ToString();
+                textBox_iw_item_level3.Text = (Settings.Instance.InfoWindowItemLevel3Seconds / 60.0).ToString();
+                setColors(groupInfoWinItemBgColors, Settings.Instance.InfoWindowItemBgColors, Settings.Instance.InfoWindowItemBgCustColors);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -413,6 +432,35 @@ namespace EpgTimer.Setting
                 getColors(groupReserveRecModeColors, Settings.Instance.RecModeFontColors, Settings.Instance.RecModeFontCustColors);
                 getColors(groupReserveBackColors, Settings.Instance.ResBackColors, Settings.Instance.ResBackCustColors);
                 getColors(groupStatColors, Settings.Instance.StatColors, Settings.Instance.StatCustColors);
+
+                // [予約簡易表示]
+                Settings.Instance.InfoWindowRefreshInterval = mutil.MyToNumerical(textBox_iw_refresh_interval, Convert.ToInt32, 60, 1, 10);
+                Settings.Instance.InfoWindowBasedOnBroadcast = (radioButton_iw_based_on_bcst.IsChecked == true);
+                if (radioButton_Level1.IsChecked == true)
+                {
+                    Settings.Instance.InfoWindowItemFilterLevel = 1;
+                }
+                else if (radioButton_Level2.IsChecked == true)
+                {
+                    Settings.Instance.InfoWindowItemFilterLevel = 2;
+                }
+                else if (radioButton_Level3.IsChecked == true)
+                {
+                    Settings.Instance.InfoWindowItemFilterLevel = 3;
+                }
+                else if (radioButton_All.IsChecked == true)
+                {
+                    Settings.Instance.InfoWindowItemFilterLevel = 4;
+                }
+                else if (radioButton_TopN.IsChecked == true)
+                {
+                    Settings.Instance.InfoWindowItemFilterLevel = int.MaxValue;
+                }
+                Settings.Instance.InfoWindowItemTopN = mutil.MyToNumerical(textBox_TopN, Convert.ToInt32, 10);
+                Settings.Instance.InfoWindowItemLevel1Seconds = mutil.MyToNumerical(textBox_iw_item_level1, Convert.ToInt32, 0) * 60;
+                Settings.Instance.InfoWindowItemLevel2Seconds = mutil.MyToNumerical(textBox_iw_item_level2, Convert.ToInt32, 15) * 60;
+                Settings.Instance.InfoWindowItemLevel3Seconds = mutil.MyToNumerical(textBox_iw_item_level3, Convert.ToInt32, 480) * 60;
+                getColors(groupInfoWinItemBgColors, Settings.Instance.InfoWindowItemBgColors, Settings.Instance.InfoWindowItemBgCustColors);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }

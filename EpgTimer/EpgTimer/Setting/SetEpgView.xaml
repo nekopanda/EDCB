@@ -766,5 +766,95 @@
                 </TabItem>
             </TabControl>
         </TabItem>
+        <TabItem Header="予約簡易表示">
+            <TabItem.Resources>
+                <Style TargetType="{x:Type ComboBox}" BasedOn="{StaticResource colorCombo}" />
+                <Style TargetType="{x:Type Button}" BasedOn="{StaticResource colorButton}" />
+            </TabItem.Resources>
+            <StackPanel Margin="0,8">
+                <GroupBox x:Name="groupBox" Header="各種設定" Margin="6,6,6,0">
+                    <StackPanel>
+                        <StackPanel Margin="8,4" Orientation="Horizontal">
+                            <Label Content="予約一覧の更新間隔" />
+                            <TextBox x:Name="textBox_iw_refresh_interval" Width="55" TextAlignment="Right" ToolTip="予約一覧を更新する間隔(秒)。" />
+                            <Label Content="秒" />
+                        </StackPanel>
+                        <GroupBox Header="進行状況の表示基準" Margin="4,2">
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton Name="radioButton_iw_based_on_bcst" Content="放送" Margin="8,4"/>
+                                <RadioButton Name="radioButton_iw_based_on_rec" Content="録画" Margin="8,4" ToolTip="録画マージンを含めた時間を基準にします。"/>
+                            </StackPanel>
+                        </GroupBox>
+                        <GroupBox Header="表示範囲の選択" Margin="4,2">
+                            <StackPanel>
+                                <WrapPanel Margin="8,4">
+                                    <RadioButton Name="radioButton_Level1" Content="レベル1のみ" Margin="0,0,20,0" />
+                                    <RadioButton Name="radioButton_Level2" Content="レベル2まで" Margin="0,0,20,0" />
+                                    <RadioButton Name="radioButton_Level3" Content="レベル3まで" Margin="0,0,20,0" />
+                                    <RadioButton Name="radioButton_All" Content="全て" Margin="0,0,20,0" />
+                                    <RadioButton Name="radioButton_TopN">
+                                        <StackPanel Orientation="Horizontal" IsEnabled="{Binding IsCheked, ElementName=radioButton_TopN}">
+                                            <TextBox Name="textBox_TopN" Width="50" HorizontalAlignment="Right"/>
+                                            <Label Content="件まで" />
+                                        </StackPanel>
+                                    </RadioButton>
+                                </WrapPanel>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </GroupBox>
+                <GroupBox Header="背景色" x:Name="groupInfoWinItemBgColors" Margin="6,6,6,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
+                            <Label Content="開始までの時間" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" HorizontalContentAlignment="Center" Padding="0,0,0,2" />
+                            <Label Content="カスタム色" Width="308" HorizontalContentAlignment="Center" Padding="0,0,0,2" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="20,1,0,1">
+                            <Grid Width="{Binding ActualWidth, ElementName=label_MaxWidth}">
+                                <Label Content="レベル1" Margin="-10,0,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,0,10,0" HorizontalAlignment="Right" >
+                                    <TextBox x:Name="textBox_iw_item_level1" Width="55" TextAlignment="Right"/>
+                                    <Label Content="分" />
+                                </StackPanel>
+                            </Grid>
+                            <ComboBox Tag="0" />
+                            <Button   Tag="0" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="20,1,0,1">
+                            <Grid Width="{Binding ActualWidth, ElementName=label_MaxWidth}">
+                                <Label Content="レベル2" Margin="-10,0,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,0,10,0" HorizontalAlignment="Right" >
+                                    <TextBox x:Name="textBox_iw_item_level2" Width="55" TextAlignment="Right"/>
+                                    <Label Content="分" />
+                                </StackPanel>
+                            </Grid>
+                            <ComboBox Tag="1" />
+                            <Button   Tag="1" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="20,1,0,1">
+                            <Grid Width="{Binding ActualWidth, ElementName=label_MaxWidth}">
+                                <Label Content="レベル3" Margin="-10,0,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,0,10,0" HorizontalAlignment="Right" >
+                                    <TextBox x:Name="textBox_iw_item_level3" Width="50" TextAlignment="Right"/>
+                                    <Label Content="分" />
+                                </StackPanel>
+                            </Grid>
+                            <ComboBox Tag="2" />
+                            <Button   Tag="2" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="20,10,0,1">
+                            <Label Content="無効な予約" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" Margin="-10,0,10,0" HorizontalContentAlignment="Right" ToolTip="無効な予約" />
+                            <ComboBox Tag="3" />
+                            <Button   Tag="3" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="20,1,0,1">
+                            <Label Content="不完全な予約" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" Margin="-10,0,10,0" HorizontalContentAlignment="Right" ToolTip="チューナー不足、一部実行、自動予約登録不明な予約" />
+                            <ComboBox Tag="4" />
+                            <Button   Tag="4" />
+                        </StackPanel>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </TabItem>
     </TabControl>
 </UserControl>

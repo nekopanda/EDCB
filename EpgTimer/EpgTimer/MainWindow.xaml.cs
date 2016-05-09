@@ -222,6 +222,7 @@ namespace EpgTimer
             }
             catch (Exception ex)
             {
+                ExceptionLogger.Log(ex);
                 MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
             }
         }
@@ -703,6 +704,7 @@ namespace EpgTimer
                 {
                     Settings.Instance.InfoWindowTopMost = infoWindowViewModel.IsTopMost;
                     Settings.Instance.InfoWindowBottomMost = infoWindowViewModel.IsBottomMost;
+                    Settings.Instance.InfoWindowDisabledReserveItemVisible = infoWindowViewModel.IsDisabledReserveItemVisible;
                 }
                 if (infoWindow != null)
                 {
@@ -954,6 +956,8 @@ namespace EpgTimer
                         cmd.SendReloadSetting();
                         cmd.SendNotifyProfileUpdate();
                     }
+
+                    infoWindowViewModel.IsDisabledReserveItemVisible = Settings.Instance.InfoWindowDisabledReserveItemVisible;
 
                     ChkTimerWork();
 
@@ -1746,6 +1750,7 @@ namespace EpgTimer
             {
                 infoWindowViewModel.UpdateInfo();
                 infoWindow = new InfoWindow(infoWindowViewModel);
+                infoWindow.IsVisibleChanged += InfoWindow_IsVisibleChanged;
                 infoWindow.Closed += InfoWindow_Closed;
                 infoWindow.Show();
             }
@@ -1755,8 +1760,16 @@ namespace EpgTimer
             }
         }
 
+        private void InfoWindow_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            bool isVisible = (bool)e.NewValue;
+
+            infoWindowViewModel.IsAutoRefreshEnabled = isVisible;
+        }
+
         private void InfoWindow_Closed(object sender, EventArgs e)
         {
+            infoWindow.IsVisibleChanged -= InfoWindow_IsVisibleChanged;
             infoWindow.Closed -= InfoWindow_Closed;
             infoWindow = null;
         }

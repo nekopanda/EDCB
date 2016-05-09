@@ -1,7 +1,8 @@
 ﻿<Application x:Class="EpgTimer.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             StartupUri="MainWindow.xaml">
+             StartupUri="MainWindow.xaml"
+             DispatcherUnhandledException="Application_DispatcherUnhandledException">
     <Application.Resources>
         <!-- アプリケーション レベルでスコープされたリソースは、ここで定義する必要があります。 -->
         <Style TargetType="{x:Type ListBoxItem}" />
