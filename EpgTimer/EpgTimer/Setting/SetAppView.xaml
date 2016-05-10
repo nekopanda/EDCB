@@ -263,7 +263,7 @@
                                 <CheckBox Name="checkBox_suspendClose" Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Margin="0,4,20,0" IsEnabled="False" />
                                 <CheckBox Name="checkBox_ngAutoEpgLoad" Content="EPGデータを自動的に読み込まない" Margin="0,4,20,0" IsEnabled="False" />
                             </StackPanel>
-                            <WrapPanel Margin="0,4,0,0" MaxWidth="100">
+                            <WrapPanel Margin="0,4,0,0">
                                 <WrapPanel VerticalAlignment="Center">
                                     <CheckBox Name="checkBox_keepTCPConnect" Content="EpgTimerSrvとの接続維持を試みる" Margin="0,2,10,2" IsEnabled="False" ToolTip="EpgTimerNW使用時、EpgTimerSrv側の再起動時などに接続維持を試みます" />
                                     <CheckBox Name="checkBox_upDateTaskText" Content="タスクトレイアイコンのツールチップを更新する" Margin="0,2,10,2" ToolTip="EpgTimerNWで「EpgTimerSrvとの接続維持を試みる」使用時以外はほとんど効果ありません" />
