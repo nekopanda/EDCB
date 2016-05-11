@@ -200,7 +200,9 @@ namespace EpgTimer
                     }
                     set
                     {
-                        if (!_items.ContainsKey(key) || _items[key] != value)
+                        string old = null;
+                        _items.TryGetValue(key, out old);
+                        if (old != value)
                         {
                             _updates[key] = value;
                         }
@@ -376,7 +378,7 @@ namespace EpgTimer
             {
                 if (_files == null)
                 {
-                    var o = this["Common.Ini"];
+                    var o = this[SettingPath.CommonIniPath];
                 }
                 return canRead;
             }
@@ -392,7 +394,7 @@ namespace EpgTimer
             {
                 if (_files == null)
                 {
-                    var o = this["Common.Ini"];
+                    var o = this[SettingPath.CommonIniPath];
                 }
                 return canUpdate;
             }

@@ -1723,6 +1723,7 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 					}
 					if (needToUpdate) {
 						sys->ReloadSetting();
+						sys->notifyManager.AddNotify(NOTIFY_UPDATE_PROFILE);
 					}
 					resParam->param = CMD_SUCCESS;
 				}

@@ -84,7 +84,6 @@ namespace EpgTimer
 
             if (CommonManager.Instance.NWMode == false)
             {
-                CommonManager.Instance.CtrlCmd.SendNotifyProfileUpdate();
                 ((MainWindow)Application.Current.MainWindow).RefreshAllViewsReserveInfo(MainWindow.UpdateViewMode.ReserveInfoNoTuner);
             }
         }
