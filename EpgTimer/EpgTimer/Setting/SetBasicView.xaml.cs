@@ -40,30 +40,13 @@ namespace EpgTimer.Setting
                 // 保存できない項目は IsEnabled = false にする
                 if (CommonManager.Instance.NWMode == true)
                 {
-                    label1.IsEnabled = false; // 設定関係保存フォルダ
-                    textBox_setPath.IsEnabled = false;
-                    button_setPath.IsEnabled = false; // 開く
-                    label2.IsEnabled = false; // 録画用アプリのexe
-                    textBox_exe.IsEnabled = false;
-                    button_exe.IsEnabled = false; // 開く
-                    label_cmdBon.IsEnabled = false; // コマンドライン引数
-                    textBox_cmdBon.IsEnabled = false;
-                    label_cmdMin.IsEnabled = false; // 最小化
-                    textBox_cmdMin.IsEnabled = false;
-                    label_cmdViewOff.IsEnabled = false; // 非視聴時
-                    textBox_cmdViewOff.IsEnabled = false;
-                    label3.IsEnabled = false; //録画保存フォルダ
+                    group_setPath.IsEnabled = false; // 設定関係保存フォルダ
+                    group_exePath.IsEnabled = false; // 録画用アプリのexe
+                    group_recInfoFolder.IsEnabled = false; // 録画情報保存フォルダ
                     label4.IsEnabled = false; //※ 録画中やEPG取得中に設定を変更すると正常動作しなくなる可能性があります。
                     button_shortCutSrv.IsEnabled = false;
                 }
-
-                listBox_recFolder.IsEnabled = IniFileHandler.CanUpdateInifile;
-                button_rec_up.IsEnabled = IniFileHandler.CanUpdateInifile; // ↑
-                button_rec_down.IsEnabled = IniFileHandler.CanUpdateInifile; // ↓
-                button_rec_del.IsEnabled = IniFileHandler.CanUpdateInifile; // 削除
-                textBox_recFolder.IsEnabled = IniFileHandler.CanUpdateInifile;
-                button_rec_open.IsEnabled = IniFileHandler.CanUpdateInifile; // 開く
-                button_rec_add.IsEnabled = IniFileHandler.CanUpdateInifile; // 追加
+                group_recFolder.IsEnabled = IniFileHandler.CanUpdateInifile; // 録画保存フォルダ
 
                 // 読める設定のみ項目に反映させる
                 if (IniFileHandler.CanReadInifile)
@@ -262,7 +245,7 @@ namespace EpgTimer.Setting
 
         private void SetBasicView_tabItem4()
         {
-            // tabItem4 - サーバー設定
+            // tabItem4 - HTTPサーバー
 
             // 保存できない項目は IsEnabled = false にする
             if (CommonManager.Instance.NWMode == true)

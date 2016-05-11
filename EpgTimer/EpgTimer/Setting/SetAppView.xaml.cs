@@ -278,7 +278,6 @@ namespace EpgTimer.Setting
             }
 
             checkBox_autoDelRecInfo.IsEnabled = IniFileHandler.CanUpdateInifile; // 録画結果を自動的に削除する
-            checkBox_autoDelRecFile.IsEnabled = IniFileHandler.CanUpdateInifile; // 録画ファイルも削除する
             checkBox_srvSaveNotifyLog.IsEnabled = IniFileHandler.CanUpdateInifile; // 情報通知ログをファイルに保存する
             checkBox_srvSaveDebugLog.IsEnabled = IniFileHandler.CanUpdateInifile; // デバッグ出力をファイルに保存する
             if (IniFileHandler.CanUpdateInifile == false)

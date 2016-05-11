@@ -56,7 +56,7 @@
                     <ComboBox Grid.Row="0" Grid.Column="3" Name="comboBox_tuijyu" Margin="0,0,120,0" ItemsSource="{Binding}" />
 
                     <Label Grid.Row="1" Grid.Column="0" Name="label10" Content="優先度" Margin="0,0,10,0" />
-                    <ComboBox Grid.Row="1" Grid.Column="1" Name="comboBox_priority" Margin="0,0,180,0" ItemsSource="{Binding}" />
+                    <ComboBox Grid.Row="1" Grid.Column="1" Name="comboBox_priority" Margin="0,0,120,0" ItemsSource="{Binding}" />
                     <Label Grid.Row="1" Grid.Column="2" Name="label9" Content="ぴったり（？）録画" Margin="0,0,10,0" />
                     <ComboBox Grid.Row="1" Grid.Column="3" Name="comboBox_pittari" Margin="0,0,120,0" ItemsSource="{Binding}" />
 
@@ -92,12 +92,12 @@
                     </Grid>
                 </Grid>
 
-                <Grid Grid.Row="1" Margin="0,8,0,0">
+                <Grid Grid.Row="1" Margin="0,4,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
                         <ColumnDefinition Width="auto"/>
                     </Grid.ColumnDefinitions>
-                    <ListView Grid.Column="0" Name="listView_recFolder" Margin="5,4" ItemsSource="{Binding}">
+                    <ListView Grid.Column="0" Name="listView_recFolder" Margin="5,0" ItemsSource="{Binding}">
                         <ListView.Resources>
                             <Style TargetType="ListViewItem">
                                 <EventSetter Event="MouseDoubleClick" Handler="listView_recFolder_MouseDoubleClick"/>
@@ -138,7 +138,7 @@
                     </StackPanel>
                 </Grid>
 
-                <Grid Grid.Row="2" Grid.RowSpan="2" Margin="0,8,0,0">
+                <Grid Grid.Row="2" Grid.RowSpan="2" Margin="0,4,0,0">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                             <CheckBox Name="checkBox_partial" Content="部分受信（ワンセグ）を別ファイルに同時出力する" Margin="30,0,30,0" />

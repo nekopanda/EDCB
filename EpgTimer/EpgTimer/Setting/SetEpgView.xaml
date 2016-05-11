@@ -788,16 +788,17 @@
                         <GroupBox Header="表示範囲の選択" Margin="4,2">
                             <StackPanel>
                                 <WrapPanel Margin="8,4">
-                                    <RadioButton Name="radioButton_Level1" Content="レベル1のみ" Margin="0,0,20,0" />
-                                    <RadioButton Name="radioButton_Level2" Content="レベル2まで" Margin="0,0,20,0" />
-                                    <RadioButton Name="radioButton_Level3" Content="レベル3まで" Margin="0,0,20,0" />
-                                    <RadioButton Name="radioButton_All" Content="全て" Margin="0,0,20,0" />
-                                    <RadioButton Name="radioButton_TopN">
-                                        <StackPanel Orientation="Horizontal" IsEnabled="{Binding IsCheked, ElementName=radioButton_TopN}">
-                                            <TextBox Name="textBox_TopN" Width="50" HorizontalAlignment="Right"/>
+                                    <RadioButton Name="radioButton_Level1" Content="レベル1のみ" GroupName="groupDisplayLevel" Margin="0,0,20,0" />
+                                    <RadioButton Name="radioButton_Level2" Content="レベル2まで" GroupName="groupDisplayLevel" Margin="0,0,20,0" />
+                                    <RadioButton Name="radioButton_Level3" Content="レベル3まで" GroupName="groupDisplayLevel" Margin="0,0,20,0" />
+                                    <RadioButton Name="radioButton_All" Content="全て" GroupName="groupDisplayLevel" Margin="0,0,20,0" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton Name="radioButton_TopN" GroupName="groupDisplayLevel" />
+                                        <StackPanel Orientation="Horizontal" Margin="10,0,0,0" IsEnabled="{Binding IsChecked, ElementName=radioButton_TopN}">
+                                            <TextBox Name="textBox_TopN" Width="50" TextAlignment="Right" />
                                             <Label Content="件まで" />
                                         </StackPanel>
-                                    </RadioButton>
+                                    </StackPanel>
                                 </WrapPanel>
                             </StackPanel>
                         </GroupBox>
