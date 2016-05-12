@@ -94,7 +94,7 @@ namespace EpgTimer
 
             if (ReserveInfo == null) return result;
 
-            int secondsToStart = (int)((OnAirOrRecStart - OnAirOrRecProgress) / 10000000);
+            int secondsToStart = (int)((OnAirOrRecStart - OnAirOrRecProgress) / 10000000L);
             if (secondsToStart <= Settings.Instance.InfoWindowItemLevel1Seconds)
             {
                 if (Settings.Instance.InfoWindowItemFilterLevel < 1)

@@ -150,12 +150,31 @@ namespace EpgTimer
         private TimeSpan GetNextTimerInterval()
         {
             int interval = Settings.Instance.InfoWindowRefreshInterval;
-
-            int secondsToNextUpdate = (interval - DateTime.Now.Second) % interval;
-            if (secondsToNextUpdate <= 0)
+            int secondsToNextUpdate = 0;
+            if (Settings.Instance.InfoWindowItemProgressBarType == 0)
             {
-                secondsToNextUpdate = secondsToNextUpdate + interval;
+                // ProgressBar を動かす必要がないので、 次にステートが変わるまでの最小時間を探す
+                long nowTicks = DateTime.Now.Ticks;
+                long level1Ticks = nowTicks + Settings.Instance.InfoWindowItemLevel1Seconds * 10000000L;
+                long level2Ticks = Settings.Instance.InfoWindowItemFilterLevel > 1 ? nowTicks + Settings.Instance.InfoWindowItemLevel2Seconds * 10000000L : long.MaxValue;
+                long level3Ticks = Settings.Instance.InfoWindowItemFilterLevel > 2 ? nowTicks + Settings.Instance.InfoWindowItemLevel3Seconds * 10000000L : long.MaxValue;
+                long nextTicks = ReserveList.Select(x => x.OnAirOrRecStart < level1Ticks ? -1L :
+                                                         x.OnAirOrRecStart < level2Ticks ? x.OnAirOrRecStart - level1Ticks :
+                                                         x.OnAirOrRecStart < level3Ticks ? x.OnAirOrRecStart - level2Ticks : x.OnAirOrRecStart - level3Ticks)
+                                            .Where(x => x > 0L)
+                                            .OrderBy(x => x)
+                                            .FirstOrDefault();
+
+                // Timer の誤差を考慮して、1更新間隔分前に一度更新されるようにしておく
+                nextTicks -= interval * 10000000L;
+                secondsToNextUpdate = nextTicks < 10000000L ? 0 : (int)Math.Ceiling(nextTicks / 10000000D);
             }
+            if (secondsToNextUpdate == 0)
+            {
+                secondsToNextUpdate = interval - DateTime.Now.Second % interval;
+            }
+
+            System.Diagnostics.Debug.WriteLine(DateTime.Now + " Sleep: " + secondsToNextUpdate + " [sec]");
 
             return new TimeSpan(0, 0, secondsToNextUpdate);
         }
@@ -194,6 +213,8 @@ namespace EpgTimer
 
             // すべてのitemを定期的に更新するので毎回評価されないようにListに変換
             ReserveList = items.ToList();
+
+            RefreshTimer.Interval = GetNextTimerInterval();
         }
     }
 }
