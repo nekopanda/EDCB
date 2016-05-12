@@ -829,6 +829,7 @@ namespace EpgTimer
         public int InfoWindowRefreshInterval { get; set; }
         public bool InfoWindowBasedOnBroadcast { get; set; }
         public int InfoWindowItemFilterLevel { get; set; }
+        public int InfoWindowItemProgressBarType { get; set; }
         public int InfoWindowItemTopN { get; set; }
         public int InfoWindowItemLevel1Seconds { get; set; }
         public int InfoWindowItemLevel2Seconds { get; set; }
@@ -1024,6 +1025,7 @@ namespace EpgTimer
             InfoWindowRefreshInterval = 10;
             InfoWindowBasedOnBroadcast = true;
             InfoWindowItemFilterLevel = 10;
+            InfoWindowItemProgressBarType = 1;
             InfoWindowItemTopN = 10;
             InfoWindowItemLevel1Seconds = 0;
             InfoWindowItemLevel2Seconds = 15 * 60;

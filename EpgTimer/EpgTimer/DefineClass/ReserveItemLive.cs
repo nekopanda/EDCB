@@ -35,6 +35,8 @@ namespace EpgTimer
         private long _OnAirOrRecEnd;
         private long _OnAirOrRecProgress;
         private Visibility _OnAirOrRecProgressVisibility;
+        private Visibility _ProgressBar1Visibility = Visibility.Collapsed;
+        private Visibility _ProgressBar2Visibility = Visibility.Collapsed;
 
         #endregion
 
@@ -144,6 +146,11 @@ namespace EpgTimer
             {
                 Background = bgBrush;
                 OnAirOrRecProgressVisibility = (OnAirOrRecStart <= OnAirOrRecProgress && OnAirOrRecProgress <= OnAirOrRecEnd) ? Visibility.Visible : Visibility.Collapsed;
+                switch (Settings.Instance.InfoWindowItemProgressBarType)
+                {
+                    case 1: ProgressBar1Visibility = OnAirOrRecProgressVisibility; break;
+                    case 2: ProgressBar2Visibility = OnAirOrRecProgressVisibility; break;
+                }
                 Visibility = Visibility.Visible;
             }
             else
@@ -194,7 +201,7 @@ namespace EpgTimer
         }
 
         /// <summary>
-        /// 放送または録画の進行度を示す0から100の値。
+        /// 放送または録画の進行度を示す DateTime.Now.Ticks の値。
         /// </summary>
         public long OnAirOrRecProgress
         {
@@ -209,6 +216,24 @@ namespace EpgTimer
         {
             get { return _OnAirOrRecProgressVisibility; }
             private set { SetProperty(ref _OnAirOrRecProgressVisibility, value); }
+        }
+
+        /// <summary>
+        /// 日時の下の ProgressBar の表示状態
+        /// </summary>
+        public Visibility ProgressBar1Visibility
+        {
+            get { return _ProgressBar1Visibility; }
+            private set { SetProperty(ref _ProgressBar1Visibility, value); }
+        }
+
+        /// <summary>
+        /// 録画項目の背景の ProgressBar の表示状態
+        /// </summary>
+        public Visibility ProgressBar2Visibility
+        {
+            get { return _ProgressBar2Visibility; }
+            private set { SetProperty(ref _ProgressBar2Visibility, value); }
         }
 
         #endregion

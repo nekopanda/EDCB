@@ -786,21 +786,26 @@
                             </StackPanel>
                         </GroupBox>
                         <GroupBox Header="表示範囲の選択" Margin="4,2">
-                            <StackPanel>
-                                <WrapPanel Margin="8,4">
-                                    <RadioButton Name="radioButton_Level1" Content="レベル1のみ" GroupName="groupDisplayLevel" Margin="0,0,20,0" />
-                                    <RadioButton Name="radioButton_Level2" Content="レベル2まで" GroupName="groupDisplayLevel" Margin="0,0,20,0" />
-                                    <RadioButton Name="radioButton_Level3" Content="レベル3まで" GroupName="groupDisplayLevel" Margin="0,0,20,0" />
-                                    <RadioButton Name="radioButton_All" Content="全て" GroupName="groupDisplayLevel" Margin="0,0,20,0" />
-                                    <StackPanel Orientation="Horizontal">
-                                        <RadioButton Name="radioButton_TopN" GroupName="groupDisplayLevel" />
-                                        <StackPanel Orientation="Horizontal" Margin="10,0,0,0" IsEnabled="{Binding IsChecked, ElementName=radioButton_TopN}">
-                                            <TextBox Name="textBox_TopN" Width="50" TextAlignment="Right" />
-                                            <Label Content="件まで" />
-                                        </StackPanel>
+                            <WrapPanel Margin="8,4">
+                                <RadioButton Name="radioButton_Level1" Content="レベル1のみ" Tag="1" GroupName="groupDisplayLevel" Margin="0,0,20,0" />
+                                <RadioButton Name="radioButton_Level2" Content="レベル2まで" Tag="2" GroupName="groupDisplayLevel" Margin="0,0,20,0" />
+                                <RadioButton Name="radioButton_Level3" Content="レベル3まで" Tag="3" GroupName="groupDisplayLevel" Margin="0,0,20,0" />
+                                <RadioButton Name="radioButton_All"    Content="全て"        Tag="4" GroupName="groupDisplayLevel" Margin="0,0,20,0" />
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton Name="radioButton_TopN" GroupName="groupDisplayLevel" />
+                                    <StackPanel Orientation="Horizontal" Margin="10,0,0,0" IsEnabled="{Binding IsChecked, ElementName=radioButton_TopN}">
+                                        <TextBox Name="textBox_TopN" Width="50" TextAlignment="Right" />
+                                        <Label Content="件まで" />
                                     </StackPanel>
-                                </WrapPanel>
-                            </StackPanel>
+                                </StackPanel>
+                            </WrapPanel>
+                        </GroupBox>
+                        <GroupBox Header="プログレスバーの選択" Margin="4,2">
+                            <WrapPanel Margin="8,4">
+                                <RadioButton Name="radioButton_ProgressBarOff"   Content="表示しない"           Tag="0" Margin="0,0,20,0" />
+                                <RadioButton Name="radioButton_ProgressBarType1" Content="日時の下に表示"       Tag="1" Margin="0,0,20,0" />
+                                <RadioButton Name="radioButton_ProgressBarType2" Content="録画項目の背景に表示" Tag="2" Margin="0,0,20,0" />
+                            </WrapPanel>
                         </GroupBox>
                     </StackPanel>
                 </GroupBox>

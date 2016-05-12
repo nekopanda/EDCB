@@ -14,10 +14,23 @@
             <sys:Double x:Key="ProgressBarHeight">4</sys:Double>
             <Style TargetType="{x:Type ListViewItem}">
                 <Setter Property="IsHitTestVisible" Value="False" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                 <Setter Property="VerticalContentAlignment" Value="Top" />
                 <Setter Property="BorderThickness" Value="0,0,0,0" />
                 <Setter Property="Background" Value="{Binding Path=Background}" />
                 <Setter Property="Visibility" Value="{Binding Path=Visibility}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate>
+                            <Grid Background="{Binding Background}">
+                                <ProgressBar Minimum="{Binding OnAirOrRecStart}" Maximum="{Binding OnAirOrRecEnd}" Value="{Binding OnAirOrRecProgress, Mode=OneWay}"
+                                             VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0" BorderBrush="Transparent"
+                                             Visibility="{Binding ProgressBar2Visibility}" />
+                                <GridViewRowPresenter Content="{TemplateBinding Property=ContentControl.Content}" />
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
             <Style x:Key="VisibleHeader" TargetType="{x:Type GridViewColumnHeader}">
                 <Setter Property="Visibility" Value="Visible" />
@@ -46,7 +59,7 @@
                             <StackPanel>
                                 <TextBlock Text="{Binding Path=StartTimeShort}" />
                                 <ProgressBar Minimum="{Binding Path=OnAirOrRecStart}" Maximum="{Binding Path=OnAirOrRecEnd}" Value="{Binding Path=OnAirOrRecProgress, Mode=OneWay}"
-                                             Height="{StaticResource ProgressBarHeight}" Visibility="{Binding Path=OnAirOrRecProgressVisibility}" />
+                                             Height="{StaticResource ProgressBarHeight}" Visibility="{Binding ProgressBar1Visibility}" />
                             </StackPanel>
                         </DataTemplate>
                     </GridViewColumn.CellTemplate>
@@ -61,7 +74,7 @@
                         </DataTemplate>
                     </GridViewColumn.CellTemplate>
                 </GridViewColumn>
-                <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}" >
+                <GridViewColumn DisplayMemberBinding="{Binding Path=NetworkName}">
                     <GridViewColumn.Header>
                         <GridViewColumnHeader Content="ネットワーク" Uid="NetworkName" />
                     </GridViewColumn.Header>

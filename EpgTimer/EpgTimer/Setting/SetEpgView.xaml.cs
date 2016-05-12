@@ -217,6 +217,12 @@ namespace EpgTimer.Setting
                     case 3: radioButton_Level3.IsChecked = true; break;
                     case int.MaxValue: radioButton_TopN.IsChecked = true; break;
                 }
+                switch (Settings.Instance.InfoWindowItemProgressBarType)
+                {
+                    default: radioButton_ProgressBarOff.IsChecked = true; break;
+                    case 1: radioButton_ProgressBarType1.IsChecked = true; break;
+                    case 2: radioButton_ProgressBarType2.IsChecked = true; break;
+                }
                 textBox_TopN.Text = Settings.Instance.InfoWindowItemTopN.ToString();
                 textBox_iw_item_level1.Text = (Settings.Instance.InfoWindowItemLevel1Seconds / 60.0).ToString();
                 textBox_iw_item_level2.Text = (Settings.Instance.InfoWindowItemLevel2Seconds / 60.0).ToString();
@@ -250,7 +256,7 @@ namespace EpgTimer.Setting
                 Settings.Instance.TunerScrollSize = mutil.MyToNumerical(textBox_tuner_mouse_scroll, Convert.ToDouble, 240);
                 Settings.Instance.TunerWidth = mutil.MyToNumerical(textBox_tuner_width, Convert.ToDouble, double.MaxValue, 16, 150);//小さいと描画で落ちる
                 Settings.Instance.TunerMinHeight = mutil.MyToNumerical(textBox_tuner_minHeight, Convert.ToDouble, double.MaxValue, 0.1, 2);
-                Settings.Instance.TunerMinimumLine = mutil.MyToNumerical(textBox_tunerMinLineHeight, Convert.ToDouble, double.MaxValue,0,0);
+                Settings.Instance.TunerMinimumLine = mutil.MyToNumerical(textBox_tunerMinLineHeight, Convert.ToDouble, double.MaxValue, 0, 0);
                 Settings.Instance.TunerDragScroll = mutil.MyToNumerical(textBox_tunerDdragScroll, Convert.ToDouble, 1.5);
                 Settings.Instance.TunerMouseScrollAuto = (checkBox_tuner_scrollAuto.IsChecked == true);
                 Settings.Instance.TunerServiceNoWrap = (checkBox_tuner_service_nowrap.IsChecked == true);
@@ -436,26 +442,14 @@ namespace EpgTimer.Setting
                 // [予約簡易表示]
                 Settings.Instance.InfoWindowRefreshInterval = mutil.MyToNumerical(textBox_iw_refresh_interval, Convert.ToInt32, 60, 1, 10);
                 Settings.Instance.InfoWindowBasedOnBroadcast = (radioButton_iw_based_on_bcst.IsChecked == true);
-                if (radioButton_Level1.IsChecked == true)
-                {
-                    Settings.Instance.InfoWindowItemFilterLevel = 1;
-                }
-                else if (radioButton_Level2.IsChecked == true)
-                {
-                    Settings.Instance.InfoWindowItemFilterLevel = 2;
-                }
-                else if (radioButton_Level3.IsChecked == true)
-                {
-                    Settings.Instance.InfoWindowItemFilterLevel = 3;
-                }
-                else if (radioButton_All.IsChecked == true)
-                {
-                    Settings.Instance.InfoWindowItemFilterLevel = 4;
-                }
-                else if (radioButton_TopN.IsChecked == true)
-                {
-                    Settings.Instance.InfoWindowItemFilterLevel = int.MaxValue;
-                }
+                string level = (string)new RadioButton[] {
+                    radioButton_Level1, radioButton_Level2, radioButton_Level3, radioButton_All, radioButton_TopN
+                }.Where(x => x.IsChecked == true).Select(x => x.Tag).FirstOrDefault();
+                Settings.Instance.InfoWindowItemFilterLevel = level != null ? int.Parse(level) : int.MaxValue;
+                string progbar = (string)new RadioButton[] {
+                    radioButton_ProgressBarOff, radioButton_ProgressBarType1, radioButton_ProgressBarType2,
+                }.Where(x => x.IsChecked == true).Select(x => x.Tag).FirstOrDefault();
+                Settings.Instance.InfoWindowItemProgressBarType = progbar != null ? int.Parse(progbar) : 0;
                 Settings.Instance.InfoWindowItemTopN = mutil.MyToNumerical(textBox_TopN, Convert.ToInt32, 10);
                 Settings.Instance.InfoWindowItemLevel1Seconds = mutil.MyToNumerical(textBox_iw_item_level1, Convert.ToInt32, 0) * 60;
                 Settings.Instance.InfoWindowItemLevel2Seconds = mutil.MyToNumerical(textBox_iw_item_level2, Convert.ToInt32, 15) * 60;
