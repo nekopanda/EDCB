@@ -472,6 +472,7 @@ namespace EpgTimer
 
     class SettingPath
     {
+        internal static bool IniPathExceptionSkip = false;
         private static string IniPath
         {
             // サーバー側のINIファイルの直接参照をしなくなったので、IniPath が必要になるのは
@@ -479,7 +480,7 @@ namespace EpgTimer
             // ローカル接続する EpgTimer.exe と EpgTimerSrv.exe のバージョンは揃えるべきだとは思う。
             get
             {
-                if (CommonManager.Instance.NWMode == false)
+                if (CommonManager.Instance.NWMode == false && IniPathExceptionSkip == false)
                 {
                     try
                     {
@@ -493,6 +494,7 @@ namespace EpgTimer
                     catch (Exception ex)
                     {
                         MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
+                        IniPathExceptionSkip = true;
                     }
                 }
                 return ModulePath;
