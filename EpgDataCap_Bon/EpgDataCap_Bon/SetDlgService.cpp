@@ -57,7 +57,8 @@ void CSetDlgService::OnBnClickedButtonChkVideo()
 	for( int i=0; i<ListView_GetItemCount(GetDlgItem(IDC_LIST_SERVICE)); i++ ){
 		CH_DATA4* chSet = (CH_DATA4*)ListView_GetItemParam(GetDlgItem(IDC_LIST_SERVICE), i, 0);
 		if( chSet != NULL ){
-			ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, chSet->serviceType == 0x01 || chSet->serviceType == 0xA5);
+			ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i,
+				chSet->serviceType == 0x01 || chSet->serviceType == 0xA5 || chSet->serviceType == 0xAD);
 		}
 	}
 }
