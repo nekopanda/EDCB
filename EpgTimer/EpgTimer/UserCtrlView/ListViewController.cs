@@ -43,6 +43,25 @@ namespace EpgTimer
             dataList = new List<T>();
         }
 
+        public void SetSelectionChangedEventHandler(SelectionChangedEventHandler hdlr = null)
+        {
+            if (hdlr == null) return;
+
+            bool onSelectionChanging = false;
+            listView.SelectionChanged += (sender, e) =>
+            {
+                if (onSelectionChanging == true) return;
+                onSelectionChanging = true;
+
+                //リスト更新中などに何度も走らないようにしておく。
+                //リストビュー自体に遅延実行があるので、イベントハンドラ外しても効果薄いため。
+                System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() =>
+                {
+                    hdlr(sender, e);
+                    onSelectionChanging = false;
+                }), System.Windows.Threading.DispatcherPriority.ContextIdle);
+            };
+        }
         public void SetSavePath(string columnSavePath, string sortHeaderSavePath = null, string sortDirectionSavePath = null)
         {
             column_SavePath = columnSavePath;
@@ -161,10 +180,7 @@ namespace EpgTimer
                 Settings.Instance.SetSettings(sort_HeaderSavePath, this.gvSorter.LastHeader);
                 Settings.Instance.SetSettings(sort_DirectionSavePath, this.gvSorter.LastDirection);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
         private List<ListColumnInfo> columnSaveList
         {
@@ -200,14 +216,8 @@ namespace EpgTimer
                 oldItems.RestoreListViewSelected();
                 return true;
             }
-            catch (Exception ex)
-            {
-                Owner.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                }), null);
-                return false;
-            }
+            catch (Exception ex) { CommonUtil.ModelessMsgBoxShow(Owner, ex.Message + "\r\n" + ex.StackTrace); }
+            return false;
         }
 
         public bool GridViewHeaderClickSort(RoutedEventArgs e)
@@ -228,10 +238,7 @@ namespace EpgTimer
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
             return false;
         }
 

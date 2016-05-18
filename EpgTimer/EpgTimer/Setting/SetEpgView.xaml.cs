@@ -197,6 +197,8 @@ namespace EpgTimer.Setting
                 textBox_LaterTimeHour.Text = (Settings.Instance.LaterTimeHour + 24).ToString();
                 checkBox_displayPresetOnSearch.IsChecked = Settings.Instance.DisplayPresetOnSearch;
                 checkBox_nekopandaToolTip.IsChecked = Settings.Instance.RecItemToolTip;
+                checkBox_displayStatus.IsChecked = Settings.Instance.DisplayStatus;
+                checkBox_displayStatusNotify.IsChecked = Settings.Instance.DisplayStatusNotify;
 
                 // [予約一覧・共通] - [色]
                 setComboColor1(Settings.Instance.ListDefColor, cmb_ListDefFontColor);
@@ -432,6 +434,8 @@ namespace EpgTimer.Setting
                 Settings.Instance.LaterTimeHour = mutil.MyToNumerical(textBox_LaterTimeHour, Convert.ToInt32, 36, 24, 28) - 24;
                 Settings.Instance.DisplayPresetOnSearch = (checkBox_displayPresetOnSearch.IsChecked == true);
                 Settings.Instance.RecItemToolTip = (checkBox_nekopandaToolTip.IsChecked == true);
+                Settings.Instance.DisplayStatus = (checkBox_displayStatus.IsChecked == true);
+                Settings.Instance.DisplayStatusNotify = (checkBox_displayStatusNotify.IsChecked == true);
                 // [予約一覧・共通] - [色]
                 Settings.Instance.ListDefColor = getComboColor1(cmb_ListDefFontColor);
                 Settings.Instance.ListDefCustColor = getButtonColor1(btn_ListDefFontColor);
@@ -462,11 +466,7 @@ namespace EpgTimer.Setting
         private void button_tab_add_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new EpgDataViewSettingWindow();
-            var topWindow = PresentationSource.FromVisual(this);
-            if (topWindow != null)
-            {
-                dlg.Owner = (Window)topWindow.RootVisual;
-            }
+            dlg.Owner = CommonUtil.GetTopWindow(this);
             if (dlg.ShowDialog() == true)
             {
                 var info = new CustomEpgTabInfo();
@@ -491,11 +491,7 @@ namespace EpgTimer.Setting
                 listBox_tab.UnselectAll();
                 listBox_tab.SelectedItem = setInfo;
                 var dlg = new EpgDataViewSettingWindow();
-                var topWindow = PresentationSource.FromVisual(this);
-                if (topWindow != null)
-                {
-                    dlg.Owner = (Window)topWindow.RootVisual;
-                }
+                dlg.Owner = CommonUtil.GetTopWindow(this);
                 dlg.SetDefSetting(setInfo);
                 if (dlg.ShowDialog() == true)
                 {
@@ -545,7 +541,7 @@ namespace EpgTimer.Setting
             var btn = sender as Button;
 
             var dlg = new ColorSetWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            dlg.Owner = CommonUtil.GetTopWindow(this);
             Color item = (btn.Background as SolidColorBrush).Color;
             dlg.SetColor(item);
             if (dlg.ShowDialog() == true)
@@ -573,10 +569,9 @@ namespace EpgTimer.Setting
 
         private void button_set_cm_Click(object sender, RoutedEventArgs e)
         {
-            SetContextMenuWindow dlg = new SetContextMenuWindow();
+            var dlg = new SetContextMenuWindow();
+            dlg.Owner = CommonUtil.GetTopWindow(this);
             dlg.info = this.ctxmSetInfo.Clone();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-
             if (dlg.ShowDialog() == true)
             {
                 this.ctxmSetInfo = dlg.info.Clone();

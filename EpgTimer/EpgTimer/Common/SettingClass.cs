@@ -545,6 +545,15 @@ namespace EpgTimer
                     return "";
                 }
             }
+            set
+            {
+                string path = value.Trim();
+                bool isDefaultPath = string.Compare(path.TrimEnd('\\'), SettingPath.DefSettingFolderPath.TrimEnd('\\'), true) == 0;
+                if (IniFileHandler.CanUpdateInifile == true)
+                {
+                    IniFileHandler.WritePrivateProfileString("SET", "DataSavePath", isDefaultPath == true ? null : path, SettingPath.CommonIniPath);
+                }
+            }
         }
         public static string ModulePath
         {
@@ -694,6 +703,9 @@ namespace EpgTimer
         public string Cust2BtnName { get; set; }
         public string Cust2BtnCmd { get; set; }
         public string Cust2BtnCmdOpt { get; set; }
+        public string Cust3BtnName { get; set; }
+        public string Cust3BtnCmd { get; set; }
+        public string Cust3BtnCmdOpt { get; set; }
         public List<string> AndKeyList { get; set; }
         public List<string> NotKeyList { get; set; }
         public EpgSearchKeyInfo DefSearchKey { get; set; }
@@ -755,6 +767,9 @@ namespace EpgTimer
         public List<NWPresetItem> NWPerset { get; set; }            // obsolete because of typo of 'NWPreset'
         public List<NWPresetItem> NWPreset { get; set; }
         public bool WakeReconnectNW { get; set; }
+        public bool WoLWait { get; set; }
+        public bool WoLWaitRecconect { get; set; }
+        public double WoLWaitSecond { get; set; }
         public bool SuspendCloseNW { get; set; }
         public bool NgAutoEpgLoadNW { get; set; }
         public bool ChkSrvRegistTCP { get; set; }
@@ -791,6 +806,7 @@ namespace EpgTimer
         public double SearchWndWidth { get; set; }
         public double SearchWndHeight { get; set; }
         public bool SearchWndPinned { get; set; }
+        public bool SaveSearchKeyword { get; set; }
         public short AutoSaveNotifyLog { get; set; }
         public bool ShowTray { get; set; }
         public bool MinHide { get; set; }
@@ -815,6 +831,8 @@ namespace EpgTimer
         public bool RecInfoExtraDataCacheOptimize { get; set; }
         public bool RecInfoExtraDataCacheKeepConnect { get; set; }
         public bool UpdateTaskText { get; set; }
+        public bool DisplayStatus { get; set; }
+        public bool DisplayStatusNotify { get; set; }
 
         public bool ApplyMultiInstance { get; set; }
         public double ReserveMinHeight { get; set; }
@@ -916,6 +934,9 @@ namespace EpgTimer
             Cust2BtnName = "";
             Cust2BtnCmd = "";
             Cust2BtnCmdOpt = "";
+            Cust3BtnName = "";
+            Cust3BtnCmd = "";
+            Cust3BtnCmdOpt = "";
             AndKeyList = new List<string>();
             NotKeyList = new List<string>();
             DefSearchKey = new EpgSearchKeyInfo();
@@ -944,12 +965,15 @@ namespace EpgTimer
             MenuSet = new MenuSettingData();
             NWServerIP = "";
             NWServerPort = 4510;
-            NWWaitPort = 4520;
+            NWWaitPort = 0;
             NWMacAdd = "";
             NWPassword = new SerializableSecureString();
             NWPerset = new List<NWPresetItem>();
             NWPreset = new List<NWPresetItem>();
             WakeReconnectNW = false;
+            WoLWaitRecconect = false;
+            WoLWaitSecond= 30;
+            WoLWait = false;
             SuspendCloseNW = false;
             NgAutoEpgLoadNW = false;
             ChkSrvRegistTCP = false;
@@ -986,6 +1010,7 @@ namespace EpgTimer
             SearchWndWidth = -100;
             SearchWndHeight = -100;
             SearchWndPinned = false;
+            SaveSearchKeyword = true;
             AutoSaveNotifyLog = 0;
             ShowTray = true;
             MinHide = true;
@@ -1037,6 +1062,8 @@ namespace EpgTimer
 
             RecItemToolTip = false;
             UpdateTaskText = false;
+            DisplayStatus = false;
+            DisplayStatusNotify = false;
         }
 
         [NonSerialized()]
@@ -1487,6 +1514,35 @@ namespace EpgTimer
         public double TunerFontHeightService
         {
             get { return tunerFontSizeService * CommonManager.Instance.VUtil.ItemFontTunerService.GlyphType.Height; }
+        }
+
+        public List<string> GetViewButtonAllItems()
+        {
+            return new List<string>
+            {
+                "（空白）",
+                "設定",
+                "再接続",
+                "再接続(前回)",
+                "検索",
+                "スタンバイ",
+                "休止",
+                "終了",
+                "EPG取得",
+                "EPG再読み込み",
+                "NetworkTV終了",
+                "情報通知ログ",
+                "予約簡易表示",
+                "カスタム１",
+                "カスタム２",
+                "カスタム３"
+            };
+        }
+        public List<string> GetTaskMenuAllItems()
+        {
+            var taskItem = new List<string> { "（セパレータ）" };
+            taskItem.AddRange(GetViewButtonAllItems().Skip(1));
+            return taskItem;
         }
     }
 }

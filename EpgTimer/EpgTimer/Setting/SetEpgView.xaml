@@ -649,6 +649,10 @@
                                 <CheckBox Name="checkBox_nekopandaToolTip" Margin="8,4" >
                                     <TextBlock TextWrapping="Wrap">自動予約登録画面で録画予約項目をツールチップ表示する</TextBlock>
                                 </CheckBox>
+                                <WrapPanel Margin="8,4">
+                                    <CheckBox Name="checkBox_displayStatus" Content="ステータス表示をする" />
+                                    <CheckBox Name="checkBox_displayStatusNotify" Content="主要操作の操作結果を表示をする" Margin="14,0,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_displayStatus, UpdateSourceTrigger=PropertyChanged}" />
+                                </WrapPanel>
                             </StackPanel>
                         </GroupBox>
                     </ScrollViewer>

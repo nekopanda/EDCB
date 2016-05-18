@@ -88,6 +88,17 @@ namespace EpgTimer
                 button_up.Click += new RoutedEventHandler(bx.button_up_Click);
                 button_down.Click += new RoutedEventHandler(bx.button_down_Click);
                 button_bottom.Click += new RoutedEventHandler(bx.button_bottom_Click);
+
+                //その他画面用の設定
+                foreach (var item in MenuCodeToTitle.Where(i => i.Key != CtxmCode.EditChgMenu))
+                {
+                    var chkbox = new CheckBox();
+                    chkbox.Tag = item.Key;
+                    chkbox.Content = item.Value;
+                    chkbox.Checked += new RoutedEventHandler(checkBox_IsManualMenuCode_Checked);
+                    chkbox.Unchecked += new RoutedEventHandler(checkBox_IsManualMenuCode_Checked);
+                    wrapPanel_IsManualMenu.Children.Add(chkbox);
+                }
             }
             catch (Exception ex)
             {
@@ -118,22 +129,12 @@ namespace EpgTimer
                     }
                     else
                     {
-                        Control newItem = null;
-                        if (itr_src.Current is Separator)
-                        {
-                            newItem = new Separator();
-                        }
-                        else if (itr_src.Current is CheckBox)
-                        {
-                            newItem = new CheckBox();
-                            newItem.Visibility = Visibility.Hidden;
-                        }
-                        if (newItem != null)
-                        {
-                            newItem.Height = itr_src.Current.Height;
-                            newItem.Margin = itr_src.Current.Margin;
-                            trg.Children.Add(newItem);
-                        }
+                        var newItem = (Control)Activator.CreateInstance(itr_src.Current.GetType());
+                        newItem.Style = itr_src.Current.Style;
+                        newItem.Height = itr_src.Current.Height;
+                        newItem.Margin = itr_src.Current.Margin;
+                        if (itr_src.Current is CheckBox) newItem.Visibility = Visibility.Hidden;
+                        trg.Children.Add(newItem);
                     }
                 }
             };
@@ -157,7 +158,14 @@ namespace EpgTimer
         {
             try
             {
-                checkBox_ManualMenu.IsChecked = info.IsManualMenu;
+                ManualMenuCheckboxWorking = true;
+                foreach (var chkbox in IsManualChkBox)
+                {
+                    chkbox.IsChecked = info.IsManualAssign.Contains((CtxmCode)chkbox.Tag);
+                }
+                ManualMenuCheckboxWorking = false;
+                checkBox_IsManualMenuCode_Checked(null, null);
+
                 checkBox_NoMessageKeyGesture.IsChecked = info.NoMessageKeyGesture;
                 checkBox_NoMessageDeleteAll.IsChecked = info.NoMessageDeleteAll;
                 checkBox_NoMessageDelete2.IsChecked = info.NoMessageDelete2;
@@ -200,10 +208,7 @@ namespace EpgTimer
                 this.comboBoxViewSelect.SelectedIndex = -1; //初期化ボタンでSetData()使うとき用のリセット。
                 this.comboBoxViewSelect.SelectedIndex = 7; //これでSelectionChanged発生する
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void button_OK_Click(object sender, RoutedEventArgs e)
@@ -227,7 +232,7 @@ namespace EpgTimer
                     });
                 }
 
-                info.IsManualMenu = (checkBox_ManualMenu.IsChecked == true);
+                info.IsManualAssign = IsManualChkBox.Where(c => c.IsChecked == true).Select(c => (CtxmCode)c.Tag).ToList();
                 info.NoMessageKeyGesture = (checkBox_NoMessageKeyGesture.IsChecked == true);
                 info.NoMessageDeleteAll = (checkBox_NoMessageDeleteAll.IsChecked == true);
                 info.NoMessageDelete2 = (checkBox_NoMessageDelete2.IsChecked == true);
@@ -245,12 +250,10 @@ namespace EpgTimer
                 info.OpenParentFolder = (checkBox_OpenParentFolder.IsChecked == true);
 
                 DialogResult = true;
+                return;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-                DialogResult = false;
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+            DialogResult = false;
         }
 
         private void button_cancel_Click(object sender, RoutedEventArgs e)
@@ -303,10 +306,7 @@ namespace EpgTimer
                         break;
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void button_allDefault_Click(object sender, RoutedEventArgs e)
@@ -321,10 +321,7 @@ namespace EpgTimer
                     editMenu.FindData(code).Items.ForEach(item => this.listBox_Setting.Items.Add(item));
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void button_separator_Click(object sender, RoutedEventArgs e)
@@ -333,6 +330,30 @@ namespace EpgTimer
             listBox_Setting.SelectedIndex = listBox_Setting.Items.Count - 1;
             listBox_Setting.ScrollIntoViewFix(listBox_Setting.SelectedIndex);
         }
-        
+
+        private bool ManualMenuCheckboxWorking = false;
+        private IEnumerable<CheckBox> IsManualChkBox { get { return wrapPanel_IsManualMenu.Children.OfType<CheckBox>(); } }
+        private void checkBox_IsManualMenu_Checked(object sender, RoutedEventArgs e)
+        {
+            if (ManualMenuCheckboxWorking == true) return;
+            ManualMenuCheckboxWorking = true;
+
+            foreach (var chkbox in IsManualChkBox)
+            {
+                chkbox.IsChecked = checkBox_IsManualMenu.IsChecked;
+            }
+
+            ManualMenuCheckboxWorking = false;
+        }
+        private void checkBox_IsManualMenuCode_Checked(object sender, RoutedEventArgs e)
+        {
+            if (ManualMenuCheckboxWorking == true) return;
+            ManualMenuCheckboxWorking = true;
+
+            int count = IsManualChkBox.Where(c => c.IsChecked == true).Count();
+            checkBox_IsManualMenu.IsChecked = count == 0 ? false : count == IsManualChkBox.Count() ? (bool?)true : null;
+
+            ManualMenuCheckboxWorking = false;
+        }
     }
 }

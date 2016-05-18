@@ -28,9 +28,13 @@ namespace EpgTimer.Setting
         private ObservableCollection<EpgCaptime> timeList;
         private List<ServiceViewItem> serviceList;
 
+        public bool IsChangeSettingPath { get; private set; }
+
         public SetBasicView()
         {
             InitializeComponent();
+
+            IsChangeSettingPath = false;
 
             listBox_Button_Set();
 
@@ -310,9 +314,12 @@ namespace EpgTimer.Setting
                 // tabItem1
                 if (textBox_setPath.IsEnabled)
                 {
-                    System.IO.Directory.CreateDirectory(textBox_setPath.Text);
+                    string setPath = textBox_setPath.Text.Trim();
+                    setPath = setPath == "" ? SettingPath.DefSettingFolderPath : setPath;
+                    System.IO.Directory.CreateDirectory(setPath);
 
-                    IniFileHandler.WritePrivateProfileString("SET", "DataSavePath",textBox_setPath.Text, SettingPath.CommonIniPath);
+                    IsChangeSettingPath = SettingPath.SettingFolderPath.TrimEnd('\\') != setPath.TrimEnd('\\');
+                    SettingPath.SettingFolderPath = setPath;
                 }
                 if (textBox_recInfoFolder.IsEnabled)
                 {
@@ -539,29 +546,15 @@ namespace EpgTimer.Setting
 
         private void button_setPath_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFolderNameByDialog(textBox_setPath.Text, "設定関係保存フォルダの選択");
-            if (path != null)
-            {
-                textBox_setPath.Text = path;
-            }
+            CommonManager.GetFolderNameByDialog(textBox_setPath, "設定関係保存フォルダの選択");
         }
-
         private void button_exe_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFileNameByDialog(textBox_exe.Text, "", ".exe");
-            if (path != null)
-            {
-                textBox_exe.Text = path;
-            }
+            CommonManager.GetFileNameByDialog(textBox_exe, false, "", ".exe");
         }
-
         private void button_recInfoFolder_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFolderNameByDialog(textBox_recInfoFolder.Text, "録画情報保存フォルダの選択");
-            if (path != null)
-            {
-                textBox_recInfoFolder.Text = path;
-            }
+            CommonManager.GetFolderNameByDialog(textBox_recInfoFolder, "録画情報保存フォルダの選択");
         }
 
 
@@ -601,11 +594,7 @@ namespace EpgTimer.Setting
 
         private void button_rec_open_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFolderNameByDialog(textBox_recFolder.Text, "録画フォルダの選択");
-            if (path != null)
-            {
-                textBox_recFolder.Text = path;
-            }
+            CommonManager.GetFolderNameByDialog(textBox_recFolder, "録画フォルダの選択");
         }
 
         private void button_rec_add_Click(object sender, RoutedEventArgs e)
@@ -944,7 +933,7 @@ namespace EpgTimer.Setting
 
         private void button_opensslPath_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFileNameByDialog(textBox_opensslPath.Text, "openssl.exe の場所", ".exe");
+            string path = CommonManager.GetFileNameByDialog(textBox_opensslPath.Text, "openssl.exe の場所", ".exe");
             if (path != null)
             {
                 textBox_opensslPath.Text = path;
@@ -1009,7 +998,7 @@ namespace EpgTimer.Setting
 
         private void button_docrootPath_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFolderNameByDialog(textBox_docrootPath.Text, "document rootフォルダの選択");
+            string path = CommonManager.GetFolderNameByDialog(textBox_docrootPath.Text, "document rootフォルダの選択");
             if (path != null)
             {
                 textBox_docrootPath.Text = path;
@@ -1018,7 +1007,7 @@ namespace EpgTimer.Setting
 
         private void button_ffmpegPath_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFileNameByDialog(textBox_ffmpegPath.Text, "ffmpeg.exe の場所", ".exe");
+            string path = CommonManager.GetFileNameByDialog(textBox_ffmpegPath.Text, "ffmpeg.exe の場所", ".exe");
             if (path != null)
             {
                 textBox_ffmpegPath.Text = path;
@@ -1027,7 +1016,7 @@ namespace EpgTimer.Setting
 
         private void button_readexPath_Click(object sender, RoutedEventArgs e)
         {
-            string path = CommonManager.Instance.GetFileNameByDialog(textBox_readexPath.Text, "readex.exe の場所", ".exe");
+            string path = CommonManager.GetFileNameByDialog(textBox_readexPath.Text, "readex.exe の場所", ".exe");
             if (path != null)
             {
                 textBox_readexPath.Text = path;
