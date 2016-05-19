@@ -27,13 +27,15 @@ namespace EpgTimer
             return CommonManager.Instance.InfoWindowItemBgColors[(int)index];
         }
 
+        private int TickToSecond(long ticks) { return (int)(ticks / 10000000L); }
+
         #region プロパティ用のフィールド
 
         private Brush _Background;
         private Visibility _Visibility;
-        private long _OnAirOrRecStart;
-        private long _OnAirOrRecEnd;
-        private long _OnAirOrRecProgress;
+        private int _OnAirOrRecStart;
+        private int _OnAirOrRecEnd;
+        private int _OnAirOrRecProgress;
         private Visibility _OnAirOrRecProgressVisibility;
         private Visibility _ProgressBar1Visibility = Visibility.Collapsed;
         private Visibility _ProgressBar2Visibility = Visibility.Collapsed;
@@ -48,15 +50,14 @@ namespace EpgTimer
 
             if (Settings.Instance.InfoWindowBasedOnBroadcast)
             {
-                OnAirOrRecStart = ReserveInfo.StartTime.Ticks;
-                OnAirOrRecEnd = ReserveInfo.StartTime.AddSeconds(ReserveInfo.DurationSecond).Ticks;
+                OnAirOrRecStart = TickToSecond(ReserveInfo.StartTime.Ticks);
+                OnAirOrRecEnd = TickToSecond(ReserveInfo.StartTime.AddSeconds(ReserveInfo.DurationSecond).Ticks);
             }
             else
             {
-                OnAirOrRecStart = ReserveInfo.StartTimeWithMargin(0).Ticks;
-                OnAirOrRecEnd = ReserveInfo.EndTimeWithMargin().Ticks;
+                OnAirOrRecStart = TickToSecond(ReserveInfo.StartTimeWithMargin(0).Ticks);
+                OnAirOrRecEnd = TickToSecond(ReserveInfo.EndTimeWithMargin().Ticks);
             }
-            Update(DateTime.Now.Ticks);
         }
 
         #region INotifyPropertyChangedの実装
@@ -94,7 +95,7 @@ namespace EpgTimer
 
             if (ReserveInfo == null) return result;
 
-            int secondsToStart = (int)((OnAirOrRecStart - OnAirOrRecProgress) / 10000000L);
+            int secondsToStart = OnAirOrRecStart - OnAirOrRecProgress;
             if (secondsToStart <= Settings.Instance.InfoWindowItemLevel1Seconds)
             {
                 if (Settings.Instance.InfoWindowItemFilterLevel < 1)
@@ -138,9 +139,9 @@ namespace EpgTimer
         /// <summary>
         /// 基準となる時刻 ticks の値に応じてプロパティを更新します。
         /// </summary>
-        public void Update(long ticks)
+        public void Update(int seconds)
         {
-            OnAirOrRecProgress = ticks;
+            OnAirOrRecProgress = seconds;
             Brush bgBrush = CalcBackground();
             if (bgBrush != null)
             {
@@ -183,27 +184,27 @@ namespace EpgTimer
         }
 
         /// <summary>
-        /// 放送または録画の開始時刻を示す DateTime.Ticks の値。
+        /// 放送または録画の開始時刻を示す値。(単位は秒)
         /// </summary>
-        public long OnAirOrRecStart
+        public int OnAirOrRecStart
         {
             get { return _OnAirOrRecStart; }
             private set { SetProperty(ref _OnAirOrRecStart, value); }
         }
 
         /// <summary>
-        /// 放送または録画の終了時刻を示す DateTime.Ticks の値。
+        /// 放送または録画の終了時刻を示す値。(単位は秒)
         /// </summary>
-        public long OnAirOrRecEnd
+        public int OnAirOrRecEnd
         {
             get { return _OnAirOrRecEnd; }
             private set { SetProperty(ref _OnAirOrRecEnd, value); }
         }
 
         /// <summary>
-        /// 放送または録画の進行度を示す DateTime.Now.Ticks の値。
+        /// 放送または録画の進行度を示す時刻の値。(単位は秒)
         /// </summary>
-        public long OnAirOrRecProgress
+        public int OnAirOrRecProgress
         {
             get { return _OnAirOrRecProgress; }
             private set { SetProperty(ref _OnAirOrRecProgress, value); }

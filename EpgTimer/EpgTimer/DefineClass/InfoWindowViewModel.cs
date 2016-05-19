@@ -133,7 +133,7 @@ namespace EpgTimer
 
                 if (value)
                 {
-                    RefreshTimer.Interval = GetNextTimerInterval();
+                    UpdateInfo();
                     RefreshTimer.Tick += TimerHandler;
                     RefreshTimer.IsEnabled = true;
                 }
@@ -147,6 +147,8 @@ namespace EpgTimer
 
         #endregion
 
+        private int TickToSecond(long ticks) { return (int)(ticks / 10000000L); }
+
         private TimeSpan GetNextTimerInterval()
         {
             int interval = Settings.Instance.InfoWindowRefreshInterval;
@@ -154,11 +156,11 @@ namespace EpgTimer
             if (Settings.Instance.InfoWindowItemProgressBarType == 0)
             {
                 // ProgressBar を動かす必要がないので、 次にステートが変わるまでの最小時間を探す
-                long nowTicks = DateTime.Now.Ticks;
-                long level1Ticks = nowTicks + Settings.Instance.InfoWindowItemLevel1Seconds * 10000000L;
-                long level2Ticks = Settings.Instance.InfoWindowItemFilterLevel > 1 ? nowTicks + Settings.Instance.InfoWindowItemLevel2Seconds * 10000000L : long.MaxValue;
-                long level3Ticks = Settings.Instance.InfoWindowItemFilterLevel > 2 ? nowTicks + Settings.Instance.InfoWindowItemLevel3Seconds * 10000000L : long.MaxValue;
-                long nextTicks = ReserveList.Select(x => x.OnAirOrRecStart < level1Ticks ? -1L :
+                int nowSeconds = TickToSecond(DateTime.Now.Ticks);
+                int level1Ticks = nowSeconds + Settings.Instance.InfoWindowItemLevel1Seconds;
+                int level2Ticks = Settings.Instance.InfoWindowItemFilterLevel > 1 ? nowSeconds + Settings.Instance.InfoWindowItemLevel2Seconds : int.MaxValue;
+                int level3Ticks = Settings.Instance.InfoWindowItemFilterLevel > 2 ? nowSeconds + Settings.Instance.InfoWindowItemLevel3Seconds : int.MaxValue;
+                secondsToNextUpdate = ReserveList.Select(x => x.OnAirOrRecStart < level1Ticks ? -1 :
                                                          x.OnAirOrRecStart < level2Ticks ? x.OnAirOrRecStart - level1Ticks :
                                                          x.OnAirOrRecStart < level3Ticks ? x.OnAirOrRecStart - level2Ticks : x.OnAirOrRecStart - level3Ticks)
                                             .Where(x => x > 0L)
@@ -166,10 +168,9 @@ namespace EpgTimer
                                             .FirstOrDefault();
 
                 // Timer の誤差を考慮して、1更新間隔分前に一度更新されるようにしておく
-                nextTicks -= interval * 10000000L;
-                secondsToNextUpdate = nextTicks < 10000000L ? 0 : (int)Math.Ceiling(nextTicks / 10000000D);
+                secondsToNextUpdate -= interval;
             }
-            if (secondsToNextUpdate == 0)
+            if (secondsToNextUpdate <= 0)
             {
                 secondsToNextUpdate = interval - DateTime.Now.Second % interval;
             }
@@ -190,19 +191,21 @@ namespace EpgTimer
         {
             if (ReserveList == null) return;
 
-            long nowTicks = DateTime.Now.Ticks;
+            int nowSeconds = TickToSecond(DateTime.Now.Ticks);
             
-            ReserveList.ForEach(item => item.Update(nowTicks));
+            ReserveList.ForEach(item => item.Update(nowSeconds));
         }
 
         public void UpdateInfo()
         {
-            var items = CommonManager.Instance.DB.ReserveList.Values.
-                // 無効予約を除外
-                Where(x => IsDisabledReserveItemVisible || (x.RecSetting.RecMode != 5)).
-                // 開始時刻でソート
-                OrderBy(x => Settings.Instance.InfoWindowBasedOnBroadcast ? x.StartTime : x.StartTimeWithMargin(0)). 
-                Select(x => new ReserveItemLive(x));
+            if (IsAutoRefreshEnabled == false) return;
+
+            var items = CommonManager.Instance.DB.ReserveList.Values
+                            // 無効予約を除外
+                            .Where(x => IsDisabledReserveItemVisible || (x.RecSetting.RecMode != 5))
+                            // 開始時刻でソート
+                            .OrderBy(x => Settings.Instance.InfoWindowBasedOnBroadcast ? x.StartTime : x.StartTimeWithMargin(0))
+                            .Select(x => new ReserveItemLive(x));
 
             if (Settings.Instance.InfoWindowItemFilterLevel == int.MaxValue)
             {
@@ -213,6 +216,8 @@ namespace EpgTimer
 
             // すべてのitemを定期的に更新するので毎回評価されないようにListに変換
             ReserveList = items.ToList();
+
+            UpdateReserveList();
 
             RefreshTimer.Interval = GetNextTimerInterval();
         }
