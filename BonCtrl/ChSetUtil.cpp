@@ -92,7 +92,10 @@ BOOL CChSetUtil::AddServiceInfo(
 	if( serviceInfo->extInfo != NULL ){
 		item4.serviceType = serviceInfo->extInfo->service_type;
 		item4.partialFlag = serviceInfo->extInfo->partialReceptionFlag;
-		if( item4.serviceType == 0x01 || item4.serviceType == 0xA5 ){
+		if( item4.serviceType == 0x01 ||
+			item4.serviceType == 0xA5 ||
+			item4.serviceType == 0xAD) // スカパー4K
+		{
 			item4.useViewFlag = TRUE;
 		}else{
 			item4.useViewFlag = FALSE;
@@ -135,7 +138,7 @@ BOOL CChSetUtil::AddServiceInfo(
 		}else if( serviceInfo->extInfo->network_name != NULL){
 			item5.networkName = serviceInfo->extInfo->network_name;
 		}
-		if( item5.serviceType == 0x01 || item4.serviceType == 0xA5 ){
+		if( item5.serviceType == 0x01 || item4.serviceType == 0xA5 || item4.serviceType == 0xAD){
 			item5.epgCapFlag = TRUE;
 			item5.searchFlag = TRUE;
 		}else{

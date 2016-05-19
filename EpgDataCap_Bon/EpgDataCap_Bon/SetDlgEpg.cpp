@@ -111,7 +111,8 @@ void CSetDlgEpg::OnBnClickedButtonVideoChk()
 		map<LONGLONG, CH_DATA5>::const_iterator itr;
 		itr = this->chSet.GetMap().begin();
 		advance(itr, i);
-		ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i, itr->second.serviceType == 0x01 || itr->second.serviceType == 0xA5);
+		ListView_SetCheckState(GetDlgItem(IDC_LIST_SERVICE), i,
+			itr->second.serviceType == 0x01 || itr->second.serviceType == 0xA5 || itr->second.serviceType == 0xAD);
 	}
 }
 
