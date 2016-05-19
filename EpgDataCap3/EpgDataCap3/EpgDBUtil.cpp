@@ -746,7 +746,7 @@ EPG_SECTION_STATUS CEpgDBUtil::GetSectionStatus(BOOL l_eitFlag)
 				map<ULONGLONG, BYTE>::iterator itrType;
 				itrType = this->serviceList.find(itr->first);
 				if( itrType != this->serviceList.end() ){
-					if( itrType->second != 0x01 && itrType->second != 0xA5 ){
+					if( itrType->second != 0x01 && itrType->second != 0xA5 && itrType->second != 0xAD){
 						continue;
 					}
 				}
