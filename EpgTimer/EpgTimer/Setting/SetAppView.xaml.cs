@@ -983,7 +983,7 @@ namespace EpgTimer.Setting
             {
                 MessageBox.Show("アンインストールに失敗しました。");
             }
-            else if (WaitToExit())
+            else if (started && WaitToExit())
             {
                 ServiceStop |= started;
             }
@@ -1016,10 +1016,7 @@ namespace EpgTimer.Setting
                     {
                         MessageBox.Show("サービスの開始に失敗しました。");
                     }
-                    else
-                    {
-                        ServiceStop = true; // 接続しなおす必要がある。
-                    }
+                    ServiceStop = true; // 接続しなおす必要がある。
                 }
             }
             UpdateServiceBtn();

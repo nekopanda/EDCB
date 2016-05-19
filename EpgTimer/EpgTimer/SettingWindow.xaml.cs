@@ -51,6 +51,7 @@ namespace EpgTimer
                 MessageBox.Show("不正な入力値によるエラーのため、一部設定のみ更新されました。");
             }
 
+            ServiceStop |= setAppView.ServiceStop;
             this.DialogResult = true;
         }
 

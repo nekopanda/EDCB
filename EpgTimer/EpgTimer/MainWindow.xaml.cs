@@ -42,7 +42,7 @@ namespace EpgTimer
         private bool initExe = false;
         private bool? minimizedStarting = false;
 
-        private System.Windows.Threading.DispatcherTimer chkTimer = null;
+        private DispatcherTimer chkTimer = null;
 
         private bool idleShowBalloon = false;
 
@@ -416,6 +416,10 @@ namespace EpgTimer
             {
                 ConnectCmd(true);
             }
+            else if (CommonManager.Instance.IsConnected == false)
+            {
+                InitializeClient();
+            }
         }
         void ConnectCmd(bool showDialog = false)
         {
@@ -607,6 +611,11 @@ namespace EpgTimer
                 }
             }
 
+            return InitializeClient();
+        }
+
+        private bool InitializeClient()
+        {
             IniFileHandler.UpdateSrvProfileIniNW();
 
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
@@ -662,7 +671,7 @@ namespace EpgTimer
 
             if (chkSrvRegistTCP == true || updateTaskText == true)
             {
-                chkTimer = new System.Windows.Threading.DispatcherTimer();
+                chkTimer = new DispatcherTimer();
                 chkTimer.Interval = TimeSpan.FromMinutes(Math.Max(Settings.Instance.ChkSrvRegistInterval, 1));
                 if (chkSrvRegistTCP == true)
                 {
@@ -1021,7 +1030,7 @@ namespace EpgTimer
             if (setting.ServiceStop == true)
             {
                 DisconnectServer();
-                ConnectCmd(true);
+                OpenConnectDialog();
             }
         }
 
