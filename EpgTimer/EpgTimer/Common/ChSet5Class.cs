@@ -59,6 +59,10 @@ namespace EpgTimer
         {
             return ONID == 0x0007;
         }
+        public static bool IsSkyPerfectv(UInt16 ONID)
+        {
+            return ONID == 0x00A;
+        }
         public static bool IsOther(UInt16 ONID)
         {
             return IsDttv(ONID) == false && IsBS(ONID) == false && IsCS(ONID) == false;
