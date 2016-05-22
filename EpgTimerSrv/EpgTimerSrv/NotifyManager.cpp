@@ -101,14 +101,13 @@ BOOL CNotifyManager::IsRegistTCP(const REGIST_TCP_INFO& info) const
 {
 	CBlockLock lock(&this->managerLock);
 
-	{
-		wstring key = L"";
-		Format(key, L"%s:%d", info.ip.c_str(), info.port);
-
-		map<wstring,REGIST_TCP_INFO>::const_iterator itr;
-		itr = this->registTCPMap.find(key);
-		return itr != this->registTCPMap.end();
+	for( size_t i = 0; i < this->registTCPList.size(); i++ ){
+		if( this->registTCPList[i].ip == info.ip && this->registTCPList[i].port == info.port ){
+			return TRUE;
+		}
 	}
+
+	return FALSE;
 }
 
 void CNotifyManager::SetNotifyWindow(HWND hwnd, UINT msgID)
