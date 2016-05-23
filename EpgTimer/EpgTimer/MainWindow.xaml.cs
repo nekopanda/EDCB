@@ -51,6 +51,8 @@ namespace EpgTimer
         private InfoWindowViewModel infoWindowViewModel = null;
         private InfoWindow infoWindow = null;
 
+        private bool CheckCmdLineCompleted = false;
+
         public MainWindow()
         {
             Settings.LoadFromXmlFile();
@@ -100,19 +102,17 @@ namespace EpgTimer
             ss.AddAccessRule(new SemaphoreAccessRule("Everyone", SemaphoreRights.FullControl, AccessControlType.Allow));
             semaphore = new Semaphore(int.MaxValue, int.MaxValue, "Global\\EpgTimer_Bon3", out firstInstance, ss);
             semaphore.WaitOne(0);
-            if (!firstInstance)
+            if (!firstInstance && Settings.Instance.ApplyMultiInstance == false)
             {
-                CheckCmdLine();
+                ConnectSrv();
+                DisconnectServer();
 
-                if (Settings.Instance.ApplyMultiInstance == false)
-                {
-                    semaphore.Release();
-                    semaphore.Close();
-                    semaphore = null;
+                semaphore.Release();
+                semaphore.Close();
+                semaphore = null;
 
-                    CloseCmd();
-                    return;
-                }
+                CloseCmd();
+                return;
             }
 
             InitializeComponent();
@@ -201,8 +201,6 @@ namespace EpgTimer
 
                 ResetButtonView();
 
-                CheckCmdLine();
-
                 StatusbarReset();//ステータスバーリセット
 
                 if(Settings.Instance.InfoWindowEnabled)
@@ -224,8 +222,6 @@ namespace EpgTimer
                 taskTray.ContextMenuClick += (sender, e) => CommonButtons_Click(sender as string);
                 taskTray.Text = GetTaskTrayReserveInfoText();
                 ResetTaskMenu();
-
-                ChkTimerWork();
             }
             catch (Exception ex)
             {
@@ -236,6 +232,9 @@ namespace EpgTimer
 
         private void CheckCmdLine()
         {
+            if (CheckCmdLineCompleted == true || CommonManager.Instance.IsConnected == false)
+                return;
+
             foreach (string arg in Environment.GetCommandLineArgs())
             {
                 String ext = System.IO.Path.GetExtension(arg);
@@ -289,6 +288,7 @@ namespace EpgTimer
                     }
                 }
             }
+            CheckCmdLineCompleted = true;
         }
 
         private void ResetTaskMenu()
@@ -501,7 +501,10 @@ namespace EpgTimer
 
             CommonManager.Instance.DB.ClearRecFileAppend(true);
             CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
-            ChkTimerWork();
+            if (initExe == true)
+            {
+                ChkTimerWork();
+            }
 
             if (Settings.Instance.NWMode == false)
             {
@@ -603,7 +606,7 @@ namespace EpgTimer
 
                 if (CommonManager.Instance.IsConnected == false)
                 {
-                    if (Settings.Instance.ChkSrvRegistTCP == true)
+                    if (Settings.Instance.ChkSrvRegistTCP == true && taskTray != null)
                     {
                         taskTray.Icon = TaskIconSpec.TaskIconGray;
                     }
@@ -616,26 +619,29 @@ namespace EpgTimer
 
         private bool InitializeClient()
         {
-            IniFileHandler.UpdateSrvProfileIniNW();
+            if (initExe == true)
+            {
+                IniFileHandler.UpdateSrvProfileIniNW();
 
-            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
-            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
-            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
-            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
-            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
-            CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.PlugInFile);
-            CommonManager.Instance.DB.ReloadReserveInfo();
-            CommonManager.Instance.DB.ClearRecFileAppend(true);
-            CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
-            CommonManager.Instance.DB.ReloadManualAutoAddInfo();
-            CommonManager.Instance.DB.ReloadEpgData();
-            reserveView.UpdateInfo();
-            infoWindowViewModel.UpdateInfo();
-            tunerReserveView.UpdateInfo();
-            autoAddView.UpdateInfo();
-            recInfoView.UpdateInfo();
-            epgView.UpdateInfo();
-            SearchWindow.UpdatesInfo();
+                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
+                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
+                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddEpgInfo);
+                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.AutoAddManualInfo);
+                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.EpgData);
+                CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.PlugInFile);
+                CommonManager.Instance.DB.ReloadReserveInfo();
+                CommonManager.Instance.DB.ClearRecFileAppend(true);
+                CommonManager.Instance.DB.ReloadEpgAutoAddInfo();
+                CommonManager.Instance.DB.ReloadManualAutoAddInfo();
+                CommonManager.Instance.DB.ReloadEpgData();
+                reserveView.UpdateInfo();
+                infoWindowViewModel.UpdateInfo();
+                tunerReserveView.UpdateInfo();
+                autoAddView.UpdateInfo();
+                recInfoView.UpdateInfo();
+                epgView.UpdateInfo();
+                SearchWindow.UpdatesInfo();
+            }
 
             if (CommonManager.Instance.IsConnected)
             {
@@ -649,6 +655,8 @@ namespace EpgTimer
                 {
                     Title = appName + " - ローカル接続";
                 }
+
+                CheckCmdLine();
             }
             else
             {
@@ -1306,7 +1314,7 @@ namespace EpgTimer
                         UInt16 param = 0;
                         (new CtrlCmdReader(new System.IO.MemoryStream(pCmdParam.bData, false))).Read(ref param);
 
-                        Dispatcher.BeginInvoke(new Action(() => ShowSleepDialog(param)));
+                        Dispatcher.BeginInvoke(new Action(() => { if (closeFlag == false) ShowSleepDialog(param); }));
                     }
                     break;
                 case CtrlCmd.CMD_TIMER_GUI_QUERY_REBOOT:
@@ -1326,6 +1334,7 @@ namespace EpgTimer
 
                         Dispatcher.BeginInvoke(new Action(() =>
                         {
+                            if (closeFlag == true) return;
                             SuspendCheckWindow dlg = new SuspendCheckWindow();
                             dlg.SetMode(reboot, suspendMode);
                             if (dlg.ShowDialog() != true)
@@ -1348,7 +1357,7 @@ namespace EpgTimer
                         r.Read(ref status);
                         //通知の巡回カウンタをuiSizeを利用して返す(やや汚い)
                         pCmdParam.uiSize = status.param3;
-                        Dispatcher.BeginInvoke(new Action(() => NotifyStatus(status)));
+                        Dispatcher.BeginInvoke(new Action(() => { if (closeFlag == false) NotifyStatus(status); }));
                     }
                     break;
                 default:
