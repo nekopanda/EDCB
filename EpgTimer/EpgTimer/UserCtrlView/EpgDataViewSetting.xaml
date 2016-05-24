@@ -61,21 +61,21 @@
                                         <ColumnDefinition/>
                                         <ColumnDefinition Width="auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <Label Grid.ColumnSpan="2" Name="label31" Content="表示サービス (同一TSでSIDを逆順にすると結合)" Margin="6,6,0,0" />
+                                    <Label Grid.ColumnSpan="2" Content="表示サービス (同一TSでSIDを逆順にすると結合)" Margin="6,0" />
                                     <ListBox Grid.Column="0" Grid.Row="1" Margin="6,0" Name="listBox_serviceView" SelectionChanged="listBox_serviceView_SelectionChanged" IsManipulationEnabled="False" SelectionMode="Extended" />
                                     <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,0,6,0">
-                                        <Button Name="button_service_addAll" Content="全追加" HorizontalAlignment="Left" Margin="0,0,0,3" MinWidth="70" />
-                                        <Button Name="button_service_addVideo" Content="映像のみ全追加" Margin="0,3" Click="button_service_addVideo_Click" />
-                                        <Button Name="button_service_add" Content="追加" HorizontalAlignment="Left" Margin="0,3" MinWidth="70" />
-                                        <Button Name="button_service_del" Content="削除" HorizontalAlignment="Left" Margin="0,3" MinWidth="70" />
-                                        <Button Name="button_service_delAll" Content="全削除" HorizontalAlignment="Left" Margin="0,3" MinWidth="70" />
+                                        <Button Name="button_service_addAll"     Content="全追加"         Margin="0,0,0,3" MinWidth="70" HorizontalAlignment="Left" />
+                                        <Button Name="button_service_addVideo"   Content="映像のみ全追加" Margin="0,0,0,3" Click="button_service_addVideo_Click" />
+                                        <Button Name="button_service_add"        Content="追加"           Margin="0,0,0,3" MinWidth="70" HorizontalAlignment="Left" />
+                                        <Button Name="button_service_del"        Content="削除"           Margin="0,0,0,3" MinWidth="70" HorizontalAlignment="Left" />
+                                        <Button Name="button_service_delAll"     Content="全削除"         Margin="0,0,0,3" MinWidth="70" HorizontalAlignment="Left" />
                                         <StackPanel Orientation="Horizontal">
-                                            <Button Name="button_service_up" Content="↑" Margin="0,3" MinWidth="50" ToolTip="1つ上へ" />
-                                            <Button Name="button_service_top" Content="↑↑" Margin="6,3" MinWidth="50" ToolTip="一番上へ" />
+                                            <Button Name="button_service_up"     Content="↑"             Margin="0,0,5,3" MinWidth="50" ToolTip="1つ上へ" />
+                                            <Button Name="button_service_top"    Content="↑↑"           Margin="0,0,0,3" MinWidth="50" ToolTip="一番上へ" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal">
-                                            <Button Name="button_service_down" Content="↓" Margin="0,3" MinWidth="50" ToolTip="1つ下へ" />
-                                            <Button Name="button_service_bottom" Content="↓↓" Margin="6,3" MinWidth="50" ToolTip="一番下へ" />
+                                            <Button Name="button_service_down"   Content="↓"             Margin="0,0,5,3" MinWidth="50" ToolTip="1つ下へ" />
+                                            <Button Name="button_service_bottom" Content="↓↓"           Margin="0,0,0,3" MinWidth="50" ToolTip="一番下へ" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
@@ -84,7 +84,7 @@
                                         <RowDefinition Height="auto"/>
                                         <RowDefinition/>
                                     </Grid.RowDefinitions>
-                                    <Label Grid.Row="0" Name="label32" Content="サービス一覧" Margin="6,6,0,0" />
+                                    <Label      Grid.Row="0" Content="サービス一覧" Margin="6,0,0,0" />
                                     <TabControl Grid.Row="1" Margin="6,0" Name="tab_ServiceList">
                                         <TabItem Header="地デジ" Name="tabItem_tere">
                                             <ListBox Name="listBox_serviceDttv" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
