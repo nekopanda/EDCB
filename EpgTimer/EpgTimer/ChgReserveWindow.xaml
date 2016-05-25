@@ -55,17 +55,21 @@
 
                                 <Label Grid.Row="1" Grid.Column="0" Name="label3" Content="開始日時" Margin="0,4,10,0" />
                                 <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,4,0,0">
-                                    <DatePicker Name="datePicker_start" Margin="0,0,5,0" MinWidth="115" SelectedDateFormat="Short" />
-                                    <ComboBox Name="comboBox_sh" ItemsSource="{Binding}" Margin="0,0,5,0" MinWidth="44" />
-                                    <ComboBox Name="comboBox_sm" ItemsSource="{Binding}" Margin="0,0,5,0" MinWidth="44" />
-                                    <ComboBox Name="comboBox_ss" ItemsSource="{Binding}" Margin="0,0,5,0" MinWidth="44" />
+                                    <DatePicker Name="datePicker_start" Margin="0,0,5,0" MinWidth="100" SelectedDateFormat="Short" />
+                                    <ComboBox Name="comboBox_sh" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <Label Content=":" />
+                                    <ComboBox Name="comboBox_sm" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <Label Content=":" />
+                                    <ComboBox Name="comboBox_ss" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                                 </StackPanel>
                                 <Label Grid.Row="1" Grid.Column="2" Name="label4" Content="終了日時" Margin="0,4,10,0" />
                                 <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal" Margin="0,4,0,0">
-                                    <DatePicker Name="datePicker_end" Margin="0,0,5,0" MinWidth="115" />
-                                    <ComboBox Name="comboBox_eh" ItemsSource="{Binding}" Margin="0,0,5,0" MinWidth="44" />
-                                    <ComboBox Name="comboBox_em" ItemsSource="{Binding}" Margin="0,0,5,0" MinWidth="44" />
-                                    <ComboBox Name="comboBox_es" ItemsSource="{Binding}" Margin="0,0,5,0" MinWidth="44" />
+                                    <DatePicker Name="datePicker_end" Margin="0,0,5,0" MinWidth="100" />
+                                    <ComboBox Name="comboBox_eh" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <Label Content=":" />
+                                    <ComboBox Name="comboBox_em" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <Label Content=":" />
+                                    <ComboBox Name="comboBox_es" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                                 </StackPanel>
                             </Grid>
                         </StackPanel>

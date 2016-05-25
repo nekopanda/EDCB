@@ -46,6 +46,7 @@
         </Style>
         <Style TargetType="ComboBox" x:Key="NumberComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="HorizontalContentAlignment" Value="Right" />
+            <Setter Property="MinWidth" Value="45" />
         </Style>
         <Style TargetType="ScrollViewer" BasedOn="{StaticResource {x:Type ScrollViewer}}">
             <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />

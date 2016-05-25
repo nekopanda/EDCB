@@ -155,38 +155,38 @@
                             <StackPanel Grid.Column="1">
                                 <Label Content="期間" />
                                 <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
-                                    <ComboBox x:Name="comboBox_time_sw" Margin="5" MinWidth="44" ItemsSource="{Binding}" />
-                                    <ComboBox x:Name="comboBox_time_sh" Margin="0,5" MinWidth="44" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <ComboBox x:Name="comboBox_time_sw" Margin="5" MinWidth="45" ItemsSource="{Binding}" />
+                                    <ComboBox x:Name="comboBox_time_sh" Margin="0,5" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                                     <Label Content=":" />
-                                    <ComboBox x:Name="comboBox_time_sm" Margin="0,5" MinWidth="44" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <ComboBox x:Name="comboBox_time_sm" Margin="0,5" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
                                     <Label Content="～" Margin="5" />
-                                    <ComboBox x:Name="comboBox_time_ew" Margin="5" MinWidth="44" ItemsSource="{Binding}" />
-                                    <ComboBox x:Name="comboBox_time_eh" Margin="0,5" MinWidth="44" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <ComboBox x:Name="comboBox_time_ew" Margin="5" MinWidth="45" ItemsSource="{Binding}" />
+                                    <ComboBox x:Name="comboBox_time_eh" Margin="0,5" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                                     <Label Content=":" />
-                                    <ComboBox x:Name="comboBox_time_em" Margin="0,5" MinWidth="44" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <ComboBox x:Name="comboBox_time_em" Margin="0,5" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                                     <Button x:Name="button_timeAdd" Content="追加" Margin="5" Click="button_timeAdd_Click" />
                                 </StackPanel>
 
                                 <Label Content="曜日毎" />
                                 <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
-                                    <CheckBox x:Name="checkBox_mon" Content="月" />
-                                    <CheckBox x:Name="checkBox_tue" Content="火" />
-                                    <CheckBox x:Name="checkBox_wen" Content="水" />
-                                    <CheckBox x:Name="checkBox_thu" Content="木" />
-                                    <CheckBox x:Name="checkBox_fri" Content="金" />
-                                    <CheckBox x:Name="checkBox_sat" Content="土" />
+                                    <CheckBox x:Name="checkBox_mon" Content="月" Margin="0,0,3,0" />
+                                    <CheckBox x:Name="checkBox_tue" Content="火" Margin="0,0,3,0" />
+                                    <CheckBox x:Name="checkBox_wen" Content="水" Margin="0,0,3,0" />
+                                    <CheckBox x:Name="checkBox_thu" Content="木" Margin="0,0,3,0" />
+                                    <CheckBox x:Name="checkBox_fri" Content="金" Margin="0,0,3,0" />
+                                    <CheckBox x:Name="checkBox_sat" Content="土" Margin="0,0,3,0" />
                                     <CheckBox x:Name="checkBox_sun" Content="日" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
-                                    <ComboBox x:Name="comboBox_week_sh" Margin="0,5" MinWidth="44" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <ComboBox x:Name="comboBox_week_sh" Margin="0,5" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                                     <Label Content=":" />
-                                    <ComboBox x:Name="comboBox_week_sm" Margin="0,5" MinWidth="44" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <ComboBox x:Name="comboBox_week_sm" Margin="0,5" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                                     <Label Content="～" Margin="5" />
-                                    <ComboBox x:Name="comboBox_week_eh" Margin="0,5" MinWidth="44" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <ComboBox x:Name="comboBox_week_eh" Margin="0,5" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                                     <Label Content=":" />
-                                    <ComboBox x:Name="comboBox_week_em" Margin="0,5" MinWidth="44" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <ComboBox x:Name="comboBox_week_em" Margin="0,5" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
                                     <Button x:Name="button_weekAdd" Content="追加" Click="button_weekAdd_Click" />

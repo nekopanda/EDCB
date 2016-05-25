@@ -255,10 +255,10 @@
                                         </ComboBox>
                                         <WrapPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                                <ComboBox Name="comboBox_HH" MinWidth="50" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                                <ComboBox Name="comboBox_HH" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                                                 <Label Name="label25" Content="：" />
                                             </StackPanel>
-                                            <ComboBox Name="comboBox_MM" Margin="0,0,0,4" MinWidth="50" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                            <ComboBox Name="comboBox_MM" Margin="0,0,0,4" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                                         </WrapPanel>
                                     </WrapPanel>
                                 </WrapPanel>

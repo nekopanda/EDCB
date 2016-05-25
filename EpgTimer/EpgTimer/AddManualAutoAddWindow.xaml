@@ -32,17 +32,17 @@
 
             <Label Grid.Row="1" Grid.Column="0" Name="label2" Content="録画時間" Margin="12,2,0,0" MinWidth="80" />
             <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,2,0,0">
-                <ComboBox Name="comboBox_startHH" MinWidth="40" ItemsSource="{Binding}" />
+                <ComboBox Name="comboBox_startHH" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                 <Label Name="label3" Content="：" />
-                <ComboBox Name="comboBox_startMM" MinWidth="40" ItemsSource="{Binding}" />
+                <ComboBox Name="comboBox_startMM" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                 <Label Name="label4" Content="：" />
-                <ComboBox Name="comboBox_startSS" MinWidth="40" ItemsSource="{Binding}" />
+                <ComboBox Name="comboBox_startSS" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                 <Label Name="label5" Content="～" />
-                <ComboBox Name="comboBox_endHH" MinWidth="40" ItemsSource="{Binding}" />
+                <ComboBox Name="comboBox_endHH" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                 <Label Name="label6" Content="：" />
-                <ComboBox Name="comboBox_endMM" MinWidth="40" ItemsSource="{Binding}" />
+                <ComboBox Name="comboBox_endMM" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                 <Label Name="label7" Content="：" />
-                <ComboBox Name="comboBox_endSS" MinWidth="40" ItemsSource="{Binding}" />
+                <ComboBox Name="comboBox_endSS" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
             </StackPanel>
 
             <Label Grid.Row="2" Grid.Column="0" Name="label8" Content="番組名" Margin="12,2,0,0" MinWidth="80" />
