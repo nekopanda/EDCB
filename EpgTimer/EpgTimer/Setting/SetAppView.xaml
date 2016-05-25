@@ -34,7 +34,7 @@
                                 <Label Grid.Column="0" Grid.Row="1" Content="復帰処理開始時間" Margin="8" VerticalAlignment="Top" />
                                 <StackPanel Grid.Column="1" Grid.Row="1" Margin="8" Orientation="Horizontal">
                                     <Label Content="録画開始" />
-                                    <TextBox Name="textBox_pcWakeTime" Width="42" />
+                                    <TextBox Name="textBox_pcWakeTime" Style="{StaticResource NumberBox}" />
                                     <Label Content="分前 (再起動ありの場合は＋5分)" />
                                 </StackPanel>
                             </Grid>
@@ -55,19 +55,19 @@
                                 <WrapPanel Grid.Column="1" Grid.Row="0" Margin="8">
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="開始" />
-                                        <TextBox Name="textBox_megine_start" Width="42" />
+                                        <TextBox Name="textBox_megine_start" Style="{StaticResource NumberBox}" />
                                         <Label Content="秒" Margin="0,0,30,0"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="終了"/>
-                                        <TextBox Name="textBox_margine_end" Width="42" />
+                                        <TextBox Name="textBox_margine_end" Style="{StaticResource NumberBox}" />
                                         <Label Content="秒" />
                                     </StackPanel>
                                 </WrapPanel>
                                 <Label Grid.Column="0" Grid.Row="1" Content="録画用アプリ" Margin="8" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
                                 <StackPanel Grid.Column="1" Grid.Row="1" Margin="8" Orientation="Horizontal">
                                     <Label Content="開始" />
-                                    <TextBox Name="textBox_appWakeTime" Width="42" />
+                                    <TextBox Name="textBox_appWakeTime" Style="{StaticResource NumberBox}" />
                                     <Label Content="分前に起動する" />
                                 </StackPanel>
                                 <WrapPanel Grid.Column="1" Grid.Row="2" Margin="9,0" >
@@ -80,7 +80,7 @@
                                     <CheckBox Name="checkBox_appOverWrite" Content="同一ファイル名が存在した場合に上書きする" Margin="4,4,10,4" />
                                 </WrapPanel>
                                 <Label Grid.Column="0" Grid.Row="3" Content="プロセス優先度" Margin="8" Width="{Binding ActualWidth, ElementName=label_MaxWidth}" />
-                                <ComboBox Grid.Column="1" Grid.Row="3" Name="comboBox_process" Margin="13,8" Width="150" HorizontalAlignment="Left"/>
+                                <ComboBox Grid.Column="1" Grid.Row="3" Name="comboBox_process" Margin="13,8" Width="150" HorizontalAlignment="Left" />
                             </Grid>
                         </GroupBox>
                     </StackPanel>
@@ -105,7 +105,7 @@
                         <WrapPanel Margin="0,4,0,0">
                             <CheckBox Name="checkBox_cautionOnRecChange" Content="録画中または開始直前の予約を変更・削除するとき警告する" Margin="0,4,0,0" />
                             <StackPanel Margin="30,4,0,0"  Orientation="Horizontal">
-                                <TextBox Name="textBox_cautionOnRecMarginMin" Width="62" />
+                                <TextBox Name="textBox_cautionOnRecMarginMin" Style="{StaticResource NumberBox}" />
                                 <Label Content="分以内" />
                             </StackPanel>
                         </WrapPanel>
@@ -160,7 +160,7 @@
                                     <TextBlock TextWrapping="Wrap">スタンバイ、休止ボタンでもカウントダウンを表示</TextBlock>
                                 </CheckBox>
                                 <StackPanel Grid.Row="2" Margin="20,0,0,0" Orientation="Horizontal">
-                                    <TextBox Name="textBox_suspendChkTime" Width="42" />
+                                    <TextBox Name="textBox_suspendChkTime" Style="{StaticResource NumberBox}" />
                                     <Label Content="秒間" />
                                 </StackPanel>
                                 <Grid Grid.Row="3">
@@ -224,7 +224,7 @@
                             <CheckBox Name="checkBox_tcpServer" Content="ネットワーク接続を許可する" />
                             <StackPanel Margin="20,0,0,0" Orientation="Horizontal" IsEnabled="{Binding IsChecked, ElementName=checkBox_tcpServer}">
                                 <Label Content="ポート" MinWidth="80" IsEnabled="{Binding IsEnabled, ElementName=checkBox_tcpServer}" />
-                                <TextBox Name="textBox_tcpPort" Width="50" IsEnabled="{Binding IsEnabled, ElementName=checkBox_tcpServer}" />
+                                <TextBox Name="textBox_tcpPort" Style="{StaticResource NumberBox}" IsEnabled="{Binding IsEnabled, ElementName=checkBox_tcpServer}" />
                             </StackPanel>
                             <StackPanel Margin="20,0,0,0" Orientation="Horizontal" IsEnabled="{Binding IsChecked, ElementName=checkBox_tcpServer}">
                                 <Label Content="アクセス制御" MinWidth="80" IsEnabled="{Binding IsEnabled, ElementName=checkBox_tcpServer}" />
@@ -236,7 +236,7 @@
                             </StackPanel>
                             <StackPanel Margin="20,0,0,0" Orientation="Horizontal" IsEnabled="{Binding IsChecked, ElementName=checkBox_tcpServer}">
                                 <Label Content="無通信タイムアウト(秒)" MinWidth="80" IsEnabled="{Binding IsEnabled, ElementName=checkBox_tcpServer}" />
-                                <TextBox Name="textBox_tcpResTo" Width="50" IsEnabled="{Binding IsEnabled, ElementName=checkBox_tcpServer}" />
+                                <TextBox Name="textBox_tcpResTo" Style="{StaticResource NumberBox}" IsEnabled="{Binding IsEnabled, ElementName=checkBox_tcpServer}" />
                             </StackPanel>
                         </WrapPanel>
                         <WrapPanel Margin="0,3,0,0" >
@@ -246,7 +246,7 @@
                             </StackPanel>
                             <StackPanel Margin="20,0,0,0" Orientation="Horizontal" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_autoDelRecInfo}">
                                 <Label Content="保持件数" IsEnabled="{Binding Path=IsEnabled, ElementName=checkBox_autoDelRecInfo}" />
-                                <TextBox Name="textBox_autoDelRecInfo" Width="50" IsEnabled="{Binding Path=IsEnabled, ElementName=checkBox_autoDelRecInfo}" />
+                                <TextBox Name="textBox_autoDelRecInfo" Style="{StaticResource NumberBox}" IsEnabled="{Binding Path=IsEnabled, ElementName=checkBox_autoDelRecInfo}" />
                             </StackPanel>
                         </WrapPanel>
                         <CheckBox Name="checkBox_timeSync" Margin="0,3,0,0" VerticalContentAlignment="Top">
@@ -275,7 +275,7 @@
                                     <CheckBox Name="checkBox_WoLWaitRecconect" Content="接続失敗時にWoLで再接続を試みる"                   Checked="checkBox_WoLWaitRecconect_Checked" ToolTipService.ShowOnDisabled="True" ToolTipService.ShowDuration="20000" ToolTip="WoL→接続(→待機→接続)&#10;とりあえず最初にマジックパケットは投げます。&#10;接続失敗時はEpgTimerNWが一時的に反応しにくくなっているので注意が必要です" />
                                 </WrapPanel>
                                 <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
-                                    <TextBox Name="textBox_WoLWaitSecond" Width="50" />
+                                    <TextBox Name="textBox_WoLWaitSecond" Style="{StaticResource NumberBox}" />
                                     <Label Content="秒後" />
                                 </StackPanel>
                             </WrapPanel>
@@ -285,7 +285,7 @@
                                     <CheckBox Name="checkBox_upDateTaskText" Content="タスクトレイアイコンのツールチップを更新する"                                     ToolTip="EpgTimerNWで「EpgTimerSrvとの接続維持を試みる」使用時以外はほとんど効果ありません" />
                                 </WrapPanel>
                                 <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
-                                    <TextBox Name="textBox_chkTimerInterval" Width="50" />
+                                    <TextBox Name="textBox_chkTimerInterval" Style="{StaticResource NumberBox}" />
                                     <Label Content="分間隔" />
                                 </StackPanel>
                             </WrapPanel>
@@ -293,7 +293,7 @@
                         <WrapPanel>
                             <CheckBox Name="checkBox_cautionManyChange" Content="多数の項目を処理するとき警告する" />
                             <StackPanel Orientation="Horizontal" Margin="20,0,0,0" IsEnabled="{Binding IsChecked, ElementName=checkBox_cautionManyChange}">
-                                <TextBox Name="textBox_cautionManyChange" Width="50" />
+                                <TextBox Name="textBox_cautionManyChange" Style="{StaticResource NumberBox}" />
                                 <Label Content="以上" />
                             </StackPanel>
                         </WrapPanel>

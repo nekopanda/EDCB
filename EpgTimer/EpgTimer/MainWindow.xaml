@@ -14,6 +14,10 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
+        <Style TargetType="TextBox" x:Key="NumberBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="MinWidth" Value="50" />
+        </Style>
         <Style TargetType="PasswordBox" BasedOn="{StaticResource {x:Type PasswordBox}}">
             <Setter Property="Padding" Value="2" />
             <Setter Property="VerticalAlignment" Value="Center" />
@@ -39,6 +43,9 @@
         <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style TargetType="ComboBox" x:Key="NumberComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="HorizontalContentAlignment" Value="Right" />
         </Style>
         <Style TargetType="ScrollViewer" BasedOn="{StaticResource {x:Type ScrollViewer}}">
             <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />

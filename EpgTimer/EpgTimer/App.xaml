@@ -7,6 +7,10 @@
         <!-- アプリケーション レベルでスコープされたリソースは、ここで定義する必要があります。 -->
         <Style TargetType="{x:Type ListBoxItem}" />
         <Style TargetType="{x:Type ListViewItem}" />
+        <Style TargetType="{x:Type Window}">
+            <Setter Property="FontFamily" Value="Meiryo" />
+            <Setter Property="FontSize" Value="20" />
+        </Style>
         
         <!--
         ここに書くスタイルは実行時にマージされるテーマを無効にしてしまう。
@@ -19,6 +23,10 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Background" Value="LightGreen"/>
+        </Style>
+        <Style TargetType="TextBox" x:Key="NumberBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="MinWidth" Value="50" />
         </Style>
         <Style TargetType="PasswordBox" BasedOn="{StaticResource {x:Type PasswordBox}}">
             <Setter Property="Padding" Value="2" />
@@ -51,6 +59,9 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Background" Value="LightGreen"/>
+        </Style>
+        <Style TargetType="ComboBox" x:Key="NumberComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="HorizontalContentAlignment" Value="Right" />
         </Style>
         <Style TargetType="ScrollViewer" BasedOn="{StaticResource {x:Type ScrollViewer}}">
             <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />

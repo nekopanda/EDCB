@@ -32,7 +32,7 @@
                                 <RowDefinition/>
                                 <RowDefinition Height="auto"/>
                             </Grid.RowDefinitions>
-                            <Label Grid.Row="0" Name="label1" Content="ジャンル絞り込み（未登録で全ジャンル対象）" />
+                            <Label Grid.Row="0" Content="ジャンル絞り込み（未登録で全ジャンル対象）" />
                             <ListBox Grid.Row="1" Name="listBox_content" Margin="4" SelectionMode="Extended" DisplayMemberPath="ListBoxView"/>
                             <Grid Grid.Row="2" Margin="4,0">
                                 <Grid.ColumnDefinitions>
@@ -58,7 +58,7 @@
                                 <RowDefinition Height="auto"/>
                                 <RowDefinition/>
                             </Grid.RowDefinitions>
-                            <Label Grid.Row="0" Name="label2" Content="サービス絞り込み" />
+                            <Label Grid.Row="0" Content="サービス絞り込み" />
                             <ListView Grid.Row="1" Name="listView_service" SelectionMode="Single" ItemsSource="{Binding}" >
                                 <ListView.View>
                                     <GridView x:Name="gridView_service">
@@ -130,7 +130,7 @@
                             <RowDefinition Height="auto"/>
                             <RowDefinition />
                         </Grid.RowDefinitions>
-                        <Label Grid.Row="0" Name="label3" Content="時間絞り込み（項目なしで全期間対象）" Margin="0,0,-200,0" />
+                        <Label Grid.Row="0" Content="時間絞り込み（項目なしで全期間対象）" Margin="0,0,-200,0" />
 
                         <Grid Grid.Row="1">
                             <Grid.ColumnDefinitions>
@@ -153,22 +153,24 @@
                             </Grid>
 
                             <StackPanel Grid.Column="1">
-                                <Label x:Name="label4" Content="期間" />
+                                <Label Content="期間" />
                                 <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
                                     <ComboBox x:Name="comboBox_time_sw" Margin="5" MinWidth="44" ItemsSource="{Binding}" />
-                                    <ComboBox x:Name="comboBox_time_sh" Margin="5" MinWidth="44" ItemsSource="{Binding}" />
-                                    <ComboBox x:Name="comboBox_time_sm" Margin="5" MinWidth="44" ItemsSource="{Binding}" />
+                                    <ComboBox x:Name="comboBox_time_sh" Margin="0,5" MinWidth="44" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <Label Content=":" />
+                                    <ComboBox x:Name="comboBox_time_sm" Margin="0,5" MinWidth="44" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
-                                    <Label x:Name="label6" Content="～" />
+                                    <Label Content="～" Margin="5" />
                                     <ComboBox x:Name="comboBox_time_ew" Margin="5" MinWidth="44" ItemsSource="{Binding}" />
-                                    <ComboBox x:Name="comboBox_time_eh" Margin="5" MinWidth="44" ItemsSource="{Binding}" />
-                                    <ComboBox x:Name="comboBox_time_em" Margin="5" MinWidth="44" ItemsSource="{Binding}" />
-                                    <Button x:Name="button_timeAdd" Content="追加" Margin="5" Click="button_timeAdd_Click" Grid.ColumnSpan="2" Grid.Column="1" />
+                                    <ComboBox x:Name="comboBox_time_eh" Margin="0,5" MinWidth="44" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <Label Content=":" />
+                                    <ComboBox x:Name="comboBox_time_em" Margin="0,5" MinWidth="44" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <Button x:Name="button_timeAdd" Content="追加" Margin="5" Click="button_timeAdd_Click" />
                                 </StackPanel>
 
-                                <Label x:Name="label5" Content="曜日毎" />
-                                <StackPanel Orientation="Horizontal" Margin="25,0,0,0">
+                                <Label Content="曜日毎" />
+                                <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
                                     <CheckBox x:Name="checkBox_mon" Content="月" />
                                     <CheckBox x:Name="checkBox_tue" Content="火" />
                                     <CheckBox x:Name="checkBox_wen" Content="水" />
@@ -178,34 +180,36 @@
                                     <CheckBox x:Name="checkBox_sun" Content="日" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
-                                    <ComboBox x:Name="comboBox_week_sh" Margin="5" ItemsSource="{Binding}" />
-                                    <ComboBox x:Name="comboBox_week_sm" Margin="5" ItemsSource="{Binding}" />
-                                    <Label x:Name="label7" Content="～" />
-                                    <ComboBox x:Name="comboBox_week_eh" Margin="5" ItemsSource="{Binding}" />
-                                    <ComboBox x:Name="comboBox_week_em" Margin="5" ItemsSource="{Binding}" />
+                                    <ComboBox x:Name="comboBox_week_sh" Margin="0,5" MinWidth="44" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <Label Content=":" />
+                                    <ComboBox x:Name="comboBox_week_sm" Margin="0,5" MinWidth="44" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <Label Content="～" Margin="5" />
+                                    <ComboBox x:Name="comboBox_week_eh" Margin="0,5" MinWidth="44" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
+                                    <Label Content=":" />
+                                    <ComboBox x:Name="comboBox_week_em" Margin="0,5" MinWidth="44" ItemsSource="{Binding}" Style="{StaticResource NumberComboBox}" />
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="25,0,0,0">
+                                <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
                                     <Button x:Name="button_weekAdd" Content="追加" Click="button_weekAdd_Click" />
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
                     </Grid>
 
-                    <StackPanel Grid.Column="2">
-                        <Label Name="label8" Content="スクランブル放送" />
+                    <StackPanel Grid.Column="1" Margin="0,4">
+                        <Label Content="スクランブル放送" />
                         <RadioButton Name="radioButton_free_1" Content="無料、有料番組を対象とする" Margin="20,0,0,4" />
                         <RadioButton Name="radioButton_free_2" Content="無料番組のみ対象とする" Margin="20,0,0,4" />
                         <RadioButton Name="radioButton_free_3" Content="有料番組のみ対象とする" Margin="20,0,0,4" />
 
-                        <Label Name="label13" Content="番組長で絞り込み（それぞれ0で絞り込み無し）" />
+                        <Label Content="番組長で絞り込み（それぞれ0で絞り込み無し）" />
                         <WrapPanel Margin="20,0,0,0">
                             <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
-                                <TextBox Name="textBox_chkDurationMin" Width="48"/>
-                                <Label Name="label12" Content="分以上" />
+                                <TextBox Name="textBox_chkDurationMin" Style="{StaticResource NumberBox}" />
+                                <Label Content="分以上" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <TextBox Name="textBox_chkDurationMax" Width="48"/>
-                                <Label Name="label14" Content="分以下" />
+                                <TextBox Name="textBox_chkDurationMax" Style="{StaticResource NumberBox}" />
+                                <Label Content="分以下" />
                             </StackPanel>
                         </WrapPanel>
 
@@ -213,10 +217,10 @@
                             <StackPanel>
                                 <CheckBox Name="checkBox_chkRecEnd" Content="同一番組名の録画結果があれば無効で登録する" Margin="4" />
                                 <WrapPanel>
-                                    <Label Name="label9" Content="録画済み確認対象期間" />
+                                    <Label Content="録画済み確認対象期間" />
                                     <StackPanel Orientation="Horizontal" Margin="4,0">
-                                        <TextBox Name="textBox_chkRecDay" Width="40" />
-                                        <Label Name="label10" Content="日前まで" />
+                                        <TextBox Name="textBox_chkRecDay" Style="{StaticResource NumberBox}" />
+                                        <Label Content="日前まで" />
                                     </StackPanel>
                                 </WrapPanel>
                                 <WrapPanel>

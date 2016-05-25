@@ -78,11 +78,11 @@
                         <CheckBox Grid.Row="0" Grid.Column="1" Name="checkBox_margineDef" Content="デフォルト" Margin="0,0,20,0" Checked="checkBox_margineDef_Checked" Unchecked="checkBox_margineDef_Checked" />
                         <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal">
                             <Label Name="label13" Content="開始" Margin="0,0,10,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource invert}}" />
-                            <TextBox Name="textBox_margineStart" Width="57" Text="0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource invert}}" />
+                            <TextBox Name="textBox_margineStart" Text="0" Style="{StaticResource NumberBox}" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource invert}}" />
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal">
                             <Label Name="label14" Content="終了" Margin="0,0,10,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource invert}}" />
-                            <TextBox Name="textBox_margineEnd" Width="57" Text="0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource invert}}" />
+                            <TextBox Name="textBox_margineEnd" Text="0" Style="{StaticResource NumberBox}" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_margineDef, Converter={StaticResource invert}}" />
                         </StackPanel>
 
                         <Label Grid.Row="1" Grid.Column="0" Name="label15" Content="指定サービス対象データ" Margin="0,0,10,0"/>
