@@ -56,44 +56,7 @@ namespace EpgTimer
             CommonManager.Instance.ReloadCustContentColorList();
             Settings.Instance.ReloadOtherOptions();
 
-            // デザイン用スタイルをテーマをマージする前に削除しておく
-            App.Current.Resources.MergedDictionaries.Clear();
-#if false
-            foreach (var delObj in App.Current.Resources.Keys)
-            {
-                Style s = App.Current.Resources[delObj] as Style;
-                if (s != null && s.BasedOn != null)
-                {
-                    App.Current.Resources.Remove(delObj);
-                }
-            }
-#endif
-            if (Settings.Instance.NoStyle == 0)
-            {
-                if (System.IO.File.Exists(System.Reflection.Assembly.GetEntryAssembly().Location + ".rd.xaml"))
-                {
-                    //ResourceDictionaryを定義したファイルがあるので本体にマージする
-                    try
-                    {
-                        App.Current.Resources.MergedDictionaries.Add(
-                            (ResourceDictionary)System.Windows.Markup.XamlReader.Load(
-                                System.Xml.XmlReader.Create(System.Reflection.Assembly.GetEntryAssembly().Location + ".rd.xaml")));
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.ToString());
-                    }
-                }
-                else
-                {
-                    //既定のテーマ(Aero)をマージする
-                    App.Current.Resources.MergedDictionaries.Add(
-                        Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                        );
-                }
-            }
-            // レイアウト用のスタイルをロード
-            App.Current.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/UserCtrlView/UiLayoutStyles.xaml") });
+            CommonUtil.ApplyStyle(Settings.Instance.NoStyle == 0 ? Settings.Instance.StyleXamlPath : null);
 
             SemaphoreSecurity ss = new SemaphoreSecurity();
             ss.AddAccessRule(new SemaphoreAccessRule("Everyone", SemaphoreRights.FullControl, AccessControlType.Allow));

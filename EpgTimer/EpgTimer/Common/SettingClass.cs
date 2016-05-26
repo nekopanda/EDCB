@@ -970,6 +970,8 @@ namespace EpgTimer
         public bool MouseScrollAuto { get; set; }
         /// <summary>テーマを適用しない</summary>
         public int NoStyle { get; set; }
+        /// <summary>適用するテーマファイルのパス</summary>
+        public string StyleXamlPath { get; set; }
         /// <summary>多数の項目を処理するとき警告する</summary>
         public bool CautionManyChange { get; set; }
         /// <summary>処理を警告する時の項目数</summary>
@@ -1212,6 +1214,7 @@ namespace EpgTimer
             MinHide = true;
             MouseScrollAuto = false;
             NoStyle = 0;
+            StyleXamlPath = Assembly.GetEntryAssembly().Location + ".rd.xaml";
             CautionManyChange = true;
             CautionManyNum = 10;
             CautionOnRecChange = true;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -26,7 +27,7 @@ namespace EpgTimer.Setting
 
         private MenuSettingData ctxmSetInfo;
 
-        //Dictionary<string, ColorReferenceViewItem> colorReference;
+        private string styleFile;
 
         public SetEpgView()
         {
@@ -197,11 +198,9 @@ namespace EpgTimer.Setting
                 textBox_LaterTimeHour.Text = (Settings.Instance.LaterTimeHour + 24).ToString();
                 checkBox_displayPresetOnSearch.IsChecked = Settings.Instance.DisplayPresetOnSearch;
                 checkBox_nekopandaToolTip.IsChecked = Settings.Instance.RecItemToolTip;
-                checkBox_NotNoStyle.ToolTip = string.Format("チェック時、テーマファイル「{0}」があればそれを、無ければ既定のテーマ(Aero)を適用します。", System.IO.Path.GetFileName(System.Reflection.Assembly.GetEntryAssembly().Location) + ".rd.xaml");
-                checkBox_NotNoStyle.IsChecked = Settings.Instance.NoStyle == 0;
                 checkBox_displayStatus.IsChecked = Settings.Instance.DisplayStatus;
                 checkBox_displayStatusNotify.IsChecked = Settings.Instance.DisplayStatusNotify;
-
+                InitializeStyleList();
                 // [予約一覧・共通] - [色]
                 setComboColor1(Settings.Instance.ListDefColor, cmb_ListDefFontColor);
                 setButtonColor1(Settings.Instance.ListDefCustColor, btn_ListDefFontColor);
@@ -437,6 +436,10 @@ namespace EpgTimer.Setting
                 Settings.Instance.DisplayPresetOnSearch = (checkBox_displayPresetOnSearch.IsChecked == true);
                 Settings.Instance.RecItemToolTip = (checkBox_nekopandaToolTip.IsChecked == true);
                 Settings.Instance.NoStyle = (checkBox_NotNoStyle.IsChecked == true ? 0 : 1);
+                if (Settings.Instance.NoStyle == 0)
+                {
+                    Settings.Instance.StyleXamlPath = (comboBox_Style.SelectedItem as ComboBoxItem).Tag as string;
+                }
                 Settings.Instance.DisplayStatus = (checkBox_displayStatus.IsChecked == true);
                 Settings.Instance.DisplayStatusNotify = (checkBox_displayStatusNotify.IsChecked == true);
                 // [予約一覧・共通] - [色]
@@ -464,6 +467,48 @@ namespace EpgTimer.Setting
                 getColors(groupInfoWinItemBgColors, Settings.Instance.InfoWindowItemBgColors, Settings.Instance.InfoWindowItemBgCustColors);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+        }
+
+        private void InitializeStyleList()
+        {
+            var defaultStyle = System.Reflection.Assembly.GetEntryAssembly().Location + ".rd.xaml";
+            comboBox_Style.Items.Add(new ComboBoxItem
+            {
+                Content = File.Exists(defaultStyle) ? System.IO.Path.GetFileName(defaultStyle) : "",
+                Tag = defaultStyle
+            });
+            var resourceFolder = SettingPath.ModulePath + "\\Resources";
+            if (Directory.Exists(resourceFolder))
+            {
+                foreach (var file in Directory.EnumerateFiles(resourceFolder, "*.xaml").OrderBy(x => x))
+                {
+                    comboBox_Style.Items.Add(new ComboBoxItem
+                    {
+                        Content = System.IO.Path.GetFileNameWithoutExtension(file),
+                        Tag = file
+                    });
+                }
+            }
+            var style = System.IO.Path.GetFileNameWithoutExtension(Settings.Instance.StyleXamlPath);
+            if (comboBox_Style.Items
+                              .OfType<ComboBoxItem>()
+                              .Where(x => x.Content.Equals(style))
+                              .Select(x => comboBox_Style.SelectedItem = x)
+                              .GetEnumerator()
+                              .MoveNext() == false)
+            {
+                comboBox_Style.SelectedIndex = 0;
+            }
+            checkBox_NotNoStyle.ToolTip = string.Format("チェック時、テーマファイル「{0}」があればそれを、無ければ既定のテーマ(Aero)を適用します。", System.IO.Path.GetFileName(defaultStyle));
+            checkBox_NotNoStyle.IsChecked = Settings.Instance.NoStyle == 0;
+        }
+        public void UpdateStyle(string file)
+        {
+            if (!file.Equals(styleFile))
+            {
+                styleFile = file;
+                CommonUtil.ApplyStyle(file);
+            }
         }
 
         private void button_tab_add_Click(object sender, RoutedEventArgs e)
@@ -581,5 +626,22 @@ namespace EpgTimer.Setting
             }
         }
 
+        private void checkBox_NotNoStyle_Checked(object sender, RoutedEventArgs e)
+        {
+            if (comboBox_Style.SelectedIndex >= 0)
+            {
+                UpdateStyle((comboBox_Style.SelectedItem as ComboBoxItem).Tag as string);
+            }
+        }
+
+        private void checkBox_NotNoStyle_Unchecked(object sender, RoutedEventArgs e)
+        {
+            UpdateStyle("");
+        }
+
+        private void comboBox_Style_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateStyle(checkBox_NotNoStyle.IsChecked == true ?(comboBox_Style.SelectedItem as ComboBoxItem).Tag as string : "");
+        }
     }
 }
