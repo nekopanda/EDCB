@@ -244,7 +244,7 @@
                                     <Button Name="button_addTime" Content="追加" Margin="0,0,0,4" Click="button_addTime_Click" />
                                     <WrapPanel Margin="25,0,0,0">
                                         <ComboBox Name="comboBox_wday" Margin="0,0,10,4" MinWidth="50" SelectedIndex="0">
-                                            <ComboBoxItem Content="　" />
+                                            <ComboBoxItem Content="毎日" />
                                             <ComboBoxItem Content="日" />
                                             <ComboBoxItem Content="月" />
                                             <ComboBoxItem Content="火" />

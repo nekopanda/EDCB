@@ -16,6 +16,9 @@ namespace EpgTimer
     {
         private SortedList dayList = new SortedList();
 
+        //class RestoreDateとか用意するところだけど、今回はこれだけなので手抜き
+        public override object GetViewState() { return GetSelectID(); }
+
         public EpgWeekMainView()
         {
             InitializeComponent();
@@ -31,16 +34,6 @@ namespace EpgTimer
 
             //メニューの作成、ショートカットの登録
             base.RefreshMenu();
-        }
-
-        public override bool ClearInfo()
-        {
-            base.ClearInfo();
-
-            weekDayView.ClearInfo();
-            dayList = new SortedList();
-
-            return true;
         }
 
         public override void SetViewMode(CustomEpgTabInfo setInfo)
@@ -170,37 +163,27 @@ namespace EpgTimer
         {
             try
             {
-                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList =
-                    setViewInfo.SearchMode == true ? searchEventList : CommonManager.Instance.DB.ServiceEventList;
+                //表示していたサービスの保存
+                ulong selectID = (restoreData as ulong?) ?? GetSelectID();
+
+                comboBox_service.Items.Clear();
 
                 //必要サービスの抽出
                 int selectIndex = 0;
-                UInt64 selectID = GetSelectID();
-                comboBox_service.Items.Clear();
-
                 foreach (UInt64 id in viewCustServiceList)
                 {
                     EpgServiceEventInfo serviceInfo;
-                    if (serviceEventList.TryGetValue(id, out serviceInfo) == false)
+                    if (serviceEventList.TryGetValue(id, out serviceInfo) == true)
                     {
-                        //サービス情報ないので無効
-                        continue;
-                    }
-
-                    ComboBoxItem item = new ComboBoxItem();
-                    item.Content = serviceInfo.serviceInfo.service_name;
-                    item.DataContext = serviceInfo.serviceInfo;
-                    int index = comboBox_service.Items.Add(item);
-                    if (selectID == id || selectID == 0)
-                    {
-                        selectIndex = index;
-                        selectID = id;
+                        var item = new ComboBoxItem();
+                        item.Content = serviceInfo.serviceInfo.service_name;
+                        item.DataContext = serviceInfo.serviceInfo;
+                        int index = comboBox_service.Items.Add(item);
+                        if (selectID == id) selectIndex = index;
                     }
                 }
+                //comboBox_service_SelectionChanged()からUpdateProgramView()が走る
                 comboBox_service.SelectedIndex = selectIndex;
-
-                //サービスの選択イベントから勝手に走る
-                //UpdateProgramView();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
@@ -211,17 +194,13 @@ namespace EpgTimer
             {
                 epgProgramView.ClearInfo();
                 timeList.Clear();
-                dayList.Clear();
                 programList.Clear();
-
                 nowViewTimer.Stop();
+                dayList.Clear();
 
                 if (comboBox_service.Items.Count == 0) return;
 
                 UInt64 selectID = GetSelectID(true);
-
-                Dictionary<UInt64, EpgServiceEventInfo> serviceEventList =
-                    setViewInfo.SearchMode == true ? base.searchEventList : CommonManager.Instance.DB.ServiceEventList;
 
                 //まず日時のチェック
                 foreach (EpgEventInfo eventInfo in serviceEventList[selectID].eventList)

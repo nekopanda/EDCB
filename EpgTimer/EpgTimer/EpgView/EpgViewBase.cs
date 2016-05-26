@@ -13,10 +13,14 @@ namespace EpgTimer.EpgView
         protected CustomEpgTabInfo setViewInfo = null;
         protected List<UInt64> viewCustServiceList = null;
         protected Dictionary<UInt16, UInt16> viewCustContentKindList = new Dictionary<UInt16, UInt16>();
-        protected Dictionary<UInt64, EpgServiceEventInfo> searchEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
+        protected Dictionary<UInt64, EpgServiceEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
 
         protected CmdExeReserve mc; //予約系コマンド集
         protected bool ReloadReserveInfo = true;
+
+        protected object restoreData = null;
+        public virtual object GetViewState() { return null; }
+        public virtual void SetViewState(object data) { restoreData = data; }
 
         protected virtual void InitCommand()
         {
@@ -59,11 +63,13 @@ namespace EpgTimer.EpgView
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
+#if false
         public virtual bool ClearInfo()
         {
             searchEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
             return true; 
         }
+#endif
 
         public virtual void RefreshMenu() { }
 
@@ -87,15 +93,16 @@ namespace EpgTimer.EpgView
         }
 
         /// 保存関係
-        public virtual bool IsLastActivate { get { return false; } }
-        public virtual void SaveViewData(bool IfThisLastView = false) { }
+        //public virtual bool IsLastActivate { get { return false; } }
+        //public virtual void SaveViewData(bool IfThisLastView = false) { }
+        public virtual void SaveViewData() { }
 
         /// <summary>
         /// 予約情報更新通知
         /// </summary>
-        public void UpdateReserveData(bool reload = true)
+        public void UpdateReserveInfo(bool reload = true)
         {
-            if (reload == true) ReloadReserveInfo = true;
+            ReloadReserveInfo |= reload;
             if (ReloadReserveInfo == true && this.IsVisible == true)
             {
                 ReloadReserveInfo = !ReloadReserveData();
@@ -116,10 +123,11 @@ namespace EpgTimer.EpgView
         // public void UpdateInfo() は DataViewBase へ
         protected override bool ReloadInfoData()
         {
-            ClearInfo();
+            //ClearInfo();
             if (ReloadEpgData() == false) return false;
             ReloadProgramViewItem();
             ReloadReserveInfo = !ReloadReserveData();
+            restoreData = null;
             return true;
         }
         protected virtual void ReloadProgramViewItem() { }
@@ -135,6 +143,7 @@ namespace EpgTimer.EpgView
                 {
                     ErrCode err = CommonManager.Instance.DB.ReloadEpgData();
                     if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false) return false;
+                    serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>(CommonManager.Instance.DB.ServiceEventList);
                 }
                 else
                 {
@@ -144,7 +153,7 @@ namespace EpgTimer.EpgView
                     if (CommonManager.CmdErrMsgTypical(err, "EPGデータの取得", this) == false) return false;
 
                     //サービス毎のリストに変換
-                    var serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
+                    serviceEventList = new Dictionary<UInt64, EpgServiceEventInfo>();
                     foreach (EpgEventInfo eventInfo in list)
                     {
                         UInt64 id = eventInfo.Create64Key();
@@ -163,7 +172,6 @@ namespace EpgTimer.EpgView
                         }
                         serviceInfo.eventList.Add(eventInfo);
                     }
-                    searchEventList = serviceEventList;
                 }
 
                 return true;
@@ -177,7 +185,7 @@ namespace EpgTimer.EpgView
             if (this.IsVisible == false) return;
 
             UpdateInfo(false);
-            UpdateReserveData(false);//こちらを後に。UpdateInfo()が実行された場合は、こちらは素通りになる。
+            UpdateReserveInfo(false);//こちらを後に。UpdateInfo()が実行された場合は、こちらは素通りになる。
 
             // Loaded イベントでは Reload*Data を省略したので
             // この IsVisibleChanged で Reload*Data を見逃してはいけない

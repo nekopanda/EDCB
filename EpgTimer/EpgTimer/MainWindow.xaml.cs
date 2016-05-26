@@ -1,19 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using System.Threading; //紅
-using System.Windows.Interop; //紅
 using System.Runtime.InteropServices; //紅
 using System.Security.AccessControl;
 
@@ -63,6 +57,8 @@ namespace EpgTimer
             Settings.Instance.ReloadOtherOptions();
 
             // デザイン用スタイルをテーマをマージする前に削除しておく
+            App.Current.Resources.MergedDictionaries.Clear();
+#if false
             foreach (var delObj in App.Current.Resources.Keys)
             {
                 Style s = App.Current.Resources[delObj] as Style;
@@ -71,6 +67,7 @@ namespace EpgTimer
                     App.Current.Resources.Remove(delObj);
                 }
             }
+#endif
             if (Settings.Instance.NoStyle == 0)
             {
                 if (System.IO.File.Exists(System.Reflection.Assembly.GetEntryAssembly().Location + ".rd.xaml"))
@@ -95,8 +92,8 @@ namespace EpgTimer
                         );
                 }
             }
-            // MainWindow.xaml に定義してあるスタイルをアプリ全体のデフォルトとして使う
-            App.Current.Resources.MergedDictionaries.Add(Application.Current.MainWindow.Resources);
+            // レイアウト用のスタイルをロード
+            App.Current.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/UserCtrlView/UiLayoutStyles.xaml") });
 
             SemaphoreSecurity ss = new SemaphoreSecurity();
             ss.AddAccessRule(new SemaphoreAccessRule("Everyone", SemaphoreRights.FullControl, AccessControlType.Allow));
@@ -174,14 +171,15 @@ namespace EpgTimer
                     Button btn = new Button();
                     btn.MinWidth = 75;
                     btn.Margin = new Thickness(2, 2, 2, 5);
-                    if (handler != null) btn.Click += (sender, e) => handler();
+                    //btn.Height = 23;
+                    btn.Click += (sender, e) => handler();
                     btn.Content = key;
                     buttonList.Add(key, btn);
                 };
                 ButtonGen("設定", OpenSettingDialog);
                 ButtonGen("再接続", OpenConnectDialog);
                 ButtonGen("再接続(前回)", () => ConnectCmd());
-                ButtonGen("検索", null);
+                ButtonGen("検索", OpenSearchDialog);
                 ButtonGen("スタンバイ", () => SuspendCmd(1));
                 ButtonGen("休止", () => SuspendCmd(2));
                 ButtonGen("終了", CloseCmd);
@@ -194,9 +192,10 @@ namespace EpgTimer
                 ButtonGen("カスタム２", () => CustumCmd(2));
                 ButtonGen("カスタム３", () => CustumCmd(3));
 
-                //検索ボタンは他と共通でショートカット割り振られているので、コマンド側で処理する。
-                this.CommandBindings.Add(new CommandBinding(EpgCmds.Search, (sender, e) => OpenSearchDialog()));
-                mBinds.SetCommandToButton(buttonList["検索"], EpgCmds.Search);
+                //検索ボタンは他と共通でショートカット割り振られているので、その部分はコマンド側で処理する。
+                this.CommandBindings.Add(new CommandBinding(EpgCmds.Search, (sender, e) => CommonButtons_Click("検索")));
+                mBinds.AddInputCommand(EpgCmds.Search);
+                SetSearchButtonTooltip(buttonList["検索"]);
                 RefreshButton();
 
                 ResetButtonView();
@@ -299,77 +298,83 @@ namespace EpgTimer
                 .Select(id => new Tuple<string, string>(id, id == "" ? "" : buttonList[id].Content as string)));
         }
 
+        const string specific = "PushLike";
         private void ResetButtonView()
         {
-            var specific = "PushLike";
+            //カスタムボタンの更新
+            buttonList["カスタム１"].Content = Settings.Instance.Cust1BtnName;
+            buttonList["カスタム２"].Content = Settings.Instance.Cust2BtnName;
+            buttonList["カスタム３"].Content = Settings.Instance.Cust3BtnName;
 
-            stackPanel_button.Children.Clear();
             var delTabs = tabControl_main.Items.OfType<TabItem>().Where(ti => (string)ti.Tag == specific).ToList();
             delTabs.ForEach(ti => tabControl_main.Items.Remove(ti));
+            stackPanel_button.Children.Clear();
 
-            foreach (string info in Settings.Instance.ViewButtonList)
+            if (Settings.Instance.ViewButtonShowAsTab == true)
             {
-                if (String.Compare(info, "（空白）") == 0)
+                Settings.Instance.ViewButtonList.ForEach(id => TabButtonAdd(id));
+            }
+            else
+            {
+                foreach (string info in Settings.Instance.ViewButtonList)
                 {
-                    if (!Settings.Instance.ViewButtonShowAsTab)
+                    if (String.Compare(info, "（空白）") == 0)
                     {
-                        var space = new Label();
-                        space.Width = 15;
-                        stackPanel_button.Children.Add(space);
+                        stackPanel_button.Children.Add(new Label { Width = 15 });
                     }
-                }
-                else
-                {
-                    Button btn;
-                    if (buttonList.TryGetValue(info, out btn) == true)
+                    else
                     {
-                        switch (info)
-                        {
-                            case "カスタム１":
-                                btn.Content = Settings.Instance.Cust1BtnName;
-                                break;
-                            case "カスタム２":
-                                btn.Content = Settings.Instance.Cust2BtnName;
-                                break;
-                            case "カスタム３":
-                                btn.Content = Settings.Instance.Cust3BtnName;
-                                break;
-                        }
-
-                        if (Settings.Instance.ViewButtonShowAsTab)
-                        {
-                            //ボタン風のタブを追加する
-                            var ti = new TabItem();
-                            ti.Header = btn.Content;
-                            ti.Tag = specific;
-                            ti.Uid = info;
-                            ti.Background = null;
-                            ti.BorderBrush = null;
-
-                            //タブ移動をキャンセルしつつ擬似的に対応するボタンを押す
-                            ti.PreviewMouseDown += (sender, e) => e.Handled = true;
-                            ti.MouseLeftButtonUp += (sender, e) => CommonButtons_Click(((TabItem)sender).Uid);
-                            
-                            //コマンド割り当ての場合の自動ツールチップ表示、一応ボタンと同様のショートカット変更対応のコード
-                            if (btn.Command != null)
-                            {
-                                ti.ToolTip = "";
-                                ti.ToolTipOpening += new ToolTipEventHandler((sender, e) =>
-                                {
-                                    var icmd = buttonList[((TabItem)sender).Uid].Command;
-                                    ti.ToolTip = MenuBinds.GetInputGestureText(icmd);
-                                    ti.ToolTip = ti.ToolTip == null ? "" : ti.ToolTip;
-                                });
-                            }
-                            tabControl_main.Items.Add(ti);
-                        }
-                        else
+                        Button btn;
+                        if (buttonList.TryGetValue(info, out btn) == true)
                         {
                             stackPanel_button.Children.Add(btn);
                         }
                     }
                 }
             }
+            EmphasizeSearchButton(SearchWindow.HasHideSearchWindow);
+        }
+
+        TabItem TabButtonAdd(string id)
+        {
+            Button btn;
+            if (buttonList.TryGetValue(id, out btn) == false) return null;
+
+            //ボタン風のタブを追加する
+            var ti = new TabItem();
+            ti.Header = btn.Content;
+            ti.ToolTip = btn.ToolTip;
+            ti.Tag = specific;
+            ti.Uid = id;
+            ti.Background = null;
+            ti.BorderBrush = null;
+
+            //タブ移動をキャンセルしつつ擬似的に対応するボタンを押す
+            ti.PreviewMouseDown += (sender, e) => e.Handled = true;
+            ti.MouseLeftButtonUp += (sender, e) => CommonButtons_Click(((TabItem)sender).Uid);
+
+            //検索ボタン用のツールチップ設定。
+            if (id == "検索") SetSearchButtonTooltip(ti);
+
+            tabControl_main.Items.Add(ti);
+            return ti;
+        }
+        void SetSearchButtonTooltip(FrameworkElement fe)
+        {
+            fe.ToolTip = "";
+            fe.ToolTipOpening += (sender, e) =>
+            {
+                var keytip = MenuBinds.GetInputGestureText(EpgCmds.Search);
+                var addtip = SearchWindow.HasHideSearchWindow == false ? "" : "最後に番組表などへジャンプした検索/キーワードダイアログを復帰します。";
+                fe.ToolTip = ((string.IsNullOrEmpty(keytip) == true ? "" : keytip + "\r\n") + addtip).TrimEnd();
+            };
+        }
+
+        void CommonButtons_Click(string tag)
+        {
+            Button btn;
+            if (string.IsNullOrEmpty(tag) == true || buttonList.TryGetValue(tag, out btn) == false) return;
+            btn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         }
 
         void DisconnectServer()
@@ -388,21 +393,6 @@ namespace EpgTimer
             cmd.SetSendMode(CommonManager.Instance.NWMode);
             cmd.SetNWSetting("", 0);
             CommonManager.Instance.IsConnected = false;
-        }
-
-        void CommonButtons_Click(string tag)
-        {
-            Button btn;
-            if (buttonList.TryGetValue(tag, out btn) == false) return;
-
-            if (btn.Command != null)
-            {
-                (btn.Command as RoutedCommand).Execute(btn.CommandParameter, this);
-            }
-            else
-            {
-                btn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            }
         }
 
         DispatcherTimer connectTimer = null;
@@ -807,7 +797,7 @@ namespace EpgTimer
             reserveView.SaveViewData();
             recInfoView.SaveViewData();
             autoAddView.SaveViewData();
-            epgView.SaveViewData(true);
+            epgView.SaveViewData();
         }
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -1020,17 +1010,16 @@ namespace EpgTimer
                     ChkTimerWork();//タイマーリセット
 
                     reserveView.UpdateInfo();
-                    infoWindowViewModel.UpdateInfo();
                     tunerReserveView.UpdateInfo();
                     recInfoView.UpdateInfo();
                     autoAddView.UpdateInfo();
                     epgView.UpdateSetting();
-                    SearchWindow.UpdatesInfo(true);
-                    ResetButtonView();
+                    SearchWindow.UpdatesInfo(false);
                     ResetTaskMenu();
                     taskTray.Text = GetTaskTrayReserveInfoText();
                     taskTray.Visible = Settings.Instance.ShowTray;
                     RefreshMenu(false);
+                    ResetButtonView();
 
                     CommonManager.Instance.StatusNotifySet("設定変更に伴う画面再構築を実行");
                 }
@@ -1070,8 +1059,8 @@ namespace EpgTimer
             infoWindowViewModel.UpdateInfo();
             if (mode != UpdateViewMode.ReserveInfoNoTuner) tunerReserveView.UpdateInfo();
             if (mode != UpdateViewMode.ReserveInfoNoAutoAdd) autoAddView.UpdateInfo();
-            epgView.UpdateReserveData();
-            SearchWindow.UpdatesInfo(true);
+            epgView.UpdateReserveInfo();
+            SearchWindow.UpdatesInfo(false);
         }
         /*
         public enum UpdateViewMode : uint
@@ -1111,12 +1100,18 @@ namespace EpgTimer
             // 最小化したSearchWindowを復帰
             if (SearchWindow.HasHideSearchWindow == true)
             {
-                SearchWindow.RestoreMinimizedWindow();
+                SearchWindow.RestoreHideSearchWindow();
             }
             else
             {
                 CommonManager.Instance.MUtil.OpenSearchEpgDialog();
             }
+        }
+
+        public void RestoreMinimizedWindow()
+        {
+            this.Visibility = Visibility.Visible;
+            this.WindowState = Settings.Instance.LastWindowState;
         }
 
         void CloseCmd()
@@ -1700,61 +1695,63 @@ namespace EpgTimer
         public void EmphasizeSearchButton(bool emphasize)
         {
             Button button1 = buttonList["検索"];
-            if (Settings.Instance.ViewButtonList.Contains("検索") == false)
+
+            //検索ボタンを点滅させる
+            if (emphasize && Settings.Instance.ViewButtonShowAsTab == false)
             {
-                if (emphasize)
+                if (stackPanel_button.Children.Contains(button1) == false)
                 {
                     stackPanel_button.Children.Add(button1);
                 }
-                else
-                {
-                    stackPanel_button.Children.Remove(button1);
-                }
-            }
-
-            //検索ボタンを点滅させる
-            if (emphasize)
-            {
-                button1.Effect = new System.Windows.Media.Effects.DropShadowEffect();
-                var animation = new System.Windows.Media.Animation.DoubleAnimation
+                button1.Effect = new DropShadowEffect();
+                var animation = new DoubleAnimation
                 {
                     From = 1.0,
                     To = 0.7,
-                    RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever,
+                    RepeatBehavior = RepeatBehavior.Forever,
                     AutoReverse = true
                 };
                 button1.BeginAnimation(Button.OpacityProperty, animation);
             }
             else
             {
+                //ストックのボタンは削除されないので、一応このコードは毎回実行させることにする。
                 button1.BeginAnimation(Button.OpacityProperty, null);
                 button1.Opacity = 1;
                 button1.Effect = null;
+                if (Settings.Instance.ViewButtonList.Contains("検索") == false)
+                {
+                    stackPanel_button.Children.Remove(button1);
+                }
             }
 
             //もしあればタブとして表示のタブも点滅させる
-            foreach (var item in tabControl_main.Items)
+            if (Settings.Instance.ViewButtonShowAsTab == true)
             {
-                TabItem ti = item as TabItem;
-                if (ti != null && ti.Tag is string && (string)ti.Tag == "PushLike検索")
+                var ti = tabControl_main.Items.OfType<TabItem>().FirstOrDefault(item => item.Uid == "検索");
+                if (emphasize)
                 {
-                    if (emphasize)
+                    if (ti == null) ti = TabButtonAdd("検索");
+                    var animation = new DoubleAnimation
                     {
-                        var animation = new System.Windows.Media.Animation.DoubleAnimation
-                        {
-                            From = 1.0,
-                            To = 0.1,
-                            RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever,
-                            AutoReverse = true
-                        };
-                        ti.BeginAnimation(TabItem.OpacityProperty, animation);
+                        From = 1.0,
+                        To = 0.1,
+                        RepeatBehavior = RepeatBehavior.Forever,
+                        AutoReverse = true
+                    };
+                    ti.BeginAnimation(TabItem.OpacityProperty, animation);
+                }
+                else if (ti != null)
+                {
+                    if (Settings.Instance.ViewButtonList.Contains("検索") == false)
+                    {
+                        tabControl_main.Items.Remove(ti);
                     }
                     else
                     {
                         ti.BeginAnimation(TabItem.OpacityProperty, null);
                         ti.Opacity = 1;
                     }
-                    break;
                 }
             }
         }

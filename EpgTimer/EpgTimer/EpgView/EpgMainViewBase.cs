@@ -66,6 +66,7 @@ namespace EpgTimer.EpgView
         }
 
         /// <summary>保持情報のクリア</summary>
+#if false
         public override bool ClearInfo()
         {
             base.ClearInfo();
@@ -85,6 +86,7 @@ namespace EpgTimer.EpgView
 
             return true;
         }
+#endif
 
         protected override void UpdateStatusData(int mode = 0)
         {

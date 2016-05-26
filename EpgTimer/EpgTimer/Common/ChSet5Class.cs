@@ -246,6 +246,7 @@ namespace EpgTimer
         public bool IsCS { get { return ChSet5.IsCS(ONID); } }
         public bool IsCS1 { get { return ChSet5.IsCS1(ONID); } }
         public bool IsCS2 { get { return ChSet5.IsCS2(ONID); } }
+        public bool IsSkyPerfectv { get { return ChSet5.IsSkyPerfectv(ONID); } }
         public bool IsOther { get { return ChSet5.IsOther(ONID); } }
 
         public override string ToString()

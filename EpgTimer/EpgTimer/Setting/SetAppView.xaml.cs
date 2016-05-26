@@ -339,6 +339,8 @@ namespace EpgTimer.Setting
             checkBox_applyMulti.IsChecked = Settings.Instance.ApplyMultiInstance;
             checkBox_noToolTips.IsChecked = Settings.Instance.NoToolTip;
             checkBox_noBallonTips.IsChecked = Settings.Instance.NoBallonTips;
+            textBox_ForceHideBalloonTipSec.Text = Settings.Instance.ForceHideBalloonTipSec.ToString();
+            checkBox_AutoSaveNotifyLog.IsChecked = Settings.Instance.AutoSaveNotifyLog == 1;
             checkBox_showTray.IsChecked = Settings.Instance.ShowTray;
             checkBox_minHide.IsChecked = Settings.Instance.MinHide;
             checkBox_cautionManyChange.IsChecked = Settings.Instance.CautionManyChange;
@@ -666,6 +668,8 @@ namespace EpgTimer.Setting
 
             Settings.Instance.NoToolTip = (checkBox_noToolTips.IsChecked == true);
             Settings.Instance.NoBallonTips = (checkBox_noBallonTips.IsChecked == true);
+            Settings.Instance.ForceHideBalloonTipSec = mutil.MyToNumerical(textBox_ForceHideBalloonTipSec, Convert.ToInt32, 255, 0, Settings.Instance.ForceHideBalloonTipSec);
+            Settings.Instance.AutoSaveNotifyLog = (short)(checkBox_AutoSaveNotifyLog.IsChecked == true ? 1 : 0);
             Settings.Instance.CautionManyChange = (checkBox_cautionManyChange.IsChecked != false);
             Settings.Instance.CautionManyNum = mutil.MyToNumerical(textBox_cautionManyChange, Convert.ToInt32, Settings.Instance.CautionManyNum); 
             Settings.Instance.SaveSearchKeyword = (checkBox_saveSearchKeyword.IsChecked != false);

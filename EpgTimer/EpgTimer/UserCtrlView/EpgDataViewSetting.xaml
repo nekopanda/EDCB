@@ -86,19 +86,19 @@
                                     </Grid.RowDefinitions>
                                     <Label      Grid.Row="0" Content="サービス一覧" Margin="6,0,0,0" />
                                     <TabControl Grid.Row="1" Margin="6,0" Name="tab_ServiceList">
-                                        <TabItem Header="地デジ" Name="tabItem_tere">
+                                        <TabItem Header="地デジ">
                                             <ListBox Name="listBox_serviceDttv" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
                                         </TabItem>
-                                        <TabItem Header="BS" Name="tabItem_bs">
+                                        <TabItem Header="BS">
                                             <ListBox Name="listBox_serviceBS" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
                                         </TabItem>
-                                        <TabItem Header="CS" Name="tabItem_cs">
+                                        <TabItem Header="CS">
                                             <ListBox Name="listBox_serviceCS" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
                                         </TabItem>
-                                        <TabItem Header="その他" Name="tabItem_other">
+                                        <TabItem Header="その他">
                                             <ListBox Name="listBox_serviceOther" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
                                         </TabItem>
-                                        <TabItem Header="全て" Name="tabItem_all">
+                                        <TabItem Header="全て">
                                             <ListBox Name="listBox_serviceAll" SelectionChanged="listBox_service_SelectionChanged" SelectionMode="Extended" />
                                         </TabItem>
                                     </TabControl>

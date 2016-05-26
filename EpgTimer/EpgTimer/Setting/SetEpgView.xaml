@@ -625,34 +625,39 @@
                                 <CheckBox Name="checkBox_displayAutoAddMissing" Margin="8,4" ToolTip="自動予約登録を削除・変更した場合や、EPGのタイトルが変わった場合などに発生する場合があります">
                                     <TextBlock TextWrapping="Wrap">自動予約登録(キーワード予約、プログラム予約)を見失った予約を強調表示する<LineBreak/>※EpgTimerNWでは若干もたつく感じがあるかもしれません</TextBlock>
                                 </CheckBox>
-                                <WrapPanel Margin="10,4">
+                                <WrapPanel Margin="4">
                                     <Label Content="番組表などへジャンプしたときの強調表示の継続時間" />
-                                    <StackPanel Margin="30,0" Orientation="Horizontal">
+                                    <StackPanel Margin="14,0" Orientation="Horizontal">
                                         <TextBox Name="textBox_DisplayJumpTime" Style="{StaticResource NumberBox}" />
                                         <Label Content="秒" />
                                     </StackPanel>
                                 </WrapPanel>
-                                <StackPanel Orientation="Horizontal" Margin="10,4">
+                                <WrapPanel Margin="4">
                                     <Label Content="リスト表示で省略する(録画済み一覧以外)" />
-                                    <CheckBox Name="checkBox_resNoYear" Content="'年'" Margin="4,0" />
-                                    <CheckBox Name="checkBox_resNoSecond" Content="'秒'" Margin="4,0" ToolTip="たまに'秒'単位の番組も存在します。" />
-                                    <CheckBox Name="checkBox_resNoDurSecond" Content="長さの'秒'" Margin="4,0" ToolTip="たまに'秒'単位の番組も存在します。" />
-                                </StackPanel>
-                                <StackPanel Margin="8,0" Orientation="Horizontal" >
+                                    <StackPanel Margin="14,0" Orientation="Horizontal">
+                                        <CheckBox Name="checkBox_resNoYear" Content="'年'" Margin="4,0" />
+                                        <CheckBox Name="checkBox_resNoSecond" Content="'秒'" Margin="4,0" ToolTip="たまに'秒'単位の番組も存在します。" />
+                                        <CheckBox Name="checkBox_resNoDurSecond" Content="長さの'秒'" Margin="4,0" ToolTip="たまに'秒'単位の番組も存在します。" />
+                                    </StackPanel>
+                                </WrapPanel>
+                                <WrapPanel Margin="8,0">
                                     <CheckBox Name="checkBox_LaterTimeUse" Content="深夜時間表示をする" />
-                                    <TextBox Name="textBox_LaterTimeHour" Margin="12,0,0,0" Style="{StaticResource NumberBox}" />
-                                    <Label Content="時まで" />
-                                </StackPanel>
-                                <CheckBox Name="checkBox_displayPresetOnSearch" Margin="8,4" >
+                                    <StackPanel Margin="14,0" Orientation="Horizontal">
+                                        <TextBox Name="textBox_LaterTimeHour" Style="{StaticResource NumberBox}" />
+                                        <Label Content="時まで" />
+                                    </StackPanel>
+                                </WrapPanel>
+                                <CheckBox Name="checkBox_displayPresetOnSearch" Margin="8,4">
                                     <TextBlock TextWrapping="Wrap">検索/キーワード予約ダイアログの録画設定タブにプリセットを表示する</TextBlock>
                                 </CheckBox>
-                                <CheckBox Name="checkBox_nekopandaToolTip" Margin="8,4" >
+                                <CheckBox Name="checkBox_nekopandaToolTip" Margin="8,4">
                                     <TextBlock TextWrapping="Wrap">自動予約登録画面で録画予約項目をツールチップ表示する</TextBlock>
                                 </CheckBox>
-                                <WrapPanel Margin="8,4">
+                                <CheckBox Name="checkBox_NotNoStyle" Content="テーマを適用する(要再起動)" Margin="8,4" />
+                                <StackPanel Margin="8,4">
                                     <CheckBox Name="checkBox_displayStatus" Content="ステータス表示をする" />
-                                    <CheckBox Name="checkBox_displayStatusNotify" Content="主要操作の操作結果を表示をする" Margin="14,0,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_displayStatus, UpdateSourceTrigger=PropertyChanged}" />
-                                </WrapPanel>
+                                    <CheckBox Name="checkBox_displayStatusNotify" Content="主要操作の操作結果を表示をする" Margin="14,4,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_displayStatus, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
                             </StackPanel>
                         </GroupBox>
                     </ScrollViewer>

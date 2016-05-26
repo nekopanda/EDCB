@@ -660,7 +660,7 @@ namespace EpgTimer
         public bool NoToolTip { get; set; }
         /// <summary>バルーンチップでの動作通知を抑制する</summary>
         public bool NoBallonTips { get; set; }
-        /// <summary>指定タイムアウトでバルーンチップを強制的に閉じる[秒] (設定画面無し)</summary>
+        /// <summary>指定タイムアウトでバルーンチップを強制的に閉じる[秒]</summary>
         public int ForceHideBalloonTipSec { get; set; }
         /// <summary>録画済み一覧のダブルクリックで再生を行う</summary>
         public bool PlayDClick { get; set; }
@@ -894,9 +894,9 @@ namespace EpgTimer
         public bool ChkSrvRegistTCP { get; set; }
         /// <summary>EpgTimerSrvとの接続維持を試みる時間間隔[分]</summary>
         public double ChkSrvRegistInterval { get; set; }
-        /// <summary>TvTestの起動を待つ時間[ミリ秒] (設定画面無し)</summary>
+        /// <summary>TvTestの起動を待つ時間[ミリ秒]</summary>
         public Int32 TvTestOpenWait { get; set; }
-        /// <summary>BonDriverの切り替えを待つ時間[ミリ秒] (設定画面無し)</summary>
+        /// <summary>BonDriverの切り替えを待つ時間[ミリ秒]</summary>
         public Int32 TvTestChgBonWait { get; set; }
         /// <summary>録画済一覧の背景色</summary>
         public List<string> RecEndColors { get; set; }
@@ -960,7 +960,7 @@ namespace EpgTimer
         public bool SearchWndPinned { get; set; }
         /// <summary>検索/キーワード予約ダイアログで検索語を保存する</summary>
         public bool SaveSearchKeyword { get; set; }
-        /// <summary>情報通知をファイルに記録する (設定画面無し)</summary>
+        /// <summary>情報通知をファイルに記録する</summary>
         public short AutoSaveNotifyLog { get; set; }
         /// <summary>タスクトレイアイコンを表示する</summary>
         public bool ShowTray { get; set; }
@@ -968,7 +968,7 @@ namespace EpgTimer
         public bool MinHide { get; set; }
         /// <summary>番組表のマウススクロールサイズを自動で決める</summary>
         public bool MouseScrollAuto { get; set; }
-        /// <summary>テーマを適用しない (設定画面無し)</summary>
+        /// <summary>テーマを適用しない</summary>
         public int NoStyle { get; set; }
         /// <summary>多数の項目を処理するとき警告する</summary>
         public bool CautionManyChange { get; set; }

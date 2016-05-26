@@ -102,19 +102,19 @@
                             <RowDefinition/>
                             <RowDefinition/>
                         </Grid.RowDefinitions>
-                        <Button Grid.ColumnSpan="2" Grid.Row="0" Name="button_all_on" Content="全チェック" Margin="0,0,50,0" Click="button_all_on_Click" />
-                        <Button Grid.ColumnSpan="2" Grid.Row="1" Name="button_video_on" Content="映像サービスのみ" Margin="0,0,50,0" Click="button_video_on_Click" />
-                        <Button Grid.Column="0" Grid.Row="2" Name="button_bs_on" Content="BS映像のみ" Margin="0,0,10,0" Click="button_bs_on_Click" />
-                        <Button Grid.Column="1" Grid.Row="2" Name="button_bs_on2" Content="BS映像" Click="button_bs_on2_Click" />
-                        <Button Grid.Column="0" Grid.Row="3" Name="button_cs_on" Content="CS映像のみ" Margin="0,0,10,0" Click="button_cs_on_Click" />
-                        <Button Grid.Column="1" Grid.Row="3" Name="button_cs_on2" Content="CS映像" Click="button_cs_on2_Click" />
-                        <Button Grid.Column="0" Grid.Row="4" Name="button_dttv_on" Content="地デジ映像のみ" Margin="0,0,10,0" Click="button_dttv_on_Click" />
-                        <Button Grid.Column="1" Grid.Row="4" Name="button_dttv_on2" Content="地デジ映像" Click="button_dttv_on2_Click" />
-                        <Button Grid.Column="0" Grid.Row="5" Name="button_1seg_on" Content="ワンセグのみ" Margin="0,0,10,0" Click="button_1seg_on_Click" />
-                        <Button Grid.Column="1" Grid.Row="5" Name="button_1seg_on2" Content="ワンセグ" Click="button_1seg_on2_Click" />
-                        <Button Grid.Column="0" Grid.Row="6" Name="button_other_on" Content="その他のみ" Margin="0,0,10,0" Click="button_other_on_Click" />
-                        <Button Grid.Column="1" Grid.Row="6" Name="button_other_on2" Content="その他" Click="button_other_on2_Click" />
-                        <Button Grid.ColumnSpan="2" Grid.Row="7" Name="button_all_off" Content="全クリア" Margin="0,0,50,0" Click="button_all_off_Click" />
+                        <Button Grid.ColumnSpan="2" Grid.Row="0" Content="全チェック"       Margin="0,0,50,0" Click="button_all_on_Click" />
+                        <Button Grid.ColumnSpan="2" Grid.Row="1" Content="映像サービスのみ" Margin="0,0,50,0" Click="button_video_on_Click" />
+                        <Button Grid.Column="0"     Grid.Row="2" Content="BS映像のみ"       Margin="0,0,10,0" Click="button_bs_on_Click" />
+                        <Button Grid.Column="1"     Grid.Row="2" Content="BS映像"                             Click="button_bs_on2_Click" />
+                        <Button Grid.Column="0"     Grid.Row="3" Content="CS映像のみ"       Margin="0,0,10,0" Click="button_cs_on_Click" />
+                        <Button Grid.Column="1"     Grid.Row="3" Content="CS映像"                             Click="button_cs_on2_Click" />
+                        <Button Grid.Column="0"     Grid.Row="4" Content="地デジ映像のみ"   Margin="0,0,10,0" Click="button_dttv_on_Click" />
+                        <Button Grid.Column="1"     Grid.Row="4" Content="地デジ映像"                         Click="button_dttv_on2_Click" />
+                        <Button Grid.Column="0"     Grid.Row="5" Content="ワンセグのみ"     Margin="0,0,10,0" Click="button_1seg_on_Click" />
+                        <Button Grid.Column="1"     Grid.Row="5" Content="ワンセグ"                           Click="button_1seg_on2_Click" />
+                        <Button Grid.Column="0"     Grid.Row="6" Content="その他のみ"       Margin="0,0,10,0" Click="button_other_on_Click" />
+                        <Button Grid.Column="1"     Grid.Row="6" Content="その他"                             Click="button_other_on2_Click" />
+                        <Button Grid.ColumnSpan="2" Grid.Row="7" Content="全クリア"         Margin="0,0,50,0" Click="button_all_off_Click" />
                     </Grid>
                 </Grid>
             </TabItem>

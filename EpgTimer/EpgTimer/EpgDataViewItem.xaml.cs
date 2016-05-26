@@ -19,14 +19,33 @@ namespace EpgTimer
             InitializeComponent();
         }
 
-        public void SaveViewData(bool IfThisLastView = false)
+        public void SaveViewData()
         {
-            if (viewCtrl != null) viewCtrl.SaveViewData(IfThisLastView);
+            if (viewCtrl != null) viewCtrl.SaveViewData();
         }
 
         public void RefreshMenu()
         {
             if (viewCtrl != null) viewCtrl.RefreshMenu();
+        }
+
+        public void UpdateReserveInfo(bool reload = true)
+        {
+            if (viewCtrl != null) viewCtrl.UpdateReserveInfo(reload);
+        }
+
+        public void UpdateInfo(bool reload = true)
+        {
+            if (viewCtrl != null) viewCtrl.UpdateInfo(reload);
+        }
+
+        public object GetViewState()
+        {
+            return viewCtrl == null ? null : viewCtrl.GetViewState();
+        }
+        public void SetViewState(object data)
+        {
+            if (viewCtrl != null) viewCtrl.SetViewState(data);
         }
 
         /// <summary>現在のEPGデータ表示モードの設定を取得する</summary>
@@ -35,19 +54,9 @@ namespace EpgTimer
             return viewCtrl == null ? null : viewCtrl.GetViewMode();
         }
 
-        public void UpdateReserveData()
-        {
-            if (viewCtrl != null) viewCtrl.UpdateReserveData();
-        }
-
-        public void UpdateInfo()
-        {
-            if (viewCtrl != null) viewCtrl.UpdateInfo();
-        }
-
         /// <summary>EPGデータの表示モードを設定する</summary>
         /// <param name="setInfo">[IN]表示モードの設定値</param>
-        public void SetViewMode(CustomEpgTabInfo setInfo)
+        public void SetViewMode(CustomEpgTabInfo setInfo, object state = null)
         {
             //表示モード一緒で、絞り込み内容変化のみ。
             if (viewCtrl != null)
@@ -78,6 +87,7 @@ namespace EpgTimer
 
             viewCtrl.ViewSettingClick += new ViewSettingClickHandler(item_ViewSettingClick);
             viewCtrl.SetViewMode(setInfo);
+            if (state != null) SetViewState(state);
             grid_main.Children.Clear();
             grid_main.Children.Add(viewCtrl as UIElement);
         }

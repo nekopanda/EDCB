@@ -249,46 +249,56 @@
                                 <TextBox Name="textBox_autoDelRecInfo" Style="{StaticResource NumberBox}" IsEnabled="{Binding Path=IsEnabled, ElementName=checkBox_autoDelRecInfo}" />
                             </StackPanel>
                         </WrapPanel>
-                        <CheckBox Name="checkBox_timeSync" Margin="0,3,0,0" VerticalContentAlignment="Top">
-                            <TextBlock TextWrapping="Wrap">EPG取得時に放送波時間でPC時計を同期する<LineBreak/>※EpgTimerSrv.exeが管理者権限で起動している必要があります</TextBlock>
-                        </CheckBox>
                         <WrapPanel>
-                            <CheckBox Name="checkBox_noToolTips"   Content="ツールチップの表示を抑制する"         Margin="0,3,10,0" MinWidth="300" />
-                            <CheckBox Name="checkBox_noBallonTips" Content="バルーンチップでの動作通知を抑制する" Margin="0,3,10,0" />
-                        </WrapPanel>
-                        <WrapPanel>
-                            <StackPanel Margin="0,0,10,0" MinWidth="300">
-                                <CheckBox Name="checkBox_srvResident"      Content="EpgTimerSrvを常駐させる"              Margin="0,3,0,0" />
-                                <CheckBox Name="checkBox_srvShowTray"      Content="タスクトレイアイコンを表示する"       Margin="20,3,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
-                                <CheckBox Name="checkBox_srvNoBalloonTip"  Content="バルーンチップでの動作通知を抑制する" Margin="20,3,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
-                                <CheckBox Name="checkBox_srvSaveNotifyLog" Content="情報通知ログをファイルに保存する"     Margin="0,3,0,0" />
-                                <CheckBox Name="checkBox_srvSaveDebugLog"  Content="デバッグ出力をファイルに保存する"     Margin="0,3,0,0" />
-                            </StackPanel>
-                            <StackPanel>
-                                <CheckBox Name="checkBox_wakeReconnect" Content="起動時に前回接続サーバーに接続する"           Margin="0,3,20,0" IsEnabled="False" />
-                                <CheckBox Name="checkBox_suspendClose"  Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Margin="0,3,20,0" IsEnabled="False" />
-                                <CheckBox Name="checkBox_ngAutoEpgLoad" Content="EPGデータを自動的に読み込まない"              Margin="0,3,20,0" IsEnabled="False" />
-                            </StackPanel>
-                            <WrapPanel Name="group_WoLWait" IsEnabled="False">
-                                <WrapPanel VerticalAlignment="Center">
-                                    <CheckBox Name="checkBox_WoLWait"          Content="WoLしてから接続する"             Margin="0,0,20,0" Checked="checkBox_WoLWait_Checked"          ToolTipService.ShowOnDisabled="True" ToolTip="WoL→待機→接続" />
-                                    <CheckBox Name="checkBox_WoLWaitRecconect" Content="接続失敗時にWoLで再接続を試みる"                   Checked="checkBox_WoLWaitRecconect_Checked" ToolTipService.ShowOnDisabled="True" ToolTipService.ShowDuration="20000" ToolTip="WoL→接続(→待機→接続)&#10;とりあえず最初にマジックパケットは投げます。&#10;接続失敗時はEpgTimerNWが一時的に反応しにくくなっているので注意が必要です" />
-                                </WrapPanel>
-                                <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
-                                    <TextBox Name="textBox_WoLWaitSecond" Style="{StaticResource NumberBox}" />
+                            <CheckBox Name="checkBox_timeSync" Margin="0,3,10,0" VerticalContentAlignment="Top">
+                                <TextBlock TextWrapping="Wrap">EPG取得時に放送波時間でPC時計を同期する<LineBreak/>※EpgTimerSrv.exeが管理者権限で起動している必要があります</TextBlock>
+                            </CheckBox>
+                            <CheckBox Name="checkBox_noToolTips"   Content="ツールチップの表示を抑制する" Margin="0,3,10,0" VerticalAlignment="Top" />
+                            <WrapPanel VerticalAlignment="Top">
+                                <CheckBox Name="checkBox_noBallonTips" Content="バルーンチップでの動作通知を抑制する" />
+                                <StackPanel Orientation="Horizontal" Margin="20,0">
+                                    <Label Content="バルーンチップを強制的に閉じる" ToolTip="0でタイムアウト無し" Margin="0,0,10,0" />
+                                    <TextBox Name="textBox_ForceHideBalloonTipSec" Style="{StaticResource NumberBox}" />
                                     <Label Content="秒後" />
                                 </StackPanel>
                             </WrapPanel>
-                            <WrapPanel>
-                                <WrapPanel VerticalAlignment="Center">
-                                    <CheckBox Name="checkBox_keepTCPConnect" Content="EpgTimerSrvとの接続維持を試みる"              Margin="0,0,20,0" IsEnabled="False" ToolTip="EpgTimerNW使用時、EpgTimerSrv側の再起動時などに接続維持を試みます" />
-                                    <CheckBox Name="checkBox_upDateTaskText" Content="タスクトレイアイコンのツールチップを更新する"                                     ToolTip="EpgTimerNWで「EpgTimerSrvとの接続維持を試みる」使用時以外はほとんど効果ありません" />
+                        </WrapPanel>
+                        <WrapPanel>
+                            <StackPanel Margin="0,0,10,0" MinWidth="300">
+                                <CheckBox Name="checkBox_srvResident"       Content="EpgTimerSrvを常駐させる"                         Margin="0,3,0,0" />
+                                <CheckBox Name="checkBox_srvShowTray"       Content="タスクトレイアイコンを表示する"                  Margin="20,3,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
+                                <CheckBox Name="checkBox_srvNoBalloonTip"   Content="バルーンチップでの動作通知を抑制する"            Margin="20,3,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_srvResident, UpdateSourceTrigger=PropertyChanged}" />
+                                <CheckBox Name="checkBox_srvSaveNotifyLog"  Content="情報通知ログをファイルに保存する(EpgTimerSrv側)" Margin="0,3,0,0" />
+                                <CheckBox Name="checkBox_AutoSaveNotifyLog" Content="情報通知ログをファイルに保存する(EpgTimer側)"    Margin="0,3,0,0" />
+                                <CheckBox Name="checkBox_srvSaveDebugLog"   Content="デバッグ出力をファイルに保存する"                Margin="0,3,0,0" />
+                            </StackPanel>
+                            <StackPanel>
+                                <CheckBox Name="checkBox_wakeReconnect" Content="起動時に前回接続サーバーに接続する"           Margin="0,3,20,0" IsEnabled="False" />
+                                <WrapPanel Name="group_WoLWait" IsEnabled="False" Margin="20,3,0,0">
+                                    <StackPanel VerticalAlignment="Center">
+                                        <CheckBox Name="checkBox_WoLWait"          Content="WoLしてから接続する"             Margin="0,0,20,0" Checked="checkBox_WoLWait_Checked"          ToolTipService.ShowOnDisabled="True" ToolTip="WoL→待機→接続" />
+                                        <CheckBox Name="checkBox_WoLWaitRecconect" Content="接続失敗時にWoLで再接続を試みる"                   Checked="checkBox_WoLWaitRecconect_Checked" ToolTipService.ShowOnDisabled="True" ToolTipService.ShowDuration="20000" ToolTip="WoL→接続(→待機→接続)&#10;とりあえず最初にマジックパケットは投げます。&#10;接続失敗時はEpgTimerNWが一時的に反応しにくくなっているので注意が必要です" />
+                                    </StackPanel>
+                                    <Border BorderThickness="0,1,1,1" Width="10" Margin="-20,8,-40,8" BorderBrush="Gray" />
+                                    <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
+                                        <TextBox Name="textBox_WoLWaitSecond" Style="{StaticResource NumberBox}" />
+                                        <Label Content="秒後" />
+                                    </StackPanel>
                                 </WrapPanel>
-                                <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
-                                    <TextBox Name="textBox_chkTimerInterval" Style="{StaticResource NumberBox}" />
-                                    <Label Content="分間隔" />
-                                </StackPanel>
-                            </WrapPanel>
+                                <CheckBox Name="checkBox_suspendClose"  Content="休止／スタンバイ移行時にEpgTimerNWを終了する" Margin="0,3,20,0" IsEnabled="False" />
+                                <CheckBox Name="checkBox_ngAutoEpgLoad" Content="EPGデータを自動的に読み込まない"              Margin="0,3,20,0" IsEnabled="False" />
+                                <WrapPanel Margin="0,3,0,0">
+                                    <StackPanel VerticalAlignment="Center">
+                                        <CheckBox Name="checkBox_keepTCPConnect" Content="EpgTimerSrvとの接続維持を試みる"              Margin="0,0,20,0" IsEnabled="False" ToolTip="EpgTimerNW使用時、EpgTimerSrv側の再起動時などに接続維持を試みます" />
+                                        <CheckBox Name="checkBox_upDateTaskText" Content="タスクトレイアイコンのツールチップを更新する"                                     ToolTip="EpgTimerNWで「EpgTimerSrvとの接続維持を試みる」使用時以外はほとんど効果ありません" />
+                                    </StackPanel>
+                                    <Border BorderThickness="0,1,1,1" Width="10" Margin="-20,8,-40,8" BorderBrush="Gray" />
+                                    <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
+                                        <TextBox Name="textBox_chkTimerInterval" Style="{StaticResource NumberBox}" />
+                                        <Label Content="分間隔" />
+                                    </StackPanel>
+                                </WrapPanel>
+                            </StackPanel>
                         </WrapPanel>
                         <WrapPanel>
                             <CheckBox Name="checkBox_cautionManyChange" Content="多数の項目を処理するとき警告する" />
@@ -299,7 +309,7 @@
                         </WrapPanel>
                         <WrapPanel>
                             <CheckBox Name="checkBox_saveSearchKeyword" Content="検索/キーワード予約ダイアログで検索語を保存する" />
-                            <Button Content="検索語をクリア" Margin="20,0,0,0" Click="button_clearSerchKeywords" />
+                            <Button Content="検索語をクリア" Margin="20,2" Click="button_clearSerchKeywords" />
                         </WrapPanel>
                     </StackPanel>
                 </ScrollViewer>
