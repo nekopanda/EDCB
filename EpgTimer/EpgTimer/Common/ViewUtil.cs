@@ -190,10 +190,8 @@ namespace EpgTimer
                 }
                 GlyphType = glyphType;
             }
-            private int refCacheCount;
             public ItemFont PrepareCache()
             {
-                refCacheCount++;
                 if (GlyphIndexCache == null)
                 {
                     GlyphIndexCache = new ushort[ushort.MaxValue + 1];
@@ -203,12 +201,8 @@ namespace EpgTimer
             }
             public void ClearCache()
             {
-                if (--refCacheCount <= 0)
-                {
-                    GlyphIndexCache = null;
-                    GlyphWidthCache = null;
-                    refCacheCount = 0;
-                }
+                GlyphIndexCache = null;
+                GlyphWidthCache = null;
             }
         }
         private ItemFont itemFontNormal;
