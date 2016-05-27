@@ -973,6 +973,7 @@ namespace EpgTimer
                     ChkTimerWork();//タイマーリセット
 
                     reserveView.UpdateInfo();
+                    infoWindowViewModel.UpdateInfo();
                     tunerReserveView.UpdateInfo();
                     recInfoView.UpdateInfo();
                     autoAddView.UpdateInfo();
