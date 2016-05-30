@@ -141,10 +141,11 @@
                             <Label Grid.Column="0" Grid.Row="0" Content="表示ボタン" Margin="4" />
                             <ListBox Grid.Column="0" Grid.Row="1" Name="listBox_viewBtn" SelectionMode="Extended" Margin="4,0,0,0" />
                             <StackPanel Grid.Column="1" Grid.Row="1">
-                                <Button Name="button_btnUp" Content="↑" Margin="10,4" />
-                                <Button Name="button_btnDel" Content="→" Margin="10,4" />
-                                <Button Name="button_btnAdd" Content="←" Margin="10,4" />
-                                <Button Name="button_btnDown" Content="↓" Margin="10,4" />
+                                <Button Name="button_btnUp"   Content="↑"   Margin="10,4" />
+                                <Button Name="button_btnAdd"  Content="追加" Margin="10,4" />
+                                <Button Name="button_btnIns"  Content="挿入" Margin="10,4" />
+                                <Button Name="button_btnDel"  Content="削除" Margin="10,4" />
+                                <Button Name="button_btnDown" Content="↓"   Margin="10,4" />
                             </StackPanel>
                             <Label Grid.Column="2" Grid.Row="0" Content="項目" Margin="0,4" />
                             <ListBox Grid.Column="2" Grid.Row="1" Name="listBox_itemBtn" SelectionMode="Extended" Margin="0,0,4,0" />
@@ -189,10 +190,11 @@
                             <Label Grid.Column="0" Grid.Row="0" Content="表示ボタン" Margin="4" />
                             <ListBox Grid.Column="0" Grid.Row="1" Name="listBox_viewTask" SelectionMode="Extended" Margin="4,0,0,0" />
                             <StackPanel Grid.Column="1" Grid.Row="1">
-                                <Button Name="button_taskUp" Content="↑" Margin="10,4" />
-                                <Button Name="button_taskDel" Content="→" Margin="10,4" />
-                                <Button Name="button_taskAdd" Content="←" Margin="10,4" />
-                                <Button Name="button_taskDown" Content="↓" Margin="10,4" />
+                                <Button Name="button_taskUp"   Content="↑"   Margin="10,4" />
+                                <Button Name="button_taskAdd"  Content="追加" Margin="10,4" />
+                                <Button Name="button_taskIns"  Content="挿入" Margin="10,4" />
+                                <Button Name="button_taskDel"  Content="削除" Margin="10,4" />
+                                <Button Name="button_taskDown" Content="↓"   Margin="10,4" />
                             </StackPanel>
                             <Label Grid.Column="2" Grid.Row="0" Content="項目"  Margin="0,4" />
                             <ListBox Grid.Column="2" Grid.Row="1" Name="listBox_itemTask" SelectionMode="Extended"  Margin="0,0,4,0" />

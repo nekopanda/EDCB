@@ -82,6 +82,7 @@ namespace EpgTimer
                 bx.DoubleClickMoveAllow();
                 button_reset.Click += new RoutedEventHandler(bx.button_reset_Click);
                 button_add.Click += new RoutedEventHandler(bx.button_add_Click);
+                button_ins.Click += new RoutedEventHandler(bx.button_insert_Click);
                 button_del.Click += new RoutedEventHandler(bx.button_del_Click);
                 button_delAll.Click += new RoutedEventHandler(bx.button_delAll_Click);
                 button_top.Click += new RoutedEventHandler(bx.button_top_Click);
@@ -100,10 +101,7 @@ namespace EpgTimer
                     wrapPanel_IsManualMenu.Children.Add(chkbox);
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -195,10 +193,10 @@ namespace EpgTimer
                     stackItems_ges1[i].IsChecked = src.IsGestureEnabled;
                     stackItems_ges2[i].IsChecked = !src.IsGesNeedMenu;
 
-                    stackItems_ges1[i].Content = MenuBinds.GetInputGestureText(src.GetGestuers());
+                    stackItems_ges1[i].Content = MenuBinds.GetInputGestureText(src.GetGestuers()) ?? "";
                     stackItems_ges2[i].Content = "使用する";
 
-                    stackItems_ges1[i].Visibility = (stackItems_ges1[i].Content == null) ? Visibility.Hidden : Visibility.Visible;
+                    stackItems_ges1[i].Visibility = string.IsNullOrEmpty(stackItems_ges1[i].Content as string) ? Visibility.Hidden : Visibility.Visible;
                     stackItems_ges2[i].Visibility = stackItems_ges1[i].Visibility;
                 }
 
