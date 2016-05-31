@@ -77,12 +77,15 @@ namespace EpgTimer
                         listBox.SelectedItem = setItem;
                     }
 
-                    foreach (ulong oldItem1 in oldItems)
+                    if (listBox.SelectionMode != SelectionMode.Single)
                     {
-                        if (listKeys.TryGetValue(oldItem1, out setItem))
+                        foreach (ulong oldItem1 in oldItems)
                         {
-                            //数が多いとき、このAddが致命的に遅い
-                            listBox.SelectedItems.Add(setItem);
+                            if (listKeys.TryGetValue(oldItem1, out setItem))
+                            {
+                                //数が多いとき、このAddが致命的に遅い
+                                listBox.SelectedItems.Add(setItem);
+                            }
                         }
                     }
 
