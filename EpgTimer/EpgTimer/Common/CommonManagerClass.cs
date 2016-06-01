@@ -630,12 +630,8 @@ namespace EpgTimer
             return retText;
         }
 
-        /// <summary>
-        /// 良くある通信エラー(CMD_ERR_CONNECT,CMD_ERR_TIMEOUT)をMessageBoxで表示する。
-        /// Owner(this)を指定するとDispatcher.BeginInvokeで実行する。
-        /// </summary>
-        private static bool showing = false;
-        public static bool CmdErrMsgTypical(ErrCode err, string caption = "通信エラー", Control Owner = null)
+        /// <summary>良くある通信エラー(CMD_ERR_CONNECT,CMD_ERR_TIMEOUT)をMessageBoxで表示する。</summary>
+        public static bool CmdErrMsgTypical(ErrCode err, string caption = "通信エラー")
         {
             if (err == ErrCode.CMD_SUCCESS) return true;
 
@@ -656,32 +652,7 @@ namespace EpgTimer
                     break;
             }
 
-            if (Owner != null)
-            {
-                Owner.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    // MessageBox 表示中は新たに表示させない。
-                    // Lock とかしてないのでまれに表示するかもだけど、もともと表示する流れだったし気にしない。
-                    if (showing == false)
-                    {
-                        showing = true;
-                        MessageBox.Show(msg, caption);
-                        showing = false;
-                    }
-                }), null);
-            }
-            else
-            {
-                // MessageBox 表示中は新たに表示させない。
-                // Lock とかしてないのでまれに表示するかもだけど、もともと表示する流れだったし気にしない。
-                if (showing == false)
-                {
-                    showing = true;
-                    MessageBox.Show(msg, caption);
-                    showing = false;
-                }
-            }
-            //CommonUtil.ModelessMsgBoxShow(Owner, msg, caption);
+            CommonUtil.DispatcherMsgBoxShow(msg, caption);
             return false;
         }
 
