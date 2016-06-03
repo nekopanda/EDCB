@@ -651,7 +651,6 @@ namespace EpgTimer
                     msg = "通信エラーが発生しました。";
                     break;
             }
-
             CommonUtil.DispatcherMsgBoxShow(msg, caption);
             return false;
         }
