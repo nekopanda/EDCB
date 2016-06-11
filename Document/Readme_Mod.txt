@@ -18,7 +18,7 @@ https://github.com/xtne6f/EDCB/commits/log-to-crlf (改行コード安定までの履歴)
 コンを表示し、スリープ確認ダイアログやチューナ・バッチを直接起動します。
 
 HTTPサーバ機能はフル機能のWebサーバを組み込み、ページ生成をLuaに任せました。詳細
-は 後述「Civetwebの組み込みについて」を参照してください。デフォルトではlocalhost
+は 後述「CivetWebの組み込みについて」を参照してください。デフォルトではlocalhost
 以外からのアクセスを拒否するので注意してください。
 
 ■Readme.txt■
@@ -49,13 +49,13 @@ HTTPサーバ機能はフル機能のWebサーバを組み込み、ページ生成をLuaに任せました。詳細
     ・基本情報のみ取得するネットワーク(視聴・録画中)【追加】
       動作設定タブにある、視聴中、録画中のEPGデータ取得について、基本情報のみ取
       得するかどうか設定します。
+  ●ネットワーク設定タブ
+    ・TCP送信
+      ポート番号が22000～22999の範囲では送信形式がplainになります【追加】。
 
-◇TSデータのバッファリング最大値を変更する
+◇TSデータ/ファイル出力データのバッファリング最大値を変更する
 設定値は「回数」ではなく「48128バイトのn倍」になります。
-デフォルト値はそのまま(48128*5000≒230メガバイト)です。
-
-◇ファイル出力データのバッファリング最大値を変更する
-同様に「48128バイトのn倍」になります。
+デフォルト値は従来通りです。
 
 ◇EPG取得のタイムアウト値を変更する
 デフォルトは10分ではなく15分です(仕様変更でなく誤表記)
@@ -359,7 +359,7 @@ EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
   ドロップカウントの仕様変更により、RecInfo2DropChkのデフォルトは2になりました。
 
 ◇ブラウザから表示できるようにする
-  「Civetwebの組み込みについて」を参照。
+  「CivetWebの組み込みについて」を参照。
 
 ◇録画後bat起動時の形式を変える
   非サービス時は常に最小化で起動します。
@@ -370,7 +370,7 @@ EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
   ルを用意したので参考にしてください。
 
 ◇DLNAのDMSぽい機能を使う
-  「Civetwebの組み込みについて」を参照。
+  「CivetWebの組み込みについて」を参照。
 
 ◇同一番組無効登録で番組名の比較の際に無視する文字列を指定する【追加】
   [無]や[生]などのついた番組名も同一番組として扱いたい場合に利用することを想定し
@@ -407,12 +407,12 @@ Write_Defaultの通常のファイル出力に平行して、出力と同じデータをPlugIn設定で指定
 ・Teeバッファサイズ(byte) : コマンドにデータを入力する単位
 ・Tee読み込み遅延(byte) : コマンドへの入力をファイル出力からこの値だけ遅らせる
 
-■Civetwebの組み込みについて■
-HTTPサーバ機能の簡単化とディレクトリトラバーサル等々のバグ修正を目的に、EpgTimerSrv.exeにCivetwebを組み込みました。
+■CivetWebの組み込みについて■
+HTTPサーバ機能の簡単化とディレクトリトラバーサル等々のバグ修正を目的に、EpgTimerSrv.exeにCivetWebを組み込みました。
 HTTPサーバ機能は従来通りEpgTimerSrv.iniのEnableHttpSrvキーを1にすると有効になります(2にするとEpgTimerSrv.exeと同じ場所にログファイルも出力)。
 有効にする場合はEpgTimerSrv.exeと同じ場所にlua52.dllが必要です。対応するものをDLしてください。
 https://sourceforge.net/projects/luabinaries/files/5.2.4/Windows%20Libraries/Dynamic/
-Civetwebについては本家のドキュメント↓を参照してください(英語) ※組み込みバージョンはv1.7
+CivetWebについては本家のドキュメント↓を参照してください(英語) ※組み込みバージョンはv1.8
 https://github.com/civetweb/civetweb/blob/master/docs/UserManual.md
 SSL/TLSを利用する場合はEpgTimerSrv.exeと同じ場所にssleay32.dllとlibeay32.dllが必要です。自ビルド(推奨)するか信頼できるどこかから入手してください。
 とりあえず https://www.openssl.org/community/binaries.html にある https://indy.fulgan.com/SSL/ で動作を確認しています。
@@ -423,35 +423,38 @@ iniフォルダにあるdlna以下を公開フォルダに置いてEpgTimerSrv.iniのEnableDMSキーを1
 EpgTimerSrv.iniのSETに以下のキー[=デフォルト]を指定できます:
 HttpAccessControlList[=+127.0.0.1]
   アクセス制御
-  # Civetwebのaccess_control_listに相当(ただし"deny all accesses"からスタート)
+  # CivetWebのaccess_control_listに相当(ただし"deny all accesses"からスタート)
   # 従来通りすべてのアクセスを許可する場合は+0.0.0.0/0とする
   # ※+0.0.0.0/0は最終手段。キャリアの技術情報やプロキシを活用して接続元をできるだけ限定すべき
 HttpPort[=5510]
   ポート番号
-  # Civetwebのlistening_portsに相当
+  # CivetWebのlistening_portsに相当
   # SSLや複数ポート指定方法などは本家ドキュメント参照
 HttpPublicFolder[=EpgTimerSrv.exeと同じ場所の"HttpPublic"]
   公開フォルダ
-  # Civetwebのdocument_rootに相当
+  # CivetWebのdocument_rootに相当
   # フォルダパスに日本語(マルチバイト)文字を含まないこと
-HttpAuthenticationDomain[=Civetwebのデフォルト]
+HttpAuthenticationDomain[=CivetWebのデフォルト]
   認証領域
-  # Civetwebのauthentication_domainに相当
+  # CivetWebのauthentication_domainに相当
   # パスワード確認画面の文字列ぐらいの役割しかない
 HttpNumThreads[=5]
   ワーカスレッド数
-  # Civetwebのnum_threadsに相当
+  # CivetWebのnum_threadsに相当
   # 最大50
 HttpRequestTimeoutSec[=120]
   リクエストタイムアウト(秒)
-  # Civetwebのrequest_timeout_msに相当
+  # CivetWebのrequest_timeout_msに相当
+HttpSslCipherList[=HIGH:!aNULL:!MD5]
+  使用するSSL/TLSの暗号スイートのリスト
+  # CivetWebのssl_cipher_listに相当
 HttpSslProtocolVersion[=2]
   受け入れるSSL/TLSプロトコルのバージョン
-  # Civetwebのssl_protocol_versionに相当
+  # CivetWebのssl_protocol_versionに相当
   # 値が大きいほど安全。ガラケーなどでSSL3.0が必要な場合は1にする
 HttpKeepAlive[=0]
   Keep-Aliveを有効にするかどうか
-  # Civetwebのenable_keep_aliveに相当
+  # CivetWebのenable_keep_aliveに相当
   # 有効にする[=1]ときは以下に注意:
   # ・本家ドキュメントによると"Experimental feature"(実験的な機能)
   # ・HttpNumThreadsを大きめ(同時閲覧ブラウザ数×6)にすべき
@@ -459,19 +462,21 @@ HttpKeepAlive[=0]
   # ・mg.keep_alive(true)メソッドを呼んだLuaスクリプトは持続的接続になるかもしれない。
   #   このメソッドがtrueを返したときは"Content-Length"を必ず送り、"Connection: close"しない
 
-加えて、以下の設定をCivetwebのデフォルトから変更しています:
+加えて、以下の設定をCivetWebのデフォルトから変更しています:
   extra_mime_types: "ContentTypeText.txt"に追加したMIMEタイプ(従来通り)
   lua_script_pattern: "**.lua$|**.html$|*/api/*$" (つまり.htmlファイルはLuaスクリプト扱いになる)
     ※REST APIとの互換のため、公開フォルダ直下のapiフォルダにあるファイルもLuaスクリプト扱いになる
   ssl_certificate: HttpPortに文字's'を含むとき、EpgTimerSrv.exeと同じ場所の"ssl_cert.pem"
+  ssl_ca_file: EpgTimerSrv.exeと同じ場所の"ssl_peer.pem"
+  ssl_verify_peer: "ssl_peer.pem"が存在するとき"yes"
   global_auth_file: EpgTimerSrv.exeと同じ場所の"glpasswd"
 
 公開フォルダ以下のフォルダやファイルが公開対象です(色々遊べる)。
 iniフォルダに原作っぽい動作をするLuaスクリプトを追加したので参考にしてください。
 
-外部公開は推奨しませんが、もしも行う場合は本家ドキュメントに従い"glpasswd"を作成し(フォルダごとの.htpasswdは不確実)、
+外部公開は推奨しませんが、もしも行う場合は以下を参考に"ssl_peer.pem"または"glpasswd"を作成し(フォルダごとの.htpasswdは不確実)、
 SSL/TLSを利用してください。さらに重要なデータから隔離してください。
-Civetwebでセキュリティが確保されているだろうと判断できたのは認証処理までの不正アクセス耐性のみです。
+CivetWebでセキュリティが確保されているだろうと判断できたのは認証処理までの不正アクセス耐性のみです。
 DoS耐性は期待できませんし、パス無しの公開サーバとしての利用もお勧めできません。
 
 "ssl_cert.pem"(秘密鍵+自己署名証明書)の作成手順は本家ドキュメントに従わないほうが良いです。暗号強度が
@@ -483,13 +488,21 @@ DoS耐性は期待できませんし、パス無しの公開サーバとしての利用もお勧めできません。
 > copy server.crt ssl_cert.pem
 > type server.key >> ssl_cert.pem
 
-"glpasswd"の簡単な作り方(ユーザ名root、認証領域mydomain.com、パスワードtest)
+"ssl_peer.pem"(信頼済みクライアント証明書リスト)の作成手順例
+> openssl genrsa -out client.key 2048
+> openssl req -new -key client.key -out client.csr
+> openssl x509 -req -days 3650 -sha256 -in client.csr -signkey client.key -out client.crt
+> copy client.crt > ssl_peer.pem
+> openssl pkcs12 -export -inkey client.key -in client.crt -out edcb_key.p12 -name "edcb_key"
+> (↑"edcb_key.p12"(クライアントの秘密鍵)はブラウザ等にインポートする)
+
+"glpasswd"(ダイジェスト認証ファイル)の簡単な作り方(ユーザ名root、認証領域mydomain.com、パスワードtest)
 > set <nul /p "x=root:mydomain.com:test" | openssl md5
   (出力される32文字のハッシュ値でパスワードを上書き↓)
 > set <nul /p "x=root:mydomain.com:351eee77bbb11db9fef4870b0d78b061" >glpasswd
 
 Luaのmg.write()について、成否のブーリアンを返すよう拡張しています。
-機会があればCivetweb側に要望するつもりですが、その過程で仕様が変わる(例えば整数を返すようになるなど)可能性もあります。
+機会があればCivetWeb側に要望するつもりですが、その過程で仕様が変わる(例えば整数を返すようになるなど)可能性もあります。
 
 ■Lua edcbグローバル変数の仕様■
 機能はEpgTimerSrv本体にあるメソッドとほぼ同じなので
