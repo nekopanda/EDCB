@@ -255,50 +255,50 @@ namespace EpgTimer
         {
             try
             {
-                if (target == null || target.SelectedItem == null) return;
-
-                // SelectedItems だと重複するアイテムの区別がつかないため、インデックスで処理する
-
-                // 選択されているアイテムのインデックスリストを作る（削除のときにインデックスがずれないように末尾からの逆順にしておく）
-                var selectedIndices = new List<int>();
-                for (int i = target.Items.Count - 1; i >= 0 ; i--)
-                {
-                    var item = target.ItemContainerGenerator.ContainerFromIndex(i) as ListBoxItem;
-                    if (item != null && item.IsSelected == true)
-                    {
-                        selectedIndices.Add(i);
-                    }
-                }
-
-                // 一番上・一番下に移動する場合のブロックの先頭インデックスを計算
-                int gatherIndex = (direction == int.MinValue) ? 0 : (direction == int.MaxValue) ? target.Items.Count - target.SelectedItems.Count : -1;
+                if (target == null || target.SelectedItem == null) return;
+
+                // SelectedItems だと重複するアイテムの区別がつかないため、インデックスで処理する
+
+                // 選択されているアイテムのインデックスリストを作る（削除のときにインデックスがずれないように末尾からの逆順にしておく）
+                var selectedIndices = new List<int>();
+                for (int i = target.Items.Count - 1; i >= 0 ; i--)
+                {
+                    var item = target.ItemContainerGenerator.ContainerFromIndex(i) as ListBoxItem;
+                    if (item != null && item.IsSelected == true)
+                    {
+                        selectedIndices.Add(i);
+                    }
+                }
+
+                // 一番上・一番下に移動する場合のブロックの先頭インデックスを計算
+                int gatherIndex = (direction == int.MinValue) ? 0 : (direction == int.MaxValue) ? target.Items.Count - target.SelectedItems.Count : -1;
 
                 // 選択アイテムの移動先インデックスを計算
                 var selectedItems = selectedIndices.Reverse<int>()
                                                    .Select(x => new Tuple<int, object>(gatherIndex >= 0 ? gatherIndex++ : (x + direction + target.Items.Count) % target.Items.Count, target.Items[x]))
                                                    .OrderBy(x => x.Item1)
-                                                   .ToList();
-
-                // ListViewSelectedKeeper クラスが重複アイテムがあるときに正しく動かないので自前で選択状態の保存・復元をする
-                // 選択状態を解除 
-                target.UnselectAll();
-
-                // 選択されていたアイテムをリスト最後尾から削除
-                selectedIndices.ForEach(x => target.Items.RemoveAt(x));
-
-                // 選択されていたアイテムを移動先の位置に先頭から追加
-                selectedItems.ForEach(x => {
-                    target.Items.Insert(x.Item1, x.Item2);
-
-                    // 選択状態に変更
-                    target.UpdateLayout();          // 重複アイテムがあるとき ScrollIntoView が正しく選択されないための保険
-                    target.ScrollIntoView(x.Item2); // ItemContainerGenerator を使う前準備
-                    var item = target.ItemContainerGenerator.ContainerFromIndex(x.Item1) as ListBoxItem;
-                    if (item != null)
-                    {
-                        item.IsSelected = true;
-                    }
-                });
+                                                   .ToList();
+
+                // ListViewSelectedKeeper クラスが重複アイテムがあるときに正しく動かないので自前で選択状態の保存・復元をする
+                // 選択状態を解除 
+                target.UnselectAll();
+
+                // 選択されていたアイテムをリスト最後尾から削除
+                selectedIndices.ForEach(x => target.Items.RemoveAt(x));
+
+                // 選択されていたアイテムを移動先の位置に先頭から追加
+                selectedItems.ForEach(x => {
+                    target.Items.Insert(x.Item1, x.Item2);
+
+                    // 選択状態に変更
+                    target.UpdateLayout();          // 重複アイテムがあるとき ScrollIntoView が正しく選択されないための保険
+                    target.ScrollIntoView(x.Item2); // ItemContainerGenerator を使う前準備
+                    var item = target.ItemContainerGenerator.ContainerFromIndex(x.Item1) as ListBoxItem;
+                    if (item != null)
+                    {
+                        item.IsSelected = true;
+                    }
+                });
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
