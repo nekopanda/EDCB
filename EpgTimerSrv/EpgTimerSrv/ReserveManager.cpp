@@ -39,6 +39,13 @@ void CReserveManager::Initialize()
 	this->reserveText.ParseText((settingPath + L"\\" + RESERVE_TEXT_NAME).c_str());
 
 	ReloadSetting();
+	wstring iniPath;
+	GetModuleIniPath(iniPath);
+	DWORD shiftID = GetPrivateProfileInt(L"SET", L"RecInfoShiftID", 100000, iniPath.c_str());
+	if( shiftID != 0 ){
+		this->recInfoText.SetNextID(shiftID + 1);
+		WritePrivateProfileInt(L"SET", L"RecInfoShiftID", shiftID % 900000 + 100000, iniPath.c_str());
+	}
 	this->recInfoText.ParseText((settingPath + L"\\" + REC_INFO_TEXT_NAME).c_str());
 	this->recInfo2Text.ParseText((settingPath + L"\\" + REC_INFO2_TEXT_NAME).c_str());
 
@@ -140,7 +147,7 @@ void CReserveManager::ReloadSetting()
 	this->recInfoText.SetRecInfoFolder(GetPrivateProfileToString(L"SET", L"RecInfoFolder", L"", commonIniPath.c_str()).c_str());
 
 	this->recInfo2Text.SetKeepCount(GetPrivateProfileInt(L"SET", L"RecInfo2Max", 1000, iniPath.c_str()));
-	this->recInfo2DropChk = GetPrivateProfileInt(L"SET", L"RecInfo2DropChk", 15, iniPath.c_str());
+	this->recInfo2DropChk = GetPrivateProfileInt(L"SET", L"RecInfo2DropChk", 2, iniPath.c_str());
 	this->recInfo2RegExp = GetPrivateProfileToString(L"SET", L"RecInfo2RegExp", L"", iniPath.c_str());
 
 	this->defEnableCaption = GetPrivateProfileInt(L"SET", L"Caption", 1, viewIniPath.c_str()) != 0;
@@ -254,7 +261,7 @@ bool CReserveManager::GetReserveData(DWORD id, RESERVE_DATA* reserveData, bool g
 	return false;
 }
 
-bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setComment, bool setReserveStatus)
+bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bool setComment, bool setReserveStatus, bool noReportNotify)
 {
 	CBlockLock lock(&this->managerLock);
 
@@ -291,7 +298,10 @@ bool CReserveManager::AddReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		this->reserveText.SaveText();
 		ReloadBankMap(minStartTime);
 		CheckAutoDel();
-		AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+		//自動登録リスト更新時(EPG更新時など)にNOTIFYの発生を抑制するため
+		if( noReportNotify != true){
+			AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+		}
 		AddPostBatWork(batWorkList, L"PostAddReserve.bat");
 		return true;
 	}
@@ -310,7 +320,7 @@ bool CReserveManager::ChgReserveData(const vector<RESERVE_DATA>& reserveList, bo
 		map<DWORD, RESERVE_DATA>::const_iterator itr = this->reserveText.GetMap().find(r.reserveID);
 		if( itr != this->reserveText.GetMap().end() ){
 			//変更できないフィールドを上書き
-			r.comment = itr->second.comment;
+			//r.comment = itr->second.comment;プログラム予約に変更する場合があるので許可(tknerec版)
 			r.presentFlag = itr->second.presentFlag;
 			r.startTimeEpg = itr->second.startTimeEpg;
 			if( setReserveStatus == false ){
@@ -477,16 +487,74 @@ void CReserveManager::DelReserveData(const vector<DWORD>& idList)
 	}
 }
 
-vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll() const
+vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoAll(bool getExtraInfo) const
 {
-	CBlockLock lock(&this->managerLock);
-
 	vector<REC_FILE_INFO> infoList;
-	infoList.reserve(this->recInfoText.GetMap().size());
-	for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().begin(); itr != this->recInfoText.GetMap().end(); itr++ ){
-		infoList.push_back(itr->second);
+	wstring folder;
+	{
+		CBlockLock lock(&this->managerLock);
+		infoList.reserve(this->recInfoText.GetMap().size());
+		for( map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().begin(); itr != this->recInfoText.GetMap().end(); itr++ ){
+			infoList.push_back(itr->second);
+		}
+		if( getExtraInfo ){
+			folder = this->recInfoText.GetRecInfoFolder();
+		}
+	}
+	if( getExtraInfo ){
+		for( size_t i = 0; i < infoList.size(); i++ ){
+			infoList[i].programInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".program.txt", folder);
+			infoList[i].errInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".err", folder);
+		}
 	}
 	return infoList;
+}
+
+vector<REC_FILE_INFO> CReserveManager::GetRecFileInfoList(const vector<DWORD>& idList, bool getExtraInfo) const
+{
+	vector<REC_FILE_INFO> infoList;
+	wstring folder;
+	{
+		CBlockLock lock(&this->managerLock);
+		infoList.reserve(idList.size());
+		for( size_t i = 0; i < idList.size(); i++ ){
+			map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().find(idList[i]);
+			if( itr != this->recInfoText.GetMap().end() ){
+				infoList.push_back(itr->second);
+			}
+		}
+		if( getExtraInfo ){
+			folder = this->recInfoText.GetRecInfoFolder();
+		}
+	}
+	if( getExtraInfo ){
+		for( size_t i = 0; i < infoList.size(); i++ ){
+			infoList[i].programInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".program.txt", folder);
+			infoList[i].errInfo = CParseRecInfoText::GetExtraInfo(infoList[i].recFilePath.c_str(), L".err", folder);
+		}
+	}
+	return infoList;
+}
+
+bool CReserveManager::GetRecFileInfo(DWORD id, REC_FILE_INFO* recInfo, bool getExtraInfo) const
+{
+	wstring folder;
+	{
+		CBlockLock lock(&this->managerLock);
+		map<DWORD, REC_FILE_INFO>::const_iterator itr = this->recInfoText.GetMap().find(id);
+		if( itr == this->recInfoText.GetMap().end() ){
+			return false;
+		}
+		*recInfo = itr->second;
+		if( getExtraInfo ){
+			folder = this->recInfoText.GetRecInfoFolder();
+		}
+	}
+	if( getExtraInfo ){
+		recInfo->programInfo = CParseRecInfoText::GetExtraInfo(recInfo->recFilePath.c_str(), L".program.txt", folder);
+		recInfo->errInfo = CParseRecInfoText::GetExtraInfo(recInfo->recFilePath.c_str(), L".err", folder);
+	}
+	return true;
 }
 
 void CReserveManager::DelRecFileInfo(const vector<DWORD>& idList)
@@ -1768,7 +1836,7 @@ bool CReserveManager::GetRecFilePath(DWORD reserveID, wstring& filePath, DWORD* 
 	return false;
 }
 
-bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkDay) const
+bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, const EPGDB_SEARCH_KEY_INFO& key) const
 {
 	CBlockLock lock(&this->managerLock);
 	bool ret = false;
@@ -1788,10 +1856,10 @@ bool CReserveManager::IsFindRecEventInfo(const EPGDB_EVENT_INFO& info, WORD chkD
 			if( infoEventName.empty() == false && info.StartTimeFlag != 0 ){
 				map<DWORD, PARSE_REC_INFO2_ITEM>::const_iterator itr;
 				for( itr = this->recInfo2Text.GetMap().begin(); itr != this->recInfo2Text.GetMap().end(); itr++ ){
-					if( itr->second.originalNetworkID == info.original_network_id &&
-					    itr->second.transportStreamID == info.transport_stream_id &&
-					    itr->second.serviceID == info.service_id &&
-					    ConvertI64Time(itr->second.startTime) + chkDay*24*60*60*I64_1SEC > ConvertI64Time(info.start_time) ){
+					if( ( key.chkRecNoService == 1 || itr->second.originalNetworkID == info.original_network_id &&
+						itr->second.transportStreamID == info.transport_stream_id &&
+						itr->second.serviceID == info.service_id ) &&
+						ConvertI64Time(itr->second.startTime) + key.chkRecDay*24*60*60*I64_1SEC > ConvertI64Time(info.start_time) ){
 						wstring eventName = itr->second.eventName;
 						if( this->recInfo2RegExp.empty() == false ){
 							_bstr_t rpl = regExp->Replace(_bstr_t(eventName.c_str()), _bstr_t());
