@@ -1,9 +1,9 @@
 #include "StdAfx.h"
-#include "SendCtrlCmd.h"
 #ifndef SEND_CTRL_CMD_NO_TCP
 #include <winsock2.h>
 #pragma comment(lib, "Ws2_32.lib")
 #endif
+#include "SendCtrlCmd.h"
 #include "StringUtil.h"
 #include "CryptUtil.h"
 
