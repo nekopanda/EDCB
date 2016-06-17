@@ -70,7 +70,7 @@
                                 <RowDefinition Height="auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <ListBox Grid.Column="0" Grid.RowSpan="3" Name="listBox_recFolder" HorizontalContentAlignment="Stretch" />
+                            <ListBox Grid.Column="0" Grid.RowSpan="3" Name="listBox_recFolder" HorizontalContentAlignment="Stretch" SelectionMode="Extended" />
                             <Button Grid.Column="1" Grid.Row="0" Name="button_rec_up" Content="↑" Margin="12,0,0,4" />
                             <Button Grid.Column="1" Grid.Row="1" Name="button_rec_down" Content="↓" Margin="12,0,0,4" />
                             <Button Grid.Column="1" Grid.Row="2" Name="button_rec_del" Content="削除" Margin="12,0,0,0" Click="button_rec_del_Click" VerticalAlignment="Bottom" />
@@ -125,7 +125,7 @@
                             <ColumnDefinition />
                             <ColumnDefinition MinWidth="160" MaxWidth="270" />
                         </Grid.ColumnDefinitions>
-                        <ListBox Grid.Column="0" Name="listBox_bon" Margin="40,0,0,0" SelectionChanged="listBox_bon_SelectionChanged" />
+                        <ListBox Grid.Column="0" Name="listBox_bon" Margin="40,0,0,0" SelectionChanged="listBox_bon_SelectionChanged" SelectionMode="Extended" />
                         <WrapPanel Grid.Column="1" Margin="12,0">
                             <StackPanel Margin="0,0,20,0">
                                 <Button Name="button_bon_up" Content="↑" Margin="0,12" />

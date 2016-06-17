@@ -408,6 +408,7 @@ namespace EpgTimer
             }
         }
 
+        /*/未使用
         public static DependencyObject SearchParentWpfTree(DependencyObject obj, Type t_trg, Type t_cut = null)
         {
             Func<string, DependencyObject> GetParentFromProperty = name =>
@@ -426,6 +427,7 @@ namespace EpgTimer
                 obj = trg;
             }
         }
+        /*/
 
 #if false
         public void WalkLogicalTree(DependencyObject obj, Func<object, bool> func)
@@ -541,6 +543,43 @@ namespace EpgTimer
             return string.Format("{0}:{1} (有効予約数:{2} 無効予約数:{3})",
                 itemText, list.Count(), onRes.Distinct().Count(), offRes.Distinct().Count());
         }
+
+        public static Type GetListBoxItemType(ListBox lb)
+        {
+            if (lb == null) return null;
+            //場合分けしないで取得する方法があるはず
+            return lb is ListView ? typeof(ListViewItem) : lb is ListBox ? typeof(ListBoxItem) : typeof(object);
+        }
+        public static void ResetItemContainerStyle(ListBox lb)
+        {
+            try
+            {
+                if (lb == null) return;
+                if (lb.ItemContainerStyle != null && lb.ItemContainerStyle.IsSealed == false) return;
+
+                //IsSealedが設定されているので、作り直す。
+                var newStyle = new Style();
+
+                //baseStyleに元のItemContainerStyle放り込むと一見簡単だが、ここはちゃんと内容を移す。
+                if (lb.ItemContainerStyle != null)
+                {
+                    newStyle.TargetType = lb.ItemContainerStyle.TargetType;//余り意味は無いはずだが一応
+                    newStyle.BasedOn = lb.ItemContainerStyle.BasedOn;//nullならそのままnullにしておく
+                    newStyle.Resources = lb.ItemContainerStyle.Resources;
+                    foreach (var item in lb.ItemContainerStyle.Setters) newStyle.Setters.Add(item);
+                    foreach (var item in lb.ItemContainerStyle.Triggers) newStyle.Triggers.Add(item);
+                }
+                else
+                {
+                    newStyle.TargetType = GetListBoxItemType(lb);
+                    //現在のContainerTypeを引っ張る。ただし、アプリケーションリソースでListViewItemが定義されている前提。
+                    try { newStyle.BasedOn = (Style)lb.FindResource(newStyle.TargetType); }
+                    catch { }
+                }
+                lb.ItemContainerStyle = newStyle;
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
+        }
     }
 
     public static class ViewUtilEx
@@ -548,42 +587,38 @@ namespace EpgTimer
         ///<summary>同じアイテムがあってもスクロールするようにしたもの(ItemSource使用時無効)</summary>
         //ScrollIntoView()は同じアイテムが複数あると上手く動作しないので、ダミーを使って無理矢理移動させる。
         //同じ理由でSelectedItemも正しく動作しないので、スクロール位置はindexで取るようにする。
-        public static void ScrollIntoViewFix(this ListBox box, int index)
+        public static void ScrollIntoViewIndex(this ListBox box, int index)
         {
             try
             {
-                if (box == null || index < 0 || index >= box.Items.Count) return;
+                if (box == null || box.Items.Count == 0) return;
+
+                index = Math.Min(Math.Max(0, index), box.Items.Count - 1);
+                object item = box.Items[index];
 
                 //リストに追加・削除をするので、ItemsSourceなどあるときは動作しない
                 if (box.ItemsSource == null)
                 {
-                    object key = box.Items[index];
-                    if (box.Items.OfType<object>().Count(item => item.Equals(key)) != 1)//==は失敗する
+                    if (box.Items.IndexOf(item) != index)
                     {
-                        var dummy = new ListBoxItem();
-                        dummy.Visibility = Visibility.Collapsed;//まだスクロールバーがピクピクする
-                        box.Items.Insert(index + (index == 0 ? 0 : 1), dummy);
-                        box.ScrollIntoView(dummy);
+                        item = new ListBoxItem { Visibility = Visibility.Collapsed };
+                        box.Items.Insert(index == 0 ? 0 : index + 1, item);
 
                         //ScrollIntoView()は遅延して実行されるので、実行後にダミーを削除する。
-                        Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() => box.Items.Remove(dummy)), DispatcherPriority.ContextIdle);
-
-                        return;
+                        Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() => box.Items.Remove(item)), DispatcherPriority.Loaded/*ContextIdle*/);
                     }
                 }
 
-                box.ScrollIntoView(box.Items[index]);
+                box.ScrollIntoView(item);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
-        public static ListBoxItem PlacementItem(this ListBox lb, Point? pt = null)
+        public static DependencyObject GetPlacementItem(this ItemsControl lb, Point? pt = null)
         {
             if (lb == null) return null;
-            if (pt == null) pt = Mouse.GetPosition(lb);
-            var hitobj = lb.InputHitTest((Point)pt) as DependencyObject;
-            var item_type = lb is ListView ? typeof(ListViewItem) : lb is ListBox ? typeof(ListBoxItem) : typeof(object);//場合分けしないで取得する方法があるはず
-            return ViewUtil.SearchParentWpfTree(hitobj, item_type, lb.GetType()) as ListBoxItem;
+            var element = lb.InputHitTest((Point)(pt ?? Mouse.GetPosition(lb))) as DependencyObject;
+            return element == null ? null : lb.ContainerFromElement(element);
         }
     }
 }
