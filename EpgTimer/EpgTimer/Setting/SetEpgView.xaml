@@ -358,19 +358,15 @@
                                     <RowDefinition Height="auto" />
                                 </Grid.RowDefinitions>
                                 <Label Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="0" Content="表示タブ" />
-                                <ListBox Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1" Name="listBox_tab" Margin="8,4" SelectionMode="Extended">
-                                    <ListBox.Resources>
-                                        <Style TargetType="ListBoxItem">
-                                            <EventSetter Event="MouseDoubleClick" Handler="listBox_tab_MouseDoubleClick"/>
-                                        </Style>
-                                    </ListBox.Resources>
-                                </ListBox>
+                                <ListBox Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1" Name="listBox_tab" Margin="8,4" SelectionMode="Extended" />
                                 <StackPanel Grid.Column="2" Grid.Row="1" Margin="8,4">
-                                    <Button Name="button_tab_add" Content="追加" Margin="0,4" Click="button_tab_add_Click" />
-                                    <Button Name="button_tab_chg" Content="変更" Margin="0,4" Click="button_tab_chg_Click" />
-                                    <Button Name="button_tab_del" Content="削除" Margin="0,4" />
-                                    <Button Name="button_tab_up" Content="↑" Margin="0,4" />
-                                    <Button Name="button_tab_down" Content="↓" Margin="0,4" />
+                                    <Button Name="button_tab_add"    Content="追加" Margin="0,4" Click="button_tab_add_Click" />
+                                    <Button Name="button_tab_chg"    Content="変更" Margin="0,4" Click="button_tab_chg_Click" />
+                                    <Button Name="button_tab_del"    Content="削除" Margin="0,4" />
+                                    <Button Name="button_tab_top"    Content="↑↑" Margin="0,4" />
+                                    <Button Name="button_tab_up"     Content="↑"   Margin="0,4" />
+                                    <Button Name="button_tab_down"   Content="↓"   Margin="0,4" />
+                                    <Button Name="button_tab_bottom" Content="↓↓" Margin="0,4" />
                                 </StackPanel>
                                 <Button Grid.Column="0" Grid.Row="2" Name="button_tab_clone" Content="コピー" Margin="8,4" Click="button_tab_clone_Click" />
                                 <Button Grid.Column="1" Grid.Row="2" Name="button_tab_defaultCopy" Content="デフォルト表示をコピー" Margin="8,4" Click="button_tab_defaultCopy_Click" />
@@ -661,6 +657,28 @@
                                     <CheckBox Name="checkBox_displayStatus" Content="ステータス表示をする" />
                                     <CheckBox Name="checkBox_displayStatusNotify" Content="主要操作の操作結果を表示をする" Margin="14,4,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_displayStatus, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
+                                <GroupBox Header="初期表示画面" Margin="0,6,0,0" >
+                                    <WrapPanel Name="wrapPanel_StartTab" Margin="6,6,0,0" />
+                                </GroupBox>
+                                <DockPanel Margin="0,6,0,0">
+                                    <GroupBox Header="各画面のボタン列を表示する" Margin="0,6,0,0" >
+                                        <StackPanel Orientation="Horizontal" Margin="6,6,0,0">
+                                            <CheckBox Name="checkBox_IsVisibleReserveView"         Content="予約一覧"                 Margin="0,0,12,0" />
+                                            <CheckBox Name="checkBox_IsVisibleRecInfoView"         Content="録画済み一覧"             Margin="0,0,12,0" />
+                                            <CheckBox Name="checkBox_IsVisibleAutoAddView"         Content="自動予約登録（"           Margin="0,0,12,0" />
+                                            <CheckBox Name="checkBox_IsVisibleAutoAddViewMoveOnly" Content="「並び替え」のみ表示　）" Margin="-6,0,12,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_IsVisibleAutoAddView, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </StackPanel>
+                                    </GroupBox>
+                                    <GroupBox Header="各画面のボタン列の位置" Margin="0,6,0,0" >
+                                        <WrapPanel Name="wrapPanel_MainViewButtonsDock" Margin="6,6,0,0">
+                                            <WrapPanel.Resources>
+                                                <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
+                                                    <Setter Property="Margin" Value="0,0,12,0"/>
+                                                </Style>
+                                            </WrapPanel.Resources>
+                                        </WrapPanel>
+                                    </GroupBox>
+                                </DockPanel>
                             </StackPanel>
                         </GroupBox>
                     </ScrollViewer>

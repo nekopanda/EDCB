@@ -9,6 +9,7 @@ using Microsoft.Win32;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace EpgTimer
 {
@@ -1014,7 +1015,18 @@ namespace EpgTimer
         public bool DisplayStatus { get; set; }
         /// <summary>主要操作の操作結果を表示をする</summary>
         public bool DisplayStatusNotify { get; set; }
-
+        /// <summary>予約一覧のボタンを表示する</summary>
+        public bool IsVisibleReserveView { get; set; }
+        /// <summary>録画済み一覧のボタンを表示する</summary>
+        public bool IsVisibleRecInfoView { get; set; }
+        /// <summary>自動予約登録のボタンを表示する</summary>
+        public bool IsVisibleAutoAddView { get; set; }
+        /// <summary>自動予約登録の「並び替え」のボタンのみを表示する</summary>
+        public bool IsVisibleAutoAddViewMoveOnly { get; set; }
+        /// <summary>各画面のボタン列の位置</summary>
+        public Dock MainViewButtonsDock { get; set; }
+        /// <summary>初期表示画面</summary>
+        public CtxmCode StartTab { get; set; }
         /// <summary>多重起動を許す</summary>
         public bool ApplyMultiInstance { get; set; }
         /// <summary>ウィンドウのサイズや位置、状態などを保存するリスト</summary>
@@ -1260,6 +1272,11 @@ namespace EpgTimer
             UpdateTaskText = false;
             DisplayStatus = false;
             DisplayStatusNotify = false;
+            IsVisibleReserveView = true;
+            IsVisibleRecInfoView = true;
+            IsVisibleAutoAddView = true;
+            IsVisibleAutoAddViewMoveOnly = false;
+            MainViewButtonsDock = Dock.Right;
         }
 
         [NonSerialized()]

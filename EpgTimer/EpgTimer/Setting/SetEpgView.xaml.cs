@@ -10,6 +10,8 @@ using System.Windows.Shapes;
 
 namespace EpgTimer.Setting
 {
+    using EpgTimer.BoxExchangeEdit;
+
     /// <summary>
     /// SetEpgView.xaml の相互作用ロジック
     /// </summary>
@@ -23,7 +25,6 @@ namespace EpgTimer.Setting
         }
 
         private MenuUtil mutil = CommonManager.Instance.MUtil;
-        private BoxExchangeEditor bx = new BoxExchangeEditor();
 
         private MenuSettingData ctxmSetInfo;
 
@@ -70,15 +71,18 @@ namespace EpgTimer.Setting
                 button_tunerFontCustColorService.IsEnabled = !Settings.Instance.TunerColorModeUse;
                 checkBox_tuner_display_offres.IsChecked = Settings.Instance.TunerDisplayOffReserve;
 
-                bx.TargetBox = this.listBox_tab;
-                button_tab_del.Click += new RoutedEventHandler(bx.button_del_Click);
-                button_tab_up.Click += new RoutedEventHandler(bx.button_up_Click);
-                button_tab_down.Click += new RoutedEventHandler(bx.button_down_Click);
+                var bx = new BoxExchangeEditor(null, this.listBox_tab, true, true, true);
+                bx.targetBoxAllowDoubleClick(bx.TargetBox, (sender, e) => button_tab_chg.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+                button_tab_del.Click += new RoutedEventHandler(bx.button_Delete_Click);
+                button_tab_up.Click += new RoutedEventHandler(bx.button_Up_Click);
+                button_tab_down.Click += new RoutedEventHandler(bx.button_Down_Click);
+                button_tab_top.Click += new RoutedEventHandler(bx.button_Top_Click);
+                button_tab_bottom.Click += new RoutedEventHandler(bx.button_Bottom_Click);
 
                 radioButton_1_def.IsChecked = (Settings.Instance.UseCustomEpgView == false);
                 radioButton_1_cust.IsChecked = (Settings.Instance.UseCustomEpgView != false);
 
-                Settings.Instance.CustomEpgTabList.ForEach(info => listBox_tab.Items.Add(info));
+                listBox_tab.Items.AddItems(Settings.Instance.CustomEpgTabList);
                 if (listBox_tab.Items.Count > 0) listBox_tab.SelectedIndex = 0;
 
                 XmlLanguage FLanguage = XmlLanguage.GetLanguage("ja-JP");
@@ -200,7 +204,33 @@ namespace EpgTimer.Setting
                 checkBox_nekopandaToolTip.IsChecked = Settings.Instance.RecItemToolTip;
                 checkBox_displayStatus.IsChecked = Settings.Instance.DisplayStatus;
                 checkBox_displayStatusNotify.IsChecked = Settings.Instance.DisplayStatusNotify;
+                checkBox_IsVisibleReserveView.IsChecked = Settings.Instance.IsVisibleReserveView;
+                checkBox_IsVisibleRecInfoView.IsChecked = Settings.Instance.IsVisibleRecInfoView;
+                checkBox_IsVisibleAutoAddView.IsChecked = Settings.Instance.IsVisibleAutoAddView;
+                checkBox_IsVisibleAutoAddViewMoveOnly.IsChecked = Settings.Instance.IsVisibleAutoAddViewMoveOnly;
+
+                foreach (var item in new Dictionary<object, string> {
+                            { CtxmCode.ReserveView, "予約一覧" },{ CtxmCode.TunerReserveView, "使用予定チューナ" },
+                            { CtxmCode.RecInfoView, "録画済み一案" },{ CtxmCode.EpgAutoAddView, "キーワード予約登録" },
+                            { CtxmCode.ManualAutoAddView, "プログラム予約登録" },{ CtxmCode.EpgView, "番組表" } })
+                {
+                    wrapPanel_StartTab.Children.Add(new RadioButton { Tag = item.Key, Content = item.Value });
+                }
+                var rbtn = wrapPanel_StartTab.Children.OfType<RadioButton>()
+                    .FirstOrDefault(item => item.Tag as CtxmCode? == Settings.Instance.StartTab);
+                if (rbtn != null) rbtn.IsChecked = true;
+
+                foreach (var item in new Dictionary<object, string> {
+                                { Dock.Bottom, "下" },{ Dock.Top, "上" },{ Dock.Left, "左" },{ Dock.Right, "右" } })
+                {
+                    wrapPanel_MainViewButtonsDock.Children.Add(new RadioButton { Tag = item.Key, Content = item.Value });
+                }
+                rbtn = wrapPanel_MainViewButtonsDock.Children.OfType<RadioButton>()
+                    .FirstOrDefault(item => item.Tag as Dock? == Settings.Instance.MainViewButtonsDock);
+                if (rbtn != null) rbtn.IsChecked = true;
+
                 InitializeStyleList();
+
                 // [予約一覧・共通] - [色]
                 setComboColor1(Settings.Instance.ListDefColor, cmb_ListDefFontColor);
                 setButtonColor1(Settings.Instance.ListDefCustColor, btn_ListDefFontColor);
@@ -249,7 +279,6 @@ namespace EpgTimer.Setting
                 Settings.Instance.EpgPopupResOnly = (checkBox_epg_popup_resOnly.IsChecked == true);
                 Settings.Instance.EpgGradation = (checkBox_gradation.IsChecked == true);
                 Settings.Instance.EpgGradationHeader = (checkBox_gradationHeader.IsChecked == true);
-
 
                 Settings.Instance.EpgInfoSingleClick = (checkBox_singleOpen.IsChecked == true);
                 Settings.Instance.EpgInfoOpenMode = (byte)(checkBox_openInfo.IsChecked == true ? 1 : 0);
@@ -442,6 +471,19 @@ namespace EpgTimer.Setting
                 }
                 Settings.Instance.DisplayStatus = (checkBox_displayStatus.IsChecked == true);
                 Settings.Instance.DisplayStatusNotify = (checkBox_displayStatusNotify.IsChecked == true);
+                Settings.Instance.IsVisibleReserveView = (checkBox_IsVisibleReserveView.IsChecked == true);
+                Settings.Instance.IsVisibleRecInfoView = (checkBox_IsVisibleRecInfoView.IsChecked == true);
+                Settings.Instance.IsVisibleAutoAddView = (checkBox_IsVisibleAutoAddView.IsChecked == true);
+                Settings.Instance.IsVisibleAutoAddViewMoveOnly = (checkBox_IsVisibleAutoAddViewMoveOnly.IsChecked == true);
+
+                CtxmCode? code = wrapPanel_StartTab.Children.OfType<RadioButton>()
+                    .Where(btn => btn.IsChecked == true).Select(btn => btn.Tag as CtxmCode?).FirstOrDefault();
+                if (code != null) Settings.Instance.StartTab = (CtxmCode)code;
+
+                Dock? dock = wrapPanel_MainViewButtonsDock.Children.OfType<RadioButton>()
+                    .Where(btn => btn.IsChecked == true).Select(btn => btn.Tag as Dock?).FirstOrDefault();
+                if (dock != null) Settings.Instance.MainViewButtonsDock = (Dock)dock;
+
                 // [予約一覧・共通] - [色]
                 Settings.Instance.ListDefColor = getComboColor1(cmb_ListDefFontColor);
                 Settings.Instance.ListDefCustColor = getButtonColor1(btn_ListDefFontColor);
@@ -572,16 +614,11 @@ namespace EpgTimer.Setting
         {
             if (items.Count != 0)
             {
-                items.ForEach(info => listBox_tab.Items.Add(info));
-                listBox_tab.ScrollIntoView(listBox_tab.Items[listBox_tab.Items.Count - 1]);
-                listBox_tab.SelectedItem = items[0];
-                items.ForEach(info => listBox_tab.SelectedItems.Add(info));
+                listBox_tab.Items.AddItems(items);
+                listBox_tab.UnselectAll();
+                listBox_tab.SelectedItemsAdd(items);
+                listBox_tab.ScrollIntoViewIndex(int.MaxValue);
             }
-        }
-
-        private void listBox_tab_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            button_tab_chg_Click(null, null);
         }
 
         private void button_Color_Click(object sender, RoutedEventArgs e)

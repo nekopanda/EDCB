@@ -351,7 +351,7 @@ namespace EpgTimer
             {
                 Settings.Instance.MenuSet = dlg.info.Clone();
                 Settings.SaveToXmlFile();//メニュー設定の保存
-                mainWindow.RefreshMenu(true);
+                mainWindow.RefreshMenu();
             }
         }
         protected bool mcc_chgRecSetting(ExecutedRoutedEventArgs e)
@@ -418,7 +418,7 @@ namespace EpgTimer
                 if (ctxm.PlacementTarget is ListBox && e != null)
                 {
                     //リストビューの場合は、アイテムの無いところではデータ選択してないものと見なす。
-                    if ((ctxm.PlacementTarget as ListBox).PlacementItem() == null)
+                    if ((ctxm.PlacementTarget as ListBox).GetPlacementItem() == null)
                     {
                         ClearData();
                     }
@@ -671,8 +671,10 @@ namespace EpgTimer
             //cmdMessage.Add(EpgCmds.DeleteInDialog, "削除を実行");
             //cmdMessage.Add(EpgCmds.Delete2InDialog, "全て削除を実行");
             //cmdMessage.Add(EpgCmds.Search, "");
+            //cmdMessage.Add(EpgCmds.TopItem, "");
             //cmdMessage.Add(EpgCmds.UpItem, "");
             //cmdMessage.Add(EpgCmds.DownItem, "");
+            //cmdMessage.Add(EpgCmds.BottomItem, "");
             //cmdMessage.Add(EpgCmds.SaveOrder, "");
             //cmdMessage.Add(EpgCmds.RestoreOrder, "");
             //cmdMessage.Add(EpgCmds.DragCancel, "");
