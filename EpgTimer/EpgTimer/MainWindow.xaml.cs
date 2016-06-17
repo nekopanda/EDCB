@@ -92,7 +92,9 @@ namespace EpgTimer
                 {
                     // Icon化起動すると Windows_Loaded イベントが来ないので
                     // InitializeComponent 後に ConnectCmd しておく。
-                    ConnectCmd(Settings.Instance.NWMode && Settings.Instance.WakeReconnectNW == false);
+                    Dispatcher.BeginInvoke(new Action(() =>
+                                            ConnectCmd(Settings.Instance.NWMode && Settings.Instance.WakeReconnectNW == false)
+                                            ), DispatcherPriority.Loaded);
 
                     if (Settings.Instance.ShowTray && Settings.Instance.MinHide)
                     {
@@ -179,6 +181,31 @@ namespace EpgTimer
                 taskTray.ContextMenuClick += (sender, e) => CommonButtons_Click(sender as string);
 
                 ResetMainView();
+
+                //初期タブ選択
+                switch (Settings.Instance.StartTab)
+                {
+                    //case CtxmCode.ReserveView:
+                    //    this.tabItem_reserve.IsSelected = true;
+                    //    break;
+                    case CtxmCode.TunerReserveView:
+                        this.tabItem_tunerReserve.IsSelected = true;
+                        break;
+                    case CtxmCode.RecInfoView:
+                        this.tabItem_recinfo.IsSelected = true;
+                        break;
+                    case CtxmCode.EpgAutoAddView:
+                        this.tabItem_AutoAdd.IsSelected = true;
+                    //    this.autoAddView.tabItem_epgAutoAdd.IsSelected = true;
+                        break;
+                    case CtxmCode.ManualAutoAddView:
+                        this.tabItem_AutoAdd.IsSelected = true;
+                        this.autoAddView.tabItem_manualAutoAdd.IsSelected = true;
+                        break;
+                    case CtxmCode.EpgView:
+                        this.tabItem_epg.IsSelected = true;
+                        break;
+                }
             }
             catch (Exception ex)
             {
@@ -308,7 +335,7 @@ namespace EpgTimer
 
         private void ResetTaskMenu()
         {
-            taskTray.Visible = Settings.Instance.ShowTray;
+            taskTray.Visible = Settings.Instance.ShowTray || this.Visibility == Visibility.Hidden;
             taskTray.Text = GetTaskTrayReserveInfoText();
             taskTray.SetContextMenu(Settings.Instance.TaskMenuList
                 .Select(s1 => s1.Replace("（セパレータ）", ""))
@@ -554,6 +581,8 @@ namespace EpgTimer
                             {
                                 System.Diagnostics.Process process = System.Diagnostics.Process.Start(exePath);
                                 startExe = true;
+                                //EpgTimerSrvを自分で起動させた場合、後でUpdateNotifyItem.EpgDataが来るので、初期フラグをリセットする。
+                                CommonManager.Instance.DB.ResetUpdateNotifyEpg();
                             }
                             else //if (showDialog == true)
                             {

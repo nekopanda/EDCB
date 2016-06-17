@@ -199,13 +199,11 @@ namespace EpgTimer.BoxExchangeEdit
         /// <summary>一番上に集める</summary>
         public void button_Top_Click(object sender, RoutedEventArgs e)
         {
-            //bxMoveItems(TargetBox, int.MinValue, TargetItemsSource);
             bxMoveItemsTopBottom(TargetBox, -1, TargetItemsSource);
         }
         /// <summary>一番下に集める</summary>
         public void button_Bottom_Click(object sender, RoutedEventArgs e)
         {
-            //bxMoveItems(TargetBox, int.MaxValue, TargetItemsSource);
             bxMoveItemsTopBottom(TargetBox, 1, TargetItemsSource);
         }
         /// <summary>一番上または下に移動</summary>

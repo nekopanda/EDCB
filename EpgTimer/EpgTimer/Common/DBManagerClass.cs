@@ -368,6 +368,9 @@ namespace EpgTimer
             }
         }
 
+        /// <summary>EPG更新フラグをオフにする(EpgTimerSrv直接起動時用)。</summary>
+        public void ResetUpdateNotifyEpg() { updateEpgData = false; }
+
         /// <summary>
         /// EPGデータの更新があれば再読み込みする
         /// </summary>

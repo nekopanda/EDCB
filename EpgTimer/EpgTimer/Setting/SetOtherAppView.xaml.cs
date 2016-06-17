@@ -26,6 +26,15 @@ namespace EpgTimer.Setting
         {
             InitializeComponent();
 
+            //エスケープキャンセルだけは常に有効にする。
+            var bx = new BoxExchangeEdit.BoxExchangeEditor(null, this.listBox_bon, true);
+            if (CommonManager.Instance.NWMode == false)
+            {
+                bx.AllowDragDrop();
+                bx.AllowKeyAction();
+                button_del.Click += new RoutedEventHandler(bx.button_Delete_Click);
+            }
+
             try
             {
                 // tabItem_tvtest - TVTest連携
@@ -104,14 +113,6 @@ namespace EpgTimer.Setting
         private void button_exe_Click(object sender, RoutedEventArgs e)
         {
             CommonManager.GetFileNameByDialog(textBox_exe, false, "", ".exe");
-        }
-
-        private void button_del_Click(object sender, RoutedEventArgs e)
-        {
-            if (listBox_bon.SelectedItem != null)
-            {
-                listBox_bon.Items.RemoveAt(listBox_bon.SelectedIndex);
-            }
         }
 
         private void button_add_Click(object sender, RoutedEventArgs e)

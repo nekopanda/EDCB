@@ -221,7 +221,7 @@ namespace EpgTimer.Setting
                 if (rbtn != null) rbtn.IsChecked = true;
 
                 foreach (var item in new Dictionary<object, string> {
-                                { Dock.Bottom, "下" },{ Dock.Top, "上" },{ Dock.Left, "左" },{ Dock.Right, "右" } })
+                            { Dock.Bottom, "下" },{ Dock.Top, "上" },{ Dock.Left, "左" },{ Dock.Right, "右" } })
                 {
                     wrapPanel_MainViewButtonsDock.Children.Add(new RadioButton { Tag = item.Key, Content = item.Value });
                 }

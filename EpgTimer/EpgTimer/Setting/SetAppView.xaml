@@ -405,7 +405,7 @@
                     <Label Grid.Column="0" Grid.Row="1" Content="サービス一覧" Margin="15,0" />
                     <ListBox Grid.Column="0" Grid.Row="2" Grid.RowSpan="2" Name="listBox_service" Margin="15,0,15,10" ItemsSource="{Binding}"  DisplayMemberPath="ServiceName" SelectionChanged="listBox_service_SelectionChanged">
                         <ListBox.ItemContainerStyle>
-                            <Style TargetType="{x:Type ListBoxItem}">
+                            <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                                 <Setter Property="ToolTipService.ShowDuration" Value="20000" />
                                 <Setter Property="ToolTip" Value="{Binding Path=ToolTipView}" />
                             </Style>

@@ -124,7 +124,7 @@
             <Button Name="button_del2"   Content="予約ごと削除" Margin="10,5" />
             <local:ListBoxDragMoverView x:Name="dragMover"      Margin="5,20,5,0" />
         </StackPanel>
-        <ListView x:Name="listView_key" Style="{StaticResource DataListViewStyle}" >
+        <ListView x:Name="listView_key" Style="{StaticResource DataListViewStyle}">
             <ListView.View>
                 <GridView x:Name="gridView_key" />
             </ListView.View>

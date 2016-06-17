@@ -617,18 +617,18 @@
                     <ScrollViewer>
                         <GroupBox Header="各種設定" Margin="6,6,6,0" VerticalAlignment="Top">
                             <StackPanel>
-                                <Button Name="button_set_cm" Content="右クリックメニューの設定" Margin="8" HorizontalAlignment="Left" Click="button_set_cm_Click" />
-                                <CheckBox Name="checkBox_displayAutoAddMissing" Margin="8,4" ToolTip="自動予約登録を削除・変更した場合や、EPGのタイトルが変わった場合などに発生する場合があります">
+                                <Button Name="button_set_cm" Content="右クリックメニューの設定" Margin="8,8,0,2" HorizontalAlignment="Left" Click="button_set_cm_Click" />
+                                <CheckBox Name="checkBox_displayAutoAddMissing" Margin="8,2" ToolTip="自動予約登録を削除・変更した場合や、EPGのタイトルが変わった場合などに発生する場合があります">
                                     <TextBlock TextWrapping="Wrap">自動予約登録(キーワード予約、プログラム予約)を見失った予約を強調表示する<LineBreak/>※EpgTimerNWでは若干もたつく感じがあるかもしれません</TextBlock>
                                 </CheckBox>
-                                <WrapPanel Margin="4">
+                                <WrapPanel Margin="4,0">
                                     <Label Content="番組表などへジャンプしたときの強調表示の継続時間" />
                                     <StackPanel Margin="14,0" Orientation="Horizontal">
                                         <TextBox Name="textBox_DisplayJumpTime" Style="{StaticResource NumberBox}" />
                                         <Label Content="秒" />
                                     </StackPanel>
                                 </WrapPanel>
-                                <WrapPanel Margin="4">
+                                <WrapPanel Margin="4,0">
                                     <Label Content="リスト表示で省略する(録画済み一覧以外)" />
                                     <StackPanel Margin="14,0" Orientation="Horizontal">
                                         <CheckBox Name="checkBox_resNoYear" Content="'年'" Margin="4,0" />
@@ -643,42 +643,52 @@
                                         <Label Content="時まで" />
                                     </StackPanel>
                                 </WrapPanel>
-                                <CheckBox Name="checkBox_displayPresetOnSearch" Margin="8,4">
+                                <CheckBox Name="checkBox_displayPresetOnSearch" Margin="8,2">
                                     <TextBlock TextWrapping="Wrap">検索/キーワード予約ダイアログの録画設定タブにプリセットを表示する</TextBlock>
                                 </CheckBox>
-                                <CheckBox Name="checkBox_nekopandaToolTip" Margin="8,4">
+                                <CheckBox Name="checkBox_nekopandaToolTip" Margin="8,2">
                                     <TextBlock TextWrapping="Wrap">自動予約登録画面で録画予約項目をツールチップ表示する</TextBlock>
                                 </CheckBox>
-                                <WrapPanel Margin="8,4">
+                                <WrapPanel Margin="8,2">
                                     <CheckBox Name="checkBox_NotNoStyle" Content="テーマを適用する" Checked="checkBox_NotNoStyle_Checked" Unchecked="checkBox_NotNoStyle_Unchecked"/>
                                     <ComboBox Name="comboBox_Style" Margin="20,0" Width="200" IsEnabled="{Binding IsChecked, ElementName=checkBox_NotNoStyle}" SelectionChanged="comboBox_Style_SelectionChanged" />
                                 </WrapPanel>
-                                <StackPanel Margin="8,4">
+                                <WrapPanel Margin="8,2">
                                     <CheckBox Name="checkBox_displayStatus" Content="ステータス表示をする" />
-                                    <CheckBox Name="checkBox_displayStatusNotify" Content="主要操作の操作結果を表示をする" Margin="14,4,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_displayStatus, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                                <GroupBox Header="初期表示画面" Margin="0,6,0,0" >
-                                    <WrapPanel Name="wrapPanel_StartTab" Margin="6,6,0,0" />
-                                </GroupBox>
-                                <DockPanel Margin="0,6,0,0">
-                                    <GroupBox Header="各画面のボタン列を表示する" Margin="0,6,0,0" >
-                                        <StackPanel Orientation="Horizontal" Margin="6,6,0,0">
-                                            <CheckBox Name="checkBox_IsVisibleReserveView"         Content="予約一覧"                 Margin="0,0,12,0" />
-                                            <CheckBox Name="checkBox_IsVisibleRecInfoView"         Content="録画済み一覧"             Margin="0,0,12,0" />
-                                            <CheckBox Name="checkBox_IsVisibleAutoAddView"         Content="自動予約登録（"           Margin="0,0,12,0" />
-                                            <CheckBox Name="checkBox_IsVisibleAutoAddViewMoveOnly" Content="「並び替え」のみ表示　）" Margin="-6,0,12,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_IsVisibleAutoAddView, UpdateSourceTrigger=PropertyChanged}"/>
-                                        </StackPanel>
-                                    </GroupBox>
-                                    <GroupBox Header="各画面のボタン列の位置" Margin="0,6,0,0" >
-                                        <WrapPanel Name="wrapPanel_MainViewButtonsDock" Margin="6,6,0,0">
+                                    <CheckBox Name="checkBox_displayStatusNotify" Content="主要操作の操作結果を表示をする" Margin="20,0,0,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_displayStatus, UpdateSourceTrigger=PropertyChanged}" />
+                                </WrapPanel>
+                                <WrapPanel>
+                                    <GroupBox Header="初期表示画面" Margin="0,2,0,0" >
+                                        <WrapPanel Name="wrapPanel_StartTab" Margin="0,4,0,0">
                                             <WrapPanel.Resources>
                                                 <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
-                                                    <Setter Property="Margin" Value="0,0,12,0"/>
+                                                    <Setter Property="Margin" Value="6,0"/>
                                                 </Style>
                                             </WrapPanel.Resources>
                                         </WrapPanel>
                                     </GroupBox>
-                                </DockPanel>
+                                    <GroupBox Header="各画面のボタン列を表示する" Margin="0,2,0,0" >
+                                        <WrapPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                            <CheckBox Name="checkBox_IsVisibleReserveView"             Content="予約一覧"             Margin="6,0" />
+                                            <CheckBox Name="checkBox_IsVisibleRecInfoView"             Content="録画済み一覧"         Margin="6,0" />
+                                            <CheckBox Name="checkBox_IsVisibleAutoAddView"             Content="自動予約登録"         Margin="6,0" />
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="（" />
+                                                <CheckBox Name="checkBox_IsVisibleAutoAddViewMoveOnly" Content="「並び替え」のみ表示" Margin="6,0" IsEnabled="{Binding Path=IsChecked, ElementName=checkBox_IsVisibleAutoAddView, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBlock Text="）" />
+                                            </StackPanel>
+                                        </WrapPanel>
+                                    </GroupBox>
+                                    <GroupBox Header="各画面のボタン列の位置" Margin="0,2,0,0" >
+                                        <WrapPanel Name="wrapPanel_MainViewButtonsDock" Margin="0,4,0,0">
+                                            <WrapPanel.Resources>
+                                                <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
+                                                    <Setter Property="Margin" Value="6,0"/>
+                                                </Style>
+                                            </WrapPanel.Resources>
+                                        </WrapPanel>
+                                    </GroupBox>
+                                </WrapPanel>
                             </StackPanel>
                         </GroupBox>
                     </ScrollViewer>

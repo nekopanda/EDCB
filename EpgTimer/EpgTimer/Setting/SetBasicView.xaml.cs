@@ -9,23 +9,12 @@ using System.Reflection;
 
 namespace EpgTimer.Setting
 {
-    //BonDriver一覧の表示・設定用クラス
-    public class TunerInfo
-    {
-        public TunerInfo(string bon) { BonDriver = bon; }
-        public String BonDriver { get; set; }
-        public String TunerNum { get; set; }
-        public String EPGNum { get; set; }
-        public bool IsEpgCap { get; set; }
-        public override string ToString() { return BonDriver; }
-    }
-
     /// <summary>
     /// SetBasicView.xaml の相互作用ロジック
     /// </summary>
     public partial class SetBasicView : UserControl
     {
-        private ObservableCollection<EpgCaptime> timeList;
+        private ObservableCollection<EpgCaptime> timeList = new ObservableCollection<EpgCaptime>();
         private List<ServiceViewItem> serviceList;
 
         public bool IsChangeSettingPath { get; private set; }
@@ -187,6 +176,14 @@ namespace EpgTimer.Setting
                     {
                         checkBox_cs2.IsChecked = false;
                     }
+                    if (IniFileHandler.GetPrivateProfileInt("SET", "CS3BasicOnly", 0, SettingPath.CommonIniPath) == 1)
+                    {
+                        checkBox_cs3.IsChecked = true;
+                    }
+                    else
+                    {
+                        checkBox_cs3.IsChecked = false;
+                    }
 
                     timeList = new ObservableCollection<EpgCaptime>();
                     int capCount = IniFileHandler.GetPrivateProfileInt("EPG_CAP", "Count", 0, SettingPath.TimerSrvIniPath);
@@ -198,6 +195,7 @@ namespace EpgTimer.Setting
                         item.BSBasicOnly = checkBox_bs.IsChecked == true;
                         item.CS1BasicOnly = checkBox_cs1.IsChecked == true;
                         item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
+                        item.CS3BasicOnly = checkBox_cs3.IsChecked == true;
                         timeList.Add(item);
                     }
                     else
@@ -214,19 +212,21 @@ namespace EpgTimer.Setting
                             {
                                 item.IsSelected = false;
                             }
-                            // 取得種別(bit0(LSB)=BS,bit1=CS1,bit2=CS2)。負値のときは共通設定に従う
+                            // 取得種別(bit0(LSB)=BS,bit1=CS1,bit2=CS2,bit3=CS3)。負値のときは共通設定に従う
                             int flags = IniFileHandler.GetPrivateProfileInt("EPG_CAP", i.ToString() + "BasicOnlyFlags", -1, SettingPath.TimerSrvIniPath);
                             if (flags >= 0)
                             {
                                 item.BSBasicOnly = (flags & 1) != 0;
                                 item.CS1BasicOnly = (flags & 2) != 0;
                                 item.CS2BasicOnly = (flags & 4) != 0;
+                                item.CS3BasicOnly = (flags & 8) != 0;
                             }
                             else
                             {
                                 item.BSBasicOnly = checkBox_bs.IsChecked == true;
                                 item.CS1BasicOnly = checkBox_cs1.IsChecked == true;
                                 item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
+                                item.CS3BasicOnly = checkBox_cs3.IsChecked == true;
                             }
                             timeList.Add(item);
                         }
@@ -421,6 +421,17 @@ namespace EpgTimer.Setting
                         IniFileHandler.WritePrivateProfileString("SET", "CS2BasicOnly", "0", SettingPath.CommonIniPath);
                     }
                 }
+                if (checkBox_cs3.IsEnabled)
+                {
+                    if (checkBox_cs3.IsChecked == true)
+                    {
+                        IniFileHandler.WritePrivateProfileString("SET", "CS3BasicOnly", "1", SettingPath.CommonIniPath);
+                    }
+                    else
+                    {
+                        IniFileHandler.WritePrivateProfileString("SET", "CS3BasicOnly", "0", SettingPath.CommonIniPath);
+                    }
+                }
 
                 foreach (ServiceViewItem info in serviceList)
                 {
@@ -456,7 +467,7 @@ namespace EpgTimer.Setting
                         {
                             IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "Select", "0", SettingPath.TimerSrvIniPath);
                         }
-                        int flags = (item.BSBasicOnly ? 1 : 0) | (item.CS1BasicOnly ? 2 : 0) | (item.CS2BasicOnly ? 4 : 0);
+                        int flags = (item.BSBasicOnly ? 1 : 0) | (item.CS1BasicOnly ? 2 : 0) | (item.CS2BasicOnly ? 4 : 0) | (item.CS3BasicOnly ? 8 : 0);
                         IniFileHandler.WritePrivateProfileString("EPG_CAP", i.ToString() + "BasicOnlyFlags", flags.ToString(), SettingPath.TimerSrvIniPath);
                     }
                 }
@@ -557,28 +568,41 @@ namespace EpgTimer.Setting
             CommonManager.GetFolderNameByDialog(textBox_recInfoFolder, "録画情報保存フォルダの選択");
         }
 
-        //ボタン表示画面の上下ボタンのみ他と同じものを使用する。
-        private BoxExchangeEdit.BoxExchangeEditor bxr = new BoxExchangeEdit.BoxExchangeEditor();
-        private BoxExchangeEdit.BoxExchangeEditor bxb = new BoxExchangeEdit.BoxExchangeEditor();
         private void listBox_Button_Set()
         {
-            //録画設定関係
-            bxr.TargetBox = this.listBox_recFolder;
-
-            //チューナ関係関係
-            bxb.TargetBox = this.listBox_bon;
+            //エスケープキャンセルだけは常に有効にする。
+            var bxr = new BoxExchangeEdit.BoxExchangeEditor(null, this.listBox_recFolder, true);
+            var bxb = new BoxExchangeEdit.BoxExchangeEditor(null, this.listBox_bon, true);
+            var bxt = new BoxExchangeEdit.BoxExchangeEditor(null, this.ListView_time, true);
 
             if (CommonManager.Instance.NWMode == false)
             {
-                bxr.AllowKeyAction();
+                //録画設定関係
                 bxr.AllowDragDrop();
+                bxr.AllowKeyAction();
+                bxr.targetBoxAllowDoubleClick(bxr.TargetBox, (sender, e) => button_rec_open.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
                 button_rec_up.Click += new RoutedEventHandler(bxr.button_Up_Click);
                 button_rec_down.Click += new RoutedEventHandler(bxr.button_Down_Click);
                 button_rec_del.Click += new RoutedEventHandler(bxr.button_Delete_Click);
 
+                //チューナ関係関係
                 bxb.AllowDragDrop();
                 button_bon_up.Click += new RoutedEventHandler(bxb.button_Up_Click);
                 button_bon_down.Click += new RoutedEventHandler(bxb.button_Down_Click);
+
+                //EPG取得関係
+                bxt.TargetItemsSource = timeList;
+                bxt.AllowDragDrop();
+                bxt.AllowKeyAction();
+                button_delTime.Click += new RoutedEventHandler(bxt.button_Delete_Click);
+            }
+        }
+
+        private void listBox_recFolder_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listBox_recFolder.SelectedItem is string)
+            {
+                textBox_recFolder.Text = listBox_recFolder.SelectedItem as string;
             }
         }
 
@@ -822,23 +846,8 @@ namespace EpgTimer.Setting
                     item.BSBasicOnly = checkBox_bs.IsChecked == true;
                     item.CS1BasicOnly = checkBox_cs1.IsChecked == true;
                     item.CS2BasicOnly = checkBox_cs2.IsChecked == true;
+                    item.CS3BasicOnly = checkBox_cs3.IsChecked == true;
                     timeList.Add(item);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
-        }
-
-        private void button_delTime_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (ListView_time.SelectedItem != null)
-                {
-                    EpgCaptime item = ListView_time.SelectedItem as EpgCaptime;
-                    timeList.Remove(item);
                 }
             }
             catch (Exception ex)
@@ -962,7 +971,7 @@ namespace EpgTimer.Setting
                 cnfFile = System.IO.Path.GetTempFileName();
                 keyFile = System.IO.Path.GetTempFileName();
                 csrFile = System.IO.Path.GetTempFileName();
-            
+
                 // openssl configuation file を用意する
                 StreamWriter cnf = File.CreateText(cnfFile);
                 cnf.WriteLine("[req]");
@@ -1067,5 +1076,16 @@ namespace EpgTimer.Setting
             dlg.ShowDialog();
             checkBox_httpAuth.IsChecked = File.Exists(TimerSrvFolder + "\\glpasswd");
         }
+    }
+
+    //BonDriver一覧の表示・設定用クラス
+    public class TunerInfo
+    {
+        public TunerInfo(string bon) { BonDriver = bon; }
+        public String BonDriver { get; set; }
+        public String TunerNum { get; set; }
+        public String EPGNum { get; set; }
+        public bool IsEpgCap { get; set; }
+        public override string ToString() { return BonDriver; }
     }
 }

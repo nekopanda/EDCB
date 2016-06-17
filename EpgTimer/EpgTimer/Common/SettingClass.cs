@@ -1027,6 +1027,7 @@ namespace EpgTimer
         public Dock MainViewButtonsDock { get; set; }
         /// <summary>初期表示画面</summary>
         public CtxmCode StartTab { get; set; }
+
         /// <summary>多重起動を許す</summary>
         public bool ApplyMultiInstance { get; set; }
         /// <summary>ウィンドウのサイズや位置、状態などを保存するリスト</summary>
@@ -1277,6 +1278,7 @@ namespace EpgTimer
             IsVisibleAutoAddView = true;
             IsVisibleAutoAddViewMoveOnly = false;
             MainViewButtonsDock = Dock.Right;
+            StartTab = CtxmCode.ReserveView;
         }
 
         [NonSerialized()]

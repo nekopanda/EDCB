@@ -605,7 +605,7 @@ namespace EpgTimer
                         box.Items.Insert(index == 0 ? 0 : index + 1, item);
 
                         //ScrollIntoView()は遅延して実行されるので、実行後にダミーを削除する。
-                        Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() => box.Items.Remove(item)), DispatcherPriority.Loaded/*ContextIdle*/);
+                        Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() => box.Items.Remove(item)), DispatcherPriority.Loaded);
                     }
                 }
 
