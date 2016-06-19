@@ -1054,6 +1054,12 @@ namespace EpgTimer
         public int InfoWindowItemFilterLevel { get; set; }
         /// <summary>予約簡易表示のプログレスバーの選択</summary>
         public int InfoWindowItemProgressBarType { get; set; }
+        /// <summary>予約簡易表示のプログレスバーの色</summary>
+        public List<string> InfoWindowItemProgressBarColors { get; set; }
+        /// <summary>予約簡易表示のプログレスバーの色 (カスタム用)</summary>
+        public List<UInt32> InfoWindowItemProgressBarCustColors { get; set; }
+        /// <summary>予約簡易表示のプログレスバーの背景色を透明にする</summary>
+        public bool InfoWindowItemProgressBarTransparent { get; set; }
         /// <summary>予約簡易表示の表示制限件数</summary>
         public int InfoWindowItemTopN { get; set; }
         /// <summary>予約簡易表示の表示範囲1[秒]</summary>
@@ -1262,6 +1268,9 @@ namespace EpgTimer
             InfoWindowBasedOnBroadcast = true;
             InfoWindowItemFilterLevel = 10;
             InfoWindowItemProgressBarType = 1;
+            InfoWindowItemProgressBarColors = new List<string>();
+            InfoWindowItemProgressBarCustColors = new List<UInt32>();
+            InfoWindowItemProgressBarTransparent = true;
             InfoWindowItemTopN = 10;
             InfoWindowItemLevel1Seconds = 0;
             InfoWindowItemLevel2Seconds = 15 * 60;
@@ -1457,7 +1466,21 @@ namespace EpgTimer
                 }
                 _FillList(Instance.StatCustColors, 0xFFFFFFFF, num);
 
-                //予約状態列文字色
+
+                //予約簡易表示のプログレスバー色
+                num = 2;
+                if (Instance.InfoWindowItemProgressBarColors.Count < num)
+                {
+                    defColors = new List<string>
+                    {
+                        "LightGreen", // Foreground
+                        "Transparent" // Background
+                    };
+                    _FillList(Instance.InfoWindowItemProgressBarColors, defColors);
+                }
+                _FillList(Instance.InfoWindowItemProgressBarCustColors, 0xFFFFFFFF, num);
+
+                //予約簡易表示の予約状態列背景色
                 num = 5;
                 if (Instance.InfoWindowItemBgColors.Count < num)
                 {

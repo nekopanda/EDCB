@@ -94,6 +94,7 @@
     <Compile Include="Common\CallerInfo.cs" />
     <Compile Include="Common\BoxExchangeEditor.cs" />
     <Compile Include="Common\ExceptionLogger.cs" />
+    <Compile Include="DefineClass\Converter.cs" />
     <Compile Include="DefineClass\InfoWindowBase.cs" />
     <Compile Include="DefineClass\InfoWindowViewModel.cs" />
     <Compile Include="DefineClass\ReserveItemLive.cs" />

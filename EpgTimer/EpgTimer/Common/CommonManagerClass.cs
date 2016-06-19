@@ -95,6 +95,7 @@ namespace EpgTimer
         public Brush StatResForeColor { get; private set; }
         public Brush StatRecForeColor { get; private set; }
         public Brush StatOnAirForeColor { get; private set; }
+        public List<Brush> InfoWindowItemProgressBarColors { get; private set; }
         public List<Brush> InfoWindowItemBgColors { get; private set; }
 
         private static CommonManager _instance;
@@ -493,6 +494,10 @@ namespace EpgTimer
             if (RecModeForeColor == null)
             {
                 RecModeForeColor = new List<Brush>();
+            }
+            if (InfoWindowItemProgressBarColors == null)
+            {
+                InfoWindowItemProgressBarColors = new List<Brush>();
             }
             if (InfoWindowItemBgColors == null)
             {
@@ -1595,6 +1600,12 @@ namespace EpgTimer
                 StatResForeColor = _GetColorBrush(Settings.Instance.StatColors[0], Settings.Instance.StatCustColors[0]);
                 StatRecForeColor = _GetColorBrush(Settings.Instance.StatColors[1], Settings.Instance.StatCustColors[1]);
                 StatOnAirForeColor = _GetColorBrush(Settings.Instance.StatColors[2], Settings.Instance.StatCustColors[2]);
+
+                InfoWindowItemProgressBarColors.Clear();
+                for (int i = 0; i < Settings.Instance.InfoWindowItemProgressBarColors.Count; i++)
+                {
+                    InfoWindowItemProgressBarColors.Add(_GetColorBrush(Settings.Instance.InfoWindowItemProgressBarColors[i], Settings.Instance.InfoWindowItemProgressBarCustColors[i]));
+                }
 
                 InfoWindowItemBgColors.Clear();
                 for (int i = 0; i < Settings.Instance.InfoWindowItemBgColors.Count; i++)

@@ -256,6 +256,8 @@ namespace EpgTimer.Setting
                     case 1: radioButton_ProgressBarType1.IsChecked = true; break;
                     case 2: radioButton_ProgressBarType2.IsChecked = true; break;
                 }
+                setColors(groupInfoWinItemProgressBarColors, Settings.Instance.InfoWindowItemProgressBarColors, Settings.Instance.InfoWindowItemProgressBarCustColors);
+                checkBox_bgTransparent.IsChecked = Settings.Instance.InfoWindowItemProgressBarTransparent;
                 textBox_TopN.Text = Settings.Instance.InfoWindowItemTopN.ToString();
                 textBox_iw_item_level1.Text = (Settings.Instance.InfoWindowItemLevel1Seconds / 60.0).ToString();
                 textBox_iw_item_level2.Text = (Settings.Instance.InfoWindowItemLevel2Seconds / 60.0).ToString();
@@ -502,6 +504,8 @@ namespace EpgTimer.Setting
                     radioButton_ProgressBarOff, radioButton_ProgressBarType1, radioButton_ProgressBarType2,
                 }.Where(x => x.IsChecked == true).Select(x => x.Tag).FirstOrDefault();
                 Settings.Instance.InfoWindowItemProgressBarType = progbar != null ? int.Parse(progbar) : 0;
+                getColors(groupInfoWinItemProgressBarColors, Settings.Instance.InfoWindowItemProgressBarColors, Settings.Instance.InfoWindowItemProgressBarCustColors);
+                Settings.Instance.InfoWindowItemProgressBarTransparent = checkBox_bgTransparent.IsChecked == true;
                 Settings.Instance.InfoWindowItemTopN = mutil.MyToNumerical(textBox_TopN, Convert.ToInt32, 10);
                 Settings.Instance.InfoWindowItemLevel1Seconds = mutil.MyToNumerical(textBox_iw_item_level1, Convert.ToInt32, 0) * 60;
                 Settings.Instance.InfoWindowItemLevel2Seconds = mutil.MyToNumerical(textBox_iw_item_level2, Convert.ToInt32, 15) * 60;
