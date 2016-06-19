@@ -133,7 +133,7 @@ namespace EpgTimer
             get { return mutil.GetTooltipBlockStandard(ConvertInfoText()); }
         }
         public virtual String ConvertInfoText() { return ""; }
-        public SolidColorBrush ForeColor
+        public Brush ForeColor
         {
             get
             {
@@ -147,7 +147,7 @@ namespace EpgTimer
                 return CommonManager.Instance.ListDefForeColor;
             }
         }
-        public SolidColorBrush BackColor
+        public Brush BackColor
         {
             get
             {
