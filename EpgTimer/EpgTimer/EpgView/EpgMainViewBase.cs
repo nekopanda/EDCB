@@ -65,33 +65,10 @@ namespace EpgTimer.EpgView
             horizontalViewScroll.Margin = new Thickness(0, 0, SystemParameters.VerticalScrollBarWidth, 0);
         }
 
-        /// <summary>保持情報のクリア</summary>
-#if false
-        public override bool ClearInfo()
-        {
-            base.ClearInfo();
-
-            nowViewTimer.Stop();
-            if (nowLine != null)
-            {
-                programView.canvas.Children.Remove(nowLine);
-            }
-            nowLine = null;
-
-            programView.ClearInfo();
-            timeView.ClearInfo();
-            timeList.Clear();
-            programList.Clear();
-            reserveList.Clear();
-
-            return true;
-        }
-#endif
-
         protected override void UpdateStatusData(int mode = 0)
         {
             this.status[1] = string.Format("番組数:{0}", programList.Count)
-                + vutil.ConvertReserveStatus(reserveList.GetDataList(), "　予約");
+                + ViewUtil.ConvertReserveStatus(reserveList.GetDataList(), "　予約");
         }
 
         /// <summary>現在ライン表示用タイマーイベント呼び出し</summary>

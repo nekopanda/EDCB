@@ -17,7 +17,7 @@ namespace EpgTimer
         
         private RecSettingData recSetting;
         private List<TunerSelectInfo> tunerList = new List<TunerSelectInfo>();
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+        private static CtrlCmdUtil cmd { get { return CommonManager.Instance.CtrlCmd; } }
 
         private bool initLoad = false;
         public RecSettingView()
@@ -100,12 +100,12 @@ namespace EpgTimer
             switch (chgMode)
             {
                 case 0:
-                    CommonManager.Instance.VUtil.SetSpecificChgAppearance(textBox_margineStart);
+                    ViewUtil.SetSpecificChgAppearance(textBox_margineStart);
                     textBox_margineStart.Focus();
                     textBox_margineStart.SelectAll();
                     break;
                 case 1:
-                    CommonManager.Instance.VUtil.SetSpecificChgAppearance(textBox_margineEnd);
+                    ViewUtil.SetSpecificChgAppearance(textBox_margineEnd);
                     textBox_margineEnd.Focus();
                     textBox_margineEnd.SelectAll();
                     break;

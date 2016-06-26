@@ -23,7 +23,7 @@ namespace EpgTimer
         private TaskTrayClass taskTray = null;
         private bool serviceMode = false;
         private Dictionary<string, Button> buttonList = new Dictionary<string, Button>();
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+        private static CtrlCmdUtil cmd { get { return CommonManager.Instance.CtrlCmd; } }
 
         private MenuBinds mBinds = new MenuBinds();
 
@@ -1143,7 +1143,7 @@ namespace EpgTimer
             }
             else
             {
-                CommonManager.Instance.MUtil.OpenSearchEpgDialog();
+                MenuUtil.OpenSearchEpgDialog();
             }
         }
 

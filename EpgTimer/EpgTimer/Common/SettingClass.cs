@@ -583,61 +583,61 @@ namespace EpgTimer
         public string FontName
         {
             get { return fontName; }
-            set { fontName = value; CommonManager.Instance.VUtil.ItemFontNormal = null; }
+            set { fontName = value; ViewUtil.ItemFontNormal = null; }
         }
         /// <summary>番組表のタイトル名以外に使うフォントサイズ</summary>
         public double FontSize
         {
             get { return fontSize; }
-            set { fontSize = value; CommonManager.Instance.VUtil.ItemFontNormal = null; }
+            set { fontSize = value; ViewUtil.ItemFontNormal = null; }
         }
         /// <summary>番組表のタイトル名に使うフォント名</summary>
         public string FontNameTitle
         {
             get { return fontNameTitle; }
-            set { fontNameTitle = value; CommonManager.Instance.VUtil.ItemFontTitle = null; }
+            set { fontNameTitle = value; ViewUtil.ItemFontTitle = null; }
         }
         /// <summary>番組表のタイトル名に使うフォントサイズ</summary>
         public double FontSizeTitle
         {
             get { return fontSizeTitle; }
-            set { fontSizeTitle = value; CommonManager.Instance.VUtil.ItemFontTitle = null; }
+            set { fontSizeTitle = value; ViewUtil.ItemFontTitle = null; }
         }
         /// <summary>番組表のタイトル名に太字を使う</summary>
         public bool FontBoldTitle
         {
             get { return fontBoldTitle; }
-            set { fontBoldTitle = value; CommonManager.Instance.VUtil.ItemFontTitle = null; }
+            set { fontBoldTitle = value; ViewUtil.ItemFontTitle = null; }
         }
         /// <summary>使用予定チューナーのサービス名に使うフォント名</summary>
         public string TunerFontNameService
         {
             get { return tunerFontNameService; }
-            set { tunerFontNameService = value; CommonManager.Instance.VUtil.ItemFontTunerService = null; }
+            set { tunerFontNameService = value; ViewUtil.ItemFontTunerService = null; }
         }
         /// <summary>使用予定チューナーのサービス名に使うフォントサイズ</summary>
         public double TunerFontSizeService
         {
             get { return tunerFontSizeService; }
-            set { tunerFontSizeService = value; CommonManager.Instance.VUtil.ItemFontTunerService = null; }
+            set { tunerFontSizeService = value; ViewUtil.ItemFontTunerService = null; }
         }
         /// <summary>使用予定チューナーのサービス名に太字を使う</summary>
         public bool TunerFontBoldService
         {
             get { return tunerFontBoldService; }
-            set { tunerFontBoldService = value; CommonManager.Instance.VUtil.ItemFontTunerService = null; }
+            set { tunerFontBoldService = value; ViewUtil.ItemFontTunerService = null; }
         }
         /// <summary>使用予定チューナーのサービス名以外に使うフォント名</summary>
         public string TunerFontName
         {
             get { return tunerFontName; }
-            set { tunerFontName = value; CommonManager.Instance.VUtil.ItemFontTunerNormal = null; }
+            set { tunerFontName = value; ViewUtil.ItemFontTunerNormal = null; }
         }
         /// <summary>使用予定チューナーのサービス名以外に使うフォントサイズ</summary>
         public double TunerFontSize
         {
             get { return tunerFontSize; }
-            set { tunerFontSize = value; CommonManager.Instance.VUtil.ItemFontTunerNormal = null; }
+            set { tunerFontSize = value; ViewUtil.ItemFontTunerNormal = null; }
         }
 
         /// <summary>番組表でカスタマイズ表示を行う</summary>
@@ -1737,19 +1737,19 @@ namespace EpgTimer
 
         public double FontHeight
         {
-            get { return FontSize * CommonManager.Instance.VUtil.ItemFontNormal.GlyphType.Height; }
+            get { return FontSize * ViewUtil.ItemFontNormal.GlyphType.Height; }
         }
         public double FontHeightTitle
         {
-            get { return FontSizeTitle * CommonManager.Instance.VUtil.ItemFontTitle.GlyphType.Height; }
+            get { return FontSizeTitle * ViewUtil.ItemFontTitle.GlyphType.Height; }
         }
         public double TunerFontHeight
         {
-            get { return tunerFontSize * CommonManager.Instance.VUtil.ItemFontTunerNormal.GlyphType.Height; }
+            get { return tunerFontSize * ViewUtil.ItemFontTunerNormal.GlyphType.Height; }
         }
         public double TunerFontHeightService
         {
-            get { return tunerFontSizeService * CommonManager.Instance.VUtil.ItemFontTunerService.GlyphType.Height; }
+            get { return tunerFontSizeService * ViewUtil.ItemFontTunerService.GlyphType.Height; }
         }
 
         public List<string> GetViewButtonAllItems()

@@ -63,9 +63,9 @@ namespace EpgTimer.Setting
                 // 保存できない項目は IsEnabled = false にする
                 if (IniFileHandler.CanUpdateInifile == false)
                 {
-                    CommonManager.Instance.VUtil.DisableControlChildren(tabItem2);
+                    ViewUtil.DisableControlChildren(tabItem2);
                     grid_tuner.IsEnabled = true;
-                    CommonManager.Instance.VUtil.ChangeChildren(grid_tuner, false);
+                    ViewUtil.ChangeChildren(grid_tuner, false);
                 }
                 listBox_bon.IsEnabled = IniFileHandler.CanUpdateInifile;
 
@@ -118,7 +118,7 @@ namespace EpgTimer.Setting
                 // 保存できない項目は IsEnabled = false にする
                 if (IniFileHandler.CanUpdateInifile == false)
                 {
-                    CommonManager.Instance.VUtil.DisableControlChildren(tabItem3);
+                    ViewUtil.DisableControlChildren(tabItem3);
                 }
                 listView_service.IsEnabled = IniFileHandler.CanUpdateInifile;
 
@@ -133,7 +133,7 @@ namespace EpgTimer.Setting
 
                     try
                     {
-                        foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+                        foreach (ChSet5Item info in ChSet5.ChList.Values)
                         {
                             ServiceViewItem item = new ServiceViewItem(info);
                             if (info.EpgCapFlag == 1)
@@ -254,7 +254,7 @@ namespace EpgTimer.Setting
             // 保存できない項目は IsEnabled = false にする
             if (CommonManager.Instance.NWMode == true)
             {
-                CommonManager.Instance.VUtil.DisableControlChildren(tabItem4);
+                ViewUtil.DisableControlChildren(tabItem4);
             }
             else
             {
@@ -440,11 +440,11 @@ namespace EpgTimer.Setting
                     {
                         if (info.IsSelected == true)
                         {
-                            ChSet5.Instance.ChList[key].EpgCapFlag = 1;
+                            ChSet5.ChList[key].EpgCapFlag = 1;
                         }
                         else
                         {
-                            ChSet5.Instance.ChList[key].EpgCapFlag = 0;
+                            ChSet5.ChList[key].EpgCapFlag = 0;
                         }
                     }
                     catch
@@ -575,6 +575,8 @@ namespace EpgTimer.Setting
             var bxb = new BoxExchangeEdit.BoxExchangeEditor(null, this.listBox_bon, true);
             var bxt = new BoxExchangeEdit.BoxExchangeEditor(null, this.ListView_time, true);
 
+            listBox_recFolder.SelectionChanged += ViewUtil.ListBox_TextBoxSyncSelectionChanged(listBox_recFolder, textBox_recFolder);
+
             if (CommonManager.Instance.NWMode == false)
             {
                 //録画設定関係
@@ -584,6 +586,7 @@ namespace EpgTimer.Setting
                 button_rec_up.Click += new RoutedEventHandler(bxr.button_Up_Click);
                 button_rec_down.Click += new RoutedEventHandler(bxr.button_Down_Click);
                 button_rec_del.Click += new RoutedEventHandler(bxr.button_Delete_Click);
+                button_rec_add.Click += ViewUtil.ListBox_TextCheckAdd(listBox_recFolder, textBox_recFolder);
 
                 //チューナ関係関係
                 bxb.AllowDragDrop();
@@ -595,14 +598,8 @@ namespace EpgTimer.Setting
                 bxt.AllowDragDrop();
                 bxt.AllowKeyAction();
                 button_delTime.Click += new RoutedEventHandler(bxt.button_Delete_Click);
-            }
-        }
 
-        private void listBox_recFolder_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (listBox_recFolder.SelectedItem is string)
-            {
-                textBox_recFolder.Text = listBox_recFolder.SelectedItem as string;
+                new BoxExchangeEdit.BoxExchangeEditor(null, this.listView_service, true);
             }
         }
 
@@ -627,62 +624,6 @@ namespace EpgTimer.Setting
         private void button_rec_open_Click(object sender, RoutedEventArgs e)
         {
             CommonManager.GetFolderNameByDialog(textBox_recFolder, "録画フォルダの選択");
-        }
-
-        private void button_rec_add_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (String.IsNullOrEmpty(textBox_recFolder.Text) == false)
-                {
-                    foreach (var info in listBox_recFolder.Items)
-                    {
-                        if (String.Compare(textBox_recFolder.Text, info.ToString(), true) == 0)
-                        {
-                            MessageBox.Show("すでに追加されています");
-                            return;
-                        }
-                    }
-
-                    // 追加対象のフォルダーの空き容量をサーバーに問い合わせてみる
-                    // SendEnumRecFolders にフォルダー名を指定した場合、そのフォルダーの空き容量を返してくる
-                    var folders = new List<RecFolderInfo>();
-                    if (CommonManager.Instance.CtrlCmd.SendEnumRecFolders(textBox_recFolder.Text, ref folders) != ErrCode.CMD_SUCCESS)
-                    {
-                        if (CommonManager.Instance.NW.IsConnected == false)
-                        {
-                            if (System.IO.Directory.Exists(textBox_recFolder.Text))
-                            {
-                                //サーバーが問い合わせに対応していないようなので、フォルダー名だけ登録する
-                                folders.Add(new RecFolderInfo(textBox_recFolder.Text));
-                            }
-                            else
-                            {
-                                MessageBox.Show("フォルダーが存在するか確認してください。");
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            MessageBox.Show("EpgTimerNW ではフォルダーの追加は出来ません。");
-                            return;
-                        }
-                    }
-                    if (folders.Count == 1)
-                    {
-                        listBox_recFolder.Items.Add(new UserCtrlView.BGBarListBoxItem(folders[0]));
-                    }
-                    else
-                    {
-                        // SendEnumRecFolders でフォルダーの空き容量が取得できなかった場合
-                        MessageBox.Show("サーバーからアクセスできるフォルダーか確認してください。");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
         }
 
         private void button_shortCut_Click(object sender, RoutedEventArgs e)

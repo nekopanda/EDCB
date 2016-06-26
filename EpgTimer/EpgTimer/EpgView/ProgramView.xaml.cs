@@ -233,8 +233,8 @@ namespace EpgTimer.EpgView
                         canvas.Children.RemoveAt(i--);
                     }
                 }
-                var itemFontNormal = CommonManager.Instance.VUtil.ItemFontNormal;
-                var itemFontTitle = CommonManager.Instance.VUtil.ItemFontTitle;
+                var itemFontNormal = ViewUtil.ItemFontNormal;
+                var itemFontTitle = ViewUtil.ItemFontTitle;
                 double totalWidth = 0;
                 foreach (var programList in programGroupList)
                 {

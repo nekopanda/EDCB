@@ -15,9 +15,6 @@ namespace EpgTimer
 
     public class ListViewController<T> where T : class
     {
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
-        private ViewUtil vutil = CommonManager.Instance.VUtil;
-
         public GridViewSelector gvSelector { get; private set; }
         public GridViewSorter gvSorter { get; private set; }
         public List<T> dataList { get; set; }

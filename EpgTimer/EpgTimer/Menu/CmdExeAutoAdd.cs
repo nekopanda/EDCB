@@ -14,21 +14,21 @@ namespace EpgTimer
         public CmdExeAutoAdd(Control owner) : base(owner) { }
         protected override void mc_ChangeKeyEnabled(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = mutil.AutoAddChangeKeyEnabled(dataList, (byte)CmdExeUtil.ReadIdData(e, 0, 1) == 0);
+            IsCommandExecuted = MenuUtil.AutoAddChangeKeyEnabled(dataList, (byte)CmdExeUtil.ReadIdData(e, 0, 1) == 0);
         }
         protected override void mc_ChangeOnOffKeyEnabled(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = mutil.AutoAddChangeOnOffKeyEnabled(dataList);
+            IsCommandExecuted = MenuUtil.AutoAddChangeOnOffKeyEnabled(dataList);
         }
         protected override void mc_ChangeRecSetting(object sender, ExecutedRoutedEventArgs e)
         {
             if (mcc_chgRecSetting(e) == false) return;
-            IsCommandExecuted = mutil.AutoAddChange(dataList);
+            IsCommandExecuted = MenuUtil.AutoAddChange(dataList);
         }
         protected override void mc_ChgBulkRecSet(object sender, ExecutedRoutedEventArgs e)
         {
-            if (mutil.ChangeBulkSet(dataList.RecSettingList(), this.Owner, typeof(T) == typeof(ManualAutoAddData)) == false) return;
-            IsCommandExecuted = mutil.AutoAddChange(dataList);
+            if (MenuUtil.ChangeBulkSet(dataList.RecSettingList(), this.Owner, typeof(T) == typeof(ManualAutoAddData)) == false) return;
+            IsCommandExecuted = MenuUtil.AutoAddChange(dataList);
         }
         protected override void mc_Delete(object sender, ExecutedRoutedEventArgs e)
         {
@@ -42,22 +42,22 @@ namespace EpgTimer
                 if (CmdExeUtil.CheckKeyboardDeleteCancel(e, dataList.Select(data => data.DataTitle).ToList()) == true)
                 { return; }
             }
-            IsCommandExecuted = mutil.AutoAddDelete(dataList);
+            IsCommandExecuted = MenuUtil.AutoAddDelete(dataList);
         }
         protected override void mc_Delete2(object sender, ExecutedRoutedEventArgs e)
         {
             if (CmdExeUtil.CheckAllProcCancel(e, dataList, cmdCheckType.Delete2) == true) return;
-            IsCommandExecuted = mutil.AutoAddDelete(dataList, cmdDeleteType.Delete2);
+            IsCommandExecuted = MenuUtil.AutoAddDelete(dataList, cmdDeleteType.Delete2);
         }
         protected override void mc_Delete3(object sender, ExecutedRoutedEventArgs e)
         {
             if (CmdExeUtil.CheckAllProcCancel(e, dataList, cmdCheckType.Delete3) == true) return;
-            IsCommandExecuted = mutil.AutoAddDelete(dataList, cmdDeleteType.Delete3);
+            IsCommandExecuted = MenuUtil.AutoAddDelete(dataList, cmdDeleteType.Delete3);
         }
         protected override void mc_AdjustReserve(object sender, ExecutedRoutedEventArgs e)
         {
             if (CmdExeUtil.CheckAllProcCancel(e, dataList, cmdCheckType.AdjustReserve) == true) return;
-            IsCommandExecuted = mutil.AutoAddChangeSyncReserve(dataList);
+            IsCommandExecuted = MenuUtil.AutoAddChangeSyncReserve(dataList);
         }
         protected override void mc_JumpTable(object sender, ExecutedRoutedEventArgs e)
         {
@@ -93,11 +93,11 @@ namespace EpgTimer
         public CmdExeManualAutoAdd(Control owner) : base(owner) { _copyItemData = ManualAutoAddDataEx.CopyTo; }
         protected override void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = true == mutil.OpenChangeManualAutoAddDialog(dataList[0], this.Owner);
+            IsCommandExecuted = true == MenuUtil.OpenChangeManualAutoAddDialog(dataList[0], this.Owner);
         }
         protected override void mc_ShowAddDialog(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = true == mutil.OpenAddManualAutoAddDialog(Owner);
+            IsCommandExecuted = true == MenuUtil.OpenAddManualAutoAddDialog(Owner);
         }
     }
 
@@ -107,16 +107,16 @@ namespace EpgTimer
         public CmdExeEpgAutoAdd(Control owner) : base(owner) { _copyItemData = EpgAutoAddDataEx.CopyTo; }
         protected override void mc_ShowDialog(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = true == mutil.OpenChangeEpgAutoAddDialog(dataList[0]);
+            IsCommandExecuted = true == MenuUtil.OpenChangeEpgAutoAddDialog(dataList[0]);
         }
         protected override void mc_ShowAddDialog(object sender, ExecutedRoutedEventArgs e)
         {
-            IsCommandExecuted = true == mutil.OpenAddEpgAutoAddDialog();
+            IsCommandExecuted = true == MenuUtil.OpenAddEpgAutoAddDialog();
         }
         protected override void mc_ChgGenre(object sender, ExecutedRoutedEventArgs e)
         {
-            if (mutil.ChgGenre(dataList.RecSearchKeyList(), this.Owner) == false) return;
-            IsCommandExecuted = mutil.AutoAddChange(dataList);
+            if (MenuUtil.ChgGenre(dataList.RecSearchKeyList(), this.Owner) == false) return;
+            IsCommandExecuted = MenuUtil.AutoAddChange(dataList);
         }
         protected override void mc_CopyNotKey(object sender, ExecutedRoutedEventArgs e)
         {
@@ -136,7 +136,7 @@ namespace EpgTimer
                 { return; }
             }
 
-            IsCommandExecuted = mutil.EpgAutoAddChangeNotKey(dataList);
+            IsCommandExecuted = MenuUtil.EpgAutoAddChangeNotKey(dataList);
         }
     }
 }

@@ -10,9 +10,6 @@ namespace EpgTimer
     //キーワード予約とプログラム自動登録の共通項目
     public class AutoAddDataItem : RecSettingItem
     {
-        protected MenuUtil mutil = CommonManager.Instance.MUtil;
-        protected ViewUtil vutil = CommonManager.Instance.VUtil;
-
         protected AutoAddData _data;
         public AutoAddData Data { get { return _data; } set { _data = value; } }
 
@@ -125,12 +122,12 @@ namespace EpgTimer
             {
                 if (Settings.Instance.NoToolTip == true) return null;
                 //
-                return mutil.GetTooltipBlockStandard(ConvertInfoText());
+                return MenuUtil.GetTooltipBlockStandard(ConvertInfoText());
             }
         }
         public virtual TextBlock ToolTipViewAutoAddSearch
         {
-            get { return mutil.GetTooltipBlockStandard(ConvertInfoText()); }
+            get { return MenuUtil.GetTooltipBlockStandard(ConvertInfoText()); }
         }
         public virtual String ConvertInfoText() { return ""; }
         public Brush ForeColor
@@ -281,7 +278,7 @@ namespace EpgTimer
                 {
                     string network1 = "?";
                     ChSet5Item chSet5Item1;
-                    if (ChSet5.Instance.ChList.TryGetValue(service1, out chSet5Item1) == true)
+                    if (ChSet5.ChList.TryGetValue(service1, out chSet5Item1) == true)
                     {
                         network1 = CommonManager.ConvertNetworkNameText(chSet5Item1.ONID, true);
                     }
@@ -315,7 +312,7 @@ namespace EpgTimer
             {
                 if (view != "") { view += ", "; }
                 ChSet5Item chSet5Item1;
-                if (ChSet5.Instance.ChList.TryGetValue(service1, out chSet5Item1) == true)
+                if (ChSet5.ChList.TryGetValue(service1, out chSet5Item1) == true)
                 {
                     view += chSet5Item1.ServiceName + (withNetwork == true ? "(" + CommonManager.ConvertNetworkNameText(chSet5Item1.ONID) + ")" : "");
                 }
@@ -341,7 +338,7 @@ namespace EpgTimer
                 //nekopanda版ツールチップ表示
                 if (Settings.Instance.RecItemToolTip == true)
                 {
-                    return mutil.GetTooltipBlockStandard("録画予約\r\n" + ReserveProgramText + "\r\n\r\n録画済み\r\n" + RecFileText);
+                    return MenuUtil.GetTooltipBlockStandard("録画予約\r\n" + ReserveProgramText + "\r\n\r\n録画済み\r\n" + RecFileText);
                 }
                 return base.ToolTipView;
             }
@@ -373,7 +370,7 @@ namespace EpgTimer
                 {
                     return Brushes.Gainsboro;
                 }
-                return vutil.EpgDataContentBrush(EpgAutoAddInfo.searchInfo.contentList);
+                return ViewUtil.EpgDataContentBrush(EpgAutoAddInfo.searchInfo.contentList);
             }
         }
 

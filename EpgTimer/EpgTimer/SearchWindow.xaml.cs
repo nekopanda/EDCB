@@ -13,13 +13,11 @@ namespace EpgTimer
     public partial class SearchWindow : Window
     {
         //よく使うので
-        static MainWindow mainWindow { get { return (MainWindow)Application.Current.MainWindow; } }
-        static EpgAutoAddView autoAddView { get { return mainWindow.autoAddView.epgAutoAddView; } }
+        private static MainWindow mainWindow { get { return (MainWindow)Application.Current.MainWindow; } }
+        private static EpgAutoAddView autoAddView { get { return mainWindow.autoAddView.epgAutoAddView; } }
 
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
-        private ViewUtil vutil = CommonManager.Instance.VUtil;
-        private MenuManager mm = CommonManager.Instance.MM;
+        private static CtrlCmdUtil cmd { get { return CommonManager.Instance.CtrlCmd; } }
+        private static MenuManager mm { get { return CommonManager.Instance.MM; } }
 
         private CmdExeReserve mc; //予約系コマンド集
         private MenuBinds mBinds = new MenuBinds();
@@ -128,7 +126,7 @@ namespace EpgTimer
                 SetRecSetting(Settings.Instance.RecPresetList[0].RecPresetData);
 
                 //notify残ってれば更新。通常残ってないはず。
-                vutil.ReloadReserveData();
+                ViewUtil.ReloadReserveData();
 
                 //EPG自動予約登録と、登録された予約、および録画済みファイルとの関連付けを実装
                 CommonManager.Instance.DB.EpgAutoAddUpdated += DB_EpgAutoAddUpdated;
@@ -278,11 +276,11 @@ namespace EpgTimer
         {
             string s1 = null;
             string s2 = "";
-            if (mode == 0) s1 = vutil.ConvertSearchItemStatus(lstCtrl.dataList, "検索数");
+            if (mode == 0) s1 = ViewUtil.ConvertSearchItemStatus(lstCtrl.dataList, "検索数");
             if (Settings.Instance.DisplayStatus == true)
             {
                 List<SearchItem> sList = lstCtrl.GetSelectedItemsList();
-                s2 = sList.Count == 0 ? "" : vutil.ConvertSearchItemStatus(sList, "　選択中");
+                s2 = sList.Count == 0 ? "" : ViewUtil.ConvertSearchItemStatus(sList, "　選択中");
             }
             this.statusBar.SetText(s1, s2);
         }
@@ -311,7 +309,7 @@ namespace EpgTimer
 
                     List<uint> oldlist = CommonManager.Instance.DB.EpgAutoAddList.Keys.ToList();
 
-                    ret = mutil.AutoAddAdd(CommonUtil.ToList(this.GetAutoAddData()));
+                    ret = MenuUtil.AutoAddAdd(CommonUtil.ToList(this.GetAutoAddData()));
                     if (ret == true)
                     {
                         //以降の処理をEpgTimerSrvからの更新通知後に実行すればReload減らせるが、トラブル増えそうなのでこのまま。
@@ -340,7 +338,7 @@ namespace EpgTimer
                 ret = CheckAutoAddChange(e, 1);
                 if (ret == true)
                 {
-                    ret = mutil.AutoAddChange(CommonUtil.ToList(this.GetAutoAddData()));
+                    ret = MenuUtil.AutoAddChange(CommonUtil.ToList(this.GetAutoAddData()));
                 }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
@@ -355,7 +353,7 @@ namespace EpgTimer
                 ret = CheckAutoAddChange(e, 2);
                 if (ret == true)
                 {
-                    ret = mutil.AutoAddDelete(CommonUtil.ToList(CommonManager.Instance.DB.EpgAutoAddList[autoAddID]));
+                    ret = MenuUtil.AutoAddDelete(CommonUtil.ToList(CommonManager.Instance.DB.EpgAutoAddList[autoAddID]));
                     if (ret == true)
                     {
                         SetViewMode(SearchMode.NewAdd);
@@ -393,7 +391,7 @@ namespace EpgTimer
 
             if (proc != 2 && Settings.Instance.CautionManyChange == true && searchKeyView.searchKeyDescView.checkBox_keyDisabled.IsChecked != true)
             {
-                if (mutil.CautionManyMessage(lstCtrl.dataList.GetNoReserveList().Count, "予約追加の確認") == false)
+                if (MenuUtil.CautionManyMessage(lstCtrl.dataList.GetNoReserveList().Count, "予約追加の確認") == false)
                 { return false; }
             }
 
@@ -494,7 +492,7 @@ namespace EpgTimer
                     SearchItem item = lstCtrl.SelectSingleItem();
 
                     EpgSearchKeyInfo defKey = GetSearchKey();
-                    defKey.andKey = mutil.TrimEpgKeyword(item.EventName, CmdExeUtil.IsKeyGesture(e));
+                    defKey.andKey = MenuUtil.TrimEpgKeyword(item.EventName, CmdExeUtil.IsKeyGesture(e));
                     defKey.regExpFlag = 0;
                     defKey.serviceList.Clear();
                     UInt64 sidKey = item.EventInfo.Create64Key();

@@ -10,15 +10,13 @@ using System.Diagnostics;
 
 namespace EpgTimer.Setting
 {
-    using EpgTimer.BoxExchangeEdit;
+    using BoxExchangeEdit;
 
     /// <summary>
     /// SetAppView.xaml の相互作用ロジック
     /// </summary>
     public partial class SetAppView : UserControl
     {
-        private MenuUtil mutil = CommonManager.Instance.MUtil;
-
         private List<String> ngProcessList = new List<String>();
         private String ngMin = "10";
         public bool ngUsePC = false;
@@ -33,9 +31,8 @@ namespace EpgTimer.Setting
 
         private List<string> buttonItem;
         private List<string> taskItem;
-        
-        private Dictionary<UInt64, ServiceViewItem> serviceList = new Dictionary<UInt64, ServiceViewItem>();
-        private List<IEPGStationInfo> stationList = new List<IEPGStationInfo>();
+
+        private List<IEPGStationInfo> stationList;
 
         public bool ServiceStop = false;
 
@@ -57,10 +54,7 @@ namespace EpgTimer.Setting
 
                 tabControl1.SelectedItem = IniFileHandler.CanUpdateInifile ? tabItem1 : tabItem2;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void SetAppView_tabItem1()
@@ -68,7 +62,7 @@ namespace EpgTimer.Setting
             // 保存できない項目は IsEnabled = false にする
             if (IniFileHandler.CanUpdateInifile == false)
             {
-                CommonManager.Instance.VUtil.DisableControlChildren(tabItem1);
+                ViewUtil.DisableControlChildren(tabItem1);
             }
 
             // 読める設定のみ項目に反映させる
@@ -380,22 +374,15 @@ namespace EpgTimer.Setting
 
         private void SetAppView_tabItem6()
         {
-            foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
-            {
-                ServiceViewItem item = new ServiceViewItem(info);
-                serviceList.Add(item.Key, item);
-            }
-            listBox_service.ItemsSource = serviceList.Values;
-
-            stationList = Settings.Instance.IEpgStationList;
-            ReLoadStation();
+            listBox_service.Items.AddItems(ChSet5.ChList.Values.Select(info => new ServiceViewItem(info)));
+            stationList = Settings.Instance.IEpgStationList.ToList();
         }
 
         private void SetAppView_tabItem7()
         {
             if (CommonManager.Instance.NWMode == true)
             {
-                CommonManager.Instance.VUtil.DisableControlChildren(tabItem7);
+                ViewUtil.DisableControlChildren(tabItem7);
             }
 
             if (button_inst.IsEnabled || button_uninst.IsEnabled || button_stop.IsEnabled)
@@ -415,10 +402,7 @@ namespace EpgTimer.Setting
                 SaveSetting_tabItem5();
                 SaveSetting_tabItem6();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         private void SaveSetting_tabItem1()
@@ -583,7 +567,7 @@ namespace EpgTimer.Setting
             }
 
             Settings.Instance.CautionOnRecChange = (checkBox_cautionOnRecChange.IsChecked != false);
-            Settings.Instance.CautionOnRecMarginMin = mutil.MyToNumerical(textBox_cautionOnRecMarginMin, Convert.ToInt32, Settings.Instance.CautionOnRecMarginMin); 
+            Settings.Instance.CautionOnRecMarginMin = MenuUtil.MyToNumerical(textBox_cautionOnRecMarginMin, Convert.ToInt32, Settings.Instance.CautionOnRecMarginMin); 
             Settings.Instance.SyncResAutoAddChange = (checkBox_SyncResAutoAddChange.IsChecked != false);
             Settings.Instance.SyncResAutoAddDelete = (checkBox_SyncResAutoAddDelete.IsChecked != false);
             Settings.Instance.SyncResAutoAddChgNewRes = (checkBox_SyncResAutoAddChgNewRes.IsChecked != false);
@@ -593,7 +577,8 @@ namespace EpgTimer.Setting
         {
             Settings.Instance.ViewButtonShowAsTab = checkBox_showAsTab.IsChecked == true;
             Settings.Instance.SuspendChk = (uint)(checkBox_suspendChk.IsChecked == true ? 1 : 0);
-            Settings.Instance.SuspendChkTime = mutil.MyToNumerical(textBox_suspendChkTime, Convert.ToUInt32, Settings.Instance.SuspendChkTime);
+            Settings.Instance.SuspendChkTime =
+                MenuUtil.MyToNumerical(textBox_suspendChkTime, Convert.ToUInt32, Settings.Instance.SuspendChkTime);
 
             Settings.Instance.ViewButtonList = listBox_viewBtn.Items.OfType<StringItem>().ValueList();
 
@@ -671,20 +656,20 @@ namespace EpgTimer.Setting
 
             Settings.Instance.NoToolTip = (checkBox_noToolTips.IsChecked == true);
             Settings.Instance.NoBallonTips = (checkBox_noBallonTips.IsChecked == true);
-            Settings.Instance.ForceHideBalloonTipSec = mutil.MyToNumerical(textBox_ForceHideBalloonTipSec, Convert.ToInt32, 255, 0, Settings.Instance.ForceHideBalloonTipSec);
+            Settings.Instance.ForceHideBalloonTipSec = MenuUtil.MyToNumerical(textBox_ForceHideBalloonTipSec, Convert.ToInt32, 255, 0, Settings.Instance.ForceHideBalloonTipSec);
             Settings.Instance.AutoSaveNotifyLog = (short)(checkBox_AutoSaveNotifyLog.IsChecked == true ? 1 : 0);
             Settings.Instance.CautionManyChange = (checkBox_cautionManyChange.IsChecked != false);
-            Settings.Instance.CautionManyNum = mutil.MyToNumerical(textBox_cautionManyChange, Convert.ToInt32, Settings.Instance.CautionManyNum); 
+            Settings.Instance.CautionManyNum = MenuUtil.MyToNumerical(textBox_cautionManyChange, Convert.ToInt32, Settings.Instance.CautionManyNum); 
             Settings.Instance.SaveSearchKeyword = (checkBox_saveSearchKeyword.IsChecked != false);
             Settings.Instance.WakeReconnectNW = (checkBox_wakeReconnect.IsChecked == true);
             Settings.Instance.WoLWait = (checkBox_WoLWait.IsChecked == true);
             Settings.Instance.WoLWaitRecconect = (checkBox_WoLWaitRecconect.IsChecked == true);
-            Settings.Instance.WoLWaitSecond = mutil.MyToNumerical(textBox_WoLWaitSecond, Convert.ToDouble, 3600, 1, Settings.Instance.WoLWaitSecond);
+            Settings.Instance.WoLWaitSecond = MenuUtil.MyToNumerical(textBox_WoLWaitSecond, Convert.ToDouble, 3600, 1, Settings.Instance.WoLWaitSecond);
             Settings.Instance.SuspendCloseNW = (checkBox_suspendClose.IsChecked == true);
             Settings.Instance.NgAutoEpgLoadNW = (checkBox_ngAutoEpgLoad.IsChecked == true);
             Settings.Instance.ChkSrvRegistTCP = (checkBox_keepTCPConnect.IsChecked != false);
             Settings.Instance.UpdateTaskText = (checkBox_upDateTaskText.IsChecked == true);
-            Settings.Instance.ChkSrvRegistInterval = mutil.MyToNumerical(textBox_chkTimerInterval, Convert.ToDouble, 1440 * 7, 1, Settings.Instance.ChkSrvRegistInterval);
+            Settings.Instance.ChkSrvRegistInterval = MenuUtil.MyToNumerical(textBox_chkTimerInterval, Convert.ToDouble, 1440 * 7, 1, Settings.Instance.ChkSrvRegistInterval);
 
             Settings.Instance.DefSearchKey = defSearchKey.Clone();
         }
@@ -706,14 +691,14 @@ namespace EpgTimer.Setting
 
         private void SaveSetting_tabItem6()
         {
-            Settings.Instance.IEpgStationList = stationList;
+            Settings.Instance.IEpgStationList = stationList.ToList();
         }
 
         private void button_standbyCtrl_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new SetAppCancelWindow();
             dlg.Owner = CommonUtil.GetTopWindow(this);
-            dlg.processList = this.ngProcessList;
+            dlg.processList = this.ngProcessList.ToList();
             dlg.ngMin = this.ngMin;
             dlg.ngUsePC = this.ngUsePC;
             dlg.ngUsePCMin = this.ngUsePCMin;
@@ -722,7 +707,7 @@ namespace EpgTimer.Setting
 
             if (dlg.ShowDialog() == true)
             {
-                this.ngProcessList = dlg.processList;
+                this.ngProcessList = dlg.processList.ToList();
                 this.ngMin = dlg.ngMin;
                 this.ngUsePC = dlg.ngUsePC;
                 this.ngUsePCMin = dlg.ngUsePCMin;
@@ -735,13 +720,13 @@ namespace EpgTimer.Setting
         {
             var dlg = new SetApp2DelWindow();
             dlg.Owner = CommonUtil.GetTopWindow(this);
-            dlg.extList = this.extList;
-            dlg.delChkFolderList = this.delChkFolderList;
+            dlg.extList = this.extList.ToList();
+            dlg.delChkFolderList = this.delChkFolderList.ToList();
 
             if (dlg.ShowDialog() == true)
             {
-                this.extList = dlg.extList;
-                this.delChkFolderList = dlg.delChkFolderList;
+                this.extList = dlg.extList.ToList();
+                this.delChkFolderList = dlg.delChkFolderList.ToList();
             }
         }
 
@@ -805,6 +790,7 @@ namespace EpgTimer.Setting
             new BoxExchangeEditor(null, this.listBox_service, true);
             var bxi = new BoxExchangeEditor(null, this.listBox_iEPG, true);
             bxi.targetBoxAllowKeyAction(this.listBox_iEPG, new KeyEventHandler((sender, e) => button_del.RaiseEvent(new RoutedEventArgs(Button.ClickEvent))));
+            listBox_iEPG.SelectionChanged += ViewUtil.ListBox_TextBoxSyncSelectionChanged(listBox_iEPG, textBox_station);
         }
         private void drag_drop(object sender, DragEventArgs e, Button add, Button ins)
         {
@@ -874,50 +860,32 @@ namespace EpgTimer.Setting
         private void ReLoadStation()
         {
             listBox_iEPG.Items.Clear();
-            if (listBox_service.SelectedItem != null)
-            {
-                ServiceViewItem item = listBox_service.SelectedItem as ServiceViewItem;
-                foreach (IEPGStationInfo info in stationList)
-                {
-                    if (info.Key == item.Key)
-                    {
-                        listBox_iEPG.Items.Add(info);
-                    }
-                }
-            }
+            if (listBox_service.SelectedItem == null) return;
+            //
+            var key = (listBox_service.SelectedItem as ServiceViewItem).Key;
+            listBox_iEPG.Items.AddItems(stationList.Where(item => item.Key == key));
         }
 
         private void button_add_iepg_Click(object sender, RoutedEventArgs e)
         {
-            if (listBox_service.SelectedItem != null)
+            if (listBox_service.SelectedItem == null) return;
+            //
+            if (stationList.Any(info => info.StationName == textBox_station.Text) == true)
             {
-                ServiceViewItem item = listBox_service.SelectedItem as ServiceViewItem;
-                foreach (IEPGStationInfo info in stationList)
-                {
-                    if (String.Compare(info.StationName, textBox_station.Text) == 0)
-                    {
-                        MessageBox.Show("すでに登録済みです");
-                        return;
-                    }
-                }
-                IEPGStationInfo addItem = new IEPGStationInfo();
-                addItem.StationName = textBox_station.Text;
-                addItem.Key = item.Key;
-
-                stationList.Add(addItem);
-
-                ReLoadStation();
+                MessageBox.Show("すでに追加されています");
+                return;
             }
+            var key = (listBox_service.SelectedItem as ServiceViewItem).Key;
+            stationList.Add(new IEPGStationInfo { StationName = textBox_station.Text, Key = key });
+            ReLoadStation();
         }
 
         private void button_del_iepg_Click(object sender, RoutedEventArgs e)
         {
-            if (listBox_iEPG.SelectedItem != null)
-            {
-                IEPGStationInfo item = listBox_iEPG.SelectedItem as IEPGStationInfo;
-                stationList.Remove(item);
-                ReLoadStation();
-            }
+            if (listBox_service.SelectedItem == null) return;
+            //
+            listBox_iEPG.SelectedItemsList().ForEach(item => stationList.Remove(item as IEPGStationInfo));
+            ReLoadStation();
         }
 
         private void listBox_service_SelectionChanged(object sender, SelectionChangedEventArgs e)

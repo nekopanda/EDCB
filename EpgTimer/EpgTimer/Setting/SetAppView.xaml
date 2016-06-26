@@ -91,7 +91,7 @@
                     <StackPanel Margin="8">
                         <CheckBox Name="checkBox_back_priority" Content="優先度が同じで時間が重なった場合、後の予約を優先する" Margin="0,4,0,0" />
                         <WrapPanel Margin="0,4,0,0">
-                            <CheckBox Name="checkBox_autoDel" Content="HDDの空きが少ない場合、古い録画ファイルを削除する(追加設定で対象フォルダを設定)" Margin="0,4,0,0" />
+                            <CheckBox Name="checkBox_autoDel" Content="HDDの空きが少ない場合、古い録画ファイルを削除する(削除設定で対象を指定)" Margin="0,4,0,0" />
                             <Button Name="button_autoDel" Content="削除設定" Margin="30,4,0,0" Click="button_autoDel_Click" VerticalAlignment="Center" />
                         </WrapPanel>
                         <WrapPanel Margin="0,4,0,0">
@@ -412,7 +412,7 @@
                         </ListBox.ItemContainerStyle>
                     </ListBox>
                     <Label Grid.Column="1" Grid.Row="1" Content="iEPG放送局名" Margin="15,0" />
-                    <ListBox  Grid.Column="1" Grid.Row="2" Name="listBox_iEPG" Margin="15,0" />
+                    <ListBox  Grid.Column="1" Grid.Row="2" Name="listBox_iEPG" Margin="15,0" SelectionMode="Extended" />
                     <TextBox Grid.Column="1" Grid.Row="3" Name="textBox_station" Margin="15,10" />
                     <Button Grid.Column="2" Grid.Row="2" Name="button_del" Content="削除" Click="button_del_iepg_Click" VerticalAlignment="Top" />
                     <Button Grid.Column="2" Grid.Row="3" Name="button_add" Content="追加" Click="button_add_iepg_Click" />

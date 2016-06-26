@@ -9,9 +9,6 @@ namespace EpgTimer
 {
     public class SearchItem : RecSettingItem
     {
-        protected MenuUtil mutil = CommonManager.Instance.MUtil;
-        protected ViewUtil vutil = CommonManager.Instance.VUtil;
-
         protected EpgEventInfo eventInfo = null;
         public virtual EpgEventInfo EventInfo { get { return eventInfo; } set { eventInfo = value; } }
         public ReserveData ReserveInfo { get; set; }
@@ -61,9 +58,9 @@ namespace EpgTimer
                 if (EventInfo != null)
                 {
                     UInt64 serviceKey = EventInfo.Create64Key();
-                    if (ChSet5.Instance.ChList.ContainsKey(serviceKey) == true)
+                    if (ChSet5.ChList.ContainsKey(serviceKey) == true)
                     {
-                        return ChSet5.Instance.ChList[serviceKey].ServiceName;
+                        return ChSet5.ChList[serviceKey].ServiceName;
                     }
                 }
                 return "";
@@ -202,9 +199,9 @@ namespace EpgTimer
             get
             {
                 if (Settings.Instance.NoToolTip == true) return null;
-                if (EventInfo == null) return mutil.GetTooltipBlockStandard("");
+                if (EventInfo == null) return MenuUtil.GetTooltipBlockStandard("");
                 //
-                return mutil.GetTooltipBlockStandard(CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All));
+                return MenuUtil.GetTooltipBlockStandard(CommonManager.Instance.ConvertProgramText(EventInfo, EventInfoTextMode.All));
             }
         }
         public override string ToString()
@@ -293,14 +290,14 @@ namespace EpgTimer
                 }
 
                 //通常表示
-                return vutil.ReserveErrBrush(ReserveInfo);
+                return ViewUtil.ReserveErrBrush(ReserveInfo);
             }
         }
         public Brush BorderBrush
         {
             get
             {
-                return vutil.EpgDataContentBrush(EventInfo);
+                return ViewUtil.EpgDataContentBrush(EventInfo);
             }
         }
     }

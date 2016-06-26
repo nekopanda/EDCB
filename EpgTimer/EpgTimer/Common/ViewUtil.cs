@@ -13,25 +13,16 @@ using System.Reflection;
 
 namespace EpgTimer
 {
-    public class ViewUtil
+    public static class ViewUtil
     {
-        private CtrlCmdUtil cmd = null;
-        private MenuUtil mutil = null;
-
-        public ViewUtil(CtrlCmdUtil ctrlCmd, MenuUtil MUtil)
-        {
-            cmd = ctrlCmd;
-            mutil = MUtil;
-        }
-
-        public Brush EpgDataContentBrush(EpgEventInfo EventInfo)
+        public static Brush EpgDataContentBrush(EpgEventInfo EventInfo)
         {
             if (EventInfo == null) return Brushes.White;
             if (EventInfo.ContentInfo == null) return CommonManager.Instance.CustContentColorList[0x10];
 
             return EpgDataContentBrush(EventInfo.ContentInfo.nibbleList);
         }
-        public Brush EpgDataContentBrush(List<EpgContentData> nibbleList)
+        public static Brush EpgDataContentBrush(List<EpgContentData> nibbleList)
         {
             if (nibbleList != null)
             {
@@ -60,7 +51,7 @@ namespace EpgTimer
             return CommonManager.Instance.CustContentColorList[0x10];
         }
 
-        public Brush ReserveErrBrush(ReserveData ReserveData)
+        public static Brush ReserveErrBrush(ReserveData ReserveData)
         {
             if (ReserveData != null)
             {
@@ -84,13 +75,13 @@ namespace EpgTimer
             return CommonManager.Instance.ResDefBackColor;
         }
         
-        public void SetSpecificChgAppearance(Control obj)
+        public static void SetSpecificChgAppearance(Control obj)
         {
             obj.Background = Brushes.LavenderBlush;
             obj.BorderThickness = new Thickness(2);
         }
 
-        public bool ReloadReserveData(Control Owner = null)
+        public static bool ReloadReserveData(Control Owner = null)
         {
             if (CommonManager.Instance.IsConnected == false) return false;
 
@@ -101,7 +92,7 @@ namespace EpgTimer
         }
         
         //ジャンル絞り込み
-        public bool ContainsContent(EpgEventInfo info, Dictionary<UInt16, UInt16> ContentKindList)
+        public static bool ContainsContent(EpgEventInfo info, Dictionary<UInt16, UInt16> ContentKindList)
         {
             //絞り込み無し
             if (ContentKindList.Count == 0) return true;
@@ -139,7 +130,7 @@ namespace EpgTimer
         }
 
         //パネルアイテムにマージンを適用。
-        public void ApplyMarginForPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
+        public static void ApplyMarginForPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
         {
             int StartMargin = resInfo.RecSetting.GetTrueMargin(true);
             int EndMargin = resInfo.RecSetting.GetTrueMargin(false);
@@ -156,13 +147,70 @@ namespace EpgTimer
             }
         }
 
-        public void ApplyMarginForTunerPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
+        public static void ApplyMarginForTunerPanelView(ReserveData resInfo, ref DateTime startTime, ref int duration)
         {
             int StartMargin = resInfo.RecSetting.GetTrueMargin(true);
             int EndMargin = resInfo.RecSetting.GetTrueMargin(false);
 
             startTime = resInfo.StartTime.AddSeconds(StartMargin * -1);
             duration = (int)resInfo.DurationSecond + StartMargin + EndMargin;
+        }
+
+        //最低表示高さ
+        public const double PanelMinimumHeight = 2;
+
+        //最低表示行数を適用。また、最低表示高さを確保して、位置も調整する。
+        public static void ModifierMinimumLine<T, S>(List<S> list, double minimumLine, double fontHeight) where S : ViewPanelItem<T>
+        {
+            list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
+            double minimum = Math.Max((fontHeight + 2) * minimumLine, PanelMinimumHeight);
+            double lastLeft = double.MinValue;
+            double lastBottom = 0;
+            foreach (S item in list)
+            {
+                if (lastLeft != item.LeftPos)
+                {
+                    lastLeft = item.LeftPos;
+                    lastBottom = double.MinValue;
+                }
+                if (item.TopPos < lastBottom)
+                {
+                    item.Height = Math.Max(item.TopPos + item.Height - lastBottom, minimum);
+                    item.TopPos = lastBottom;
+                }
+                else
+                {
+                    item.Height = Math.Max(item.Height, minimum);
+                }
+                lastBottom = item.TopPos + item.Height;
+            }
+        }
+
+        //最低表示px数を適用。
+        public static void ModifierMinimumHeight<T, S>(List<S> list, double MinimumHeight) where S : ViewPanelItem<T>
+        {
+            list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
+            double minimum = Math.Max(MinimumHeight, 1);
+            double lastLeft = double.MinValue;
+            double lastBottom = 0;
+            foreach (S item in list)
+            {
+                if (lastLeft != item.LeftPos)
+                {
+                    lastLeft = item.LeftPos;
+                    lastBottom = double.MinValue;
+                }
+                if (item.TopPos < lastBottom)
+                {
+                    item.Height = Math.Max(item.TopPos + item.Height - lastBottom, minimum);
+                    item.TopPos = lastBottom;
+                }
+                else
+                {
+                    item.Height = Math.Max(item.Height, minimum);
+                }
+                lastBottom = item.TopPos + item.Height;
+            }
         }
 
         public class ItemFont
@@ -205,8 +253,8 @@ namespace EpgTimer
                 GlyphWidthCache = null;
             }
         }
-        private ItemFont itemFontNormal;
-        public ItemFont ItemFontNormal
+        private static ItemFont itemFontNormal;
+        public static ItemFont ItemFontNormal
         {
             get
             {
@@ -218,8 +266,8 @@ namespace EpgTimer
             }
             set { itemFontNormal = null; }
         }
-        private ItemFont itemFontTitle;
-        public ItemFont ItemFontTitle
+        private static ItemFont itemFontTitle;
+        public static ItemFont ItemFontTitle
         {
             get
             {
@@ -231,8 +279,8 @@ namespace EpgTimer
             }
             set { itemFontTitle = null; }
         }
-        private ItemFont itemFontTunerNormal;
-        public ItemFont ItemFontTunerNormal
+        private static ItemFont itemFontTunerNormal;
+        public static ItemFont ItemFontTunerNormal
         {
             get
             {
@@ -244,8 +292,8 @@ namespace EpgTimer
             }
             set { itemFontTunerNormal = null; }
         }
-        private ItemFont itemFontTunerService;
-        public ItemFont ItemFontTunerService
+        private static ItemFont itemFontTunerService;
+        public static ItemFont ItemFontTunerService
         {
             get
             {
@@ -258,64 +306,7 @@ namespace EpgTimer
             set { itemFontTunerService = null; }
         }
 
-        //最低表示高さ
-        public const double PanelMinimumHeight = 2;
-
-        //最低表示行数を適用。また、最低表示高さを確保して、位置も調整する。
-        public void ModifierMinimumLine<T, S>(List<S> list, double minimumLine, double fontHeight) where S : ViewPanelItem<T>
-        {
-            list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
-            double minimum = Math.Max((fontHeight + 2) * minimumLine, PanelMinimumHeight);
-            double lastLeft = double.MinValue;
-            double lastBottom = 0;
-            foreach (S item in list)
-            {
-                if (lastLeft != item.LeftPos)
-                {
-                    lastLeft = item.LeftPos;
-                    lastBottom = double.MinValue;
-                }
-                if (item.TopPos < lastBottom)
-                {
-                    item.Height = Math.Max(item.TopPos + item.Height - lastBottom, minimum);
-                    item.TopPos = lastBottom;
-                }
-                else
-                {
-                    item.Height = Math.Max(item.Height, minimum);
-                }
-                lastBottom = item.TopPos + item.Height;
-            }
-        }
-
-        //最低表示px数を適用。
-        public void ModifierMinimumHeight<T, S>(List<S> list, double MinimumHeight) where S : ViewPanelItem<T>
-        {
-            list.Sort((x, y) => Math.Sign(x.LeftPos - y.LeftPos) * 2 + Math.Sign(x.TopPos - y.TopPos));
-            double minimum = Math.Max(MinimumHeight, 1);
-            double lastLeft = double.MinValue;
-            double lastBottom = 0;
-            foreach (S item in list)
-            {
-                if (lastLeft != item.LeftPos)
-                {
-                    lastLeft = item.LeftPos;
-                    lastBottom = double.MinValue;
-                }
-                if (item.TopPos < lastBottom)
-                {
-                    item.Height = Math.Max(item.TopPos + item.Height - lastBottom, minimum);
-                    item.TopPos = lastBottom;
-                }
-                else
-                {
-                    item.Height = Math.Max(item.Height, minimum);
-                }
-                lastBottom = item.TopPos + item.Height;
-            }
-        }
-
-        public void SetTimeList(List<ProgramViewItem> programList, SortedList<DateTime, List<ProgramViewItem>> timeList)
+        public static void SetTimeList(List<ProgramViewItem> programList, SortedList<DateTime, List<ProgramViewItem>> timeList)
         {
             foreach (ProgramViewItem item in programList)
             {
@@ -339,7 +330,7 @@ namespace EpgTimer
             }
         }
 
-        public void ScrollToFindItem(SearchItem target_item, ListBox listBox, bool IsMarking)
+        public static void ScrollToFindItem(SearchItem target_item, ListBox listBox, bool IsMarking)
         {
             try
             {
@@ -374,7 +365,7 @@ namespace EpgTimer
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
-        public void ScrollToItem(object target_item, ListBox listBox)
+        public static void ScrollToItem(object target_item, ListBox listBox)
         {
             try
             {
@@ -392,12 +383,12 @@ namespace EpgTimer
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
-        public void DisableControlChildren(Control ctrl)
+        public static void DisableControlChildren(Control ctrl)
         {
             ctrl.Foreground = Brushes.Gray;
             ChangeChildren(ctrl, false);
         }
-        public void ChangeChildren(UIElement ele, bool enabled)
+        public static void ChangeChildren(UIElement ele, bool enabled)
         {
             foreach (var child in LogicalTreeHelper.GetChildren(ele))
             {
@@ -428,60 +419,16 @@ namespace EpgTimer
             }
         }
         /*/
-
-#if false
-        public void WalkLogicalTree(DependencyObject obj, Func<object, bool> func)
-        {
-            if (func(obj) == false)
-            {
-                foreach (var child in LogicalTreeHelper.GetChildren(obj))
-                {
-                    if (child is DependencyObject)
-                    {
-                        WalkLogicalTree((DependencyObject)child, func);
-                    }
-                }
-            }
-        }
-        public void SetButtonStyle1(Control this_)
-        {
-            Style style = null;
-            if (Settings.Instance.NoStyle == 0)
-            {
-                ResourceDictionary rd = new ResourceDictionary();
-                rd.MergedDictionaries.Add(
-                    Application.LoadComponent(new Uri("/PresentationFramework.Aero, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35;component/themes/aero.normalcolor.xaml", UriKind.Relative)) as ResourceDictionary
-                    //Application.LoadComponent(new Uri("/PresentationFramework.Classic, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, ProcessorArchitecture=MSIL;component/themes/Classic.xaml", UriKind.Relative)) as ResourceDictionary
-                    );
-                this_.Resources = rd;
-                style = App.Current.Resources["ButtonStyle1"] as Style;
-            }
-
-            WalkLogicalTree(this_, (obj) => {
-                if (obj is Button)
-                {
-                    Button btn = obj as Button;
-                    if (btn.Style == null || btn.Style.BasedOn == null)
-                    {
-                        btn.Style = style;
-                    }
-                    return true;
-                }
-                return false;
-            });
-        }
-#endif
-
-        public string ConvertSearchItemStatus(IEnumerable<SearchItem> list, string itemText = "番組数")
+        public static string ConvertSearchItemStatus(IEnumerable<SearchItem> list, string itemText = "番組数")
         {
             return string.Format("{0}:{1}", itemText, list.Count()) + ConvertReserveStatus(list, " 予約");
         }
-        public string ConvertReserveStatus(IEnumerable<SearchItem> list, string itemText = "予約数", int reserveMode = 0)
+        public static string ConvertReserveStatus(IEnumerable<SearchItem> list, string itemText = "予約数", int reserveMode = 0)
         {
             if (reserveMode == 0 && list.Count() == 0) return "";
             return ConvertReserveStatus(list.GetReserveList(), itemText, reserveMode);
         }
-        public string ConvertReserveStatus(List<ReserveData> rlist, string itemText = "予約数", int reserveMode = 0)
+        public static string ConvertReserveStatus(List<ReserveData> rlist, string itemText = "予約数", int reserveMode = 0)
         {
             var text = string.Format("{0}:{1}", itemText, rlist.Count);
             List<ReserveData> onlist = rlist.FindAll(data => data.IsEnabled == true);
@@ -515,7 +462,7 @@ namespace EpgTimer
             }
             return text;
         }
-        public string ConvertRecinfoStatus(IEnumerable<RecInfoItem> list, string itemText = "録画結果")
+        public static string ConvertRecinfoStatus(IEnumerable<RecInfoItem> list, string itemText = "録画結果")
         {
             var format = "{0}:{1} ({2}:{3} {4}:{5})";
             if (Settings.Instance.RecinfoErrCriticalDrops == true)
@@ -531,7 +478,7 @@ namespace EpgTimer
                     "Scramble", list.Sum(item => item.RecInfo.Scrambles));
             }
         }
-        public string ConvertAutoAddStatus(IEnumerable<AutoAddDataItem> list, string itemText = "自動予約登録数")
+        public static string ConvertAutoAddStatus(IEnumerable<AutoAddDataItem> list, string itemText = "自動予約登録数")
         {
             var onRes = new List<uint>();
             var offRes = new List<uint>();
@@ -580,10 +527,43 @@ namespace EpgTimer
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
-    }
 
-    public static class ViewUtilEx
-    {
+        public static SelectionChangedEventHandler ListBox_TextBoxSyncSelectionChanged(ListBox lstBox, TextBox txtBox)
+        {
+            return new SelectionChangedEventHandler((sender, e) =>
+            {
+                if (lstBox == null || lstBox.SelectedItem == null || txtBox == null) return;
+                //
+                txtBox.Text = lstBox.SelectedItem.ToString();
+            });
+        }
+
+        public static RoutedEventHandler ListBox_TextCheckAdd(ListBox lstBox, TextBox txtBox)
+        {
+            return new RoutedEventHandler((sender, e) => ListBox_TextCheckAdd(lstBox, txtBox == null ? null : txtBox.Text));
+        }
+        public static void ListBox_TextCheckAdd(ListBox lstBox, string text)
+        {
+            if (lstBox == null || String.IsNullOrEmpty(text) == true) return;
+            //
+            if (lstBox.Items.OfType<object>().Any(s => String.Compare(text, s.ToString(), true) == 0) == true)
+            {
+                MessageBox.Show("すでに追加されています");
+                return;
+            }
+            lstBox.Items.Add(text);
+        }
+
+        public static bool Window_EscapeKey_Close(KeyEventArgs e, Window win)
+        {
+            if (win != null && Keyboard.Modifiers == ModifierKeys.None && e.Key == Key.Escape)
+            {
+                e.Handled = true;
+                win.Close();
+            }
+            return e.Handled;
+        }
+
         ///<summary>同じアイテムがあってもスクロールするようにしたもの(ItemSource使用時無効)</summary>
         //ScrollIntoView()は同じアイテムが複数あると上手く動作しないので、ダミーを使って無理矢理移動させる。
         //同じ理由でSelectedItemも正しく動作しないので、スクロール位置はindexで取るようにする。

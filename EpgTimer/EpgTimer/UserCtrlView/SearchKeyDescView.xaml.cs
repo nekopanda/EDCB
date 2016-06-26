@@ -21,7 +21,7 @@ namespace EpgTimer
 
             try
             {
-                foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+                foreach (ChSet5Item info in ChSet5.ChList.Values)
                 {
                     ServiceItem item = new ServiceItem();
 
@@ -63,13 +63,14 @@ namespace EpgTimer
                 button_date_clear.Click += new RoutedEventHandler(bxd.button_DeleteAll_Click);
                 button_date_del.Click += new RoutedEventHandler(bxd.button_Delete_Click);
 
+                new BoxExchangeEdit.BoxExchangeEditor(null, listView_service, true);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         public void SetChangeMode(int chgMode)
         {
-            CommonManager.Instance.VUtil.SetSpecificChgAppearance(listBox_content);
+            ViewUtil.SetSpecificChgAppearance(listBox_content);
             listBox_content.Focus();
             if (listBox_content.Items.Count != 0) listBox_content.SelectedIndex = 0;
         }
@@ -131,13 +132,11 @@ namespace EpgTimer
                     key.freeCAFlag = 0;
                 }
 
-                var mutil = CommonManager.Instance.MUtil;
-
                 key.chkRecEnd = (byte)(checkBox_chkRecEnd.IsChecked == true ? 1 : 0);
-                key.chkRecDay = mutil.MyToNumerical(textBox_chkRecDay, Convert.ToUInt16, ushort.MinValue);
+                key.chkRecDay = MenuUtil.MyToNumerical(textBox_chkRecDay, Convert.ToUInt16, ushort.MinValue);
                 key.chkRecNoService = (byte)(radioButton_chkRecNoService2.IsChecked == true ? 1 : 0);
-                key.chkDurationMin = mutil.MyToNumerical(textBox_chkDurationMin, Convert.ToUInt16, ushort.MinValue);
-                key.chkDurationMax = mutil.MyToNumerical(textBox_chkDurationMax, Convert.ToUInt16, ushort.MinValue);
+                key.chkDurationMin = MenuUtil.MyToNumerical(textBox_chkDurationMin, Convert.ToUInt16, ushort.MinValue);
+                key.chkDurationMax = MenuUtil.MyToNumerical(textBox_chkDurationMax, Convert.ToUInt16, ushort.MinValue);
             }
             catch (Exception ex)
             {

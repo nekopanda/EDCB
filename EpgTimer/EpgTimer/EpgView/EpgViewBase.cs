@@ -8,7 +8,7 @@ namespace EpgTimer.EpgView
 {
     public class EpgViewBase : EpgTimer.UserCtrlView.DataViewBase
     {
-        protected CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
+        protected static CtrlCmdUtil cmd { get { return CommonManager.Instance.CtrlCmd; } }
 
         protected CustomEpgTabInfo setViewInfo = null;
         protected List<UInt64> viewCustServiceList = null;
@@ -101,7 +101,7 @@ namespace EpgTimer.EpgView
         }
         protected bool ReloadReserveData()
         {
-            if (vutil.ReloadReserveData() == false) return false;
+            if (ViewUtil.ReloadReserveData() == false) return false;
             ReloadReserveViewItem();
             return true;
         }
@@ -154,13 +154,13 @@ namespace EpgTimer.EpgView
                         EpgServiceEventInfo serviceInfo;
                         if (serviceEventList.TryGetValue(id, out serviceInfo) == false)
                         {
-                            if (ChSet5.Instance.ChList.ContainsKey(id) == false)
+                            if (ChSet5.ChList.ContainsKey(id) == false)
                             {
                                 //サービス情報ないので無効
                                 continue;
                             }
                             serviceInfo = new EpgServiceEventInfo();
-                            serviceInfo.serviceInfo = CommonManager.ConvertChSet5To(ChSet5.Instance.ChList[id]);
+                            serviceInfo.serviceInfo = CommonManager.ConvertChSet5To(ChSet5.ChList[id]);
 
                             serviceEventList.Add(id, serviceInfo);
                         }

@@ -8,7 +8,7 @@ using System.Windows.Input;
 
 namespace EpgTimer
 {
-    using EpgTimer.BoxExchangeEdit;
+    using BoxExchangeEdit;
     using ComboItem = KeyValuePair<CtxmCode, string>;
 
     /// <summary>
@@ -16,7 +16,7 @@ namespace EpgTimer
     /// </summary>
     public partial class SetContextMenuWindow : Window
     {
-        private MenuManager mm = CommonManager.Instance.MM;
+        private static MenuManager mm { get { return CommonManager.Instance.MM; } }
 
         private static ComboItem[] MenuCodeToTitle = new ComboItem[]{
             new ComboItem(CtxmCode.ReserveView, "予約一覧"),
@@ -253,20 +253,6 @@ namespace EpgTimer
         private void button_cancel_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
-        }
-
-        protected override void OnKeyDown(KeyEventArgs e)
-        {
-            if (Keyboard.Modifiers == ModifierKeys.None)
-            {
-                switch (e.Key)
-                {
-                    case Key.Escape:
-                        this.button_cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        break;
-                }
-            }
-            base.OnKeyDown(e);
         }
 
         private void comboBoxViewSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)

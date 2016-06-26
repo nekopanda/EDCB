@@ -54,10 +54,6 @@ namespace EpgTimer
         { get; set; }
         public NWConnect NW
         { get; set; }
-        public MenuUtil MUtil
-        { get; set; }
-        public ViewUtil VUtil
-        { get; set; }
         public bool IsConnected
         { get; set; }
 
@@ -127,14 +123,6 @@ namespace EpgTimer
             if (NW == null)
             {
                 NW = new NWConnect(CtrlCmd);
-            }
-            if (MUtil == null)
-            {
-                MUtil = new MenuUtil(CtrlCmd);
-            }
-            if (VUtil == null)
-            {
-                VUtil = new ViewUtil(CtrlCmd, MUtil);
             }
             if (ContentKindDictionary == null)
             {
@@ -869,9 +857,9 @@ namespace EpgTimer
             if (eventInfo != null)
             {
                 UInt64 key = eventInfo.Create64Key();
-                if (ChSet5.Instance.ChList.ContainsKey(key) == true)
+                if (ChSet5.ChList.ContainsKey(key) == true)
                 {
-                    basicInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + "\r\n";
+                    basicInfo += ChSet5.ChList[key].ServiceName + "(" + ChSet5.ChList[key].NetworkName + ")" + "\r\n";
                 }
 
                 basicInfo += ConvertTimeText(eventInfo) + "\r\n";
@@ -1014,9 +1002,9 @@ namespace EpgTimer
                         foreach (EpgEventData info in eventInfo.EventRelayInfo.eventDataList)
                         {
                             key = info.Create64Key();
-                            if (ChSet5.Instance.ChList.ContainsKey(key) == true)
+                            if (ChSet5.ChList.ContainsKey(key) == true)
                             {
-                                extInfo += ChSet5.Instance.ChList[key].ServiceName + "(" + ChSet5.Instance.ChList[key].NetworkName + ")" + " ";
+                                extInfo += ChSet5.ChList[key].ServiceName + "(" + ChSet5.ChList[key].NetworkName + ")" + " ";
                             }
                             else
                             {
@@ -1251,7 +1239,7 @@ namespace EpgTimer
 
         public String ConvertTextSearchString(String s)
         {
-            return ReplaceUrl(MUtil.TrimKeyword(s));
+            return ReplaceUrl(MenuUtil.TrimKeyword(s));
         }        
 
         //デフォルト番組表の情報作成
@@ -1270,7 +1258,7 @@ namespace EpgTimer
                 setInfo[i].ID = -1 * (i + 1);
             }
 
-            foreach (ChSet5Item info in ChSet5.Instance.ChList.Values)
+            foreach (ChSet5Item info in ChSet5.ChList.Values)
             {
                 int i = 3;//その他
                 if (info.IsDttv == true)//地デジ
@@ -1613,10 +1601,7 @@ namespace EpgTimer
                     InfoWindowItemBgColors.Add(_GetColorBrush(Settings.Instance.InfoWindowItemBgColors[i], Settings.Instance.InfoWindowItemBgCustColors[i]));
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message + "\r\n" + ex.StackTrace); }
         }
 
         public void AddNotifySave(NotifySrvInfo notifyInfo)

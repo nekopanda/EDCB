@@ -83,7 +83,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBox Grid.Column="0" Name="textBox_recFolder" />
                             <Button Grid.Column="1" Name="button_rec_open" Content="開く" Margin="12,0,0,0" Click="button_rec_open_Click" HorizontalAlignment="Right" />
-                            <Button Grid.Column="2" Name="button_rec_add" Content="追加" Margin="12,0,0,0" Click="button_rec_add_Click" />
+                            <Button Grid.Column="2" Name="button_rec_add" Content="追加" Margin="12,0,0,0" />
                         </Grid>
                     </Grid>
                     <StackPanel Grid.Row="2">

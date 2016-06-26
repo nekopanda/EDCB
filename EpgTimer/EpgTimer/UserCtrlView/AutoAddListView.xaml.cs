@@ -44,7 +44,7 @@ namespace EpgTimer
                 var newList = View.lstCtrl.dataList.Select(item => item.Data.CloneObj() as T).ToList();
                 newList.ForEach(item => item.DataID = changeIDTable[item.DataID]);
 
-                bool ret = View.mutil.AutoAddChange(newList, false, false, false, false);
+                bool ret = MenuUtil.AutoAddChange(newList, false, false, false, false);
                 if (ret == true)
                 {
                     //dataListと検索ダイアログへのIDの反映。dataListは既にコピーだが、SaveChange成功後に行う
@@ -144,9 +144,9 @@ namespace EpgTimer
         }
         protected override void UpdateStatusData(int mode = 0)
         {
-            if (mode == 0) this.status[1] = vutil.ConvertAutoAddStatus(lstCtrl.dataList, "自動予約登録数");
+            if (mode == 0) this.status[1] = ViewUtil.ConvertAutoAddStatus(lstCtrl.dataList, "自動予約登録数");
             List<S> sList = lstCtrl.GetSelectedItemsList();
-            this.status[2] = sList.Count == 0 ? "" : vutil.ConvertAutoAddStatus(sList, "　選択中");
+            this.status[2] = sList.Count == 0 ? "" : ViewUtil.ConvertAutoAddStatus(sList, "　選択中");
         }
         public void UpdateListViewSelection(uint autoAddID)
         {
