@@ -187,15 +187,15 @@ BOOL CTCPServer::ReceiveData(SOCKET sock, CMD_STREAM& stCmd, AUTH_INFO* auth)
 
 	SAFE_DELETE_ARRAY(stCmd.data);
 	stCmd.data = new BYTE[stCmd.dataSize];
-	if (RecvAll(sock, (char*)stCmd.data, stCmd.dataSize, 0) != stCmd.dataSize) {
+	if (RecvAll(sock, (char*)stCmd.data, stCmd.dataSize, 0) != static_cast<int>(stCmd.dataSize)) {
 		return FALSE;
 	}
 
 	// Dataの改ざんチェック
-	return auth == nullptr || auth->nonceSize == 0 ||
-		(m_hmac.CalcHmac(auth->nonceData, auth->nonceSize) &&
-			m_hmac.CalcHmac((BYTE*)stCmd.data, stCmd.dataSize) &&
-			m_hmac.CompareHmac(auth->stRes.data + m_hmac.GetHashSize()));
+    return auth == nullptr || auth->nonceSize == 0 ||
+        (m_hmac.CalcHmac(auth->nonceData, auth->nonceSize) &&
+            m_hmac.CalcHmac((BYTE*)stCmd.data, stCmd.dataSize) &&
+            m_hmac.CompareHmac(auth->stRes.data + m_hmac.GetHashSize()));
 }
 
 BOOL CTCPServer::SendData(SOCKET sock, CMD_STREAM& stRes)
@@ -351,7 +351,7 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 				}
 			}
 		}else if( result == WSA_WAIT_EVENT_0 + 1 ){
-			struct sockaddr_in client;
+			struct sockaddr_in client = {};
 			int len = sizeof(client);
 			SOCKET sock = INVALID_SOCKET;
 			WSANETWORKEVENTS events;
@@ -375,70 +375,75 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 				}
 			}
 
-			//ブロッキングモードに変更
-			WSAEventSelect(sock, NULL, 0);
-			ULONG x = 0;
-			ioctlsocket(sock, FIONBIO, &x);
-			for(;;){
-				AUTH_INFO auth;
-				CMD_STREAM stCmd;
-				CMD_STREAM stRes;
+			{
+				//ブロッキングモードに変更
+				WSAEventSelect(sock, NULL, 0);
+				ULONG x = 0;
+				ioctlsocket(sock, FIONBIO, &x);
+				for(;;){
+					AUTH_INFO auth;
+					CMD_STREAM stCmd;
+					CMD_STREAM stRes;
 
-				if( pSys->Authenticate(sock, &auth) == FALSE ||
-					pSys->ReceiveHeader(sock, stCmd, &auth) == FALSE ||
-					pSys->CheckCmd(stCmd.param, stCmd.dataSize) == FALSE ||
-					pSys->ReceiveData(sock, stCmd, &auth) == FALSE ){
-					_OutputDebugString(L"Authentication error from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
-					blacklist[client.sin_addr.S_un.S_addr].dwCount++;
-					blacklist[client.sin_addr.S_un.S_addr].dwTick = GetTickCount();
-					break;
-				}
-
-				if( stCmd.param == CMD2_EPG_SRV_REGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_UNREGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_ISREGIST_GUI_TCP ){
-					string ip = inet_ntoa(client.sin_addr);
-
-					REGIST_TCP_INFO setParam;
-					AtoW(ip, setParam.ip);
-					ReadVALUE(&setParam.port, stCmd.data, stCmd.dataSize, NULL);
-
-					SAFE_DELETE_ARRAY(stCmd.data);
-					stCmd.data = NewWriteVALUE(setParam, stCmd.dataSize);
-				}
-
-				pSys->m_pCmdProc(pSys->m_pParam, &stCmd, &stRes);
-				if( stRes.param == CMD_NO_RES ){
-					if( stCmd.param == CMD2_EPG_SRV_GET_STATUS_NOTIFY2 ){
-						//保留可能なコマンドは応答待ちリストに移動
-						if( hEventList.size() < WSA_MAXIMUM_WAIT_EVENTS ){
-							WAIT_INFO waitInfo;
-							waitInfo.sock = sock;
-							waitInfo.cmd = new CMD_STREAM;
-							waitInfo.cmd->param = stCmd.param;
-							waitInfo.cmd->dataSize = stCmd.dataSize;
-							waitInfo.cmd->data = stCmd.data;
-							waitInfo.tick = GetTickCount();
-							waitList.push_back(waitInfo);
-							hEventList.push_back(WSACreateEvent());
-							WSAEventSelect(sock, hEventList.back(), FD_READ | FD_CLOSE);
-							sock = INVALID_SOCKET;
-							stCmd.data = NULL;
-						}
+					if (pSys->Authenticate(sock, &auth) == FALSE ||
+						pSys->ReceiveHeader(sock, stCmd, &auth) == FALSE ||
+						pSys->CheckCmd(stCmd.param, stCmd.dataSize) == FALSE ||
+						pSys->ReceiveData(sock, stCmd, &auth) == FALSE) {
+						_OutputDebugString(L"Authentication error from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
+						blacklist[client.sin_addr.S_un.S_addr].dwCount++;
+						blacklist[client.sin_addr.S_un.S_addr].dwTick = GetTickCount();
+						break;
 					}
-					break;
-				}
 
-				if( pSys->SendData(sock, stRes) == FALSE ){
-					break;
-				}
+					if (stCmd.param == CMD2_EPG_SRV_REGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_UNREGIST_GUI_TCP) {
+						char ip[64];
+						if (getnameinfo((struct sockaddr *)&client, sizeof(client), ip, sizeof(ip), NULL, 0, NI_NUMERICHOST) != 0) {
+							ip[0] = '\0';
+						}
 
-				if( stRes.param != CMD_NEXT && stRes.param != OLD_CMD_NEXT ){
-					//Enum用の繰り返しではない
-					break;
+						REGIST_TCP_INFO setParam;
+						AtoW(ip, setParam.ip);
+						ReadVALUE(&setParam.port, stCmd.data, stCmd.dataSize, NULL);
+
+						SAFE_DELETE_ARRAY(stCmd.data);
+						stCmd.data = NewWriteVALUE(setParam, stCmd.dataSize);
+					}
+
+					pSys->m_pCmdProc(pSys->m_pParam, &stCmd, &stRes);
+					if( stRes.param == CMD_NO_RES ){
+						if( stCmd.param == CMD2_EPG_SRV_GET_STATUS_NOTIFY2 ){
+							//保留可能なコマンドは応答待ちリストに移動
+							if( hEventList.size() < WSA_MAXIMUM_WAIT_EVENTS ){
+								WAIT_INFO waitInfo;
+								waitInfo.sock = sock;
+								waitInfo.cmd = new CMD_STREAM;
+								waitInfo.cmd->param = stCmd.param;
+								waitInfo.cmd->dataSize = stCmd.dataSize;
+								waitInfo.cmd->data = stCmd.data;
+								waitInfo.tick = GetTickCount();
+								waitList.push_back(waitInfo);
+								hEventList.push_back(WSACreateEvent());
+								WSAEventSelect(sock, hEventList.back(), FD_READ | FD_CLOSE);
+								sock = INVALID_SOCKET;
+								stCmd.data = NULL;
+							}
+						}
+						break;
+					}
+
+					if (pSys->SendData(sock, stRes) == FALSE) {
+						break;
+					}
+
+					if (stRes.param != CMD_NEXT && stRes.param != OLD_CMD_NEXT) {
+						//Enum用の繰り返しではない
+						break;
+					}
 				}
-			}
-			if( sock != INVALID_SOCKET ){
-				shutdown(sock, SD_BOTH);
-				closesocket(sock);
+				if (sock != INVALID_SOCKET) {
+					shutdown(sock, SD_BOTH);
+					closesocket(sock);
+				}
 			}
 		}else{
 			break;
