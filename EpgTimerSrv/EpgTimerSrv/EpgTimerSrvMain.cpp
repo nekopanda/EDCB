@@ -1026,7 +1026,7 @@ void CEpgTimerSrvMain::UpdateRecFileInfo() {
 	CBlockLock lock(&this->settingLock);
 
 	if (reserveManager.GetNewRecInfoCount() > 0) {
-		DWORD time = GetTickCount();
+		//DWORD time = GetTickCount();
 		// 新規録画ファイルがある場合は録画ファイルとの関連付けを更新
 		auto list = reserveManager.UpdateAndMergeNewRecInfo(epgAutoAdd.GetMap());
 		// 新規関連付け分を追加

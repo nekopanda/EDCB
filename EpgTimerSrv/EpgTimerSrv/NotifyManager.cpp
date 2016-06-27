@@ -250,7 +250,7 @@ UINT CNotifyManager::SendNotifyThread()
 	BOOL wait1Sec = FALSE;
 	BOOL waitNotify = FALSE;
 	DWORD waitNotifyTick = 0;
-	while(1){
+	for(;;){
 		vector<DWORD> registGUI;
 		vector<REGIST_TCP_INFO> registTCP;
 		NOTIFY_SRV_INFO notifyInfo;

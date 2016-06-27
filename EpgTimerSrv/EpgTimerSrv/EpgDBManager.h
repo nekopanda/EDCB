@@ -71,7 +71,7 @@ public:
 	static void ConvertSearchText(wstring& str);
 
 	template <typename MAP, typename RESULT_CB>
-	static void SearchEvent(EPGDB_SEARCH_KEY_INFO* key, const MAP& epgMap, RESULT_CB& onResultEvent, IRegExpPtr& regExp)
+	static void SearchEvent(EPGDB_SEARCH_KEY_INFO* key, const MAP& epgMap, const RESULT_CB& onResultEvent, IRegExpPtr& regExp)
 	{
 		if (key == NULL) {
 			return;

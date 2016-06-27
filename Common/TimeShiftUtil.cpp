@@ -273,7 +273,7 @@ UINT WINAPI CTimeShiftUtil::ReadThread(LPVOID param)
 	__int64 pcr_offset = 0;
 	__int64 tick_offset = 0;
 
-	while(1){
+	for(;;){
 		if( ::WaitForSingleObject(sys->readStopEvent, 0) != WAIT_TIMEOUT ){
 			//ƒLƒƒƒ“ƒZƒ‹‚³‚ê‚½
 			break;
@@ -419,7 +419,7 @@ UINT WINAPI CTimeShiftUtil::ReadThread(LPVOID param)
 		}
 		
 
-		while(1){
+		for(;;){
 			if( initTime != -1 && base != -1){
 				if( base+pcr_offset<initTime ){
 					//PCRŠª‚«–ß‚Á‚½H

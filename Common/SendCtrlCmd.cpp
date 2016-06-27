@@ -241,8 +241,8 @@ DWORD CSendCtrlCmd::Authenticate(SOCKET sock, BYTE** pbdata, DWORD* pndata)
 	//   cmd[ 8Å`23] : HMAC for header (16 bytes)
 	//   cmd[24Å`39] : HMAC for data (16 bytes) if exist;
 	BYTE *cmd = new BYTE[sizeAuthPacket + *pndata];
-    reinterpret_cast<DWORD*>(cmd)[0] = CMD2_EPG_SRV_AUTH_REPLY;
-    reinterpret_cast<DWORD*>(cmd)[1] = sizeAuthPacket - sizeof(DWORD) * 2;
+	reinterpret_cast<DWORD*>(cmd)[0] = CMD2_EPG_SRV_AUTH_REPLY;
+	reinterpret_cast<DWORD*>(cmd)[1] = sizeAuthPacket - sizeof(DWORD) * 2;
 
 	// ÉRÉ}ÉìÉhÉwÉbÉ_Å[ÇÃHMACÇåvéZÇ∑ÇÈ
 	hmac.CalcHmac(nonce, read);
@@ -289,7 +289,7 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	}
 	SOCKET sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 	if( sock != INVALID_SOCKET &&
-	    connect(sock, result->ai_addr, static_cast<int>(result->ai_addrlen)) == SOCKET_ERROR ){
+		connect(sock, result->ai_addr, static_cast<int>(result->ai_addrlen)) == SOCKET_ERROR ){
 		closesocket(sock);
 		sock = INVALID_SOCKET;
 	}
@@ -308,7 +308,7 @@ DWORD CSendCtrlCmd::SendTCP(wstring ip, DWORD port, DWORD timeOut, CMD_STREAM* s
 	DWORD sizeData = sizeof(DWORD) * 2 + sendCmd->dataSize;
 	BYTE *data = new BYTE[sizeData];
 	reinterpret_cast<DWORD*>(data)[0] = sendCmd->param;
-    reinterpret_cast<DWORD*>(data)[1] = sendCmd->dataSize;
+	reinterpret_cast<DWORD*>(data)[1] = sendCmd->dataSize;
 	memcpy(data + sizeof(DWORD) * 2, sendCmd->data, sendCmd->dataSize);
 	SAFE_DELETE_ARRAY(sendCmd->data);
 	sendCmd->data = data;

@@ -31,7 +31,7 @@ BOOL GetNetworkPath(const wstring strPath, wstring& strNetPath)
 	{
 		PSHARE_INFO_502 BufPtr, p;
 		DWORD er = 0, tr = 0, resume = 0;
-		res = NetShareEnum(NULL, 502, (LPBYTE *)&BufPtr, -1, &er, &tr, &resume);
+		res = NetShareEnum(NULL, 502, (LPBYTE *)&BufPtr, static_cast<DWORD>(-1), &er, &tr, &resume);
 		if (res == ERROR_SUCCESS || res == ERROR_MORE_DATA)
 		{
 			p = BufPtr;

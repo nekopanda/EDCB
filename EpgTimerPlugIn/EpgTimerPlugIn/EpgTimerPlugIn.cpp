@@ -244,7 +244,7 @@ void CEpgTimerPlugIn::CtrlCmdCallbackInvoked()
 					int space = 0;
 					int ch = 0;
 					TVTest::ChannelInfo chInfo;
-					while(1){
+					for(;;){
 						if( sys->m_pApp->GetChannelInfo(space, ch, &chInfo) == false ){
 							if( ch == 0 ){
 								OutputDebugString(L"TvTest:NotFind ChInfo");

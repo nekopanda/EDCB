@@ -89,7 +89,7 @@ BOOL COneServiceUtil::SendUdp(
 			wstring key = L"";
 			HANDLE portMutex;
 
-			while(1){
+			for(;;){
 				Format(key, L"%s%d_%d", MUTEX_UDP_PORT_NAME, (*sendList)[i].ip, (*sendList)[i].port );
 				portMutex = CreateMutex(NULL, TRUE, key.c_str());
 		
@@ -144,7 +144,7 @@ BOOL COneServiceUtil::SendTcp(
 			wstring key = L"";
 			HANDLE portMutex;
 
-			while(1){
+			for(;;){
 				Format(key, L"%s%d_%d", MUTEX_TCP_PORT_NAME, (*sendList)[i].ip, (*sendList)[i].port );
 				portMutex = CreateMutex(NULL, TRUE, key.c_str());
 		

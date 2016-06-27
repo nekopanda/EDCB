@@ -873,7 +873,7 @@ bool CParseEpgAutoAddText::SetAddList(DWORD id, const vector<RESERVE_BASIC_DATA>
 {
 	map<DWORD, EPG_AUTO_ADD_DATA>::iterator itr = this->itemMap.find(id);
 	if( itr != this->itemMap.end() ){
-		itr->second.addCount = addList.size();
+		itr->second.addCount = static_cast<DWORD>(addList.size());
 		itr->second.reserveList = addList;
 		return true;
 	}

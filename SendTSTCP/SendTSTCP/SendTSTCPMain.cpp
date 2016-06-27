@@ -235,7 +235,7 @@ DWORD CSendTSTCPMain::ClearSendBuff(
 UINT WINAPI CSendTSTCPMain::ConnectThread(LPVOID pParam)
 {
 	CSendTSTCPMain* pSys = (CSendTSTCPMain*)pParam;
-	while(1){
+    for(;;){
 		if( ::WaitForSingleObject(pSys->m_hStopConnectEvent, 500) != WAIT_TIMEOUT ){
 			//キャンセルされた
 			break;
@@ -299,7 +299,7 @@ UINT WINAPI CSendTSTCPMain::SendThread(LPVOID pParam)
 	CSendTSTCPMain* pSys = (CSendTSTCPMain*)pParam;
 	DWORD dwWait = 0;
 	DWORD dwCount = 0;
-	while(1){
+    for(;;){
 		if( ::WaitForSingleObject(pSys->m_hStopSendEvent, dwWait) != WAIT_TIMEOUT ){
 			//キャンセルされた
 			break;

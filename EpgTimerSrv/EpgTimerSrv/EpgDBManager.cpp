@@ -460,20 +460,14 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 		return;
 	}
 
-	struct {
-		map<ULONGLONG, CEpgDBManager::SEARCH_RESULT_EVENT>* resultMap;
-		void operator()(SEARCH_RESULT_EVENT result) {
-			ULONGLONG mapKey = _Create64Key2(
-				result.info->original_network_id,
-				result.info->transport_stream_id,
-				result.info->service_id,
-				result.info->event_id);
-			resultMap->insert(pair<ULONGLONG, CEpgDBManager::SEARCH_RESULT_EVENT>(mapKey, result));
-		}
-	} cb;
-	cb.resultMap = resultMap;
-
-	SearchEvent(key, this->epgMap, cb, regExp);
+	SearchEvent(key, this->epgMap, [&](CEpgDBManager::SEARCH_RESULT_EVENT result) {
+		ULONGLONG mapKey = _Create64Key2(
+			result.info->original_network_id,
+			result.info->transport_stream_id,
+			result.info->service_id,
+			result.info->event_id);
+		resultMap->insert(pair<ULONGLONG, CEpgDBManager::SEARCH_RESULT_EVENT>(mapKey, result));
+	}, regExp);
 }
 
 BOOL CEpgDBManager::IsEqualContent(vector<EPGDB_CONTENT_DATA>* searchKey, vector<EPGDB_CONTENT_DATA>* eventData)

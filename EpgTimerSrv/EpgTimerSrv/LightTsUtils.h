@@ -255,6 +255,9 @@ protected:
 // PSIセクションクラス
 /////////////////////////////////////////////////////////////////////////////
 
+#pragma warning(push)
+#pragma warning(disable:4127) // 条件式が定数です。
+
 template<bool m_bTargetExt, bool m_bTR>
 class CSiSection
 {
@@ -313,6 +316,8 @@ protected:
 	const BYTE* m_pData;
 	DWORD m_dwDataSize;
 };
+
+#pragma warning(pop)
 
 /////////////////////////////////////////////////////////////////////////////
 // PSIセクション抽出クラス
@@ -610,21 +615,21 @@ public:
 
 	typedef struct DATA {
 		union {
-			struct {
+			struct nibble_ {
 				BYTE content_nibble_level_1;
 				BYTE content_nibble_level_2;
 				BYTE user_nibble1;
 				BYTE user_nibble2;
-			};
+			} nibble;
 			DWORD data;
 		};
 
-		DATA(const BYTE* ptr)
-			: content_nibble_level_1(BIT_SHIFT_MASK(ptr[0], 4, 4))
-			, content_nibble_level_2(BIT_SHIFT_MASK(ptr[0], 0, 4))
-			, user_nibble1(BIT_SHIFT_MASK(ptr[1], 4, 4))
-			, user_nibble2(BIT_SHIFT_MASK(ptr[1], 0, 4))
-		{ }
+		DATA(const BYTE* ptr) {
+			nibble.content_nibble_level_1 = BIT_SHIFT_MASK(ptr[0], 4, 4);
+			nibble.content_nibble_level_2 = BIT_SHIFT_MASK(ptr[0], 0, 4);
+			nibble.user_nibble1 = BIT_SHIFT_MASK(ptr[1], 4, 4);
+			nibble.user_nibble2 = BIT_SHIFT_MASK(ptr[1], 0, 4);
+		 }
 	} DATA;
 
 	int GetDataCount() const { return length() / 2; }
@@ -764,13 +769,16 @@ public:
 
 	typedef struct EVENT {
 		union {
-			struct {
+			struct word_data_ {
 				WORD service_id, event_id;
-			};
+			} word_data;
 			DWORD data;
 		};
 
-		EVENT(WORD sid, WORD eid) : service_id(sid), event_id(eid) { }
+		EVENT(WORD sid, WORD eid) {
+			word_data.service_id = sid;
+			word_data.event_id = eid;
+		}
 	} EVENT;
 
 	BYTE GetEventCount() const { return BIT_SHIFT_MASK(ptr[2], 0, 4); }
@@ -1056,7 +1064,7 @@ public:
 		return pfnDecodeARIBCharactersEP3 != NULL;
 	}
 
-	std::wstring DecodeString(std::pair<const BYTE*, int>& input);
+	std::wstring DecodeString(const std::pair<const BYTE*, int>& input);
 
 private:
 	DecodeARIBCharactersEP3 pfnDecodeARIBCharactersEP3;
@@ -1087,8 +1095,8 @@ private:
 
 class CCocatMediaData {
 public:
-	void Put(const BYTE* ptr, size_t length) {
-		this->ptr = ptr;
+	void Put(const BYTE* ptr_, size_t length) {
+		this->ptr = ptr_;
 		this->len1 = buffer.GetSize();
 		this->len2 = length;
 		this->offset = 0;
@@ -1101,7 +1109,7 @@ public:
 	BYTE Get(size_t idx) {
 		idx += offset;
 		if (idx < len1) {
-			return buffer.GetAt(idx);
+			return buffer.GetAt(static_cast<DWORD>(idx));
 		}
 		return ptr[idx - len1];
 	}
@@ -1112,7 +1120,7 @@ public:
 			ret = buffer.GetData() + offset;
 		}
 		else if(offset < len1) {
-			buffer.AddData(ptr, offset + bytes - len1);
+			buffer.AddData(ptr, static_cast<DWORD>(offset + bytes - len1));
 			ret = buffer.GetData() + offset;
 		}
 		else {
@@ -1125,11 +1133,11 @@ public:
 	void Commit() {
 		if (offset >= len1) {
 			buffer.ClearSize();
-			buffer.AddData(ptr + offset - len1, len1 + len2 - offset);
+			buffer.AddData(ptr + offset - len1, static_cast<DWORD>(len1 + len2 - offset));
 		}
 		else {
-			buffer.TrimHead(offset);
-			buffer.AddData(ptr, len2);
+			buffer.TrimHead(static_cast<DWORD>(offset));
+			buffer.AddData(ptr, static_cast<DWORD>(len2));
 		}
 	}
 

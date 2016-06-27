@@ -734,7 +734,7 @@ UINT WINAPI CBonCtrl::ChScanThread(LPVOID param)
 	DWORD chkCount = 0;
 	BOOL firstChg = FALSE;
 
-	while(1){
+	for(;;){
 		if( ::WaitForSingleObject(sys->chScanStopEvent, wait) != WAIT_TIMEOUT ){
 			//キャンセルされた
 			sys->chSt_err = ST_CANCEL;
@@ -925,7 +925,7 @@ UINT WINAPI CBonCtrl::EpgCapThread(LPVOID param)
 	basicOnlyONIDs[7] = GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, commonIniPath.c_str());
 	basicOnlyONIDs[10] = GetPrivateProfileInt(L"SET", L"CS3BasicOnly", 0, commonIniPath.c_str());
 
-	while(1){
+	for(;;){
 		if( ::WaitForSingleObject(sys->epgCapStopEvent, wait) != WAIT_TIMEOUT ){
 			//キャンセルされた
 			sys->epgSt_err = ST_CANCEL;
@@ -1196,7 +1196,7 @@ UINT WINAPI CBonCtrl::EpgCapBackThread(LPVOID param)
 		sys->tsOut.StopSaveEPG(FALSE);
 		return 0;
 	}
-	while(1){
+	for(;;){
 		//蓄積状態チェック
 		BOOL chkNext = FALSE;
 		for( vector<EPGCAP_SERVICE_INFO>::iterator itr = chkList.begin(); itr != chkList.end(); itr++ ){

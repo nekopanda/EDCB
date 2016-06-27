@@ -98,7 +98,7 @@ UINT WINAPI CFileStreamingUtil::SizeChkThread(LPVOID param)
 {
 	CFileStreamingUtil* sys = (CFileStreamingUtil*)param;
 
-	while(1){
+	for(;;){
 		if( ::WaitForSingleObject(sys->sizeChkStopEvent, 300) != WAIT_TIMEOUT ){
 			//ƒLƒƒƒ“ƒZƒ‹‚³‚ê‚½
 			break;
@@ -177,7 +177,7 @@ BOOL CFileStreamingUtil::SetIP(
 
 			wstring mutexKey = L"";
 			HANDLE portMutex;
-			while(1){
+			for(;;){
 				Format(mutexKey, L"%s%d_%d", MUTEX_UDP_PORT_NAME, item.ip, item.port );
 				portMutex = CreateMutex(NULL, TRUE, mutexKey.c_str());
 		
@@ -234,7 +234,7 @@ BOOL CFileStreamingUtil::SetIP(
 			wstring mutexKey = L"";
 			HANDLE portMutex;
 
-			while(1){
+			for(;;){
 				Format(mutexKey, L"%s%d_%d", MUTEX_TCP_PORT_NAME, item.ip, item.port );
 				portMutex = CreateMutex(NULL, TRUE, mutexKey.c_str());
 		

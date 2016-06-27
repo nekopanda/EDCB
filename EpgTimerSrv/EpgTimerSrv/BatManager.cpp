@@ -94,7 +94,7 @@ UINT WINAPI CBatManager::BatWorkThread(LPVOID param)
 {
 	CBatManager* sys = (CBatManager*)param;
 
-	while(1){
+	for(;;){
 		{
 			BAT_WORK_INFO work;
 			{
