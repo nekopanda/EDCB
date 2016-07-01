@@ -407,22 +407,27 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 				//ƒŠƒ[ƒhI‚í‚Á‚½‚Ì‚ÅŽ©“®—\–ñ“o˜^ˆ—‚ðs‚¤
 				ctx->sys->reserveManager.CheckTuijyu();
 				bool addCountUpdated = false;
+				bool addReserve = false;
 				{
 					CBlockLock lock(&ctx->sys->settingLock);
 					for( map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator itr = ctx->sys->epgAutoAdd.GetMap().begin(); itr != ctx->sys->epgAutoAdd.GetMap().end(); itr++ ){
 						DWORD addCount = itr->second.addCount;
-						ctx->sys->AutoAddReserveEPG(itr->second);
+						addReserve |= ctx->sys->AutoAddReserveEPG(itr->second, true);
 						if( addCount != itr->second.addCount ){
 							addCountUpdated = true;
 						}
 					}
 					for( map<DWORD, MANUAL_AUTO_ADD_DATA>::const_iterator itr = ctx->sys->manualAutoAdd.GetMap().begin(); itr != ctx->sys->manualAutoAdd.GetMap().end(); itr++ ){
-						ctx->sys->AutoAddReserveProgram(itr->second);
+						addReserve |= ctx->sys->AutoAddReserveProgram(itr->second, true);
 					}
 				}
 				if( addCountUpdated ){
 					//—\–ñ“o˜^”‚Ì•Ï‰»‚ð’Ê’m‚·‚é
 					ctx->sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+				}
+				if( addReserve ){
+					//—\–ñî•ñ‚Ì•Ï‰»‚ð’Ê’m‚·‚é
+					ctx->sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
 				}
 				ctx->sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_EPGDATA);
 
@@ -962,7 +967,7 @@ bool CEpgTimerSrvMain::IsFindNoSuspendExe() const
 	return false;
 }
 
-bool CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data)
+bool CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data, bool noReportNotify)
 {
 	bool modified = false;
 	vector<RESERVE_DATA> setList;
@@ -1051,7 +1056,7 @@ bool CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data)
 			}
 		}
 	}
-	if( setList.empty() == false && this->reserveManager.AddReserveData(setList, true) ){
+	if( setList.empty() == false && this->reserveManager.AddReserveData(setList, true, false, noReportNotify) ){
 		modified = true;
 	}
 	CBlockLock lock(&this->settingLock);
@@ -1060,7 +1065,7 @@ bool CEpgTimerSrvMain::AutoAddReserveEPG(const EPG_AUTO_ADD_DATA& data)
 	return modified;
 }
 
-bool CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data)
+bool CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, bool noReportNotify)
 {
 	vector<RESERVE_DATA> setList;
 	SYSTEMTIME baseTime;
@@ -1097,7 +1102,7 @@ bool CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data)
 			}
 		}
 	}
-	return setList.empty() == false && this->reserveManager.AddReserveData(setList);
+	return setList.empty() == false && this->reserveManager.AddReserveData(setList, false, false, noReportNotify);
 }
 
 static void SearchPgCallback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, void* param)
@@ -1375,10 +1380,14 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 					}
 					sys->epgAutoAdd.SaveText();
 				}
+				bool addReserve = false;
 				for( size_t i = 0; i < val.size(); i++ ){
-					sys->AutoAddReserveEPG(val[i]);
+					addReserve |= sys->AutoAddReserveEPG(val[i], true);
 				}
 				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+				if( addReserve ){
+					sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+				}
 				resParam->param = CMD_SUCCESS;
 			}
 		}
@@ -1410,10 +1419,14 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 					}
 					sys->epgAutoAdd.SaveText();
 				}
+				bool addReserve = false;
 				for( size_t i = 0; i < val.size(); i++ ){
-					sys->AutoAddReserveEPG(val[i]);
+					addReserve |= sys->AutoAddReserveEPG(val[i], true);
 				}
 				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+				if( addReserve ){
+					sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+				}
 				resParam->param = CMD_SUCCESS;
 			}
 		}
@@ -1444,10 +1457,14 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 					}
 					sys->manualAutoAdd.SaveText();
 				}
+				bool addReserve = false;
 				for( size_t i = 0; i < val.size(); i++ ){
-					sys->AutoAddReserveProgram(val[i]);
+					addReserve |= sys->AutoAddReserveProgram(val[i], true);
 				}
 				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
+				if( addReserve ){
+					sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+				}
 				resParam->param = CMD_SUCCESS;
 			}
 		}
@@ -1479,10 +1496,14 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 					}
 					sys->manualAutoAdd.SaveText();
 				}
+				bool addReserve = false;
 				for( size_t i = 0; i < val.size(); i++ ){
-					sys->AutoAddReserveProgram(val[i]);
+					addReserve |= sys->AutoAddReserveProgram(val[i], true);
 				}
 				sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
+				if( addReserve ){
+					sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+				}
 				resParam->param = CMD_SUCCESS;
 			}
 		}
@@ -1813,10 +1834,14 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 						}
 						sys->epgAutoAdd.SaveText();
 					}
+					bool addReserve = false;
 					for( size_t i = 0; i < val.size(); i++ ){
-						sys->AutoAddReserveEPG(val[i]);
+						addReserve |= sys->AutoAddReserveEPG(val[i], true);
 					}
 					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+					if( addReserve ){
+						sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+					}
 					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 				}
@@ -1840,10 +1865,14 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 						}
 						sys->epgAutoAdd.SaveText();
 					}
+					bool addReserve = false;
 					for( size_t i = 0; i < val.size(); i++ ){
-						sys->AutoAddReserveEPG(val[i]);
+						addReserve |= sys->AutoAddReserveEPG(val[i], true);
 					}
 					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_EPG);
+					if( addReserve ){
+						sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+					}
 					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 				}
@@ -1883,10 +1912,14 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 						}
 						sys->manualAutoAdd.SaveText();
 					}
+					bool addReserve = false;
 					for( size_t i = 0; i < val.size(); i++ ){
-						sys->AutoAddReserveProgram(val[i]);
+						addReserve |= sys->AutoAddReserveProgram(val[i], true);
 					}
 					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
+					if( addReserve ){
+						sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+					}
 					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 				}
@@ -1910,10 +1943,14 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 						}
 						sys->manualAutoAdd.SaveText();
 					}
+					bool addReserve = false;
 					for( size_t i = 0; i < val.size(); i++ ){
-						sys->AutoAddReserveProgram(val[i]);
+						addReserve |= sys->AutoAddReserveProgram(val[i], true);
 					}
 					sys->notifyManager.AddNotify(NOTIFY_UPDATE_AUTOADD_MANUAL);
+					if( addReserve ){
+						sys->reserveManager.AddNotifyAndPostBat(NOTIFY_UPDATE_RESERVE_INFO);
+					}
 					resParam->data = NewWriteVALUE(ver, resParam->dataSize);
 					resParam->param = CMD_SUCCESS;
 				}
