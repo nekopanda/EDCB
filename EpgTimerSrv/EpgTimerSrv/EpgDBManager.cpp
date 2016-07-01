@@ -441,10 +441,6 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 		andKey.erase(0, 7);
 		caseFlag = TRUE;
 	}
-	if( andKey.size() == 0 && key->notKey.size() == 0 && key->contentList.size() == 0 && key->videoList.size() == 0 && key->audioList.size() == 0){
-		//キーワードもジャンル指定もないので検索しない
-		return ;
-	}
 	
 	//キーワード分解
 	vector<wstring> andKeyList;
