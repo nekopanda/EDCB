@@ -617,6 +617,18 @@ void CEpgDBManager::SearchEvent(EPGDB_SEARCH_KEY_INFO* key, map<ULONGLONG, SEARC
 					}
 				}
 
+				//番組長で絞り込み
+				if( key->chkDurationMin != 0 ){
+					if( (LONGLONG)key->chkDurationMin * 60 > itrEvent->second->durationSec || itrEvent->second->DurationFlag == FALSE){
+						continue;
+					}
+				}
+				if( key->chkDurationMax != 0 ){
+					if( (LONGLONG)key->chkDurationMax * 60 < itrEvent->second->durationSec || itrEvent->second->DurationFlag == FALSE){
+						continue;
+					}
+				}
+
 				//キーワード確認
 				if( itrEvent->second->shortInfo == NULL ){
 					if( andKeyList.size() != 0 ){
