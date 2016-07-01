@@ -47,6 +47,20 @@ BOOL ReadVALUE( WORD ver, wstring* val, const BYTE* buff, DWORD buffSize, DWORD*
 	return TRUE;
 }
 
+DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const FILE_DATA& val )
+{
+	DWORD pos = buffOffset + sizeof(DWORD);
+	pos += WriteVALUE(ver, buff, pos, val.Name);
+	pos += WriteVALUE(ver, buff, pos, val.Size);
+	pos += WriteVALUE(ver, buff, pos, val.Status);
+	if( val.Size != 0 ){
+		if( buff != NULL ) memcpy(buff + pos, val.Data, val.Size);
+		pos += val.Size;
+	}
+	WriteVALUE(0, buff, buffOffset, pos - buffOffset);
+	return pos - buffOffset;
+}
+
 DWORD WriteVALUE( WORD ver, BYTE* buff, DWORD buffOffset, const REC_SETTING_DATA& val )
 {
 	DWORD pos = buffOffset + sizeof(DWORD);
