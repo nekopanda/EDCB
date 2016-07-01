@@ -2047,6 +2047,21 @@ int CEpgTimerSrvMain::CtrlCmdCallback(void* param, CMD_STREAM* cmdParam, CMD_STR
 			}
 		}
 		break;
+	case CMD2_EPG_SRV_GET_RECINFO_LIST2:
+		{
+			OutputDebugString(L"CMD2_EPG_SRV_GET_RECINFO_LIST2\r\n");
+			WORD ver;
+			DWORD readSize;
+			if( ReadVALUE(&ver, cmdParam->data, cmdParam->dataSize, &readSize) ){
+				vector<DWORD> idList;
+				if( ReadVALUE2(ver, &idList, cmdParam->data + readSize, cmdParam->dataSize - readSize, NULL) ){
+					resParam->data = NewWriteVALUE2WithVersion(ver,
+						sys->reserveManager.GetRecFileInfoList(idList), resParam->dataSize);
+					resParam->param = CMD_SUCCESS;
+				}
+			}
+		}
+		break;
 	case CMD2_EPG_SRV_GET_RECINFO2:
 		{
 			WORD ver;
