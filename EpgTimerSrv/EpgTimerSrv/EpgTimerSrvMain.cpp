@@ -1098,11 +1098,12 @@ bool CEpgTimerSrvMain::AutoAddReserveProgram(const MANUAL_AUTO_ADD_DATA& data, b
 					item.serviceID = data.serviceID;
 					item.eventID = 0xFFFF;
 					item.recSetting = data.recSetting;
+					item.comment = L"ƒvƒƒOƒ‰ƒ€Ž©“®—\–ñ";
 				}
 			}
 		}
 	}
-	return setList.empty() == false && this->reserveManager.AddReserveData(setList, false, false, noReportNotify);
+	return setList.empty() == false && this->reserveManager.AddReserveData(setList, true, false, noReportNotify);
 }
 
 static void SearchPgCallback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, void* param)
