@@ -66,13 +66,11 @@ EpgDataCap_Bon.exe.errというテキストファイルに出力するようにしました(スタックト
 ■Readme_EpgTimer.txt■
 "EpgTimer.exe"を"EpgTimerNW～.exe"にファイル名をリネームすることで、EpgTimerNW相
 当の動作になります。～には任意の文字列を指定可能で、この文字列が異なるEpgTimerNW
-は多重起動できます。
-EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
-したniisaka版と、従来に近いlegacy版の2種類あります。気分で使い分けてください。
-
-録画済み番組情報"RecInfo2Data.bin"はテキスト形式になって"RecInfo2.txt"に移動しま
-した。移行する場合は「同一番組無効登録」機能のための情報がリセットされるので注意
-してください。
+は多重起動できます。EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザイン
+のEPG番組表をベースにしたniisaka版と、従来に近いlegacy版の2種類あります。気分で
+使い分けてください。録画済み番組情報"RecInfo2Data.bin"はテキスト形式になって
+"RecInfo2.txt"に移動しました。移行する場合は「同一番組無効登録」機能のための情報
+がリセットされるので注意してください。
 
 ◇主な機能
   サーバー連携機能は廃止しました。
@@ -156,6 +154,8 @@ EpgTimer.exeはniisaka氏(https://github.com/niisaka)デザインのEPG番組表をベースに
           EpgTimerNWのネットワーク接続で「クライアント側に待ち受けポートを作る」
           をオフにしたときに使われるロングポーリングの再接続の間隔を指定します。
       ・EPG取得時に放送波時間でPC時計を同期する
+        同期の信頼性を確保するため、150秒の放送波時間の観測を行います。EPG取得時
+        間が延べ150(複数時は150÷チューナ数)秒に満たない場合は同期しません。
         仕様変更ではありませんが、厳密には管理者権限ではなくSE_SYSTEMTIME_NAME特
         権(コントロールパネル→ローカルセキュリティポリシー→システム時刻の変更)
         が必要です。判断は任せますが管理者起動させるよりもユーザにこの特権を与え
@@ -463,6 +463,7 @@ HttpKeepAlive[=0]
   #   このメソッドがtrueを返したときは"Content-Length"を必ず送り、"Connection: close"しない
 
 加えて、以下の設定をCivetWebのデフォルトから変更しています:
+  ssi_pattern: "" (SSIは無効)
   extra_mime_types: "ContentTypeText.txt"に追加したMIMEタイプ(従来通り)
   lua_script_pattern: "**.lua$|**.html$|*/api/*$" (つまり.htmlファイルはLuaスクリプト扱いになる)
     ※REST APIとの互換のため、公開フォルダ直下のapiフォルダにあるファイルもLuaスクリプト扱いになる

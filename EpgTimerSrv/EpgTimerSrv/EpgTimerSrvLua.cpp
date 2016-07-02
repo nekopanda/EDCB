@@ -118,7 +118,8 @@ int CEpgTimerSrvMain::LuaConvert(lua_State* L)
 			}else if( _stricmp(from, "cp932") == 0 ){
 				AtoW(src, wsrc);
 			}else{
-				return 0;
+				lua_pushnil(L);
+				return 1;
 			}
 			if( _stricmp(to, "utf-8") == 0 ){
 				lua_pushstring(L, ws.WtoUTF8(wsrc));
@@ -278,7 +279,8 @@ int CEpgTimerSrvMain::LuaGetServiceList(lua_State* L)
 		}
 		return 1;
 	}
-	return 0;
+	lua_pushnil(L);
+	return 1;
 }
 
 void CEpgTimerSrvMain::LuaGetEventMinMaxTimeCallback(const vector<EPGDB_EVENT_INFO>* pval, void* param)
@@ -313,7 +315,8 @@ int CEpgTimerSrvMain::LuaGetEventMinMaxTime(lua_State* L)
 			return 1;
 		}
 	}
-	return 0;
+	lua_pushnil(L);
+	return 1;
 }
 
 struct EnumEventParam {
@@ -414,7 +417,8 @@ int CEpgTimerSrvMain::LuaEnumEventInfo(lua_State* L)
 			}
 		}
 	}
-	return 0;
+	lua_pushnil(L);
+	return 1;
 }
 
 void CEpgTimerSrvMain::LuaSearchEpgCallback(vector<CEpgDBManager::SEARCH_RESULT_EVENT>* pval, void* param)
@@ -485,7 +489,8 @@ int CEpgTimerSrvMain::LuaSearchEpg(lua_State* L)
 			return 1;
 		}
 	}
-	return 0;
+	lua_pushnil(L);
+	return 1;
 }
 
 int CEpgTimerSrvMain::LuaAddReserveData(lua_State* L)
@@ -546,7 +551,8 @@ int CEpgTimerSrvMain::LuaGetReserveData(lua_State* L)
 			return 1;
 		}
 	}
-	return 0;
+	lua_pushnil(L);
+	return 1;
 }
 
 int CEpgTimerSrvMain::LuaGetRecFilePath(lua_State* L)
@@ -561,7 +567,8 @@ int CEpgTimerSrvMain::LuaGetRecFilePath(lua_State* L)
 			return 1;
 		}
 	}
-	return 0;
+	lua_pushnil(L);
+	return 1;
 }
 
 int CEpgTimerSrvMain::LuaGetRecFileInfo(lua_State* L)
@@ -590,7 +597,8 @@ int CEpgTimerSrvMain::LuaGetRecFileInfoProc(lua_State* L, bool getExtraInfo)
 		DWORD id = (DWORD)lua_tointeger(L, 1);
 		list.resize(1);
 		if( ws.sys->reserveManager.GetRecFileInfo(id, &list.front(), getExtraInfo) == false ){
-			return 0;
+			lua_pushnil(L);
+			return 1;
 		}
 	}
 	for( size_t i = 0; i < list.size(); i++ ){
