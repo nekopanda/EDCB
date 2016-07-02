@@ -185,7 +185,6 @@ namespace EpgTimer.Setting
                         checkBox_cs3.IsChecked = false;
                     }
 
-                    timeList = new ObservableCollection<EpgCaptime>();
                     int capCount = IniFileHandler.GetPrivateProfileInt("EPG_CAP", "Count", 0, SettingPath.TimerSrvIniPath);
                     if (capCount == 0)
                     {
