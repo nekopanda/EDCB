@@ -273,16 +273,16 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile Include="EpgTimerSrvLua.cpp" />
-    <ClCompile Include="LightTsUtils.cpp" />
-    <ClCompile Include="NetPathUtil.cpp" />
-    <ClCompile Include="RecEventDB.cpp" />
     <ClCompile Include="EpgDBManager.cpp" />
     <ClCompile Include="EpgTimerSrv.cpp" />
     <ClCompile Include="EpgTimerSrvMain.cpp" />
     <ClCompile Include="FileStreamingManager.cpp" />
     <ClCompile Include="FileStreamingUtil.cpp" />
     <ClCompile Include="HttpServer.cpp" />
+    <ClCompile Include="LightTsUtils.cpp" />
+    <ClCompile Include="NetPathUtil.cpp" />
     <ClCompile Include="NotifyManager.cpp" />
+    <ClCompile Include="RecEventDB.cpp" />
     <ClCompile Include="ReserveManager.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
