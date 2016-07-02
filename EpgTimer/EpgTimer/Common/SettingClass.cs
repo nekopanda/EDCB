@@ -307,6 +307,9 @@ namespace EpgTimer
                             else if (section.Length > 0)
                             {
                                 string[] list = buff.Split(new char[] { '=' }, 2);
+                                if (list.Length != 2) {
+                                    continue;
+                                }
                                 this[section].addPair(list[0], list[1]);
                             }
                         }
