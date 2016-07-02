@@ -2070,29 +2070,29 @@ bool CReserveManager::AutoAddReserveEPG(
 	vector<EPGDB_SEARCH_KEY_INFO> key(1, data.searchInfo);
 	this->epgDBManager.SearchEpg(&key, &resultList);
 
-	for (size_t i = 0; i < resultList.size(); i++) {
+	for( size_t i = 0; i < resultList.size(); i++ ){
 		const EPGDB_EVENT_INFO& info = resultList[i].info;
 		//時間未定でなく対象期間内かどうか
-		if (info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
-			now < ConvertI64Time(info.start_time) && ConvertI64Time(info.start_time) < now + autoAddHour_ * 60 * 60 * I64_1SEC) {
+		if( info.StartTimeFlag != 0 && info.DurationFlag != 0 &&
+		    now < ConvertI64Time(info.start_time) && ConvertI64Time(info.start_time) < now + autoAddHour_ * 60 * 60 * I64_1SEC ){
 			DWORD reserveID = 0;
-			if (IsFindReserve(info.original_network_id, info.transport_stream_id, info.service_id, info.event_id, &reserveID) == false) {
+			if( IsFindReserve(info.original_network_id, info.transport_stream_id, info.service_id, info.event_id, &reserveID) == false ){
 				bool found = false;
-				if (info.eventGroupInfo != NULL && chkGroupEvent_) {
+				if( info.eventGroupInfo != NULL && chkGroupEvent_ ){
 					//イベントグループのチェックをする
-					for (size_t j = 0; found == false && j < info.eventGroupInfo->eventDataList.size(); j++) {
+					for( size_t j = 0; found == false && j < info.eventGroupInfo->eventDataList.size(); j++ ){
 						//group_typeは必ず1(イベント共有)
 						const EPGDB_EVENT_DATA& e = info.eventGroupInfo->eventDataList[j];
-						if (IsFindReserve(e.original_network_id, e.transport_stream_id, e.service_id, e.event_id, &reserveID)) {
+						if( IsFindReserve(e.original_network_id, e.transport_stream_id, e.service_id, e.event_id, &reserveID) ){
 							found = true;
 							break;
 						}
 						//追加前予約のチェックをする
-						for (size_t k = 0; k < setList.size(); k++) {
-							if (setList[k].originalNetworkID == e.original_network_id &&
-								setList[k].transportStreamID == e.transport_stream_id &&
-								setList[k].serviceID == e.service_id &&
-								setList[k].eventID == e.event_id) {
+						for( size_t k = 0; k < setList.size(); k++ ){
+							if( setList[k].originalNetworkID == e.original_network_id &&
+							    setList[k].transportStreamID == e.transport_stream_id &&
+							    setList[k].serviceID == e.service_id &&
+							    setList[k].eventID == e.event_id ){
 								found = true;
 								break;
 							}
@@ -2100,19 +2100,19 @@ bool CReserveManager::AutoAddReserveEPG(
 					}
 				}
 				//追加前予約のチェックをする
-				for (size_t j = 0; found == false && j < setList.size(); j++) {
-					if (setList[j].originalNetworkID == info.original_network_id &&
-						setList[j].transportStreamID == info.transport_stream_id &&
-						setList[j].serviceID == info.service_id &&
-						setList[j].eventID == info.event_id) {
+				for( size_t j = 0; found == false && j < setList.size(); j++ ){
+					if( setList[j].originalNetworkID == info.original_network_id &&
+					    setList[j].transportStreamID == info.transport_stream_id &&
+					    setList[j].serviceID == info.service_id &&
+					    setList[j].eventID == info.event_id ){
 						found = true;
 					}
 				}
-				if (found == false) {
+				if( found == false ){
 					//まだ存在しないので追加対象
 					setList.resize(setList.size() + 1);
 					RESERVE_DATA& item = setList.back();
-					if (info.shortInfo != NULL) {
+					if( info.shortInfo != NULL ){
 						item.title = info.shortInfo->event_name;
 					}
 					item.startTime = info.start_time;
@@ -2125,20 +2125,19 @@ bool CReserveManager::AutoAddReserveEPG(
 					item.serviceID = info.service_id;
 					item.eventID = info.event_id;
 					item.recSetting = data.recSetting;
-					if (data.searchInfo.chkRecEnd != 0 && IsFindRecEventInfo(info, data.searchInfo)) {
+					if( data.searchInfo.chkRecEnd != 0 && IsFindRecEventInfo(info, data.searchInfo) ){
 						item.recSetting.recMode = RECMODE_NO;
 					}
 					item.comment = EPG_AUTO_ADD_TEXT;
-					if (resultList[i].findKey.empty() == false) {
+					if( resultList[i].findKey.empty() == false ){
 						item.comment += L"(" + resultList[i].findKey + L")";
 						Replace(item.comment, L"\r", L"");
 						Replace(item.comment, L"\n", L"");
 					}
 				}
-			}
-			else if (data.searchInfo.chkRecEnd != 0 && IsFindRecEventInfo(info, data.searchInfo)) {
+			}else if( data.searchInfo.chkRecEnd != 0 && IsFindRecEventInfo(info, data.searchInfo) ){
 				//録画済みなので無効でない予約は無効にする
-				if (ChgAutoAddNoRec(info.original_network_id, info.transport_stream_id, info.service_id, info.event_id)) {
+				if( ChgAutoAddNoRec(info.original_network_id, info.transport_stream_id, info.service_id, info.event_id) ){
 					modified = true;
 				}
 			}
@@ -2147,7 +2146,7 @@ bool CReserveManager::AutoAddReserveEPG(
 			}
 		}
 	}
-	if (setList.empty() == false) {
+	if( setList.empty() == false ){
 		auto addTmp = AddReserveData2(setList, true, false, noReportNotify);
 		if (addTmp.size() > 0) {
 			modified = true;

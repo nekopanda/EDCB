@@ -385,17 +385,17 @@ UINT WINAPI CTCPServer::ServerThread(LPVOID pParam)
 					CMD_STREAM stCmd;
 					CMD_STREAM stRes;
 
-					if (pSys->Authenticate(sock, &auth) == FALSE ||
+					if( pSys->Authenticate(sock, &auth) == FALSE ||
 						pSys->ReceiveHeader(sock, stCmd, &auth) == FALSE ||
 						pSys->CheckCmd(stCmd.param, stCmd.dataSize) == FALSE ||
-						pSys->ReceiveData(sock, stCmd, &auth) == FALSE) {
+						pSys->ReceiveData(sock, stCmd, &auth) == FALSE ){
 						_OutputDebugString(L"Authentication error from IP:0x%08x\r\n", ntohl(client.sin_addr.s_addr));
 						blacklist[client.sin_addr.S_un.S_addr].dwCount++;
 						blacklist[client.sin_addr.S_un.S_addr].dwTick = GetTickCount();
 						break;
 					}
 
-					if (stCmd.param == CMD2_EPG_SRV_REGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_UNREGIST_GUI_TCP) {
+					if( stCmd.param == CMD2_EPG_SRV_REGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_UNREGIST_GUI_TCP || stCmd.param == CMD2_EPG_SRV_ISREGIST_GUI_TCP ){
 						char ip[64];
 						if (getnameinfo((struct sockaddr *)&client, sizeof(client), ip, sizeof(ip), NULL, 0, NI_NUMERICHOST) != 0) {
 							ip[0] = '\0';
