@@ -164,8 +164,24 @@ namespace EpgTimer
                 {
                     string s = ReserveInfo.Comment;
                     return (ReserveInfo.IsAutoAddMissing == true ? "不明な" : ReserveInfo.IsAutoAddInvalid == true ? "無効の" : "")
-                            + (s.StartsWith("EPG自動予約(") == true ? "キーワード予約(" + s.Substring(8) : s);
+                            + (s.StartsWith("EPG自動予約(") == true ? "キーワード予約(" + AutoAddInfo + ")" : s);
                 }
+            }
+        }
+        public String AutoAddInfo
+        {
+            get
+            {
+                if (ReserveInfo == null) return "";
+                //
+                String info = "";
+                var reserveList = ReserveInfo.AutoAddInfo;
+                foreach (var data in reserveList)
+                {
+                    if (info.Length > 0) info += ",";
+                    info += data.andKey;
+                }
+                return info;
             }
         }
         public List<String> RecFileName
