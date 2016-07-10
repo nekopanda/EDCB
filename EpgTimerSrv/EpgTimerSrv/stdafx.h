@@ -16,8 +16,18 @@
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "Ws2_32.lib")
 
+// メモリーリーク検出
+#define _CRTDBG_MAP_ALLOC 
+#include <stdlib.h> 
+#include <crtdbg.h>
+#ifdef _DEBUG
+#ifndef DBG_NEW 
+#define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ ) 
+#define new DBG_NEW 
+#endif
+#endif
+
 // C ランタイム ヘッダー ファイル
-#include <stdlib.h>
 #include <malloc.h>
 #include <memory.h>
 #include <tchar.h>
