@@ -361,7 +361,6 @@ public:
 						}
 					}
 					else if (andKeyList.size() != 0 || notKeyList.size() != 0) {
-						static const wstring strNotFound = L"\x0001";
 						// 検索キー毎に結果を保存するための検索キーIDを生成する
 						std::hash<int> hash_int;
 						std::hash<wstring> hash_wstr;
@@ -393,7 +392,7 @@ public:
 							if (notKeyList.size() != 0) {
 								if (IsFindKeyword(key->regExpFlag, regExp, caseFlag, &notKeyList, targetWord, FALSE) != FALSE) {
 									//notキーワード見つかったので対象外
-									itrEvent->second->searchResult.insert(pair<size_t,wstring>(searchKeyID, strNotFound));
+									itrEvent->second->searchResult.insert(pair<size_t,wstring>(searchKeyID, L"\x0001"));
 									continue;
 								}
 							}
@@ -402,14 +401,14 @@ public:
 									//あいまい検索
 									if (IsFindLikeKeyword(caseFlag, &andKeyList, targetWord, TRUE, &matchKey) == FALSE) {
 										//andキーワード見つからなかったので対象外
-										itrEvent->second->searchResult.insert(pair<size_t, wstring>(searchKeyID, strNotFound));
+										itrEvent->second->searchResult.insert(pair<size_t, wstring>(searchKeyID, L"\x0001"));
 										continue;
 									}
 								}
 								else {
 									if (IsFindKeyword(key->regExpFlag, regExp, caseFlag, &andKeyList, targetWord, TRUE, &matchKey) == FALSE) {
 										//andキーワード見つからなかったので対象外
-										itrEvent->second->searchResult.insert(pair<size_t, wstring>(searchKeyID, strNotFound));
+										itrEvent->second->searchResult.insert(pair<size_t, wstring>(searchKeyID, L"\x0001"));
 										continue;
 									}
 								}
@@ -417,7 +416,7 @@ public:
 							itrEvent->second->searchResult.insert(pair<size_t, wstring>(searchKeyID, matchKey));
 						}
 						else {
-							if (itrResult->second == strNotFound)
+							if (itrResult->second == L"\x0001")
 								continue;
 							matchKey = itrResult->second;
 						}
@@ -470,6 +469,5 @@ protected:
 	static BOOL IsInDateTime(const vector<EPGDB_SEARCH_DATE_INFO>& dateList, const SYSTEMTIME& time);
 	static BOOL IsFindKeyword(BOOL regExpFlag, IRegExpPtr& regExp, BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey = NULL);
 	static BOOL IsFindLikeKeyword(BOOL caseFlag, const vector<wstring>* keyList, const wstring& word, BOOL andMode, wstring* findKey = NULL);
-
 };
 
